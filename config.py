@@ -1,7 +1,8 @@
 import numpy as np
 
 # Training Parameters
-MODEL: str = "attention_matd3"  # options: 'maddpg', 'matd3', 'mappo', 'masac', 'attention_<model>', 'random'
+# Thesis-oriented default: use the learning-based upper-layer controller as the default entry model.
+MODEL: str = "attention_mappo"  # options: 'maddpg', 'matd3', 'mappo', 'masac', 'attention_<model>', 'random'
 SEED: int = 42  # random seed for reproducibility
 np.random.seed(SEED)  # set numpy random seed
 STEPS_PER_EPISODE: int = 1000  # total T
@@ -20,20 +21,20 @@ TIME_SLOT_DURATION: float = 1.0  # tau in seconds
 UE_MAX_DIST: float = 15.0  # d_max^UE in meters
 UE_MAX_WAIT_TIME: int = 10  # in time slots
 
-USE_HOTSPOTS: bool = False  # using hotspots or not
+USE_HOTSPOTS: bool = True  # thesis runs: encourage non-uniform traffic so trajectory/offloading coupling is visible
 NUM_HOTSPOTS: int = 2  # number of hotspots
 HOTSPOT_RADIUS: float = 100.0  # radius of each hotspot in meters
 assert NUM_HOTSPOTS * HOTSPOT_RADIUS * 2 <= min(AREA_WIDTH, AREA_HEIGHT), "Hotspots cannot fit in the area without overlap."
 HOTSPOT_SEPARATION: float = 400.0  # minimum separation between hotspots in meters
 assert HOTSPOT_SEPARATION >= 2 * HOTSPOT_RADIUS, "Hotspot separation must be at least twice the hotspot radius to avoid overlap."
-HOTSPOT_UE_PROB: float = 0.8  # probability that a UE is in a hotspot
+HOTSPOT_UE_PROB: float = 0.85  # slightly stronger clustering to create cooperative-routing opportunities
 
 # UAV Parameters
 UAV_ALTITUDE: int = 100  # H in meters
 UAV_SPEED: float = 15.0  # v^UAV in m/s
 UAV_STORAGE_CAPACITY: np.ndarray = np.random.choice(np.arange(40 * 10**6, 80 * 10**6, 10**6), size=NUM_UAVS).astype(np.int64)  # S_u in bytes
 UAV_COMPUTING_CAPACITY: np.ndarray = np.random.choice(np.arange(5 * 10**9, 20 * 10**9, 10**9), size=NUM_UAVS).astype(np.int64)  # F_u in cycles/sec
-UAV_SENSING_RANGE: float = 300.0  # R^sense in meters
+UAV_SENSING_RANGE: float = 360.0  # R^sense in meters; improves neighbor availability without changing obs dims
 UAV_COVERAGE_RADIUS: float = 100.0  # R in meters
 MIN_UAV_SEPARATION: float = 200.0  # d_min in meters
 assert np.all(UAV_STORAGE_CAPACITY > 0)
@@ -65,8 +66,8 @@ MIN_INPUT_SIZE: int = 1 * 10**6  # in bytes
 MAX_INPUT_SIZE: int = 5 * 10**6  # in bytes
 ZIPF_BETA: float = 0.8  # beta^Zipf
 K_CPU: float = 1e-27  # CPU capacitance coefficient
-SERVICE_DEADLINE_MIN: float = 0.5 * TIME_SLOT_DURATION  # tight service requests are allowed to miss one slot
-SERVICE_DEADLINE_MAX: float = 2.0 * TIME_SLOT_DURATION  # relaxed service requests can span multiple slots logically
+SERVICE_DEADLINE_MIN: float = 0.55 * TIME_SLOT_DURATION  # moderate deadline pressure for richer local/cooperative/MBS trade-offs
+SERVICE_DEADLINE_MAX: float = 1.75 * TIME_SLOT_DURATION  # avoid making MBS trivially dominant under relaxed deadlines
 SERVICE_PRIORITY_MIN: int = 1
 SERVICE_PRIORITY_MAX: int = 3
 # Default to heuristic so old configs and baselines retain the original behavior unless explicitly switched.
@@ -87,7 +88,7 @@ TRANSMIT_POWER: float = 0.5  # P^comm in Watts
 AWGN: float = 1e-13  # sigma^2
 BANDWIDTH_INTER: int = 20 * 10**6  # B^inter in Hz
 BANDWIDTH_EDGE: int = 40 * 10**6  # B^edge in Hz
-BANDWIDTH_BACKHAUL: int = 10 * 10**6  # B^backhaul in Hz
+BANDWIDTH_BACKHAUL: int = 3 * 10**6  # B^backhaul in Hz; lower backhaul reduces the all-to-MBS collapse
 
 # WPT Parameters
 UE_BATTERY_CAPACITY: float = 100.0  # B_max in Joules
@@ -113,9 +114,9 @@ OBS_DIM_SINGLE: int = SELF_OBS_DIM + (MAX_UAV_NEIGHBORS * NEIGHBOR_OBS_DIM) + (M
 ACTION_DIM: int = 2  # angle, distance from [-1, 1]
 MLP_HIDDEN_DIM: int = 128
 
-ACTOR_LR: float = 9e-4
-CRITIC_LR: float = 8e-4
-DISCOUNT_FACTOR: float = 0.96  # gamma
+ACTOR_LR: float = 3e-4
+CRITIC_LR: float = 3e-4
+DISCOUNT_FACTOR: float = 0.99  # gamma
 UPDATE_FACTOR: float = 0.012  # tau
 MAX_GRAD_NORM: float = 0.5  # maximum norm for gradient clipping to prevent exploding gradients
 LOG_STD_MAX: float = 2  # maximum log standard deviation for stochastic policies
@@ -141,10 +142,10 @@ NOISE_CLIP: float = 0.5  # range to clip target policy smoothing noise
 # MAPPO Specific Hyperparameters
 PPO_ROLLOUT_LENGTH: int = STEPS_PER_EPISODE  # number of steps to collect per rollout before updating
 PPO_GAE_LAMBDA: float = 0.95  # lambda parameter for GAE
-PPO_EPOCHS: int = 10  # number of epochs to run on the collected rollout data
-PPO_BATCH_SIZE: int = 200  # size of mini-batches to use during the update step
+PPO_EPOCHS: int = 8  # number of epochs to run on the collected rollout data
+PPO_BATCH_SIZE: int = 256  # size of mini-batches to use during the update step
 PPO_CLIP_EPS: float = 0.2  # clipping parameter (epsilon) for the PPO surrogate objective
-PPO_ENTROPY_COEF: float = 0.01  # coefficient for the entropy bonus to encourage exploration
+PPO_ENTROPY_COEF: float = 0.005  # slightly lower entropy helps attention-MAPPO stabilize later in training
 
 # MASAC Specific Hyperparameters
 ALPHA_LR: float = 3e-4  # learning rate for the entropy temperature alpha
