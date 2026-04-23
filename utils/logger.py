@@ -37,6 +37,14 @@ class Log:
         self.offloading_ratio_cooperative: list[float] = []
         self.offloading_ratio_mbs: list[float] = []
         self.mbs_load_ratios: list[float] = []
+        self.service_learned_decision_counts: list[float] = []
+        self.service_heuristic_decision_counts: list[float] = []
+        self.service_fallback_counts: list[float] = []
+        self.service_predict_exception_fallback_counts: list[float] = []
+        self.service_offload_policy_requested: list[str] = []
+        self.service_offload_policy_loaded: list[bool] = []
+        self.service_offload_policy_checkpoint_path: list[str | None] = []
+        self.service_offload_policy_feature_family: list[str | None] = []
         # Training losses (optional, may be empty for baselines)
         self.actor_losses: list[float | None] = []
         self.critic_losses: list[float | None] = []
@@ -56,6 +64,14 @@ class Log:
         offloading_ratio_mbs: float = 0.0,
         mbs_load_ratio: float = 0.0,
         *,
+        service_learned_decision_count: float = 0.0,
+        service_heuristic_decision_count: float = 0.0,
+        service_fallback_count: float = 0.0,
+        service_predict_exception_fallback_count: float = 0.0,
+        service_offload_policy_requested: str = "heuristic",
+        service_offload_policy_loaded: bool = False,
+        service_offload_policy_checkpoint_path: str | None = None,
+        service_offload_policy_feature_family: str | None = None,
         actor_loss: float | None = None,
         critic_loss: float | None = None,
         entropy_loss: float | None = None,
@@ -77,6 +93,14 @@ class Log:
         self.offloading_ratio_cooperative.append(offloading_ratio_cooperative)
         self.offloading_ratio_mbs.append(offloading_ratio_mbs)
         self.mbs_load_ratios.append(mbs_load_ratio)
+        self.service_learned_decision_counts.append(service_learned_decision_count)
+        self.service_heuristic_decision_counts.append(service_heuristic_decision_count)
+        self.service_fallback_counts.append(service_fallback_count)
+        self.service_predict_exception_fallback_counts.append(service_predict_exception_fallback_count)
+        self.service_offload_policy_requested.append(service_offload_policy_requested)
+        self.service_offload_policy_loaded.append(service_offload_policy_loaded)
+        self.service_offload_policy_checkpoint_path.append(service_offload_policy_checkpoint_path)
+        self.service_offload_policy_feature_family.append(service_offload_policy_feature_family)
 
         self.actor_losses.append(actor_loss)
         self.critic_losses.append(critic_loss)
@@ -135,6 +159,14 @@ class Logger:
         offload_coop_slice: np.ndarray = np.array(log.offloading_ratio_cooperative[-log_freq:])
         offload_mbs_slice: np.ndarray = np.array(log.offloading_ratio_mbs[-log_freq:])
         mbs_load_slice: np.ndarray = np.array(log.mbs_load_ratios[-log_freq:])
+        learned_decision_slice: np.ndarray = np.array(log.service_learned_decision_counts[-log_freq:])
+        heuristic_decision_slice: np.ndarray = np.array(log.service_heuristic_decision_counts[-log_freq:])
+        fallback_slice: np.ndarray = np.array(log.service_fallback_counts[-log_freq:])
+        predict_exception_fallback_slice: np.ndarray = np.array(log.service_predict_exception_fallback_counts[-log_freq:])
+        policy_requested_slice: list[str] = log.service_offload_policy_requested[-log_freq:]
+        policy_loaded_slice: list[bool] = log.service_offload_policy_loaded[-log_freq:]
+        checkpoint_path_slice: list[str | None] = log.service_offload_policy_checkpoint_path[-log_freq:]
+        feature_family_slice: list[str | None] = log.service_offload_policy_feature_family[-log_freq:]
 
         reward_avg: float = float(np.mean(rewards_slice))
         latency_avg: float = float(np.mean(latencies_slice))
@@ -146,6 +178,24 @@ class Logger:
         offload_coop_avg: float = float(np.mean(offload_coop_slice))
         offload_mbs_avg: float = float(np.mean(offload_mbs_slice))
         mbs_load_avg: float = float(np.mean(mbs_load_slice))
+        learned_decision_avg: float = float(np.mean(learned_decision_slice))
+        heuristic_decision_avg: float = float(np.mean(heuristic_decision_slice))
+        fallback_avg: float = float(np.mean(fallback_slice))
+        predict_exception_fallback_avg: float = float(np.mean(predict_exception_fallback_slice))
+
+        def _resolve_constant_or_mixed(values: list[object], fallback: object) -> object:
+            if not values:
+                return fallback
+            first_value = values[0]
+            for value in values[1:]:
+                if value != first_value:
+                    return "mixed"
+            return first_value
+
+        policy_requested_value = _resolve_constant_or_mixed(policy_requested_slice, "heuristic")
+        policy_loaded_value = _resolve_constant_or_mixed(policy_loaded_slice, False)
+        checkpoint_path_value = _resolve_constant_or_mixed(checkpoint_path_slice, None)
+        feature_family_value = _resolve_constant_or_mixed(feature_family_slice, None)
 
         # Prepare loss averages from the Log object if available; prefer explicit `losses` dict when provided
         def _safe_mean(lst: list) -> float | None:
@@ -199,6 +249,9 @@ class Logger:
             f"Mean Deadline Sat: {deadline_avg:.3f} | "
             f"Mean Offload L/C/M: {offload_local_avg:.3f}/{offload_coop_avg:.3f}/{offload_mbs_avg:.3f} | "
             f"Mean MBS Load: {mbs_load_avg:.3f} | "
+            f"Offload Policy: req={policy_requested_value} loaded={policy_loaded_value} family={feature_family_value} | "
+            f"Mean Audit Learned/Heuristic/Fallback/Exception: "
+            f"{learned_decision_avg:.3f}/{heuristic_decision_avg:.3f}/{fallback_avg:.3f}/{predict_exception_fallback_avg:.3f} | "
             + loss_str
             + f"Elapsed Time: {elapsed_time:.2f}s\n"
         )
@@ -219,6 +272,14 @@ class Logger:
             "offloading_ratio_cooperative": offload_coop_avg,
             "offloading_ratio_mbs": offload_mbs_avg,
             "mbs_load_ratio": mbs_load_avg,
+            "service_learned_decision_count": learned_decision_avg,
+            "service_heuristic_decision_count": heuristic_decision_avg,
+            "service_fallback_count": fallback_avg,
+            "service_predict_exception_fallback_count": predict_exception_fallback_avg,
+            "service_offload_policy_requested": policy_requested_value,
+            "service_offload_policy_loaded": policy_loaded_value,
+            "service_offload_policy_checkpoint_path": checkpoint_path_value,
+            "service_offload_policy_feature_family": feature_family_value,
             "time": elapsed_time,
         }
         if actor_avg is not None:

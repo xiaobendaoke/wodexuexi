@@ -10,6 +10,24 @@ import numpy as np
 import time
 
 
+def _get_episode_runtime_audit(env: Env) -> dict[str, object]:
+    """Read the latest episode-level offloading audit snapshot from the environment."""
+
+    audit: dict[str, object] = env.last_runtime_audit or {}
+    return {
+        "service_learned_decision_count": float(audit.get("episode_service_learned_decision_count", 0.0)),
+        "service_heuristic_decision_count": float(audit.get("episode_service_heuristic_decision_count", 0.0)),
+        "service_fallback_count": float(audit.get("episode_service_fallback_count", 0.0)),
+        "service_predict_exception_fallback_count": float(
+            audit.get("episode_service_predict_exception_fallback_count", 0.0)
+        ),
+        "service_offload_policy_requested": str(audit.get("service_offload_policy_requested", "heuristic")),
+        "service_offload_policy_loaded": bool(audit.get("service_offload_policy_loaded", False)),
+        "service_offload_policy_checkpoint_path": audit.get("service_offload_policy_checkpoint_path"),
+        "service_offload_policy_feature_family": audit.get("service_offload_policy_feature_family"),
+    }
+
+
 def test_model(env: Env, model: MARLModel, logger: Logger, num_episodes: int) -> None:
     start_time: float = time.time()
     episode_log: Log = Log()
@@ -60,6 +78,7 @@ def test_model(env: Env, model: MARLModel, logger: Logger, num_episodes: int) ->
 
         # Request-level metrics are currently logged as means of per-step ratios.
         episode_length = max(float(config.STEPS_PER_EPISODE), 1.0)
+        runtime_audit = _get_episode_runtime_audit(env)
         episode_log.append(
             episode_reward,
             episode_latency,
@@ -71,6 +90,14 @@ def test_model(env: Env, model: MARLModel, logger: Logger, num_episodes: int) ->
             offloading_ratio_cooperative=episode_offload_cooperative_sum / episode_length,
             offloading_ratio_mbs=episode_offload_mbs_sum / episode_length,
             mbs_load_ratio=episode_mbs_load_sum / episode_length,
+            service_learned_decision_count=float(runtime_audit["service_learned_decision_count"]),
+            service_heuristic_decision_count=float(runtime_audit["service_heuristic_decision_count"]),
+            service_fallback_count=float(runtime_audit["service_fallback_count"]),
+            service_predict_exception_fallback_count=float(runtime_audit["service_predict_exception_fallback_count"]),
+            service_offload_policy_requested=str(runtime_audit["service_offload_policy_requested"]),
+            service_offload_policy_loaded=bool(runtime_audit["service_offload_policy_loaded"]),
+            service_offload_policy_checkpoint_path=runtime_audit["service_offload_policy_checkpoint_path"],
+            service_offload_policy_feature_family=runtime_audit["service_offload_policy_feature_family"],
         )
         if episode % config.TEST_LOG_FREQ == 0:
             elapsed_time: float = time.time() - start_time

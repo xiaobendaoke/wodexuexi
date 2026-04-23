@@ -14,6 +14,24 @@ import time
 import optuna
 
 
+def _get_episode_runtime_audit(env: Env) -> dict[str, object]:
+    """Read the latest episode-level offloading audit snapshot from the environment."""
+
+    audit: dict[str, object] = env.last_runtime_audit or {}
+    return {
+        "service_learned_decision_count": float(audit.get("episode_service_learned_decision_count", 0.0)),
+        "service_heuristic_decision_count": float(audit.get("episode_service_heuristic_decision_count", 0.0)),
+        "service_fallback_count": float(audit.get("episode_service_fallback_count", 0.0)),
+        "service_predict_exception_fallback_count": float(
+            audit.get("episode_service_predict_exception_fallback_count", 0.0)
+        ),
+        "service_offload_policy_requested": str(audit.get("service_offload_policy_requested", "heuristic")),
+        "service_offload_policy_loaded": bool(audit.get("service_offload_policy_loaded", False)),
+        "service_offload_policy_checkpoint_path": audit.get("service_offload_policy_checkpoint_path"),
+        "service_offload_policy_feature_family": audit.get("service_offload_policy_feature_family"),
+    }
+
+
 def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: int, trial: optuna.Trial | None = None) -> float:
     start_time: float = time.time()
     BufferClass: type[RolloutBuffer] = AttentionRolloutBuffer if "attention" in model.model_name.lower() else RolloutBuffer
@@ -89,6 +107,7 @@ def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: in
                 recent_rewards.append(episode_reward)
                 # Request-level metrics are currently logged as means of per-step ratios.
                 episode_length: float = max(float(episode_step), 1.0)
+                runtime_audit: dict[str, object] = _get_episode_runtime_audit(env)
                 episode_log.append(
                     episode_reward,
                     episode_latency,
@@ -100,6 +119,16 @@ def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: in
                     offloading_ratio_cooperative=episode_offload_cooperative_sum / episode_length,
                     offloading_ratio_mbs=episode_offload_mbs_sum / episode_length,
                     mbs_load_ratio=episode_mbs_load_sum / episode_length,
+                    service_learned_decision_count=float(runtime_audit["service_learned_decision_count"]),
+                    service_heuristic_decision_count=float(runtime_audit["service_heuristic_decision_count"]),
+                    service_fallback_count=float(runtime_audit["service_fallback_count"]),
+                    service_predict_exception_fallback_count=float(
+                        runtime_audit["service_predict_exception_fallback_count"]
+                    ),
+                    service_offload_policy_requested=str(runtime_audit["service_offload_policy_requested"]),
+                    service_offload_policy_loaded=bool(runtime_audit["service_offload_policy_loaded"]),
+                    service_offload_policy_checkpoint_path=runtime_audit["service_offload_policy_checkpoint_path"],
+                    service_offload_policy_feature_family=runtime_audit["service_offload_policy_feature_family"],
                 )
 
                 # Optuna Pruning Check
@@ -237,6 +266,7 @@ def train_off_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: i
 
         # Request-level metrics are currently logged as means of per-step ratios.
         episode_length = max(float(config.STEPS_PER_EPISODE), 1.0)
+        runtime_audit = _get_episode_runtime_audit(env)
         episode_log.append(
             episode_reward,
             episode_latency,
@@ -248,6 +278,14 @@ def train_off_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: i
             offloading_ratio_cooperative=episode_offload_cooperative_sum / episode_length,
             offloading_ratio_mbs=episode_offload_mbs_sum / episode_length,
             mbs_load_ratio=episode_mbs_load_sum / episode_length,
+            service_learned_decision_count=float(runtime_audit["service_learned_decision_count"]),
+            service_heuristic_decision_count=float(runtime_audit["service_heuristic_decision_count"]),
+            service_fallback_count=float(runtime_audit["service_fallback_count"]),
+            service_predict_exception_fallback_count=float(runtime_audit["service_predict_exception_fallback_count"]),
+            service_offload_policy_requested=str(runtime_audit["service_offload_policy_requested"]),
+            service_offload_policy_loaded=bool(runtime_audit["service_offload_policy_loaded"]),
+            service_offload_policy_checkpoint_path=runtime_audit["service_offload_policy_checkpoint_path"],
+            service_offload_policy_feature_family=runtime_audit["service_offload_policy_feature_family"],
         )
         if episode % config.LOG_FREQ == 0:
             elapsed_time: float = time.time() - start_time
@@ -335,6 +373,7 @@ def train_baselines(env: Env, model: MARLModel, logger: Logger, num_episodes: in
 
         # Request-level metrics are currently logged as means of per-step ratios.
         episode_length = max(float(config.STEPS_PER_EPISODE), 1.0)
+        runtime_audit = _get_episode_runtime_audit(env)
         episode_log.append(
             episode_reward,
             episode_latency,
@@ -346,6 +385,14 @@ def train_baselines(env: Env, model: MARLModel, logger: Logger, num_episodes: in
             offloading_ratio_cooperative=episode_offload_cooperative_sum / episode_length,
             offloading_ratio_mbs=episode_offload_mbs_sum / episode_length,
             mbs_load_ratio=episode_mbs_load_sum / episode_length,
+            service_learned_decision_count=float(runtime_audit["service_learned_decision_count"]),
+            service_heuristic_decision_count=float(runtime_audit["service_heuristic_decision_count"]),
+            service_fallback_count=float(runtime_audit["service_fallback_count"]),
+            service_predict_exception_fallback_count=float(runtime_audit["service_predict_exception_fallback_count"]),
+            service_offload_policy_requested=str(runtime_audit["service_offload_policy_requested"]),
+            service_offload_policy_loaded=bool(runtime_audit["service_offload_policy_loaded"]),
+            service_offload_policy_checkpoint_path=runtime_audit["service_offload_policy_checkpoint_path"],
+            service_offload_policy_feature_family=runtime_audit["service_offload_policy_feature_family"],
         )
         if episode % config.LOG_FREQ == 0:
             elapsed_time: float = time.time() - start_time
