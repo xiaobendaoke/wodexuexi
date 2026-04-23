@@ -13,6 +13,8 @@ class Env:
         self._uavs: list[UAV] = [UAV(i) for i in range(config.NUM_UAVS)]
         self._time_step: int = 0
         self._last_step_stats: dict[str, float] = {}
+        self._last_runtime_audit: dict[str, object] = {}
+        self._episode_runtime_audit_totals: dict[str, int] = self._make_empty_runtime_audit_totals()
 
     @property
     def uavs(self) -> list[UAV]:
@@ -25,6 +27,19 @@ class Env:
     @property
     def last_step_stats(self) -> dict[str, float]:
         return self._last_step_stats
+
+    @property
+    def last_runtime_audit(self) -> dict[str, object]:
+        return self._last_runtime_audit
+
+    @staticmethod
+    def _make_empty_runtime_audit_totals() -> dict[str, int]:
+        return {
+            "fallback_count": 0,
+            "predict_exception_fallback_count": 0,
+            "learned_decision_count": 0,
+            "heuristic_decision_count": 0,
+        }
 
     def reset(self, initial_positions: list[np.ndarray] | None = None) -> list[np.ndarray]:
         """Resets the environment to an initial state and returns the initial observations."""
@@ -40,6 +55,8 @@ class Env:
 
         self._time_step = 0
         self._last_step_stats = {}
+        self._last_runtime_audit = {}
+        self._episode_runtime_audit_totals = self._make_empty_runtime_audit_totals()
         return self._get_obs()
 
     def step(self, actions: np.ndarray, sample_recorder=None) -> tuple[list[np.ndarray], list[float], dict[str, float]]:
@@ -67,6 +84,7 @@ class Env:
 
         rewards, metrics = self._get_rewards_and_metrics()
         self._last_step_stats = metrics.copy()
+        self._last_runtime_audit = self._collect_runtime_audit()
 
         if self._time_step % config.T_CACHE_UPDATE_INTERVAL == 0:
             for uav in self._uavs:
@@ -217,7 +235,12 @@ class Env:
         total_local_offloads: int = sum(uav.service_offload_local_count for uav in self._uavs)
         total_cooperative_offloads: int = sum(uav.service_offload_cooperative_count for uav in self._uavs)
         total_mbs_offloads: int = sum(uav.service_offload_mbs_count for uav in self._uavs)
+        total_learned_decisions: int = sum(uav.service_learned_decision_count for uav in self._uavs)
+        total_heuristic_decisions: int = sum(uav.service_heuristic_decision_count for uav in self._uavs)
+        total_fallbacks: int = sum(uav.service_fallback_count for uav in self._uavs)
+        total_predict_exception_fallbacks: int = sum(uav.service_predict_exception_fallback_count for uav in self._uavs)
         assert total_local_offloads + total_cooperative_offloads + total_mbs_offloads == total_service_requests_processed
+        assert total_learned_decisions + total_heuristic_decisions == total_service_requests_processed
 
         # Convention:
         # - deadline_satisfaction_rate and mbs_load_ratio are normalized by all generated service requests.
@@ -266,5 +289,50 @@ class Env:
             "service_offloads_local": float(total_local_offloads),
             "service_offloads_cooperative": float(total_cooperative_offloads),
             "service_offloads_mbs": float(total_mbs_offloads),
+            "service_learned_decision_count": float(total_learned_decisions),
+            "service_heuristic_decision_count": float(total_heuristic_decisions),
+            "service_fallback_count": float(total_fallbacks),
+            "service_predict_exception_fallback_count": float(total_predict_exception_fallbacks),
+            "service_offload_policy_loaded": float(all(uav.service_offload_policy_loaded for uav in self._uavs)),
         }
         return rewards, metrics
+
+    def _collect_runtime_audit(self) -> dict[str, object]:
+        """Aggregate per-step and cumulative service-offloading audit fields for the current episode."""
+
+        step_fallback_count: int = sum(uav.service_fallback_count for uav in self._uavs)
+        step_predict_exception_fallback_count: int = sum(
+            uav.service_predict_exception_fallback_count for uav in self._uavs
+        )
+        step_learned_decision_count: int = sum(uav.service_learned_decision_count for uav in self._uavs)
+        step_heuristic_decision_count: int = sum(uav.service_heuristic_decision_count for uav in self._uavs)
+
+        self._episode_runtime_audit_totals["fallback_count"] += step_fallback_count
+        self._episode_runtime_audit_totals["predict_exception_fallback_count"] += step_predict_exception_fallback_count
+        self._episode_runtime_audit_totals["learned_decision_count"] += step_learned_decision_count
+        self._episode_runtime_audit_totals["heuristic_decision_count"] += step_heuristic_decision_count
+
+        first_uav: UAV | None = self._uavs[0] if self._uavs else None
+        return {
+            "service_offload_policy_requested": first_uav.service_offload_policy_requested if first_uav is not None else "heuristic",
+            "service_offload_policy_loaded": bool(all(uav.service_offload_policy_loaded for uav in self._uavs)),
+            "service_offload_policy_checkpoint_path": (
+                first_uav.service_offload_policy_checkpoint_path if first_uav is not None else None
+            ),
+            "service_offload_policy_feature_family": (
+                first_uav.service_offload_policy_feature_family if first_uav is not None else None
+            ),
+            "service_offload_policy_load_error": (
+                first_uav.service_offload_policy_load_error if first_uav is not None else None
+            ),
+            "step_service_fallback_count": step_fallback_count,
+            "step_service_predict_exception_fallback_count": step_predict_exception_fallback_count,
+            "step_service_learned_decision_count": step_learned_decision_count,
+            "step_service_heuristic_decision_count": step_heuristic_decision_count,
+            "episode_service_fallback_count": self._episode_runtime_audit_totals["fallback_count"],
+            "episode_service_predict_exception_fallback_count": self._episode_runtime_audit_totals[
+                "predict_exception_fallback_count"
+            ],
+            "episode_service_learned_decision_count": self._episode_runtime_audit_totals["learned_decision_count"],
+            "episode_service_heuristic_decision_count": self._episode_runtime_audit_totals["heuristic_decision_count"],
+        }

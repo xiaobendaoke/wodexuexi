@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 import numpy as np
 import warnings
 
@@ -46,7 +47,7 @@ def _try_add_file_to_cache(uav: "UAV", file_id: int) -> None:
 
 
 class UAV:
-    _policy_cache: dict[tuple[str, str | None, float | None], object | None] = {}
+    _policy_cache: dict[tuple[str, str | None, float | None], dict[str, object | None]] = {}
 
     def __init__(self, uav_id: int) -> None:
         self.id: int = uav_id
@@ -78,33 +79,81 @@ class UAV:
         self._service_offload_local_count: int = 0
         self._service_offload_cooperative_count: int = 0
         self._service_offload_mbs_count: int = 0
+        self._service_learned_decision_count: int = 0
+        self._service_heuristic_decision_count: int = 0
+        self._service_fallback_count: int = 0
+        self._service_predict_exception_fallback_count: int = 0
 
         self._uav_mbs_rate: float = 0.0
-        self._service_offload_policy = self._get_service_offload_policy()
+        policy_entry = self._get_service_offload_policy()
+        self._service_offload_policy = policy_entry["policy"]
+        self._service_offload_policy_requested: str = str(policy_entry["requested_policy"])
+        self._service_offload_policy_loaded: bool = bool(policy_entry["loaded"])
+        self._service_offload_policy_checkpoint_path: str | None = (
+            str(policy_entry["checkpoint_path"]) if policy_entry["checkpoint_path"] is not None else None
+        )
+        self._service_offload_policy_feature_family: str | None = (
+            str(policy_entry["feature_family"]) if policy_entry["feature_family"] is not None else None
+        )
+        self._service_offload_policy_load_error: str | None = (
+            str(policy_entry["load_error"]) if policy_entry["load_error"] is not None else None
+        )
 
     @classmethod
-    def _get_service_offload_policy(cls):
+    def _get_service_offload_policy(cls) -> dict[str, object | None]:
         policy_name: str = getattr(config, "SERVICE_OFFLOAD_POLICY", "heuristic")
         if policy_name == "heuristic":
-            return None
+            return {
+                "policy": None,
+                "requested_policy": policy_name,
+                "loaded": False,
+                "checkpoint_path": None,
+                "feature_family": None,
+                "load_error": None,
+            }
         checkpoint_path: str | None = getattr(config, "SERVICE_OFFLOAD_POLICY_CHECKPOINT", None)
+        resolved_checkpoint_path: str | None = None
+        if checkpoint_path is not None:
+            resolved_checkpoint_path = str(Path(checkpoint_path).expanduser().resolve())
         checkpoint_mtime: float | None = None
         if checkpoint_path is not None:
             checkpoint_file = Path(checkpoint_path)
             if checkpoint_file.exists():
                 checkpoint_mtime = checkpoint_file.stat().st_mtime
         cache_key: tuple[str, str | None, float | None] = (policy_name, checkpoint_path, checkpoint_mtime)
-        try:
-            if cache_key not in cls._policy_cache:
-                cls._policy_cache[cache_key] = build_offload_policy(policy_name, checkpoint_path=checkpoint_path)
-            return cls._policy_cache[cache_key]
-        except Exception as exc:
-            cls._policy_cache[cache_key] = None
-            warnings.warn(
-                f"Service offload policy '{policy_name}' is unavailable; falling back to heuristic. Details: {exc}",
-                RuntimeWarning,
-            )
-            return None
+        if cache_key not in cls._policy_cache:
+            try:
+                policy = build_offload_policy(policy_name, checkpoint_path=checkpoint_path)
+                checkpoint_used: str | None = resolved_checkpoint_path or str(getattr(policy, "checkpoint_path", checkpoint_path))
+                feature_family: str | None = str(getattr(policy, "feature_family", None))
+                cls._policy_cache[cache_key] = {
+                    "policy": policy,
+                    "requested_policy": policy_name,
+                    "loaded": True,
+                    "checkpoint_path": checkpoint_used,
+                    "feature_family": feature_family,
+                    "load_error": None,
+                }
+                print(
+                    "[offload-audit] Loaded learned service offload policy "
+                    f"checkpoint='{checkpoint_used}' feature_family='{feature_family}'."
+                )
+            except Exception as exc:
+                cls._policy_cache[cache_key] = {
+                    "policy": None,
+                    "requested_policy": policy_name,
+                    "loaded": False,
+                    "checkpoint_path": resolved_checkpoint_path,
+                    "feature_family": None,
+                    "load_error": str(exc),
+                }
+                warnings.warn(
+                    "[offload-audit] Service offload policy "
+                    f"'{policy_name}' failed to load from checkpoint='{resolved_checkpoint_path}'. "
+                    f"Falling back to heuristic. Details: {exc}",
+                    RuntimeWarning,
+                )
+        return cls._policy_cache[cache_key]
 
     @property
     def energy(self) -> float:
@@ -134,6 +183,42 @@ class UAV:
     def service_offload_mbs_count(self) -> int:
         return self._service_offload_mbs_count
 
+    @property
+    def service_offload_policy_requested(self) -> str:
+        return self._service_offload_policy_requested
+
+    @property
+    def service_offload_policy_loaded(self) -> bool:
+        return self._service_offload_policy_loaded
+
+    @property
+    def service_offload_policy_checkpoint_path(self) -> str | None:
+        return self._service_offload_policy_checkpoint_path
+
+    @property
+    def service_offload_policy_feature_family(self) -> str | None:
+        return self._service_offload_policy_feature_family
+
+    @property
+    def service_offload_policy_load_error(self) -> str | None:
+        return self._service_offload_policy_load_error
+
+    @property
+    def service_learned_decision_count(self) -> int:
+        return self._service_learned_decision_count
+
+    @property
+    def service_heuristic_decision_count(self) -> int:
+        return self._service_heuristic_decision_count
+
+    @property
+    def service_fallback_count(self) -> int:
+        return self._service_fallback_count
+
+    @property
+    def service_predict_exception_fallback_count(self) -> int:
+        return self._service_predict_exception_fallback_count
+
     def reset_for_next_step(self) -> None:
         """Reset UAV state for a new step."""
         self._current_covered_ues = []
@@ -145,6 +230,10 @@ class UAV:
         self._service_offload_local_count = 0
         self._service_offload_cooperative_count = 0
         self._service_offload_mbs_count = 0
+        self._service_learned_decision_count = 0
+        self._service_heuristic_decision_count = 0
+        self._service_fallback_count = 0
+        self._service_predict_exception_fallback_count = 0
         self.collision_violation = False
         self.boundary_violation = False
 
@@ -231,8 +320,18 @@ class UAV:
 
     def _build_service_offload_context(self, current_req: Request, ue_uav_rate: float) -> tuple[ServiceOffloadContext, "UAV" | None]:
         """Build the normalized policy context from the exact runtime heuristic state."""
+        req_id: int = current_req.req_id
+        service_load: int = max(self._current_service_request_count, 1)
+        local_compute_share: float = float(config.UAV_COMPUTING_CAPACITY[self.id]) / float(service_load)
         local_latency: float = self._estimate_local_service_latency(current_req, ue_uav_rate)
-        cooperative_latency, cooperative_uav = self._estimate_best_cooperative_service_latency(current_req, ue_uav_rate)
+        (
+            cooperative_latency,
+            cooperative_uav,
+            best_uav_uav_rate,
+            best_neighbor_mbs_rate,
+            best_neighbor_compute_share,
+            best_neighbor_cache_belief,
+        ) = self._estimate_best_cooperative_service_candidate(current_req, ue_uav_rate)
         mbs_latency: float = self._estimate_mbs_service_latency(current_req, ue_uav_rate)
 
         context = ServiceOffloadContext(
@@ -244,6 +343,17 @@ class UAV:
             local_cache_hit=bool(self.cache[current_req.req_id]),
             cooperative_available=cooperative_uav is not None,
             local_queue_length=self._current_service_request_count,
+            request_size=current_req.req_size,
+            service_file_size=int(config.FILE_SIZES[req_id]),
+            cpu_cycles_per_byte=float(config.CPU_CYCLES_PER_BYTE[req_id]),
+            neighbor_count=len(self._neighbors),
+            ue_uav_rate=ue_uav_rate,
+            uav_mbs_rate=self._uav_mbs_rate,
+            best_uav_uav_rate=best_uav_uav_rate,
+            best_neighbor_mbs_rate=best_neighbor_mbs_rate,
+            local_compute_share=local_compute_share,
+            best_neighbor_compute_share=best_neighbor_compute_share,
+            best_neighbor_cache_belief=best_neighbor_cache_belief,
         )
         return context, cooperative_uav
 
@@ -280,20 +390,42 @@ class UAV:
             context, cooperative_uav = self._build_service_offload_context(current_req, ue_uav_rate)
             heuristic_target_idx, heuristic_target_uav = self._select_service_target_from_context(context, cooperative_uav)
 
-        if getattr(config, "SERVICE_OFFLOAD_POLICY", "heuristic") == "heuristic" or self._service_offload_policy is None:
+        if getattr(config, "SERVICE_OFFLOAD_POLICY", "heuristic") == "heuristic":
+            self._service_heuristic_decision_count += 1
+            return heuristic_target_idx, heuristic_target_uav
+
+        if self._service_offload_policy is None:
+            self._service_heuristic_decision_count += 1
+            self._service_fallback_count += 1
             return heuristic_target_idx, heuristic_target_uav
 
         try:
             target_idx: int = int(self._service_offload_policy.predict(context))
-        except Exception:
+        except Exception as exc:
+            self._service_heuristic_decision_count += 1
+            self._service_fallback_count += 1
+            self._service_predict_exception_fallback_count += 1
+            warnings.warn(
+                "[offload-audit] Learned service offload predict() failed on "
+                f"UAV={self.id} checkpoint='{self._service_offload_policy_checkpoint_path}' "
+                f"feature_family='{self._service_offload_policy_feature_family}'. "
+                f"Falling back to heuristic. Details: {exc}",
+                RuntimeWarning,
+            )
             return heuristic_target_idx, heuristic_target_uav
 
         if target_idx == OFFLOAD_TARGET_LOCAL:
+            self._service_learned_decision_count += 1
             return OFFLOAD_TARGET_LOCAL, None
         if target_idx == OFFLOAD_TARGET_COOPERATIVE and cooperative_uav is not None:
+            self._service_learned_decision_count += 1
             return OFFLOAD_TARGET_COOPERATIVE, cooperative_uav
         if target_idx == OFFLOAD_TARGET_MBS:
+            self._service_learned_decision_count += 1
             return OFFLOAD_TARGET_MBS, None
+
+        self._service_heuristic_decision_count += 1
+        self._service_fallback_count += 1
         return heuristic_target_idx, heuristic_target_uav
 
     def _decide_offloading_target_heuristic(self, current_req: Request, ue_uav_rate: float) -> tuple[int, "UAV" | None]:
@@ -334,7 +466,12 @@ class UAV:
         uav_mbs_upload_latency: float = current_req.req_size / self._uav_mbs_rate
         return ue_uav_upload_latency + uav_mbs_upload_latency
 
-    def _estimate_best_cooperative_service_latency(self, current_req: Request, ue_uav_rate: float) -> tuple[float, "UAV" | None]:
+    def _estimate_best_cooperative_service_candidate(
+        self,
+        current_req: Request,
+        ue_uav_rate: float,
+    ) -> tuple[float, "UAV" | None, float, float, float, float]:
+        """Estimate the best cooperative UAV and expose its raw runtime state for learned policies."""
         req_size: int = current_req.req_size
         req_id: int = current_req.req_id
         file_size: int = int(config.FILE_SIZES[req_id])
@@ -343,19 +480,39 @@ class UAV:
 
         best_latency: float = np.inf
         best_neighbor: UAV | None = None
+        best_uav_uav_rate: float = 0.0
+        best_neighbor_mbs_rate: float = 0.0
+        best_neighbor_compute_share: float = 0.0
+        best_neighbor_cache_belief: float = 0.0
         for neighbor in self._neighbors:
             belief_prob: float = _get_belief_probability(req_id, neighbor.id)
             uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, neighbor.pos))
-            uav_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(neighbor.pos, config.MBS_POS))
-            exp_neighbor_fetch_latency: float = (1.0 - belief_prob) * (file_size / uav_mbs_rate)
+            neighbor_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(neighbor.pos, config.MBS_POS))
+            exp_neighbor_fetch_latency: float = (1.0 - belief_prob) * (file_size / neighbor_mbs_rate)
             neigh_load: int = max(neighbor._current_service_request_count + 1, 1)
-            est_comp_latency: float = cpu_cycles / (config.UAV_COMPUTING_CAPACITY[neighbor.id] / neigh_load)
+            neighbor_compute_share: float = float(config.UAV_COMPUTING_CAPACITY[neighbor.id]) / float(neigh_load)
+            est_comp_latency: float = cpu_cycles / neighbor_compute_share
             uav_uav_upload_latency: float = req_size / uav_uav_rate
             exp_neighbor_latency: float = ue_uav_upload_latency + uav_uav_upload_latency + exp_neighbor_fetch_latency + est_comp_latency
             if exp_neighbor_latency < best_latency:
                 best_latency = exp_neighbor_latency
                 best_neighbor = neighbor
+                best_uav_uav_rate = uav_uav_rate
+                best_neighbor_mbs_rate = neighbor_mbs_rate
+                best_neighbor_compute_share = neighbor_compute_share
+                best_neighbor_cache_belief = belief_prob
 
+        return (
+            best_latency,
+            best_neighbor,
+            best_uav_uav_rate,
+            best_neighbor_mbs_rate,
+            best_neighbor_compute_share,
+            best_neighbor_cache_belief,
+        )
+
+    def _estimate_best_cooperative_service_latency(self, current_req: Request, ue_uav_rate: float) -> tuple[float, "UAV" | None]:
+        best_latency, best_neighbor, _, _, _, _ = self._estimate_best_cooperative_service_candidate(current_req, ue_uav_rate)
         return best_latency, best_neighbor
 
     def _estimate_local_content_latency(self, current_req: Request, ue_uav_rate: float) -> float:

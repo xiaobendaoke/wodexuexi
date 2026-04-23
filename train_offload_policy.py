@@ -12,10 +12,13 @@ from torch.utils.data import DataLoader, TensorDataset, WeightedRandomSampler
 
 import config
 from marl_models.offload_policy import (
+    OFFLOAD_FEATURE_FAMILY_FULL,
+    OFFLOAD_FEATURE_FAMILY_RICH_REDUCED,
     OFFLOAD_NUM_CLASSES,
-    OFFLOAD_POLICY_INPUT_DIM,
     OFFLOAD_TARGET_NAMES,
     OffloadMLP,
+    get_offload_feature_dim,
+    get_offload_feature_specs,
     save_offload_policy_checkpoint,
 )
 
@@ -35,6 +38,36 @@ def select_device(device_arg: str) -> torch.device:
             return torch.device("mps")
         return torch.device("cpu")
     return torch.device(device_arg)
+
+
+def load_feature_family_matrix(dataset: dict[str, np.ndarray], feature_family: str) -> np.ndarray:
+    """Load the requested feature family while preserving backward compatibility with old datasets."""
+
+    if feature_family == OFFLOAD_FEATURE_FAMILY_FULL:
+        if "features_full" in dataset:
+            return np.asarray(dataset["features_full"], dtype=np.float32)
+        return np.asarray(dataset["features"], dtype=np.float32)
+    if feature_family == OFFLOAD_FEATURE_FAMILY_RICH_REDUCED:
+        if "features_rich_reduced" not in dataset:
+            raise KeyError(
+                "Dataset does not contain 'features_rich_reduced'. Re-collect it with the updated dataset pipeline."
+            )
+        return np.asarray(dataset["features_rich_reduced"], dtype=np.float32)
+    raise ValueError(f"Unsupported feature family: {feature_family}")
+
+
+def standardize_feature_splits(
+    x_train: np.ndarray,
+    x_val: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Standardize features using the training split statistics only."""
+
+    mean = np.mean(x_train, axis=0, keepdims=True).astype(np.float32)
+    std = np.std(x_train, axis=0, keepdims=True).astype(np.float32)
+    std = np.where(std < 1e-6, 1.0, std)
+    x_train_std = ((x_train - mean) / std).astype(np.float32)
+    x_val_std = ((x_val - mean) / std).astype(np.float32)
+    return x_train_std, x_val_std, mean.squeeze(0).astype(np.float32), std.squeeze(0).astype(np.float32)
 
 
 def stratified_train_val_split(labels: np.ndarray, val_ratio: float, seed: int) -> tuple[np.ndarray, np.ndarray]:
@@ -170,6 +203,7 @@ def train_offload_policy(
     *,
     dataset_path: str | Path,
     output_path: str | Path,
+    feature_family: str = OFFLOAD_FEATURE_FAMILY_FULL,
     hidden_dims: tuple[int, ...] = (64, 64),
     epochs: int = 30,
     batch_size: int = 256,
@@ -189,11 +223,12 @@ def train_offload_policy(
         raise FileNotFoundError(f"Dataset not found: {dataset_file}")
 
     dataset = np.load(dataset_file)
-    features = np.asarray(dataset["features"], dtype=np.float32)
+    features = load_feature_family_matrix(dataset, feature_family)
     labels = np.asarray(dataset["labels"], dtype=np.int64)
-    if features.ndim != 2 or features.shape[1] != OFFLOAD_POLICY_INPUT_DIM:
+    expected_dim: int = get_offload_feature_dim(feature_family)
+    if features.ndim != 2 or features.shape[1] != expected_dim:
         raise ValueError(
-            f"Unexpected feature shape {features.shape}; expected (*, {OFFLOAD_POLICY_INPUT_DIM})."
+            f"Unexpected feature shape {features.shape}; expected (*, {expected_dim}) for feature family '{feature_family}'."
         )
     if labels.ndim != 1 or labels.shape[0] != features.shape[0]:
         raise ValueError("Labels must be a 1D array aligned with the feature matrix.")
@@ -204,11 +239,12 @@ def train_offload_policy(
     y_train = labels[train_idx]
     x_val = features[val_idx]
     y_val = labels[val_idx]
+    x_train, x_val, scaler_mean, scaler_std = standardize_feature_splits(x_train, x_val)
 
     train_loader, effective_sampler_mode = build_train_loader(x_train, y_train, batch_size, sampler_mode)
 
     device_obj = select_device(device)
-    model = OffloadMLP(input_dim=OFFLOAD_POLICY_INPUT_DIM, hidden_dims=hidden_dims, num_classes=OFFLOAD_NUM_CLASSES).to(device_obj)
+    model = OffloadMLP(input_dim=expected_dim, hidden_dims=hidden_dims, num_classes=OFFLOAD_NUM_CLASSES).to(device_obj)
 
     train_label_counts = np.bincount(y_train, minlength=OFFLOAD_NUM_CLASSES).astype(np.float32)
     class_weights = np.zeros_like(train_label_counts)
@@ -264,6 +300,9 @@ def train_offload_policy(
         "dataset_path": str(dataset_file),
         "checkpoint_path": str(output_path),
         "device": str(device_obj),
+        "feature_family": feature_family,
+        "feature_dim": int(expected_dim),
+        "feature_names": [spec["name"] for spec in get_offload_feature_specs(feature_family)],
         "seed": seed,
         "epochs": int(epochs),
         "batch_size": int(batch_size),
@@ -299,9 +338,12 @@ def train_offload_policy(
     saved_path = save_offload_policy_checkpoint(
         model,
         output_path,
+        feature_family=feature_family,
         hidden_dims=hidden_dims,
+        scaler_mean=scaler_mean.tolist(),
+        scaler_std=scaler_std.tolist(),
         metrics=summary,
-        extra_metadata={"dataset_seed": seed, "dataset_rows": int(labels.size)},
+        extra_metadata={"dataset_seed": seed, "dataset_rows": int(labels.size), "feature_family": feature_family},
     )
     summary["checkpoint_path"] = saved_path
 
@@ -314,6 +356,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train a request-level offloading classifier from heuristic labels.")
     parser.add_argument("--dataset", type=str, default="offload_datasets/offload_dataset_minimal.npz", help="Path to the collected dataset (.npz).")
     parser.add_argument("--output", type=str, default="saved_offload_policies/offload_policy_minimal.pt", help="Checkpoint output path.")
+    parser.add_argument(
+        "--feature_family",
+        type=str,
+        default=OFFLOAD_FEATURE_FAMILY_FULL,
+        choices=[OFFLOAD_FEATURE_FAMILY_FULL, OFFLOAD_FEATURE_FAMILY_RICH_REDUCED],
+        help="Feature family to train on.",
+    )
     parser.add_argument("--epochs", type=int, default=30, help="Number of training epochs.")
     parser.add_argument("--batch_size", type=int, default=256, help="Mini-batch size.")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate.")
@@ -330,6 +379,7 @@ def main() -> None:
     summary = train_offload_policy(
         dataset_path=args.dataset,
         output_path=args.output,
+        feature_family=args.feature_family,
         hidden_dims=parse_hidden_dims(args.hidden_dims),
         epochs=args.epochs,
         batch_size=args.batch_size,
