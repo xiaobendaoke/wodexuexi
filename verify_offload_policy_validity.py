@@ -16,6 +16,7 @@ import collect_offload_dataset as dataset_module
 import config
 import environment.comm_model as comms
 import environment.uavs as uav_module
+from paths import results_path
 from environment.env import Env
 from environment.request_types import Request
 from marl_models.offload_policy import (
@@ -38,9 +39,9 @@ from train_offload_policy import (
 
 
 REPO_ROOT = Path(__file__).resolve().parent
-RESULTS_DIR = REPO_ROOT / "saved_offload_policies"
+RESULTS_DIR = results_path("reports")
 RESULTS_PATH = RESULTS_DIR / "offload_policy_paper_validity.json"
-REPORT_PATH = REPO_ROOT / "docs" / "offload_policy_paper_validity_summary.md"
+REPORT_PATH = RESULTS_DIR / "offload_policy_paper_validity_summary.md"
 
 FULL_FEATURE_NAMES: tuple[str, ...] = (
     "local_latency_vs_deadline",

@@ -11,6 +11,7 @@ import optuna.visualization as vis
 import config
 from environment.env import Env
 from marl_models.utils import get_model
+from paths import results_path
 from utils.logger import Logger
 from train import train_on_policy, train_off_policy
 
@@ -55,7 +56,7 @@ def objective(trial: optuna.Trial, stage: int, model_name: str, num_episodes: in
     elif stage == 2:
         # We tune the solver to reach the success defined in Stage 1
         # NOTE: Before running Stage 2, you should load the best Stage 1 parameters:
-        #   with open("tuning_logs/{model_name}/stage_1.json", "r") as f:
+        #   with open("results/tuning_logs/{model_name}/stage_1.json", "r") as f:
         #       best_params = json.load(f)["best_params"]
         #       config.ALPHA_1 = best_params["alpha_1"]
         #       config.ALPHA_2 = best_params["alpha_2"]
@@ -105,7 +106,7 @@ def objective(trial: optuna.Trial, stage: int, model_name: str, num_episodes: in
 
     # Minimal Logger for Tuning (Prevent cluttering disk with 100s of logs)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    tuning_log_dir = f"tuning_logs/{model_name}/stage_{stage}/trial_{trial.number}"
+    tuning_log_dir = str(results_path("tuning_logs", model_name, f"stage_{stage}", f"trial_{trial.number}"))
     if not os.path.exists(tuning_log_dir):
         os.makedirs(tuning_log_dir)
     logger = Logger(tuning_log_dir, timestamp)
@@ -149,7 +150,7 @@ def run_tuning(args):
 
     # Callback executed after each trial completes (Optuna calls this)
     def _trial_logging_callback(study, trial):
-        trial_log_dir = f"tuning_logs/{config.MODEL}/stage_{args.stage}/trial_{trial.number}"
+        trial_log_dir = str(results_path("tuning_logs", config.MODEL, f"stage_{args.stage}", f"trial_{trial.number}"))
         if not os.path.exists(trial_log_dir):
             os.makedirs(trial_log_dir)
 
@@ -202,7 +203,7 @@ def run_tuning(args):
     print(json.dumps(study.best_params, indent=4))
 
     # Save best params and study summary
-    save_path = f"tuning_logs/{config.MODEL}/stage_{args.stage}/stage_{args.stage}.json"
+    save_path = str(results_path("tuning_logs", config.MODEL, f"stage_{args.stage}", f"stage_{args.stage}.json"))
     if not os.path.exists(os.path.dirname(save_path)):
         os.makedirs(os.path.dirname(save_path))
 
@@ -228,7 +229,7 @@ def run_tuning(args):
 def plot_tuning_results(study: optuna.Study, model_name: str, stage: int) -> None:
     """Generates and saves tuning result plots."""
 
-    plot_dir = f"tuning_logs/{model_name}/plots_stage_{stage}"
+    plot_dir = str(results_path("tuning_logs", model_name, f"plots_stage_{stage}"))
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
 

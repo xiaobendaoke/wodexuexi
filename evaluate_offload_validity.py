@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 
 import config
+from paths import results_path
 from marl_models.offload_policy import OFFLOAD_NUM_CLASSES, OFFLOAD_TARGET_NAMES, OffloadMLP
 from train_offload_policy import build_train_loader, evaluate_classifier, select_device, stratified_train_val_split
 
@@ -413,7 +414,12 @@ def run_validity_evaluation(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run paper-validity checks for the request-level offloading classifier.")
     parser.add_argument("--dataset", type=str, default="offload_datasets/offload_dataset_balanced.npz", help="Dataset path.")
-    parser.add_argument("--output", type=str, default="saved_offload_policies/offload_policy_validity_report.json", help="Output report path.")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=str(results_path("reports", "offload_policy_validity_report.json")),
+        help="Output report path.",
+    )
     parser.add_argument("--epochs", type=int, default=20, help="Training epochs per evaluation.")
     parser.add_argument("--batch_size", type=int, default=256, help="Mini-batch size.")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate.")

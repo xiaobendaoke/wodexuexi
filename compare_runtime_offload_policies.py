@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 
 import config
+from paths import results_path
 from environment.env import Env
 from environment.uavs import UAV
 from marl_models.static_baseline.static_model import StaticModel
@@ -317,7 +318,12 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Compare heuristic, surrogate, and rich reduced runtime offloading policies.")
     parser.add_argument("--surrogate_checkpoint", type=str, required=True, help="Full-feature surrogate checkpoint.")
     parser.add_argument("--rich_checkpoint", type=str, required=True, help="Rich reduced runtime checkpoint.")
-    parser.add_argument("--output", type=str, default="saved_offload_policies/runtime_offload_policy_comparison.json", help="Output JSON report.")
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=str(results_path("reports", "runtime_offload_policy_comparison.json")),
+        help="Output JSON report.",
+    )
     parser.add_argument("--seeds", type=int, nargs="+", default=[42, 84, 126, 168], help="Seeds used for the multi-seed comparison.")
     parser.add_argument("--episodes_per_seed", type=int, default=4, help="Episodes per seed and scenario.")
     parser.add_argument("--steps_per_episode", type=int, default=100, help="Steps per episode.")

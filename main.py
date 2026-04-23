@@ -5,6 +5,7 @@ from train import train_on_policy, train_off_policy, train_baselines
 from test import test_model
 from utils.logger import Logger, load_configs
 from utils.plot_logs import generate_plots
+from paths import results_path
 import config
 import torch
 import numpy as np
@@ -63,7 +64,7 @@ def start_training(args: argparse.Namespace):
     model_name: str = config.MODEL.lower()
     model: MARLModel = get_model(model_name)
 
-    model_log_dir: str = f"train_logs/{model_name}"
+    model_log_dir: str = str(results_path("train_logs", model_name))
     if not os.path.exists(model_log_dir):
         os.makedirs(model_log_dir)
 
@@ -88,7 +89,12 @@ def start_training(args: argparse.Namespace):
     print("Training completed.\n")
     print("Generating plots...")
 
-    generate_plots(f"{model_log_dir}/log_data_{timestamp}.json", f"train_plots/{model_name}/", "train", timestamp)
+    generate_plots(
+        f"{model_log_dir}/log_data_{timestamp}.json",
+        str(results_path("train_plots", model_name)),
+        "train",
+        timestamp,
+    )
 
 
 def start_testing(args: argparse.Namespace):
@@ -103,7 +109,7 @@ def start_testing(args: argparse.Namespace):
     model_name: str = config.MODEL.lower()
     model: MARLModel = get_model(model_name)
 
-    model_log_dir: str = f"test_logs/{model_name}"
+    model_log_dir: str = str(results_path("test_logs", model_name))
     if not os.path.exists(model_log_dir):
         os.makedirs(model_log_dir)
 
@@ -117,7 +123,13 @@ def start_testing(args: argparse.Namespace):
     print("Testing completed.\n")
     print("Generating plots...")
 
-    generate_plots(f"{model_log_dir}/log_data_{timestamp}.json", f"test_plots/{model_name}/", "test", timestamp, smoothing_window=2)
+    generate_plots(
+        f"{model_log_dir}/log_data_{timestamp}.json",
+        str(results_path("test_plots", model_name)),
+        "test",
+        timestamp,
+        smoothing_window=2,
+    )
 
 
 if __name__ == "__main__":
