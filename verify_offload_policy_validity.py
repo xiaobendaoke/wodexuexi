@@ -950,6 +950,7 @@ def runtime_policy_mode(
             heuristic_target_idx, heuristic_target_uav = self._select_service_target_from_context(context, cooperative_uav)
 
         if policy_mode == "heuristic":
+            self._service_heuristic_decision_count += 1
             return heuristic_target_idx, heuristic_target_uav
 
         try:
@@ -965,9 +966,29 @@ def runtime_policy_mode(
             else:
                 raise ValueError(f"Unsupported policy mode: {policy_mode}")
         except Exception:
+            self._service_heuristic_decision_count += 1
+            self._service_fallback_count += 1
+            self._service_predict_exception_fallback_count += 1
             return heuristic_target_idx, heuristic_target_uav
 
-        return resolve_policy_choice(int(target_idx), int(heuristic_target_idx), heuristic_target_uav, cooperative_uav)
+        resolved_target_idx, resolved_target_uav = resolve_policy_choice(
+            int(target_idx),
+            int(heuristic_target_idx),
+            heuristic_target_uav,
+            cooperative_uav,
+        )
+        if (
+            resolved_target_idx == int(target_idx)
+            and (
+                resolved_target_idx != OFFLOAD_TARGET_COOPERATIVE
+                or cooperative_uav is not None
+            )
+        ):
+            self._service_learned_decision_count += 1
+        else:
+            self._service_heuristic_decision_count += 1
+            self._service_fallback_count += 1
+        return resolved_target_idx, resolved_target_uav
 
     try:
         config.SERVICE_OFFLOAD_POLICY = "heuristic"
