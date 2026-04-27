@@ -1,9 +1,32 @@
+"""
+中文注释说明：utils/plot_logs.py
+
+文件作用：
+    读取单次实验日志并生成训练或测试曲线图。
+
+整体流程：
+    1. 读取全局配置、命令行参数或上游传入对象，准备实验所需的环境、模型与数据。
+    2. 按本文件职责执行仿真、训练、评估、绘图或结果汇总等核心步骤。
+    3. 将关键指标、模型参数或报告写入统一结果目录，便于论文实验复现和对比。
+
+关键变量与对象：
+    - plot_metric(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - generate_plots(): 通信链路速率。
+
+主要依赖：
+    os, json, matplotlib, numpy
+
+注意事项：
+    本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
+"""
+
 import os
 import json
 import matplotlib.pyplot as plt
 import numpy as np
 
 
+# 函数 plot_metric：关键函数，承载本模块的一段可复用实验逻辑，主要参数：x, y, xlabel, ylabel, title, output_path。
 def plot_metric(
     x: list,
     y: list,
@@ -35,16 +58,20 @@ def plot_metric(
     plt.close()
 
 
+# 函数 generate_plots：通信链路速率，主要参数：log_file, output_dir, output_file_prefix, timestamp, smoothing_window。
 def generate_plots(log_file: str, output_dir: str, output_file_prefix: str, timestamp: str, smoothing_window: int = 5) -> None:
     """Generate all required plots from JSON log file."""
 
+    # 资源上下文：集中管理文件、图像或推理模式等需要成对进入和退出的资源。
     with open(log_file, "r") as file:
         log_data: list[dict] = json.load(file)
 
     os.makedirs(output_dir, exist_ok=True)
 
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not log_data:
         print(f"ERROR: Log file is empty: {log_file}")
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return
 
     # Extract data
@@ -81,7 +108,9 @@ def generate_plots(log_file: str, output_dir: str, output_file_prefix: str, time
         "offloading_ratio_mbs",
         "mbs_load_ratio",
     ]
+    # 循环处理：遍历 metric 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for metric in metrics_to_plot:
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if any(v is not None for v in parameters[metric]):
             y_data = [v if v is not None else np.nan for v in parameters[metric]]
             # Remove NaN values for cleaner plots
@@ -95,7 +124,9 @@ def generate_plots(log_file: str, output_dir: str, output_file_prefix: str, time
 
     # Plot loss curves (if available)
     loss_metrics = ["actor_loss", "critic_loss", "entropy_loss", "alpha_loss"]
+    # 循环处理：遍历 metric 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for metric in loss_metrics:
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if any(v is not None for v in parameters[metric]):
             y_data = [v if v is not None else np.nan for v in parameters[metric]]
             valid_indices = [i for i, v in enumerate(y_data) if not np.isnan(v)]

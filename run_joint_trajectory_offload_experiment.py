@@ -1,3 +1,38 @@
+"""
+中文注释说明：run_joint_trajectory_offload_experiment.py
+
+文件作用：
+    运行轨迹控制与任务卸载联合实验，用于评估无人机移动决策和卸载策略耦合后的整体性能。
+
+整体流程：
+    1. 读取全局配置、命令行参数或上游传入对象，准备实验所需的环境、模型与数据。
+    2. 按本文件职责执行仿真、训练、评估、绘图或结果汇总等核心步骤。
+    3. 将关键指标、模型参数或报告写入统一结果目录，便于论文实验复现和对比。
+
+关键变量与对象：
+    - SUMMARY_METRIC_NAMES: 实验汇总信息，最终写入报告或 manifest 文件。
+    - configure_fp32_precision(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - configure_compile_backend(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - snapshot_config(): 全局配置模块，保存环境参数和训练超参数。
+    - restore_config(): 全局配置模块，保存环境参数和训练超参数。
+    - _get_episode_runtime_audit(): 训练或测试的回合编号。
+    - resolve_latest_training_artifacts(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - resolve_offload_checkpoints(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - aggregate_metric_dicts(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - set_service_offload_policy(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - run_single_episode(): 训练或测试的回合编号。
+    - evaluate_joint_policy(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - build_delta_vs_reference(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - parse_args(): 解析命令行参数，并为实验脚本提供可覆盖的默认配置。
+    - main(): 脚本主流程入口，串联参数解析、对象创建、训练评估和结果输出。
+
+主要依赖：
+    argparse, copy, json, os, time, warnings, datetime, pathlib, numpy, torch
+
+注意事项：
+    本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -23,6 +58,7 @@ from utils.logger import Log, Logger, load_configs
 from utils.plot_logs import generate_plots
 
 
+# 关键变量 SUMMARY_METRIC_NAMES：实验汇总信息，最终写入报告或 manifest 文件。
 SUMMARY_METRIC_NAMES: tuple[str, ...] = (
     "reward",
     "latency",
@@ -41,42 +77,56 @@ SUMMARY_METRIC_NAMES: tuple[str, ...] = (
 )
 
 
+# 函数 configure_fp32_precision：关键函数，承载本模块的一段可复用实验逻辑。
 def configure_fp32_precision() -> None:
     warnings.filterwarnings(
         "ignore",
         message=r"Please use the new API settings to control TF32 behavior.*",
         category=UserWarning,
     )
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if torch.cuda.is_available():
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
     torch.set_float32_matmul_precision("high")
 
 
+# 函数 configure_compile_backend：关键函数，承载本模块的一段可复用实验逻辑。
 def configure_compile_backend() -> None:
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if os.name == "nt":
+        # 函数 _no_compile：关键函数，承载本模块的一段可复用实验逻辑，主要参数：module。
         def _no_compile(module, *args, **kwargs):
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
             return module
 
         torch.compile = _no_compile  # type: ignore[attr-defined]
 
 
+# 函数 snapshot_config：全局配置模块，保存环境参数和训练超参数。
 def snapshot_config() -> dict[str, object]:
     snapshot: dict[str, object] = {}
+    # 循环处理：遍历 key 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for key in dir(config):
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if key.isupper() and not key.startswith("__"):
             value = getattr(config, key)
             snapshot[key] = value.copy() if isinstance(value, np.ndarray) else copy.deepcopy(value)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return snapshot
 
 
+# 函数 restore_config：全局配置模块，保存环境参数和训练超参数，主要参数：snapshot。
 def restore_config(snapshot: dict[str, object]) -> None:
+    # 循环处理：遍历 (key, value) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for key, value in snapshot.items():
         setattr(config, key, value.copy() if isinstance(value, np.ndarray) else copy.deepcopy(value))
 
 
+# 函数 _get_episode_runtime_audit：训练或测试的回合编号，主要参数：env。
 def _get_episode_runtime_audit(env: Env) -> dict[str, object]:
     audit: dict[str, object] = env.last_runtime_audit or {}
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "service_learned_decision_count": float(audit.get("episode_service_learned_decision_count", 0.0)),
         "service_heuristic_decision_count": float(audit.get("episode_service_heuristic_decision_count", 0.0)),
@@ -91,14 +141,17 @@ def _get_episode_runtime_audit(env: Env) -> dict[str, object]:
     }
 
 
+# 函数 resolve_latest_training_artifacts：关键函数，承载本模块的一段可复用实验逻辑，主要参数：trajectory_run_root, model_name。
 def resolve_latest_training_artifacts(trajectory_run_root: str | Path, model_name: str) -> tuple[Path | None, Path]:
     run_root = Path(trajectory_run_root)
     config_candidates: list[Path] = []
     primary_config_dir = run_root / "train_logs" / model_name
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if primary_config_dir.exists():
         config_candidates.extend(primary_config_dir.glob("config_*.json"))
 
     fallback_config_dir = Path("train_logs") / model_name
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if fallback_config_dir.exists():
         config_candidates.extend(fallback_config_dir.glob("config_*.json"))
 
@@ -110,10 +163,12 @@ def resolve_latest_training_artifacts(trajectory_run_root: str | Path, model_nam
 
     model_candidates: list[Path] = []
     primary_model_root = run_root / "saved_models"
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if primary_model_root.exists():
         model_candidates.extend([path for path in primary_model_root.glob(f"{model_name}_*") if (path / "final").exists()])
 
     fallback_model_root = Path("saved_models")
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if fallback_model_root.exists():
         model_candidates.extend([path for path in fallback_model_root.glob(f"{model_name}_*") if (path / "final").exists()])
 
@@ -122,34 +177,47 @@ def resolve_latest_training_artifacts(trajectory_run_root: str | Path, model_nam
         key=lambda path: path.stat().st_mtime,
         reverse=True,
     )
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not model_candidates:
+        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise FileNotFoundError(
             f"No saved model run with a 'final' directory found under either '{primary_model_root}' "
             f"or '{fallback_model_root}' for model '{model_name}'."
         )
 
     resolved_config = config_candidates[0] if config_candidates else None
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return resolved_config, model_candidates[0] / "final"
 
 
+# 函数 resolve_offload_checkpoints：关键函数，承载本模块的一段可复用实验逻辑，主要参数：offload_experiment_root。
 def resolve_offload_checkpoints(offload_experiment_root: str | Path) -> tuple[Path, Path]:
     root = Path(offload_experiment_root)
     surrogate_checkpoint = root / "checkpoints" / "offload_policy_surrogate_runtime.pt"
     rich_checkpoint = root / "checkpoints" / "offload_policy_rich_runtime.pt"
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not surrogate_checkpoint.exists():
+        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise FileNotFoundError(f"Surrogate checkpoint not found: {surrogate_checkpoint}")
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not rich_checkpoint.exists():
+        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise FileNotFoundError(f"Rich reduced checkpoint not found: {rich_checkpoint}")
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return surrogate_checkpoint, rich_checkpoint
 
 
+# 函数 aggregate_metric_dicts：关键函数，承载本模块的一段可复用实验逻辑，主要参数：metric_dicts。
 def aggregate_metric_dicts(metric_dicts: list[dict[str, float]]) -> dict[str, dict[str, float]]:
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not metric_dicts:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return {metric_name: {"mean": 0.0, "std": 0.0} for metric_name in SUMMARY_METRIC_NAMES}
     arrays = {
         metric_name: np.asarray([entry[metric_name] for entry in metric_dicts], dtype=np.float64)
         for metric_name in SUMMARY_METRIC_NAMES
     }
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         metric_name: {
             "mean": float(np.mean(values)),
@@ -159,18 +227,23 @@ def aggregate_metric_dicts(metric_dicts: list[dict[str, float]]) -> dict[str, di
     }
 
 
+# 函数 set_service_offload_policy：关键函数，承载本模块的一段可复用实验逻辑，主要参数：policy_label, checkpoint_path。
 def set_service_offload_policy(policy_label: str, checkpoint_path: str | None) -> None:
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if policy_label == "heuristic":
         config.SERVICE_OFFLOAD_POLICY = "heuristic"
         config.SERVICE_OFFLOAD_POLICY_CHECKPOINT = None
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     elif policy_label in {"surrogate", "rich_reduced"}:
         config.SERVICE_OFFLOAD_POLICY = "learned"
         config.SERVICE_OFFLOAD_POLICY_CHECKPOINT = checkpoint_path
     else:
+        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise ValueError(f"Unsupported joint-eval policy label: {policy_label}")
     UAV._policy_cache.clear()
 
 
+# 函数 run_single_episode：训练或测试的回合编号，主要参数：env, model。
 def run_single_episode(env: Env, model: MARLModel) -> tuple[dict[str, float], dict[str, object]]:
     obs = env.reset()
     model.reset()
@@ -186,6 +259,7 @@ def run_single_episode(env: Env, model: MARLModel) -> tuple[dict[str, float], di
     episode_offload_mbs_sum: float = 0.0
     episode_mbs_load_sum: float = 0.0
 
+    # 循环处理：遍历 step 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for step in range(1, config.STEPS_PER_EPISODE + 1):
         obs_arr = np.asarray(obs, dtype=np.float32)
         actions = model.select_actions(obs_arr, exploration=False)
@@ -203,6 +277,7 @@ def run_single_episode(env: Env, model: MARLModel) -> tuple[dict[str, float], di
         episode_offload_mbs_sum += float(metrics["offloading_ratio_mbs"])
         episode_mbs_load_sum += float(metrics["mbs_load_ratio"])
 
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if step >= config.STEPS_PER_EPISODE:
             break
 
@@ -224,9 +299,11 @@ def run_single_episode(env: Env, model: MARLModel) -> tuple[dict[str, float], di
         "service_fallback_count": float(runtime_audit["service_fallback_count"]),
         "service_predict_exception_fallback_count": float(runtime_audit["service_predict_exception_fallback_count"]),
     }
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return episode_metrics, runtime_audit
 
 
+# 函数 evaluate_joint_policy：关键函数，承载本模块的一段可复用实验逻辑。
 def evaluate_joint_policy(
     *,
     policy_label: str,
@@ -239,9 +316,11 @@ def evaluate_joint_policy(
     steps_per_episode: int | None,
     run_root: Path,
 ) -> dict[str, object]:
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if trajectory_config_path is not None:
         load_configs(str(trajectory_config_path))
     config.MODEL = trajectory_model_name
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if steps_per_episode is not None:
         config.STEPS_PER_EPISODE = int(steps_per_episode)
 
@@ -259,6 +338,7 @@ def evaluate_joint_policy(
     aggregate_units: list[dict[str, float]] = []
     global_episode_idx = 0
 
+    # 循环处理：遍历 seed 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for seed in seeds:
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -267,6 +347,7 @@ def evaluate_joint_policy(
         model.load(str(trajectory_model_dir))
 
         episode_metrics_for_seed: list[dict[str, float]] = []
+        # 循环处理：遍历 episode_idx 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for episode_idx in range(episodes_per_seed):
             run_seed = int(seed + episode_idx * 1000)
             np.random.seed(run_seed)
@@ -313,6 +394,7 @@ def evaluate_joint_policy(
         )
 
     generate_plots(str(logger.json_file_path), str(plot_dir), "joint_test", timestamp, smoothing_window=2)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "log_dir": str(log_dir),
         "plot_dir": str(plot_dir),
@@ -324,6 +406,7 @@ def evaluate_joint_policy(
     }
 
 
+# 函数 build_delta_vs_reference：关键函数，承载本模块的一段可复用实验逻辑。
 def build_delta_vs_reference(
     *,
     results_by_policy: dict[str, dict[str, object]],
@@ -331,7 +414,9 @@ def build_delta_vs_reference(
 ) -> dict[str, dict[str, dict[str, float]]]:
     reference_units = [entry["per_seed_mean"] for entry in results_by_policy[reference_policy]["per_seed"]]
     deltas: dict[str, dict[str, dict[str, float]]] = {}
+    # 循环处理：遍历 (policy_label, details) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for policy_label, details in results_by_policy.items():
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if policy_label == reference_policy:
             continue
         policy_units = [entry["per_seed_mean"] for entry in details["per_seed"]]
@@ -350,9 +435,11 @@ def build_delta_vs_reference(
             }
             for metric_name in SUMMARY_METRIC_NAMES
         }
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return deltas
 
 
+# 函数 parse_args：解析命令行参数，并为实验脚本提供可覆盖的默认配置。
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run joint trajectory-control + offloading-policy comparison experiments.")
     parser.add_argument("--name", type=str, default=time.strftime("joint_exp_%Y%m%d_%H%M%S"), help="Joint experiment name.")
@@ -374,9 +461,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--episodes_per_seed", type=int, default=8, help="Episodes per seed and policy.")
     parser.add_argument("--steps_per_episode", type=int, default=None, help="Optional override for STEPS_PER_EPISODE.")
     parser.add_argument("--comparison_smoothing", type=int, default=3, help="Smoothing window for cross-policy comparison plots.")
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return parser.parse_args()
 
 
+# 函数 main：脚本主流程入口，串联参数解析、对象创建、训练评估和结果输出。
 def main() -> None:
     args = parse_args()
     configure_fp32_precision()
@@ -386,6 +475,7 @@ def main() -> None:
     run_root = results_path("joint_experiments", args.name)
     run_root.mkdir(parents=True, exist_ok=True)
 
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if args.trajectory_config is None or args.trajectory_model_dir is None:
         inferred_config_path, inferred_model_dir = resolve_latest_training_artifacts(
             args.trajectory_run_root,
@@ -397,12 +487,14 @@ def main() -> None:
         trajectory_config_path = Path(args.trajectory_config)
         trajectory_model_dir = Path(args.trajectory_model_dir)
 
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if trajectory_config_path is None:
         print(
             "[joint] warning: no training config_*.json was found for the trajectory model; "
             "falling back to the current config.py values."
         )
 
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if args.surrogate_checkpoint is None or args.rich_checkpoint is None:
         inferred_surrogate_checkpoint, inferred_rich_checkpoint = resolve_offload_checkpoints(args.offload_experiment_root)
         surrogate_checkpoint = Path(args.surrogate_checkpoint) if args.surrogate_checkpoint is not None else inferred_surrogate_checkpoint
@@ -418,7 +510,9 @@ def main() -> None:
     }
 
     results_by_policy: dict[str, dict[str, object]] = {}
+    # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
     try:
+        # 循环处理：遍历 policy_label 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for policy_label in args.policies:
             print(f"[joint] evaluating policy={policy_label}")
             restore_config(base_snapshot)
@@ -467,5 +561,6 @@ def main() -> None:
         UAV._policy_cache.clear()
 
 
+# 脚本入口：直接运行本文件时，从 main() 开始执行完整流程。
 if __name__ == "__main__":
     main()

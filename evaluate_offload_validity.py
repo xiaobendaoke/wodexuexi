@@ -1,3 +1,36 @@
+"""
+中文注释说明：evaluate_offload_validity.py
+
+文件作用：
+    评估任务卸载策略标签和分类器的论文有效性，输出精度、混淆矩阵和关键统计报告。
+
+整体流程：
+    1. 读取全局配置、命令行参数或上游传入对象，准备实验所需的环境、模型与数据。
+    2. 按本文件职责执行仿真、训练、评估、绘图或结果汇总等核心步骤。
+    3. 将关键指标、模型参数或报告写入统一结果目录，便于论文实验复现和对比。
+
+关键变量与对象：
+    - FEATURE_VARIANTS: 全局常量或配置项，会影响环境规模、训练过程或实验输出。
+    - load_dataset(): 任务卸载监督学习数据集或样本集合。
+    - build_feature_matrix(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - standardize_features(): 输入分类器或神经网络的特征矩阵。
+    - compute_class_weights(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - train_and_evaluate_split(): 执行模型训练流程。
+    - random_split_indices(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - paired_held_out_scenario_split(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - simplify_metrics(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - build_textual_conclusion(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - run_validity_evaluation(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - parse_args(): 解析命令行参数，并为实验脚本提供可覆盖的默认配置。
+    - main(): 脚本主流程入口，串联参数解析、对象创建、训练评估和结果输出。
+
+主要依赖：
+    argparse, json, pathlib, numpy, torch, config, paths, marl_models, train_offload_policy
+
+注意事项：
+    本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
+"""
+
 from __future__ import annotations
 
 import argparse
@@ -14,6 +47,7 @@ from marl_models.offload_policy import OFFLOAD_NUM_CLASSES, OFFLOAD_TARGET_NAMES
 from train_offload_policy import build_train_loader, evaluate_classifier, select_device, stratified_train_val_split
 
 
+# 关键变量 FEATURE_VARIANTS：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 FEATURE_VARIANTS: dict[str, dict[str, object]] = {
     "full_features": {
         "description": "All normalized features, including the three latency proxy features.",
@@ -27,20 +61,30 @@ FEATURE_VARIANTS: dict[str, dict[str, object]] = {
 }
 
 
+# 函数 load_dataset：任务卸载监督学习数据集或样本集合，主要参数：dataset_path。
 def load_dataset(dataset_path: str | Path) -> dict[str, np.ndarray]:
     dataset_file = Path(dataset_path)
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not dataset_file.exists():
+        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise FileNotFoundError(f"Dataset not found: {dataset_file}")
     loaded = np.load(dataset_file)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {key: loaded[key] for key in loaded.files}
 
 
+# 函数 build_feature_matrix：关键函数，承载本模块的一段可复用实验逻辑，主要参数：dataset, variant_name。
 def build_feature_matrix(dataset: dict[str, np.ndarray], variant_name: str) -> np.ndarray:
     features = np.asarray(dataset["features"], dtype=np.float32)
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if variant_name == "full_features":
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return features
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if variant_name == "no_latency_features":
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return np.asarray(features[:, 3:], dtype=np.float32)
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if variant_name == "raw_state_only":
         raw_state = np.stack(
             [
@@ -52,10 +96,13 @@ def build_feature_matrix(dataset: dict[str, np.ndarray], variant_name: str) -> n
             ],
             axis=1,
         )
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return raw_state.astype(np.float32)
+    # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
     raise ValueError(f"Unknown feature variant: {variant_name}")
 
 
+# 函数 standardize_features：输入分类器或神经网络的特征矩阵，主要参数：x_train, x_val, x_test。
 def standardize_features(
     x_train: np.ndarray,
     x_val: np.ndarray,
@@ -72,20 +119,25 @@ def standardize_features(
         "mean": mean.squeeze(0).astype(np.float32).tolist(),
         "std": std.squeeze(0).astype(np.float32).tolist(),
     }
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return standardized_train, standardized_val, standardized_test, scaler
 
 
+# 函数 compute_class_weights：关键函数，承载本模块的一段可复用实验逻辑，主要参数：labels。
 def compute_class_weights(labels: np.ndarray) -> np.ndarray:
     label_counts = np.bincount(labels, minlength=OFFLOAD_NUM_CLASSES).astype(np.float32)
     class_weights = np.zeros_like(label_counts)
     nonzero_mask = label_counts > 0
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if np.any(nonzero_mask):
         class_weights[nonzero_mask] = float(labels.size) / (float(np.sum(nonzero_mask)) * label_counts[nonzero_mask])
     else:
         class_weights[:] = 1.0
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return class_weights
 
 
+# 函数 train_and_evaluate_split：执行模型训练流程，主要参数：features, labels。
 def train_and_evaluate_split(
     features: np.ndarray,
     labels: np.ndarray,
@@ -128,8 +180,10 @@ def train_and_evaluate_split(
     best_val_eval: dict[str, object] | None = None
     best_epoch: int = 0
 
+    # 循环处理：遍历 epoch 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for epoch in range(1, epochs + 1):
         model.train()
+        # 循环处理：遍历 (batch_features, batch_labels) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for batch_features, batch_labels in train_loader:
             batch_features = batch_features.to(device_obj)
             batch_labels = batch_labels.to(device_obj)
@@ -140,12 +194,15 @@ def train_and_evaluate_split(
             optimizer.step()
 
         val_eval = evaluate_classifier(model, x_val_std, y_val, device_obj)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if best_val_eval is None or float(val_eval["macro_f1"]) > float(best_val_eval["macro_f1"]):
             best_state_dict = {key: value.detach().cpu().clone() for key, value in model.state_dict().items()}
             best_val_eval = val_eval
             best_epoch = epoch
 
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if best_state_dict is None or best_val_eval is None:
+        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise RuntimeError(f"Training failed for split '{split_name}'.")
 
     model.load_state_dict(best_state_dict)
@@ -155,6 +212,7 @@ def train_and_evaluate_split(
     best_val_eval = dict(best_val_eval)
     best_val_eval.pop("predictions", None)
 
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "split_name": split_name,
         "device": str(device_obj),
@@ -170,11 +228,13 @@ def train_and_evaluate_split(
     }
 
 
+# 函数 random_split_indices：关键函数，承载本模块的一段可复用实验逻辑，主要参数：labels, seed, test_ratio。
 def random_split_indices(labels: np.ndarray, seed: int, test_ratio: float = 0.2) -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.default_rng(seed)
     train_indices: list[np.ndarray] = []
     test_indices: list[np.ndarray] = []
 
+    # 循环处理：遍历 class_idx 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for class_idx in range(OFFLOAD_NUM_CLASSES):
         class_indices = np.where(labels == class_idx)[0]
         shuffled = rng.permutation(class_indices)
@@ -185,30 +245,37 @@ def random_split_indices(labels: np.ndarray, seed: int, test_ratio: float = 0.2)
 
     train_idx = rng.permutation(np.concatenate(train_indices)).astype(np.int64)
     test_idx = rng.permutation(np.concatenate(test_indices)).astype(np.int64)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return train_idx, test_idx
 
 
+# 函数 paired_held_out_scenario_split：关键函数，承载本模块的一段可复用实验逻辑，主要参数：scenario_ids, scenario_names, labels。
 def paired_held_out_scenario_split(
     scenario_ids: np.ndarray,
     scenario_names: list[str],
     labels: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, list[str], list[str], dict[str, str]]:
     scenario_majority_label: dict[int, int] = {}
+    # 循环处理：遍历 scenario_id 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for scenario_id in range(len(scenario_names)):
         scenario_labels = labels[scenario_ids == scenario_id]
         majority_label = int(np.argmax(np.bincount(scenario_labels, minlength=OFFLOAD_NUM_CLASSES)))
         scenario_majority_label[scenario_id] = majority_label
 
     scenarios_by_label: dict[int, list[int]] = {label: [] for label in range(OFFLOAD_NUM_CLASSES)}
+    # 循环处理：遍历 (scenario_id, label) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for scenario_id, label in scenario_majority_label.items():
         scenarios_by_label[label].append(scenario_id)
 
     train_scenario_ids: list[int] = []
     test_scenario_ids: list[int] = []
     pairing: dict[str, str] = {}
+    # 循环处理：遍历 label 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for label in range(OFFLOAD_NUM_CLASSES):
         candidate_ids = sorted(scenarios_by_label[label])
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if len(candidate_ids) < 2:
+            # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
             raise ValueError(f"Need at least two scenarios for class '{OFFLOAD_TARGET_NAMES[label]}' to run held-out evaluation.")
         train_id = candidate_ids[0]
         test_id = candidate_ids[1]
@@ -223,14 +290,17 @@ def paired_held_out_scenario_split(
 
     train_scenarios = [scenario_names[idx] for idx in train_scenario_ids]
     test_scenarios = [scenario_names[idx] for idx in test_scenario_ids]
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return train_indices, test_indices, train_scenarios, test_scenarios, pairing
 
 
+# 函数 simplify_metrics：关键函数，承载本模块的一段可复用实验逻辑，主要参数：result。
 def simplify_metrics(result: dict[str, object]) -> dict[str, object]:
     test_metrics = result["test"]
     per_class_recall = {
         class_name: float(test_metrics["per_class_metrics"][class_name]["recall"]) for class_name in OFFLOAD_TARGET_NAMES
     }
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "accuracy": float(test_metrics["accuracy"]),
         "macro_f1": float(test_metrics["macro_f1"]),
@@ -239,6 +309,7 @@ def simplify_metrics(result: dict[str, object]) -> dict[str, object]:
     }
 
 
+# 函数 build_textual_conclusion：关键函数，承载本模块的一段可复用实验逻辑，主要参数：report。
 def build_textual_conclusion(report: dict[str, object]) -> dict[str, str]:
     iid_full = report["feature_ablation"]["full_features"]["iid_random_split"]["test"]
     held_full = report["feature_ablation"]["full_features"]["cross_scenario_split"]["test"]
@@ -252,12 +323,14 @@ def build_textual_conclusion(report: dict[str, object]) -> dict[str, str]:
     held_no_latency_f1 = float(held_no_latency["macro_f1"])
     held_raw_state_f1 = float(held_raw_state["macro_f1"])
 
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if held_full_f1 >= 0.95 and (iid_full_f1 - held_full_f1) <= 0.05 and held_no_latency_f1 >= 0.8:
         classifier_type = "heuristic surrogate / distillation baseline"
         rationale = (
             "Cross-scenario performance remains high, but the labels still come from the heuristic and the features are "
             "engineered around the heuristic decision state. This supports describing the model as a heuristic-surrogate baseline."
         )
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     elif held_full_f1 >= 0.95 and held_no_latency_f1 < held_full_f1 - 0.2:
         classifier_type = "heuristic surrogate / distillation baseline"
         rationale = (
@@ -271,6 +344,7 @@ def build_textual_conclusion(report: dict[str, object]) -> dict[str, str]:
             "from the heuristic decision rule and curated scenarios."
         )
 
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if iid_full_f1 - held_full_f1 > 0.1:
         scenario_gap = (
             "There is a visible IID-to-held-out drop, which suggests the current classifier is sensitive to scenario composition and may "
@@ -282,11 +356,13 @@ def build_textual_conclusion(report: dict[str, object]) -> dict[str, str]:
             "held-out scenarios, but the fact that the dataset is curated from heuristic-driven synthetic scenarios."
         )
 
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if iid_no_latency_f1 < iid_full_f1 - 0.2:
         shortcut_text = (
             "The latency proxy features contribute materially to the near-perfect result, which means the current model is learning a close "
             "surrogate of the heuristic scoring rule."
         )
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     elif held_raw_state_f1 >= 0.8:
         shortcut_text = (
             "Removing latency proxies does not fully break performance, so the dataset also contains strong non-latency shortcuts from the "
@@ -303,6 +379,7 @@ def build_textual_conclusion(report: dict[str, object]) -> dict[str, str]:
         "2. Redesign the dataset so local/cooperative/MBS each appear under overlapping state regions instead of nearly template-specific patterns."
     )
 
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "recommended_thesis_label": classifier_type,
         "rationale": rationale,
@@ -312,6 +389,7 @@ def build_textual_conclusion(report: dict[str, object]) -> dict[str, str]:
     }
 
 
+# 函数 run_validity_evaluation：关键函数，承载本模块的一段可复用实验逻辑。
 def run_validity_evaluation(
     *,
     dataset_path: str | Path,
@@ -355,6 +433,7 @@ def run_validity_evaluation(
         "feature_ablation": {},
     }
 
+    # 循环处理：遍历 (variant_name, variant_meta) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for variant_name, variant_meta in FEATURE_VARIANTS.items():
         feature_matrix = build_feature_matrix(dataset, variant_name)
         iid_result = train_and_evaluate_split(
@@ -408,9 +487,11 @@ def run_validity_evaluation(
     output_file = Path(output_path)
     output_file.parent.mkdir(parents=True, exist_ok=True)
     output_file.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return report
 
 
+# 函数 parse_args：解析命令行参数，并为实验脚本提供可覆盖的默认配置。
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run paper-validity checks for the request-level offloading classifier.")
     parser.add_argument("--dataset", type=str, default="offload_datasets/offload_dataset_balanced.npz", help="Dataset path.")
@@ -426,9 +507,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=config.SEED, help="Random seed.")
     parser.add_argument("--device", type=str, default="auto", help="Device: auto, cpu, cuda, or mps.")
     parser.add_argument("--sampler_mode", type=str, default="auto", choices=["auto", "weighted", "none"], help="Sampler mode.")
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return parser.parse_args()
 
 
+# 函数 main：脚本主流程入口，串联参数解析、对象创建、训练评估和结果输出。
 def main() -> None:
     args = parse_args()
     report = run_validity_evaluation(
@@ -444,5 +527,6 @@ def main() -> None:
     print(json.dumps(report, indent=2, ensure_ascii=False))
 
 
+# 脚本入口：直接运行本文件时，从 main() 开始执行完整流程。
 if __name__ == "__main__":
     main()

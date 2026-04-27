@@ -1,3 +1,26 @@
+"""
+中文注释说明：tune.py
+
+文件作用：
+    用于批量调整或搜索实验超参数，辅助比较不同训练配置下的模型表现。
+
+整体流程：
+    1. 读取全局配置、命令行参数或上游传入对象，准备实验所需的环境、模型与数据。
+    2. 按本文件职责执行仿真、训练、评估、绘图或结果汇总等核心步骤。
+    3. 将关键指标、模型参数或报告写入统一结果目录，便于论文实验复现和对比。
+
+关键变量与对象：
+    - objective(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - run_tuning(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - plot_tuning_results(): 关键函数，承载本模块的一段可复用实验逻辑。
+
+主要依赖：
+    optuna, argparse, os, numpy, torch, json, datetime, warnings, config, environment
+
+注意事项：
+    本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
+"""
+
 import optuna
 import argparse
 import os
@@ -19,6 +42,7 @@ from train import train_on_policy, train_off_policy
 warnings.filterwarnings("ignore")
 
 
+# 函数 objective：关键函数，承载本模块的一段可复用实验逻辑，主要参数：trial, stage, model_name, num_episodes。
 def objective(trial: optuna.Trial, stage: int, model_name: str, num_episodes: int) -> float:
     """
     Optuna Objective Function.
@@ -73,6 +97,7 @@ def objective(trial: optuna.Trial, stage: int, model_name: str, num_episodes: in
             config.REPLAY_BATCH_SIZE = trial.suggest_categorical("batch_size", [64, 128, 256])
             config.UPDATE_FACTOR = trial.suggest_float("tau", 0.005, 0.05)
 
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if config.MODEL in ["matd3", "attention_matd3"]:
                 config.TARGET_POLICY_NOISE = trial.suggest_float("target_noise", 0.1, 0.3)
 
@@ -84,7 +109,9 @@ def objective(trial: optuna.Trial, stage: int, model_name: str, num_episodes: in
 
     # --- STAGE 3: Attention Architecture (for attention-based models) ---
     elif stage == 3:
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if "attention" not in model_name.lower():
+            # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
             raise ValueError(f"Stage 3 is only for attention models. Got: {model_name}")
         # Tune attention-specific hyperparameters
         # Note: ATTN_HIDDEN_DIM must be divisible by ATTN_NUM_HEADS (config.py validates this)
@@ -95,6 +122,7 @@ def objective(trial: optuna.Trial, stage: int, model_name: str, num_episodes: in
             config.ATTN_NUM_HEADS = trial.suggest_categorical("attn_num_heads", [1, 2, 4, 8])
 
     else:
+        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise ValueError(f"Invalid stage: {stage}. Choose from [1, 2, 3]")
 
     # --- Setup Environment & Model ---
@@ -107,6 +135,7 @@ def objective(trial: optuna.Trial, stage: int, model_name: str, num_episodes: in
     # Minimal Logger for Tuning (Prevent cluttering disk with 100s of logs)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     tuning_log_dir = str(results_path("tuning_logs", model_name, f"stage_{stage}", f"trial_{trial.number}"))
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not os.path.exists(tuning_log_dir):
         os.makedirs(tuning_log_dir)
     logger = Logger(tuning_log_dir, timestamp)
@@ -114,22 +143,29 @@ def objective(trial: optuna.Trial, stage: int, model_name: str, num_episodes: in
     # --- Execution ---
     try:
         final_score: float = 0.0
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if model_name in ["maddpg", "matd3", "masac", "attention_maddpg", "attention_matd3", "attention_masac"]:
             final_score = train_off_policy(env, model, logger, num_episodes, 0, trial)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         elif model_name in ["mappo", "attention_mappo"]:
             final_score = train_on_policy(env, model, logger, num_episodes, trial)
         else:
+            # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
             raise ValueError(f"Unsupported model for tuning: {model_name}")
 
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return final_score
 
     except optuna.TrialPruned:
+        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise  # Let Optuna handle the pruning exception
     except Exception as e:
         print(f"Trial {trial.number} failed: {e}")
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return float("-inf")  # Return lowest possible score on failure
 
 
+# 函数 run_tuning：关键函数，承载本模块的一段可复用实验逻辑，主要参数：args。
 def run_tuning(args):
     print(f"\n🎯 Starting Stage {args.stage} Tuning for {config.MODEL}...")
     print(f"📝 Episodes per trial: {args.episodes}")
@@ -140,22 +176,31 @@ def run_tuning(args):
 
     # Small JSON encoder to handle numpy types when saving trial summaries
     def _numpy_encoder(obj):
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if isinstance(obj, np.ndarray):
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
             return obj.tolist()
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if isinstance(obj, (np.int32, np.int64)):
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
             return int(obj)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if isinstance(obj, (np.float32, np.float64)):
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
             return float(obj)
+        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
 
     # Callback executed after each trial completes (Optuna calls this)
     def _trial_logging_callback(study, trial):
         trial_log_dir = str(results_path("tuning_logs", config.MODEL, f"stage_{args.stage}", f"trial_{trial.number}"))
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if not os.path.exists(trial_log_dir):
             os.makedirs(trial_log_dir)
 
         # Create a Logger for the trial and save current configs
         trial_logger = Logger(trial_log_dir, run_timestamp)
+        # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
         try:
             trial_logger.log_configs()
         except Exception as e:
@@ -171,7 +216,9 @@ def run_tuning(args):
         }
 
         summary_path = os.path.join(trial_log_dir, f"trial_{trial.number}_summary.json")
+        # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
         try:
+            # 资源上下文：集中管理文件、图像或推理模式等需要成对进入和退出的资源。
             with open(summary_path, "w", encoding="utf-8") as sf:
                 json.dump(summary, sf, indent=4, default=_numpy_encoder)
         except Exception as e:
@@ -191,7 +238,9 @@ def run_tuning(args):
         pruner=pruner,
     )
 
+    # 函数 objective_wrapper：关键函数，承载本模块的一段可复用实验逻辑，主要参数：trial。
     def objective_wrapper(trial):
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return objective(trial, args.stage, config.MODEL.lower(), args.episodes)
 
     study.optimize(objective_wrapper, n_trials=args.trials, callbacks=[_trial_logging_callback])
@@ -204,6 +253,7 @@ def run_tuning(args):
 
     # Save best params and study summary
     save_path = str(results_path("tuning_logs", config.MODEL, f"stage_{args.stage}", f"stage_{args.stage}.json"))
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not os.path.exists(os.path.dirname(save_path)):
         os.makedirs(os.path.dirname(save_path))
 
@@ -215,6 +265,7 @@ def run_tuning(args):
         "n_pruned": len([t for t in study.trials if t.state == optuna.trial.TrialState.PRUNED]),
     }
 
+    # 资源上下文：集中管理文件、图像或推理模式等需要成对进入和退出的资源。
     with open(save_path, "w") as f:
         json.dump(results, f, indent=4)
     print(f"💾 Saved best parameters to {save_path}")
@@ -226,10 +277,12 @@ def run_tuning(args):
         print(f"⚠️ Could not generate plots: {e}")
 
 
+# 函数 plot_tuning_results：关键函数，承载本模块的一段可复用实验逻辑，主要参数：study, model_name, stage。
 def plot_tuning_results(study: optuna.Study, model_name: str, stage: int) -> None:
     """Generates and saves tuning result plots."""
 
     plot_dir = str(results_path("tuning_logs", model_name, f"plots_stage_{stage}"))
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not os.path.exists(plot_dir):
         os.makedirs(plot_dir)
 
@@ -252,6 +305,7 @@ def plot_tuning_results(study: optuna.Study, model_name: str, stage: int) -> Non
     print(f"📊 Saved tuning plots to {plot_dir}")
 
 
+# 脚本入口：直接运行本文件时，从 main() 开始执行完整流程。
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Hyperparameter Tuning Module",

@@ -1,3 +1,45 @@
+"""
+中文注释说明：verify_offload_policy_validity.py
+
+文件作用：
+    从更完整的实验角度验证任务卸载策略是否符合论文设定，生成 JSON 与 Markdown 形式的验证结论。
+
+整体流程：
+    1. 读取全局配置、命令行参数或上游传入对象，准备实验所需的环境、模型与数据。
+    2. 按本文件职责执行仿真、训练、评估、绘图或结果汇总等核心步骤。
+    3. 将关键指标、模型参数或报告写入统一结果目录，便于论文实验复现和对比。
+
+关键变量与对象：
+    - REPO_ROOT: 全局常量或配置项，会影响环境规模、训练过程或实验输出。
+    - RESULTS_DIR: 全局常量或配置项，会影响环境规模、训练过程或实验输出。
+    - RESULTS_PATH: 全局常量或配置项，会影响环境规模、训练过程或实验输出。
+    - REPORT_PATH: 全局常量或配置项，会影响环境规模、训练过程或实验输出。
+    - FULL_FEATURE_NAMES: 全局常量或配置项，会影响环境规模、训练过程或实验输出。
+    - RICH_REDUCED_FEATURE_NAMES: 全局常量或配置项，会影响环境规模、训练过程或实验输出。
+    - TrainedClassifier: 核心类，封装本模块中的主要状态和行为。
+    - TemplateSample: 核心类，封装本模块中的主要状态和行为。
+    - snapshot_config(): 全局配置模块，保存环境参数和训练超参数。
+    - restore_config(): 全局配置模块，保存环境参数和训练超参数。
+    - build_feature_family_metadata(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - normalize_deadline(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - normalize_priority(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - safe_log10(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - extract_rich_runtime_features(): 输入分类器或神经网络的特征矩阵。
+    - extract_variant_features_from_context(): 输入分类器或神经网络的特征矩阵。
+    - standardize_features(): 输入分类器或神经网络的特征矩阵。
+    - compute_class_weights(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - train_classifier_from_arrays(): 执行模型训练流程。
+    - simplify_metrics(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - build_feature_matrices_from_template_samples(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - collect_template_rich_dataset(): 任务卸载监督学习数据集或样本集合。
+
+主要依赖：
+    copy, json, collections, contextlib, dataclasses, pathlib, typing, numpy, torch, collect_offload_dataset
+
+注意事项：
+    本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
+"""
+
 from __future__ import annotations
 
 import copy
@@ -38,11 +80,16 @@ from train_offload_policy import (
 )
 
 
+# 关键变量 REPO_ROOT：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 REPO_ROOT = Path(__file__).resolve().parent
+# 关键变量 RESULTS_DIR：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 RESULTS_DIR = results_path("reports")
+# 关键变量 RESULTS_PATH：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 RESULTS_PATH = RESULTS_DIR / "offload_policy_paper_validity.json"
+# 关键变量 REPORT_PATH：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 REPORT_PATH = RESULTS_DIR / "offload_policy_paper_validity_summary.md"
 
+# 关键变量 FULL_FEATURE_NAMES：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 FULL_FEATURE_NAMES: tuple[str, ...] = (
     "local_latency_vs_deadline",
     "cooperative_latency_vs_deadline",
@@ -53,6 +100,7 @@ FULL_FEATURE_NAMES: tuple[str, ...] = (
     "cooperative_available",
     "local_queue_fraction",
 )
+# 关键变量 RICH_REDUCED_FEATURE_NAMES：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 RICH_REDUCED_FEATURE_NAMES: tuple[str, ...] = (
     "request_size_normalized",
     "service_file_size_normalized",
@@ -73,6 +121,7 @@ RICH_REDUCED_FEATURE_NAMES: tuple[str, ...] = (
 )
 
 
+# 类 TrainedClassifier：核心类，封装本模块中的主要状态和行为。
 @dataclass(frozen=True, slots=True)
 class TrainedClassifier:
     name: str
@@ -84,18 +133,24 @@ class TrainedClassifier:
     source_description: str
     variant_group: str
 
+    # 函数 predict_from_array：关键函数，承载本模块的一段可复用实验逻辑，主要参数：features。
     def predict_from_array(self, features: np.ndarray) -> int:
         standardized = ((np.asarray(features, dtype=np.float32) - self.mean) / self.std).astype(np.float32)
         feature_tensor = torch.from_numpy(standardized).unsqueeze(0).to(self.device)
+        # 资源上下文：集中管理文件、图像或推理模式等需要成对进入和退出的资源。
         with torch.no_grad():
             logits = self.model(feature_tensor)
             prediction = torch.argmax(logits, dim=1)
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return int(prediction.item())
 
+    # 函数 predict_from_context：关键函数，承载本模块的一段可复用实验逻辑，主要参数：context。
     def predict_from_context(self, context: ServiceOffloadContext) -> int:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return self.predict_from_array(extract_variant_features_from_context(context, self.variant_group))
 
 
+# 类 TemplateSample：核心类，封装本模块中的主要状态和行为。
 @dataclass(slots=True)
 class TemplateSample:
     full_features: np.ndarray
@@ -106,21 +161,29 @@ class TemplateSample:
     scenario_name: str
 
 
+# 函数 snapshot_config：全局配置模块，保存环境参数和训练超参数。
 def snapshot_config() -> dict[str, object]:
     snapshot: dict[str, object] = {}
+    # 循环处理：遍历 key 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for key in dir(config):
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if key.isupper() and not key.startswith("__"):
             value = getattr(config, key)
             snapshot[key] = value.copy() if isinstance(value, np.ndarray) else copy.deepcopy(value)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return snapshot
 
 
+# 函数 restore_config：全局配置模块，保存环境参数和训练超参数，主要参数：snapshot。
 def restore_config(snapshot: dict[str, object]) -> None:
+    # 循环处理：遍历 (key, value) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for key, value in snapshot.items():
         setattr(config, key, value.copy() if isinstance(value, np.ndarray) else copy.deepcopy(value))
 
 
+# 函数 build_feature_family_metadata：关键函数，承载本模块的一段可复用实验逻辑。
 def build_feature_family_metadata() -> dict[str, dict[str, object]]:
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "full_features": {
             "description": "Distillation surrogate with all 8 normalized features, including the 3 latency proxies.",
@@ -145,24 +208,35 @@ def build_feature_family_metadata() -> dict[str, dict[str, object]]:
     }
 
 
+# 函数 normalize_deadline：关键函数，承载本模块的一段可复用实验逻辑，主要参数：deadline。
 def normalize_deadline(deadline: float) -> float:
     span = float(config.SERVICE_DEADLINE_MAX - config.SERVICE_DEADLINE_MIN)
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if span <= float(config.EPSILON):
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return 0.0
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return float(np.clip((float(deadline) - float(config.SERVICE_DEADLINE_MIN)) / span, 0.0, 1.0))
 
 
+# 函数 normalize_priority：关键函数，承载本模块的一段可复用实验逻辑，主要参数：priority。
 def normalize_priority(priority: int) -> float:
     span = int(config.SERVICE_PRIORITY_MAX - config.SERVICE_PRIORITY_MIN)
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if span <= 0:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return 0.0
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return float(np.clip((float(priority) - float(config.SERVICE_PRIORITY_MIN)) / float(span), 0.0, 1.0))
 
 
+# 函数 safe_log10：关键函数，承载本模块的一段可复用实验逻辑，主要参数：value。
 def safe_log10(value: float) -> float:
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return float(np.log10(max(float(value), float(config.EPSILON))))
 
 
+# 函数 extract_rich_runtime_features：输入分类器或神经网络的特征矩阵，主要参数：source_uav, request, ue_uav_rate, context, cooperative_uav。
 def extract_rich_runtime_features(
     source_uav: "uav_module.UAV",
     request: Request,
@@ -194,6 +268,7 @@ def extract_rich_runtime_features(
     best_neighbor_mbs_rate = 0.0
     best_neighbor_compute_share_normalized = 0.0
     best_neighbor_cache_belief = 0.0
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if cooperative_uav is not None:
         best_uav_uav_rate = float(
             comms.calculate_uav_uav_rate(comms.calculate_channel_gain(source_uav.pos, cooperative_uav.pos))
@@ -228,20 +303,30 @@ def extract_rich_runtime_features(
         dtype=np.float32,
     )
     assert features.shape == (len(RICH_REDUCED_FEATURE_NAMES),)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return features
 
 
+# 函数 extract_variant_features_from_context：输入分类器或神经网络的特征矩阵，主要参数：context, variant_name。
 def extract_variant_features_from_context(context: ServiceOffloadContext, variant_name: str) -> np.ndarray:
     full_features = context_to_feature_vector(context)
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if variant_name == "full_features":
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return np.asarray(full_features, dtype=np.float32)
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if variant_name == "latency_only":
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return np.asarray(full_features[:3], dtype=np.float32)
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if variant_name == "no_latency_features":
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return np.asarray(full_features[3:], dtype=np.float32)
+    # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
     raise ValueError(f"Variant '{variant_name}' needs raw runtime state, not a bare ServiceOffloadContext.")
 
 
+# 函数 standardize_features：输入分类器或神经网络的特征矩阵，主要参数：x_train, x_val, x_test。
 def standardize_features(
     x_train: np.ndarray,
     x_val: np.ndarray,
@@ -250,6 +335,7 @@ def standardize_features(
     mean = np.mean(x_train, axis=0, keepdims=True).astype(np.float32)
     std = np.std(x_train, axis=0, keepdims=True).astype(np.float32)
     std = np.where(std < 1e-6, 1.0, std)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return (
         ((x_train - mean) / std).astype(np.float32),
         ((x_val - mean) / std).astype(np.float32),
@@ -259,17 +345,21 @@ def standardize_features(
     )
 
 
+# 函数 compute_class_weights：关键函数，承载本模块的一段可复用实验逻辑，主要参数：labels。
 def compute_class_weights(labels: np.ndarray) -> np.ndarray:
     label_counts = np.bincount(labels, minlength=OFFLOAD_NUM_CLASSES).astype(np.float32)
     class_weights = np.zeros_like(label_counts)
     nonzero_mask = label_counts > 0
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if np.any(nonzero_mask):
         class_weights[nonzero_mask] = float(labels.size) / (float(np.sum(nonzero_mask)) * label_counts[nonzero_mask])
     else:
         class_weights[:] = 1.0
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return class_weights
 
 
+# 函数 train_classifier_from_arrays：执行模型训练流程。
 def train_classifier_from_arrays(
     *,
     name: str,
@@ -310,8 +400,10 @@ def train_classifier_from_arrays(
     best_val_eval: dict[str, object] | None = None
     best_epoch: int = 0
 
+    # 循环处理：遍历 epoch 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for epoch in range(1, epochs + 1):
         model.train()
+        # 循环处理：遍历 (batch_features, batch_labels) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for batch_features, batch_labels in train_loader:
             batch_features = batch_features.to(device_obj)
             batch_labels = batch_labels.to(device_obj)
@@ -322,12 +414,15 @@ def train_classifier_from_arrays(
             optimizer.step()
 
         val_eval = evaluate_classifier(model, x_val_std, y_val, device_obj)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if best_val_eval is None or float(val_eval["macro_f1"]) > float(best_val_eval["macro_f1"]):
             best_state_dict = {key: value.detach().cpu().clone() for key, value in model.state_dict().items()}
             best_val_eval = dict(val_eval)
             best_epoch = epoch
 
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if best_state_dict is None or best_val_eval is None:
+        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise RuntimeError(f"Training failed for variant '{name}'.")
 
     model.load_state_dict(best_state_dict)
@@ -357,11 +452,14 @@ def train_classifier_from_arrays(
         "validation": best_val_eval,
         "test": test_eval,
     }
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return trained_policy, metrics
 
 
+# 函数 simplify_metrics：关键函数，承载本模块的一段可复用实验逻辑，主要参数：metrics。
 def simplify_metrics(metrics: dict[str, object]) -> dict[str, object]:
     per_class_metrics = metrics["per_class_metrics"]
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "accuracy": float(metrics["accuracy"]),
         "macro_precision": float(metrics["macro_precision"]),
@@ -374,6 +472,7 @@ def simplify_metrics(metrics: dict[str, object]) -> dict[str, object]:
     }
 
 
+# 函数 build_feature_matrices_from_template_samples：关键函数，承载本模块的一段可复用实验逻辑，主要参数：samples。
 def build_feature_matrices_from_template_samples(samples: list[TemplateSample]) -> dict[str, np.ndarray]:
     scenario_name_to_id: dict[str, int] = {}
     scenario_ids: list[int] = []
@@ -383,7 +482,9 @@ def build_feature_matrices_from_template_samples(samples: list[TemplateSample]) 
     no_latency: list[np.ndarray] = []
     rich_reduced: list[np.ndarray] = []
 
+    # 循环处理：遍历 sample 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for sample in samples:
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if sample.scenario_name not in scenario_name_to_id:
             scenario_name_to_id[sample.scenario_name] = len(scenario_name_to_id)
         scenario_ids.append(scenario_name_to_id[sample.scenario_name])
@@ -394,6 +495,7 @@ def build_feature_matrices_from_template_samples(samples: list[TemplateSample]) 
         rich_reduced.append(np.asarray(sample.rich_reduced_features, dtype=np.float32))
 
     scenario_names = [name for name, _ in sorted(scenario_name_to_id.items(), key=lambda item: item[1])]
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "labels": np.asarray(labels, dtype=np.int64),
         "scenario_ids": np.asarray(scenario_ids, dtype=np.int64),
@@ -405,6 +507,7 @@ def build_feature_matrices_from_template_samples(samples: list[TemplateSample]) 
     }
 
 
+# 函数 collect_template_rich_dataset：任务卸载监督学习数据集或样本集合。
 def collect_template_rich_dataset(*, per_class_target: int, seed: int) -> dict[str, np.ndarray]:
     rng = np.random.default_rng(seed)
     base_snapshot = snapshot_config()
@@ -421,6 +524,7 @@ def collect_template_rich_dataset(*, per_class_target: int, seed: int) -> dict[s
     original_compute_service_sample = dataset_module._compute_service_sample
     pending_payload: dict[str, Any] = {}
 
+    # 函数 wrapped_compute_service_sample：关键函数，承载本模块的一段可复用实验逻辑，主要参数：local_env, request。
     def wrapped_compute_service_sample(local_env: Env, request: Request, *, covered_ues_count: int):
         source_uav = local_env.uavs[0]
         source_uav._uav_mbs_rate = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(source_uav.pos, config.MBS_POS))
@@ -443,10 +547,13 @@ def collect_template_rich_dataset(*, per_class_target: int, seed: int) -> dict[s
                 "label": int(label),
             }
         )
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return context, int(label)
 
     dataset_module._compute_service_sample = wrapped_compute_service_sample
+    # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
     try:
+        # 循环控制：在条件满足期间持续推进采样、训练或搜索流程。
         while int(np.sum(np.maximum(per_class_target - accepted_counts, 0))) > 0:
             deficits = np.maximum(per_class_target - accepted_counts, 0)
             target_label = int(np.argmax(deficits))
@@ -458,6 +565,7 @@ def collect_template_rich_dataset(*, per_class_target: int, seed: int) -> dict[s
             restore_config(base_snapshot)
             scenario_sampler(env, rng)
             label = int(pending_payload["label"])
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if accepted_counts[label] >= per_class_target:
                 continue
 
@@ -476,30 +584,37 @@ def collect_template_rich_dataset(*, per_class_target: int, seed: int) -> dict[s
         dataset_module._compute_service_sample = original_compute_service_sample
         restore_config(base_snapshot)
 
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return build_feature_matrices_from_template_samples(samples)
 
 
+# 函数 paired_held_out_scenario_split：关键函数，承载本模块的一段可复用实验逻辑，主要参数：scenario_ids, scenario_names, labels。
 def paired_held_out_scenario_split(
     scenario_ids: np.ndarray,
     scenario_names: list[str],
     labels: np.ndarray,
 ) -> tuple[np.ndarray, np.ndarray, list[str], list[str], dict[str, str]]:
     scenario_majority_label: dict[int, int] = {}
+    # 循环处理：遍历 scenario_id 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for scenario_id in range(len(scenario_names)):
         scenario_labels = labels[scenario_ids == scenario_id]
         majority_label = int(np.argmax(np.bincount(scenario_labels, minlength=OFFLOAD_NUM_CLASSES)))
         scenario_majority_label[scenario_id] = majority_label
 
     scenarios_by_label: dict[int, list[int]] = {label: [] for label in range(OFFLOAD_NUM_CLASSES)}
+    # 循环处理：遍历 (scenario_id, label) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for scenario_id, label in scenario_majority_label.items():
         scenarios_by_label[label].append(scenario_id)
 
     train_scenario_ids: list[int] = []
     test_scenario_ids: list[int] = []
     pairing: dict[str, str] = {}
+    # 循环处理：遍历 label 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for label in range(OFFLOAD_NUM_CLASSES):
         candidate_ids = sorted(scenarios_by_label[label])
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if len(candidate_ids) < 2:
+            # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
             raise ValueError(f"Need at least two scenarios for class '{OFFLOAD_TARGET_NAMES[label]}' to run held-out evaluation.")
         train_id = candidate_ids[0]
         test_id = candidate_ids[1]
@@ -511,6 +626,7 @@ def paired_held_out_scenario_split(
     test_mask = np.isin(scenario_ids, np.asarray(test_scenario_ids, dtype=np.int64))
     train_indices = np.where(train_mask)[0].astype(np.int64)
     test_indices = np.where(test_mask)[0].astype(np.int64)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return (
         train_indices,
         test_indices,
@@ -520,10 +636,12 @@ def paired_held_out_scenario_split(
     )
 
 
+# 函数 random_split_indices：关键函数，承载本模块的一段可复用实验逻辑，主要参数：labels, seed, test_ratio。
 def random_split_indices(labels: np.ndarray, seed: int, test_ratio: float = 0.2) -> tuple[np.ndarray, np.ndarray]:
     rng = np.random.default_rng(seed)
     train_indices: list[np.ndarray] = []
     test_indices: list[np.ndarray] = []
+    # 循环处理：遍历 class_idx 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for class_idx in range(OFFLOAD_NUM_CLASSES):
         class_indices = np.where(labels == class_idx)[0]
         shuffled = rng.permutation(class_indices)
@@ -531,12 +649,14 @@ def random_split_indices(labels: np.ndarray, seed: int, test_ratio: float = 0.2)
         test_count = max(1, min(test_count, class_indices.size - 1))
         test_indices.append(shuffled[:test_count])
         train_indices.append(shuffled[test_count:])
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return (
         rng.permutation(np.concatenate(train_indices)).astype(np.int64),
         rng.permutation(np.concatenate(test_indices)).astype(np.int64),
     )
 
 
+# 函数 evaluate_feature_variants_on_template：关键函数，承载本模块的一段可复用实验逻辑，主要参数：template_dataset。
 def evaluate_feature_variants_on_template(
     template_dataset: dict[str, np.ndarray],
     *,
@@ -567,6 +687,7 @@ def evaluate_feature_variants_on_template(
     trained_policies: dict[str, TrainedClassifier] = {}
     feature_meta = build_feature_family_metadata()
 
+    # 循环处理：遍历 variant_name 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for variant_name in ("full_features", "latency_only", "no_latency_features", "rich_reduced_features"):
         variant_features = np.asarray(template_dataset[variant_name], dtype=np.float32)
         iid_policy, iid_metrics = train_classifier_from_arrays(
@@ -627,16 +748,22 @@ def evaluate_feature_variants_on_template(
         }
         for variant_name in report["variants"]
     }
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return report, trained_policies
 
 
+# 函数 compute_heuristic_label：关键函数，承载本模块的一段可复用实验逻辑，主要参数：context。
 def compute_heuristic_label(context: ServiceOffloadContext) -> int:
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not context.cooperative_available:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return OFFLOAD_TARGET_MBS if context.mbs_latency < context.local_latency else OFFLOAD_TARGET_LOCAL
     latencies = np.array([context.local_latency, context.cooperative_latency, context.mbs_latency], dtype=np.float32)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return int(np.argmin(latencies))
 
 
+# 函数 generate_procedural_contexts：通信链路速率。
 def generate_procedural_contexts(
     *,
     split: str,
@@ -658,7 +785,9 @@ def generate_procedural_contexts(
     request_size_span = max(float(config.MAX_INPUT_SIZE - config.MIN_INPUT_SIZE), 1.0)
 
     collected = np.zeros(OFFLOAD_NUM_CLASSES, dtype=np.int64)
+    # 循环控制：在条件满足期间持续推进采样、训练或搜索流程。
     while np.any(collected < samples_per_class):
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if split == "train":
             deadline_norm = float(rng.uniform(0.12, 0.92))
             request_size_norm = float(rng.uniform(0.06, 0.85))
@@ -676,6 +805,7 @@ def generate_procedural_contexts(
             local_compute_share_norm = float(rng.uniform(0.20, 1.60))
             best_neighbor_compute_share_norm = float(rng.uniform(0.18, 1.85))
             best_neighbor_cache_belief = float(rng.uniform(0.18, 0.86))
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         elif split == "test":
             deadline_norm = float(rng.uniform(0.02, 1.00))
             request_size_norm = float(rng.uniform(0.01, 1.00))
@@ -694,8 +824,10 @@ def generate_procedural_contexts(
             best_neighbor_compute_share_norm = float(rng.uniform(0.10, 2.10))
             best_neighbor_cache_belief = float(rng.uniform(0.05, 0.95))
         else:
+            # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
             raise ValueError(f"Unsupported split: {split}")
 
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if not cooperative_available:
             neighbor_count_fraction = 0.0
             best_uav_uav_rate_log10 = 0.0
@@ -717,6 +849,7 @@ def generate_procedural_contexts(
 
         local_latency = (request_size / ue_uav_rate) + ((1.0 - float(local_cache_hit)) * file_size / uav_mbs_rate) + (cpu_cycles / local_compute_share)
         mbs_latency = (request_size / ue_uav_rate) + (request_size / uav_mbs_rate)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if cooperative_available:
             cooperative_latency = (
                 (request_size / ue_uav_rate)
@@ -738,6 +871,7 @@ def generate_procedural_contexts(
             local_queue_length=int(round(local_queue_fraction * float(config.MAX_ASSOCIATED_UES))),
         )
         label = compute_heuristic_label(context)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if collected[label] >= samples_per_class:
             continue
 
@@ -771,6 +905,7 @@ def generate_procedural_contexts(
         labels.append(int(label))
         collected[label] += 1
 
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "labels": np.asarray(labels, dtype=np.int64),
         "full_features": np.stack(full_features, axis=0).astype(np.float32),
@@ -780,6 +915,7 @@ def generate_procedural_contexts(
     }
 
 
+# 函数 evaluate_policy_on_arrays：关键函数，承载本模块的一段可复用实验逻辑，主要参数：policy, features, labels。
 def evaluate_policy_on_arrays(
     policy: TrainedClassifier,
     features: np.ndarray,
@@ -787,10 +923,12 @@ def evaluate_policy_on_arrays(
 ) -> dict[str, object]:
     predictions = np.asarray([policy.predict_from_array(row) for row in np.asarray(features, dtype=np.float32)], dtype=np.int64)
     confusion = np.zeros((OFFLOAD_NUM_CLASSES, OFFLOAD_NUM_CLASSES), dtype=np.int64)
+    # 循环处理：遍历 (true_label, predicted_label) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for true_label, predicted_label in zip(labels, predictions, strict=False):
         confusion[int(true_label), int(predicted_label)] += 1
 
     per_class_metrics: dict[str, dict[str, float]] = {}
+    # 循环处理：遍历 (class_idx, class_name) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for class_idx, class_name in enumerate(OFFLOAD_TARGET_NAMES):
         true_positive = int(confusion[class_idx, class_idx])
         false_positive = int(np.sum(confusion[:, class_idx]) - true_positive)
@@ -809,6 +947,7 @@ def evaluate_policy_on_arrays(
     macro_recall = float(np.mean([item["recall"] for item in per_class_metrics.values()]))
     macro_f1 = float(np.mean([item["f1"] for item in per_class_metrics.values()]))
     accuracy = float(np.mean(predictions == labels))
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "accuracy": accuracy,
         "macro_precision": macro_precision,
@@ -819,6 +958,7 @@ def evaluate_policy_on_arrays(
     }
 
 
+# 函数 evaluate_non_template_generalization：关键函数，承载本模块的一段可复用实验逻辑。
 def evaluate_non_template_generalization(
     *,
     template_dataset: dict[str, np.ndarray],
@@ -906,24 +1046,34 @@ def evaluate_non_template_generalization(
             "test": simplify_metrics(reduced_candidate_metrics["test"]),
         },
     }
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return report, reduced_candidate_policy
 
 
+# 函数 resolve_policy_choice：关键函数，承载本模块的一段可复用实验逻辑，主要参数：target_idx, heuristic_target_idx, heuristic_target_uav, cooperative_uav。
 def resolve_policy_choice(
     target_idx: int,
     heuristic_target_idx: int,
     heuristic_target_uav: "uav_module.UAV | None",
     cooperative_uav: "uav_module.UAV | None",
 ) -> tuple[int, "uav_module.UAV | None"]:
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if target_idx == OFFLOAD_TARGET_LOCAL:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return OFFLOAD_TARGET_LOCAL, None
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if target_idx == OFFLOAD_TARGET_COOPERATIVE and cooperative_uav is not None:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return OFFLOAD_TARGET_COOPERATIVE, cooperative_uav
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if target_idx == OFFLOAD_TARGET_MBS:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return OFFLOAD_TARGET_MBS, None
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return heuristic_target_idx, heuristic_target_uav
 
 
+# 函数 runtime_policy_mode：关键函数，承载本模块的一段可复用实验逻辑，主要参数：policy_mode。
 @contextmanager
 def runtime_policy_mode(
     policy_mode: str,
@@ -935,6 +1085,7 @@ def runtime_policy_mode(
     original_policy_name = config.SERVICE_OFFLOAD_POLICY
     original_checkpoint = getattr(config, "SERVICE_OFFLOAD_POLICY_CHECKPOINT", None)
 
+    # 函数 patched_select_service_offloading_target：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
     def patched_select_service_offloading_target(
         self: "uav_module.UAV",
         current_req: Request,
@@ -945,30 +1096,42 @@ def runtime_policy_mode(
         heuristic_target_idx: int | None = None,
         heuristic_target_uav: "uav_module.UAV | None" = None,
     ) -> tuple[int, "uav_module.UAV | None"]:
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if context is None or heuristic_target_idx is None:
             context, cooperative_uav = self._build_service_offload_context(current_req, ue_uav_rate)
             heuristic_target_idx, heuristic_target_uav = self._select_service_target_from_context(context, cooperative_uav)
 
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if policy_mode == "heuristic":
             self._service_heuristic_decision_count += 1
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
             return heuristic_target_idx, heuristic_target_uav
 
+        # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
         try:
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if policy_mode == "surrogate":
+                # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                 if surrogate_policy is None:
+                    # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
                     raise RuntimeError("Surrogate policy is unavailable.")
                 target_idx = surrogate_policy.predict_from_context(context)
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             elif policy_mode == "reduced":
+                # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                 if reduced_policy is None:
+                    # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
                     raise RuntimeError("Reduced policy is unavailable.")
                 runtime_features = extract_rich_runtime_features(self, current_req, ue_uav_rate, context, cooperative_uav)
                 target_idx = reduced_policy.predict_from_array(runtime_features)
             else:
+                # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
                 raise ValueError(f"Unsupported policy mode: {policy_mode}")
         except Exception:
             self._service_heuristic_decision_count += 1
             self._service_fallback_count += 1
             self._service_predict_exception_fallback_count += 1
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
             return heuristic_target_idx, heuristic_target_uav
 
         resolved_target_idx, resolved_target_uav = resolve_policy_choice(
@@ -977,6 +1140,7 @@ def runtime_policy_mode(
             heuristic_target_uav,
             cooperative_uav,
         )
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if (
             resolved_target_idx == int(target_idx)
             and (
@@ -988,8 +1152,10 @@ def runtime_policy_mode(
         else:
             self._service_heuristic_decision_count += 1
             self._service_fallback_count += 1
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return resolved_target_idx, resolved_target_uav
 
+    # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
     try:
         config.SERVICE_OFFLOAD_POLICY = "heuristic"
         config.SERVICE_OFFLOAD_POLICY_CHECKPOINT = None
@@ -1001,6 +1167,7 @@ def runtime_policy_mode(
         uav_module.UAV._select_service_offloading_target = original_method  # type: ignore[assignment]
 
 
+# 函数 run_system_comparison：关键函数，承载本模块的一段可复用实验逻辑。
 def run_system_comparison(
     *,
     surrogate_policy: TrainedClassifier,
@@ -1013,22 +1180,27 @@ def run_system_comparison(
     config.STEPS_PER_EPISODE = steps_per_episode
     static_model = StaticModel("static", config.NUM_UAVS, config.OBS_DIM_SINGLE, config.ACTION_DIM, "cpu")
 
+    # 函数 evaluate_mode：关键函数，承载本模块的一段可复用实验逻辑，主要参数：policy_mode。
     def evaluate_mode(policy_mode: str) -> dict[str, float]:
         aggregated: dict[str, list[float]] = defaultdict(list)
+        # 资源上下文：集中管理文件、图像或推理模式等需要成对进入和退出的资源。
         with runtime_policy_mode(
             policy_mode,
             surrogate_policy=surrogate_policy if policy_mode == "surrogate" else None,
             reduced_policy=reduced_policy if policy_mode == "reduced" else None,
         ):
+            # 循环处理：遍历 episode 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
             for episode in range(num_episodes):
                 np.random.seed(seed + episode)
                 env = Env()
                 env.reset(initial_positions=static_model.static_positions)
                 per_episode: dict[str, float] = defaultdict(float)
 
+                # 循环处理：遍历 _ 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
                 for _ in range(steps_per_episode):
                     actions = np.zeros((config.NUM_UAVS, config.ACTION_DIM), dtype=np.float32)
                     _, _, metrics = env.step(actions)
+                    # 循环处理：遍历 metric_name 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
                     for metric_name in (
                         "latency",
                         "energy",
@@ -1040,12 +1212,16 @@ def run_system_comparison(
                     ):
                         per_episode[metric_name] += float(metrics[metric_name])
 
+                # 循环处理：遍历 (metric_name, total_value) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
                 for metric_name, total_value in per_episode.items():
                     aggregated[metric_name].append(total_value / float(steps_per_episode))
 
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return {metric_name: float(np.mean(values)) for metric_name, values in aggregated.items()}
 
+    # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
     try:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return {
             "heuristic_offloading": evaluate_mode("heuristic"),
             "surrogate_classifier": evaluate_mode("surrogate"),
@@ -1055,16 +1231,21 @@ def run_system_comparison(
         restore_config(snapshot)
 
 
+# 函数 compute_system_deltas：关键函数，承载本模块的一段可复用实验逻辑，主要参数：system_results。
 def compute_system_deltas(system_results: dict[str, dict[str, float]]) -> dict[str, dict[str, float]]:
     heuristic = system_results["heuristic_offloading"]
     deltas: dict[str, dict[str, float]] = {}
+    # 循环处理：遍历 (policy_name, metrics) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for policy_name, metrics in system_results.items():
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if policy_name == "heuristic_offloading":
             continue
         deltas[policy_name] = {metric_name: float(metrics[metric_name] - heuristic[metric_name]) for metric_name in heuristic}
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return deltas
 
 
+# 函数 classify_policy_version：关键函数，承载本模块的一段可复用实验逻辑。
 def classify_policy_version(
     *,
     non_template_macro_f1: float,
@@ -1072,18 +1253,24 @@ def classify_policy_version(
     system_deadline_delta: float,
     uses_latency_proxies: bool,
 ) -> str:
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if uses_latency_proxies:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return "heuristic surrogate baseline"
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if (
         non_template_macro_f1 >= 0.75
         and (abs(system_latency_delta) > 1e-6 or abs(system_deadline_delta) > 1e-6)
         and system_deadline_delta >= -0.01
         and system_latency_delta <= 1.0
     ):
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return "partially generalizable learned policy"
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return "not yet sufficient for paper main claim"
 
 
+# 函数 build_markdown_summary：实验汇总信息，最终写入报告或 manifest 文件，主要参数：results。
 def build_markdown_summary(results: dict[str, object]) -> str:
     template_eval = results["template_eval"]
     non_template_eval = results["non_template_eval"]
@@ -1091,7 +1278,9 @@ def build_markdown_summary(results: dict[str, object]) -> str:
     system_deltas = results["system_delta_vs_heuristic"]
     final_judgment = results["final_judgment"]
 
+    # 函数 fmt：关键函数，承载本模块的一段可复用实验逻辑，主要参数：value。
     def fmt(value: float) -> str:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return f"{value:.4f}"
 
     lines: list[str] = []
@@ -1105,6 +1294,7 @@ def build_markdown_summary(results: dict[str, object]) -> str:
     lines.append("## Template Held-Out Evaluation")
     lines.append(f"- Train scenarios: {', '.join(template_eval['train_scenarios'])}")
     lines.append(f"- Test scenarios: {', '.join(template_eval['test_scenarios'])}")
+    # 循环处理：遍历 (variant_name, variant_result) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for variant_name, variant_result in template_eval["variants"].items():
         iid_metrics = variant_result["iid_random_split"]["test"]
         held_metrics = variant_result["held_out_template_split"]["test"]
@@ -1114,6 +1304,7 @@ def build_markdown_summary(results: dict[str, object]) -> str:
         )
     lines.append("")
     lines.append("## Non-Template Evaluation")
+    # 循环处理：遍历 variant_name 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for variant_name in ("surrogate_full", "latency_only", "no_latency_features", "rich_reduced_template_only"):
         metrics = non_template_eval[variant_name]
         lines.append(f"- {variant_name}: acc={fmt(metrics['accuracy'])}, macro_F1={fmt(metrics['macro_f1'])}")
@@ -1126,6 +1317,7 @@ def build_markdown_summary(results: dict[str, object]) -> str:
     lines.append("## Fixed-Trajectory System Comparison")
     lines.append("| Policy | Latency | Energy | Deadline Sat | Offload Local | Offload Coop | Offload MBS | MBS Load |")
     lines.append("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |")
+    # 循环处理：遍历 (policy_name, metrics) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for policy_name, metrics in system_results.items():
         lines.append(
             f"| {policy_name} | {fmt(metrics['latency'])} | {fmt(metrics['energy'])} | "
@@ -1135,6 +1327,7 @@ def build_markdown_summary(results: dict[str, object]) -> str:
         )
     lines.append("")
     lines.append("## Delta Vs Heuristic")
+    # 循环处理：遍历 (policy_name, metrics) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for policy_name, metrics in system_deltas.items():
         lines.append(
             f"- {policy_name}: latency={fmt(metrics['latency'])}, energy={fmt(metrics['energy'])}, "
@@ -1151,9 +1344,11 @@ def build_markdown_summary(results: dict[str, object]) -> str:
     lines.append(f"- Recommended paper baseline: {final_judgment['recommended_baseline']}")
     lines.append(f"- Recommended paper candidate: {final_judgment['recommended_candidate']}")
     lines.append(f"- Remaining key issues: {final_judgment['remaining_key_issues']}")
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return "\n".join(lines)
 
 
+# 函数 main：脚本主流程入口，串联参数解析、对象创建、训练评估和结果输出。
 def main() -> None:
     seed = 20260423
     template_epochs = 16
@@ -1265,5 +1460,6 @@ def main() -> None:
     print(json.dumps(results, indent=2, ensure_ascii=False))
 
 
+# 脚本入口：直接运行本文件时，从 main() 开始执行完整流程。
 if __name__ == "__main__":
     main()

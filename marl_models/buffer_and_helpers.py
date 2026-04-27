@@ -1,3 +1,31 @@
+"""
+中文注释说明：marl_models/buffer_and_helpers.py
+
+文件作用：
+    提供经验回放缓冲区、轨迹缓存和训练辅助函数，支撑多种 MARL 算法复用。
+
+整体流程：
+    1. 读取全局配置、命令行参数或上游传入对象，准备实验所需的环境、模型与数据。
+    2. 按本文件职责执行仿真、训练、评估、绘图或结果汇总等核心步骤。
+    3. 将关键指标、模型参数或报告写入统一结果目录，便于论文实验复现和对比。
+
+关键变量与对象：
+    - ReplayBuffer: 核心类，封装本模块中的主要状态和行为。
+    - RolloutBuffer: 核心类，封装本模块中的主要状态和行为。
+    - AttentionRolloutBuffer: 核心类，封装本模块中的主要状态和行为。
+    - GaussianNoise: 核心类，封装本模块中的主要状态和行为。
+    - soft_update(): 更新模型、环境或统计量的状态。
+    - layer_init(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - get_state_dict(): 环境或智能体观测状态，用于生成动作或训练样本。
+    - load_safe(): 加载模型参数或实验数据。
+
+主要依赖：
+    marl_models, config, torch, numpy, collections
+
+注意事项：
+    本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
+"""
+
 from marl_models.base_model import OffPolicyExperienceBatch
 import config
 import torch
@@ -11,6 +39,7 @@ from collections.abc import Generator
 # is O(n) per index, making each sample() call O(batch_size * buffer_size).
 # A numpy ring-buffer gives O(1) indexing and enables vectorised batch slicing.
 class ReplayBuffer:
+    # 函数 __init__：关键函数，承载本模块的一段可复用实验逻辑，主要参数：max_size。
     def __init__(self, max_size: int) -> None:
         self.max_size: int = max_size
         self.ptr: int = 0  # Points to next write position
@@ -23,6 +52,7 @@ class ReplayBuffer:
         self._rewards: np.ndarray = np.zeros((self.max_size, config.NUM_UAVS), dtype=np.float32)
         self._dones: np.ndarray = np.zeros((self.max_size, config.NUM_UAVS), dtype=np.float32)
 
+    # 函数 add：关键函数，承载本模块的一段可复用实验逻辑，主要参数：obs_arr, actions, rewards, next_obs_arr, done。
     def add(self, obs_arr: np.ndarray, actions: np.ndarray, rewards: list[float], next_obs_arr: np.ndarray, done: bool) -> None:
         rewards_arr: np.ndarray = np.array(rewards, dtype=np.float32)
         dones_arr: np.ndarray = np.full(config.NUM_UAVS, float(done), dtype=np.float32)
@@ -37,9 +67,11 @@ class ReplayBuffer:
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
+    # 函数 sample：关键函数，承载本模块的一段可复用实验逻辑，主要参数：batch_size。
     def sample(self, batch_size: int) -> OffPolicyExperienceBatch:
         """Sample a batch of experiences. O(1) random batch sampling via numpy fancy-indexing."""
         indices: np.ndarray = np.random.randint(0, self.size, size=batch_size)
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return (
             self._obs[indices],
             self._actions[indices],
@@ -48,11 +80,15 @@ class ReplayBuffer:
             self._dones[indices],
         )
 
+    # 函数 __len__：关键函数，承载本模块的一段可复用实验逻辑。
     def __len__(self) -> int:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return self.size
 
 
+# 类 RolloutBuffer：核心类，封装本模块中的主要状态和行为。
 class RolloutBuffer:
+    # 函数 __init__：关键函数，承载本模块的一段可复用实验逻辑，主要参数：num_agents, obs_dim, action_dim, buffer_size, device。
     def __init__(self, num_agents: int, obs_dim: int, action_dim: int, buffer_size: int, device: str) -> None:
         self.num_agents: int = num_agents
         self.obs_dim: int = obs_dim
@@ -76,8 +112,11 @@ class RolloutBuffer:
 
         self.step: int = 0
 
+    # 函数 add：关键函数，承载本模块的一段可复用实验逻辑，主要参数：state, obs, actions, log_probs, rewards, done。
     def add(self, state: np.ndarray, obs: np.ndarray, actions: np.ndarray, log_probs: np.ndarray, rewards: list[float], done: bool, values: np.ndarray) -> None:
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if self.step >= self.buffer_size:
+            # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
             raise ValueError("Rollout buffer overflow")
         self.states[self.step] = state
         self.observations[self.step] = obs
@@ -89,9 +128,11 @@ class RolloutBuffer:
 
         self.step += 1
 
+    # 函数 compute_returns_and_advantages：关键函数，承载本模块的一段可复用实验逻辑，主要参数：last_values, gamma, gae_lambda。
     def compute_returns_and_advantages(self, last_values: np.ndarray, gamma: float, gae_lambda: float) -> None:
         """Computes the advantages and returns for the collected trajectories using GAE."""
         last_gae_lam: float = 0.0
+        # 循环处理：遍历 t 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for t in reversed(range(self.buffer_size)):
             next_values: np.ndarray = last_values if t == self.buffer_size - 1 else self.values[t + 1]
             delta: np.ndarray = self.rewards[t] + gamma * next_values * (1.0 - self.dones[t]) - self.values[t]
@@ -102,6 +143,7 @@ class RolloutBuffer:
         # Normalize advantages
         self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + 1e-8)
 
+    # 函数 get_batches：关键函数，承载本模块的一段可复用实验逻辑，主要参数：batch_size。
     def get_batches(self, batch_size: int) -> Generator[dict[str, torch.Tensor], None, None]:
         """A generator that yields mini-batches from the buffer."""
         num_samples: int = self.buffer_size * self.num_agents
@@ -129,6 +171,7 @@ class RolloutBuffer:
 
         indices: torch.Tensor = torch.randperm(num_samples, device=self.device)
 
+        # 循环处理：遍历 start 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for start in range(0, num_samples, batch_size):
             idx: torch.Tensor = indices[start : start + batch_size]
 
@@ -143,13 +186,16 @@ class RolloutBuffer:
                 "old_values": t_values[idx],
             }
 
+    # 函数 clear：关键函数，承载本模块的一段可复用实验逻辑。
     def clear(self) -> None:
         self.step = 0
 
 
+# 类 AttentionRolloutBuffer，继承自 RolloutBuffer：核心类，封装本模块中的主要状态和行为。
 class AttentionRolloutBuffer(RolloutBuffer):
     """Preserves (Batch, Num_Agents, Dim) structure required for Graph Attention."""
 
+    # 函数 get_batches：关键函数，承载本模块的一段可复用实验逻辑，主要参数：batch_size。
     def get_batches(self, batch_size: int):
         num_time_steps: int = self.buffer_size
 
@@ -164,6 +210,7 @@ class AttentionRolloutBuffer(RolloutBuffer):
 
         indices: torch.Tensor = torch.randperm(num_time_steps, device=self.device)
 
+        # 循环处理：遍历 start 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for start in range(0, num_time_steps, batch_size):
             idx: torch.Tensor = indices[start : start + batch_size]
 
@@ -178,47 +225,67 @@ class AttentionRolloutBuffer(RolloutBuffer):
             }
 
 
+# 函数 soft_update：更新模型、环境或统计量的状态，主要参数：target_net, source_net, tau。
 def soft_update(target_net: nn.Module, source_net: nn.Module, tau: float):
     """Performs a soft update of the target network's parameters."""
+    # 资源上下文：集中管理文件、图像或推理模式等需要成对进入和退出的资源。
     with torch.no_grad():
+        # 循环处理：遍历 (target_param, param) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for target_param, param in zip(target_net.parameters(), source_net.parameters()):
             target_param.copy_(tau * param + (1.0 - tau) * target_param)
 
 
+# 类 GaussianNoise：核心类，封装本模块中的主要状态和行为。
 class GaussianNoise:
     """Gaussian noise with decay for exploration."""
 
+    # 函数 __init__：关键函数，承载本模块的一段可复用实验逻辑。
     def __init__(self) -> None:
         self.scale: float = config.INITIAL_NOISE_SCALE
 
+    # 函数 sample：关键函数，承载本模块的一段可复用实验逻辑。
     def sample(self) -> np.ndarray:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return np.random.normal(0, self.scale, config.ACTION_DIM)
 
+    # 函数 decay：关键函数，承载本模块的一段可复用实验逻辑。
     def decay(self) -> None:
         self.scale = max(config.MIN_NOISE_SCALE, self.scale * config.NOISE_DECAY_RATE)
 
+    # 函数 reset：重置环境或对象状态，开始新的回合。
     def reset(self) -> None:
         self.scale = config.INITIAL_NOISE_SCALE
 
 
+# 函数 layer_init：关键函数，承载本模块的一段可复用实验逻辑，主要参数：layer, std, bias_const。
 def layer_init(layer: nn.Linear, std: float = np.sqrt(2), bias_const: float = 0.0) -> nn.Linear:
     """Added orthogonal initialization for better training stability"""
     nn.init.orthogonal_(layer.weight, std)
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if layer.bias is not None:
         nn.init.constant_(layer.bias, bias_const)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return layer
 
 
+# 函数 get_state_dict：环境或智能体观测状态，用于生成动作或训练样本，主要参数：model。
 def get_state_dict(model):  # Helper to strip the compile wrapper
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if hasattr(model, "_orig_mod"):
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return model._orig_mod.state_dict()
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return model.state_dict()
 
 
+# 函数 load_safe：加载模型参数或实验数据，主要参数：model, state_dict。
 def load_safe(model, state_dict):  # Helper to load into potentially compiled models
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if hasattr(model, "_orig_mod"):  # If compiled, try loading into _orig_mod first
+        # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
         try:
             model._orig_mod.load_state_dict(state_dict)
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
             return
         except Exception:
             pass  # Fallback to loading directly

@@ -1,3 +1,27 @@
+"""
+中文注释说明：train.py
+
+文件作用：
+    封装强化学习模型的训练流程，区分离策略、在策略和基线模型，并记录训练日志与模型检查点。
+
+整体流程：
+    1. 读取全局配置、命令行参数或上游传入对象，准备实验所需的环境、模型与数据。
+    2. 按本文件职责执行仿真、训练、评估、绘图或结果汇总等核心步骤。
+    3. 将关键指标、模型参数或报告写入统一结果目录，便于论文实验复现和对比。
+
+关键变量与对象：
+    - _get_episode_runtime_audit(): 训练或测试的回合编号。
+    - train_on_policy(): 执行模型训练流程。
+    - train_off_policy(): 执行模型训练流程。
+    - train_baselines(): 执行模型训练流程。
+
+主要依赖：
+    marl_models, environment, utils, config, torch, numpy, time, optuna
+
+注意事项：
+    本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
+"""
+
 from marl_models.base_model import MARLModel
 from marl_models.buffer_and_helpers import ReplayBuffer, RolloutBuffer, AttentionRolloutBuffer
 from marl_models.utils import save_models
@@ -14,10 +38,12 @@ import time
 import optuna
 
 
+# 函数 _get_episode_runtime_audit：训练或测试的回合编号，主要参数：env。
 def _get_episode_runtime_audit(env: Env) -> dict[str, object]:
     """Read the latest episode-level offloading audit snapshot from the environment."""
 
     audit: dict[str, object] = env.last_runtime_audit or {}
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "service_learned_decision_count": float(audit.get("episode_service_learned_decision_count", 0.0)),
         "service_heuristic_decision_count": float(audit.get("episode_service_heuristic_decision_count", 0.0)),
@@ -32,6 +58,7 @@ def _get_episode_runtime_audit(env: Env) -> dict[str, object]:
     }
 
 
+# 函数 train_on_policy：执行模型训练流程，主要参数：env, model, logger, num_episodes, trial。
 def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: int, trial: optuna.Trial | None = None) -> float:
     start_time: float = time.time()
     BufferClass: type[RolloutBuffer] = AttentionRolloutBuffer if "attention" in model.model_name.lower() else RolloutBuffer
@@ -67,7 +94,9 @@ def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: in
     # reset_trajectories(env)  # tracking code, comment if not needed
     # plot_snapshot(env, episode, 0, logger.log_dir, logger.timestamp, True)
 
+    # 循环处理：遍历 update 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for update in range(1, num_updates + 1):
+        # 循环处理：遍历 _ 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for _ in range(1, config.PPO_ROLLOUT_LENGTH + 1):
             # if episode_step > 0 and episode_step % config.IMG_FREQ == 0:
             # plot_snapshot(env, episode, episode_step, logger.log_dir, logger.timestamp)
@@ -102,6 +131,7 @@ def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: in
             episode_offload_mbs_sum += metrics["offloading_ratio_mbs"]
             episode_mbs_load_sum += metrics["mbs_load_ratio"]
 
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if done:
                 # plot_snapshot(env, episode, episode_step, logger.log_dir, logger.timestamp)  # Final snapshot of episode
                 recent_rewards.append(episode_reward)
@@ -135,9 +165,12 @@ def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: in
                 if trial:
                     current_avg_reward: float = float(np.mean(recent_rewards[-10:] if len(recent_rewards) >= 10 else recent_rewards))
                     trial.report(current_avg_reward, episode)
+                    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                     if trial.should_prune():
+                        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
                         raise optuna.TrialPruned()
 
+                # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                 if episode % config.LOG_FREQ == 0:
                     elapsed_time: float = time.time() - start_time
                     logger.log_metrics(episode, episode_log, config.LOG_FREQ, elapsed_time, losses=recent_losses)
@@ -157,6 +190,7 @@ def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: in
                 # reset_trajectories(env)  # tracking code, comment if not needed
                 # plot_snapshot(env, episode, 0, logger.log_dir, logger.timestamp, True)
 
+        # 资源上下文：集中管理文件、图像或推理模式等需要成对进入和退出的资源。
         with torch.no_grad():
             last_obs_arr: np.ndarray = np.asarray(last_obs, dtype=np.float32)
             last_state: np.ndarray = np.concatenate(last_obs, axis=0, dtype=np.float32)
@@ -166,9 +200,12 @@ def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: in
 
         temp_losses: dict = {"actor": [], "critic": [], "entropy": []}  # Only for this update
 
+        # 循环处理：遍历 _ 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for _ in range(config.PPO_EPOCHS):
+            # 循环处理：遍历 batch 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
             for batch in buffer.get_batches(config.PPO_BATCH_SIZE):
                 loss_dict = model.update(batch)
+                # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                 if loss_dict:
                     temp_losses["actor"].append(loss_dict.get("actor"))
                     temp_losses["critic"].append(loss_dict.get("critic"))
@@ -176,12 +213,14 @@ def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: in
 
         buffer.clear()
 
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if temp_losses["actor"]:
             recent_losses = {
                 "actor": float(np.mean([x for x in temp_losses["actor"] if x is not None])),
                 "critic": float(np.mean([x for x in temp_losses["critic"] if x is not None])),
                 "entropy": float(np.mean([x for x in temp_losses["entropy"] if x is not None])),
             }
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if update % save_freq == 0 and update < num_updates:
             save_models(model, update, "update", logger.timestamp)
 
@@ -191,6 +230,7 @@ def train_on_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: in
     return float(np.mean(recent_rewards[-max(1, int(num_episodes * 0.1)) :]))
 
 
+# 函数 train_off_policy：执行模型训练流程，主要参数：env, model, logger, num_episodes, total_step_count, trial。
 def train_off_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: int, total_step_count: int, trial: optuna.Trial | None = None) -> float:
     start_time: float = time.time()
     buffer: ReplayBuffer = ReplayBuffer(config.REPLAY_BUFFER_SIZE)
@@ -199,10 +239,12 @@ def train_off_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: i
 
     accumulated_losses: dict = {"actor": [], "critic": []}
     has_alpha: bool = "sac" in model.model_name.lower()  # Only track alpha loss for SAC-based algorithms
+    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if has_alpha:
         accumulated_losses["alpha"] = []
     recent_rewards: list[float] = []  # Tracking metrics for tuning
 
+    # 循环处理：遍历 episode 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for episode in range(1, num_episodes + 1):
         obs = env.reset()
         model.reset()
@@ -219,12 +261,14 @@ def train_off_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: i
         # reset_trajectories(env)  # tracking code, comment if not needed
         # plot_snapshot(env, episode, 0, logger.log_dir, logger.timestamp, True)
 
+        # 循环处理：遍历 step 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for step in range(1, config.STEPS_PER_EPISODE + 1):
             # if step % config.IMG_FREQ == 0:
             # plot_snapshot(env, episode, step, logger.log_dir, logger.timestamp)
 
             total_step_count += 1
             obs_arr: np.ndarray = np.array(obs, dtype=np.float32)
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if total_step_count <= config.INITIAL_RANDOM_STEPS:
                 actions: np.ndarray = np.array([np.random.uniform(-1, 1, config.ACTION_DIM) for _ in range(config.NUM_UAVS)])
             else:
@@ -236,12 +280,15 @@ def train_off_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: i
             done: bool = step >= config.STEPS_PER_EPISODE
             buffer.add(obs_arr, actions, rewards, next_obs_arr, done)
 
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if (total_step_count > config.INITIAL_RANDOM_STEPS) and (step % config.LEARN_FREQ == 0) and (len(buffer) > config.REPLAY_BATCH_SIZE):
                 batch = buffer.sample(config.REPLAY_BATCH_SIZE)
                 loss_dict = model.update(batch)
+                # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                 if loss_dict:
                     accumulated_losses["actor"].append(loss_dict.get("actor"))
                     accumulated_losses["critic"].append(loss_dict.get("critic"))
+                    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                     if has_alpha and "alpha" in loss_dict:
                         accumulated_losses["alpha"].append(loss_dict.get("alpha"))
 
@@ -261,6 +308,7 @@ def train_off_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: i
             episode_offload_cooperative_sum += metrics["offloading_ratio_cooperative"]
             episode_offload_mbs_sum += metrics["offloading_ratio_mbs"]
             episode_mbs_load_sum += metrics["mbs_load_ratio"]
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if done:
                 break
 
@@ -287,32 +335,40 @@ def train_off_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: i
             service_offload_policy_checkpoint_path=runtime_audit["service_offload_policy_checkpoint_path"],
             service_offload_policy_feature_family=runtime_audit["service_offload_policy_feature_family"],
         )
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if episode % config.LOG_FREQ == 0:
             elapsed_time: float = time.time() - start_time
             # Prepare averaged losses for logging
             avg_losses: dict | None = None
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if accumulated_losses["actor"]:
                 avg_losses = {
                     "actor": float(np.mean([x for x in accumulated_losses["actor"] if x is not None])),
                     "critic": float(np.mean([x for x in accumulated_losses["critic"] if x is not None])),
                 }
+                # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                 if has_alpha and accumulated_losses["alpha"]:
                     avg_losses["alpha"] = float(np.mean([x for x in accumulated_losses["alpha"] if x is not None]))
             logger.log_metrics(episode, episode_log, config.LOG_FREQ, elapsed_time, losses=avg_losses)
             # Reset accumulated losses for next logging interval
             accumulated_losses = {"actor": [], "critic": []}
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if has_alpha:
                 accumulated_losses["alpha"] = []
 
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if episode % save_freq == 0 and episode < num_episodes:
             save_models(model, episode, "episode", logger.timestamp, total_steps=total_step_count)
 
         recent_rewards.append(episode_reward)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if trial:
             # Report average of last 10 episodes
             current_avg_reward: float = float(np.mean(recent_rewards[-10:] if len(recent_rewards) >= 10 else recent_rewards))
             trial.report(current_avg_reward, episode)
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if trial.should_prune():
+                # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
                 raise optuna.TrialPruned()
 
     save_models(model, -1, "episode", logger.timestamp, final=True, total_steps=total_step_count)
@@ -321,11 +377,14 @@ def train_off_policy(env: Env, model: MARLModel, logger: Logger, num_episodes: i
     return float(np.mean(recent_rewards[-max(1, int(num_episodes * 0.1)) :]))
 
 
+# 函数 train_baselines：执行模型训练流程，主要参数：env, model, logger, num_episodes。
 def train_baselines(env: Env, model: MARLModel, logger: Logger, num_episodes: int) -> float:
     start_time: float = time.time()
     episode_log: Log = Log()
 
+    # 循环处理：遍历 episode 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for episode in range(1, num_episodes + 1):
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if hasattr(model, "static_positions") and model.static_positions is not None:
             obs = env.reset(initial_positions=model.static_positions)
         else:
@@ -343,6 +402,7 @@ def train_baselines(env: Env, model: MARLModel, logger: Logger, num_episodes: in
         # reset_trajectories(env)  # tracking code, comment if not needed
         # plot_snapshot(env, episode, 0, logger.log_dir, logger.timestamp, True)
 
+        # 循环处理：遍历 step 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for step in range(1, config.STEPS_PER_EPISODE + 1):
             # if step % config.IMG_FREQ == 0:
             # plot_snapshot(env, episode, step, logger.log_dir, logger.timestamp)
@@ -368,6 +428,7 @@ def train_baselines(env: Env, model: MARLModel, logger: Logger, num_episodes: in
             episode_offload_cooperative_sum += metrics["offloading_ratio_cooperative"]
             episode_offload_mbs_sum += metrics["offloading_ratio_mbs"]
             episode_mbs_load_sum += metrics["mbs_load_ratio"]
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if done:
                 break
 
@@ -394,8 +455,10 @@ def train_baselines(env: Env, model: MARLModel, logger: Logger, num_episodes: in
             service_offload_policy_checkpoint_path=runtime_audit["service_offload_policy_checkpoint_path"],
             service_offload_policy_feature_family=runtime_audit["service_offload_policy_feature_family"],
         )
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if episode % config.LOG_FREQ == 0:
             elapsed_time: float = time.time() - start_time
             logger.log_metrics(episode, episode_log, config.LOG_FREQ, elapsed_time, losses=None)
 
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return 0.0  # Baseline training does not need tuning

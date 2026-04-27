@@ -1,3 +1,26 @@
+"""
+中文注释说明：marl_models/attention.py
+
+文件作用：
+    实现注意力网络模块，用于增强多智能体状态交互建模能力。
+
+整体流程：
+    1. 读取全局配置、命令行参数或上游传入对象，准备实验所需的环境、模型与数据。
+    2. 按本文件职责执行仿真、训练、评估、绘图或结果汇总等核心步骤。
+    3. 将关键指标、模型参数或报告写入统一结果目录，便于论文实验复现和对比。
+
+关键变量与对象：
+    - CrossAttentionExtractor: 核心类，封装本模块中的主要状态和行为。
+    - AttentionActorBase: 核心类，封装本模块中的主要状态和行为。
+    - AttentionCriticBase: 核心类，封装本模块中的主要状态和行为。
+
+主要依赖：
+    config, marl_models, torch
+
+注意事项：
+    本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
+"""
+
 import config
 from marl_models.buffer_and_helpers import layer_init
 import torch
@@ -5,6 +28,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 
+# 类 CrossAttentionExtractor，继承自 ：核心类，封装本模块中的主要状态和行为。
 class CrossAttentionExtractor(nn.Module):
     """
     Cross-Attention Module used in actors and critics of attention-based models
@@ -14,6 +38,7 @@ class CrossAttentionExtractor(nn.Module):
         - target_embeddings: The 'Keys/Values' (Neighbors or UEs)
     """
 
+    # 函数 __init__：关键函数，承载本模块的一段可复用实验逻辑，主要参数：self_dim, target_dim。
     def __init__(self, self_dim: int, target_dim: int) -> None:
         super().__init__()
         self.head_dim: int = config.ATTN_HIDDEN_DIM // config.ATTN_NUM_HEADS
@@ -25,6 +50,7 @@ class CrossAttentionExtractor(nn.Module):
         self.scale: float = config.ATTN_HIDDEN_DIM ** (-0.5)  # Scaling factor for dot-product attention (1 / sqrt(d_k))
         self.out_proj: nn.Linear = layer_init(nn.Linear(config.ATTN_HIDDEN_DIM, config.ATTN_HIDDEN_DIM))
 
+    # 函数 forward：定义神经网络前向传播计算，主要参数：self_embedding, target_embeddings, mask。
     def forward(self, self_embedding: torch.Tensor, target_embeddings: torch.Tensor, mask: torch.Tensor | None = None):
         # self_embedding: (batch, self_dim)
         # target_embeddings: (batch, max_targets, target_dim)
@@ -36,6 +62,7 @@ class CrossAttentionExtractor(nn.Module):
 
         # K, V: (batch, num_targets, hidden) -> (batch, num_targets, num_heads, head_dim) -> (batch, num_heads, num_targets, head_dim)
         K: torch.Tensor = self.key_layer(target_embeddings).view(batch_size, -1, config.ATTN_NUM_HEADS, self.head_dim).transpose(1, 2)
+        # 关键变量 V：全局常量或配置项，会影响环境规模、训练过程或实验输出。
         V: torch.Tensor = self.value_layer(target_embeddings).view(batch_size, -1, config.ATTN_NUM_HEADS, self.head_dim).transpose(1, 2)
 
         # -- Original Manual Attention Implementation --
@@ -61,6 +88,7 @@ class CrossAttentionExtractor(nn.Module):
         # -- Refactored to use Pytorch's in-built Attention --
 
         attn_mask: torch.Tensor | None = None
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if mask is not None:
             attn_mask = mask.unsqueeze(1).unsqueeze(1).bool()
 
@@ -74,15 +102,18 @@ class CrossAttentionExtractor(nn.Module):
 
         # Final Projection
         output = self.out_proj(context)
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return output.squeeze(1)
 
 
+# 类 AttentionActorBase，继承自 ：核心类，封装本模块中的主要状态和行为。
 class AttentionActorBase(nn.Module):
     """
     Base class for Attention-based Actors (Shared by MADDPG, MATD3, MASAC, MAPPO).
     Handles encoding, attention, and feature fusion.
     """
 
+    # 函数 __init__：关键函数，承载本模块的一段可复用实验逻辑，主要参数：obs_dim。
     def __init__(self, obs_dim: int) -> None:
         super().__init__()
         self.num_neighbors: int = config.MAX_UAV_NEIGHBORS
@@ -115,6 +146,7 @@ class AttentionActorBase(nn.Module):
         self.fc2: nn.Linear = layer_init(nn.Linear(self.mlp_dim, self.hidden_dim))
         self.ln2: nn.LayerNorm = nn.LayerNorm(self.hidden_dim)
 
+    # 函数 get_feature_embedding：关键函数，承载本模块的一段可复用实验逻辑，主要参数：obs_flat。
     def get_feature_embedding(self, obs_flat: torch.Tensor) -> torch.Tensor:
         batch_size: int = obs_flat.shape[0]
         own_state: torch.Tensor = obs_flat[:, : self.own_dim]
@@ -141,12 +173,15 @@ class AttentionActorBase(nn.Module):
         combined: torch.Tensor = torch.cat([self_emb, neighbor_context, ue_context], dim=1)
         fusion: torch.Tensor = F.relu(self.ln1(self.fc1(combined)))
         fusion = F.relu(self.ln2(self.fc2(fusion)))
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return fusion
 
 
+# 类 AttentionCriticBase，继承自 ：核心类，封装本模块中的主要状态和行为。
 class AttentionCriticBase(nn.Module):
     """Base class for Attention-based Critics (Inspired from MAAC)"""
 
+    # 函数 __init__：关键函数，承载本模块的一段可复用实验逻辑，主要参数：obs_dim, action_dim。
     def __init__(self, obs_dim: int, action_dim: int = 0) -> None:
         super().__init__()
         self.hidden_dim: int = config.ATTN_HIDDEN_DIM
@@ -164,9 +199,12 @@ class AttentionCriticBase(nn.Module):
 
         self.fusion_dim: int = self.hidden_dim * 2
 
+    # 函数 get_all_embeddings：关键函数，承载本模块的一段可复用实验逻辑，主要参数：inputs。
     def get_all_embeddings(self, inputs: torch.Tensor) -> torch.Tensor:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return self.state_encoder(inputs)
 
+    # 函数 attend_to_others：关键函数，承载本模块的一段可复用实验逻辑，主要参数：embeddings, num_agents, agent_index。
     def attend_to_others(self, embeddings: torch.Tensor, num_agents: int, agent_index: int) -> torch.Tensor:
         """Performs attention for agent i over all other agents."""
         # Extract "Me"
@@ -183,8 +221,10 @@ class AttentionCriticBase(nn.Module):
 
         # Fusion:
         combined: torch.Tensor = torch.cat([me_embedding, context], dim=1)
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return combined
 
+    # 函数 vectorized_attend_to_others：关键函数，承载本模块的一段可复用实验逻辑，主要参数：embeddings。
     def vectorized_attend_to_others(self, embeddings: torch.Tensor) -> torch.Tensor:
         """
         Computes attention for all agents simultaneously, masking out self-attention.
@@ -198,13 +238,17 @@ class AttentionCriticBase(nn.Module):
 
         # Pass through the linear layers of the existing attention module
         Q: torch.Tensor = self.attention.query_layer(embeddings)
+        # 关键变量 K：全局常量或配置项，会影响环境规模、训练过程或实验输出。
         K: torch.Tensor = self.attention.key_layer(embeddings)
+        # 关键变量 V：全局常量或配置项，会影响环境规模、训练过程或实验输出。
         V: torch.Tensor = self.attention.value_layer(embeddings)
 
         # Reshape for multi-head attention
         # (Batch, Num_Agents, Heads, Head_Dim) -> (Batch, Heads, Num_Agents, Head_Dim)
         Q = Q.view(batch_size, num_agents, self.num_heads, -1).transpose(1, 2)
+        # 关键变量 K：全局常量或配置项，会影响环境规模、训练过程或实验输出。
         K = K.view(batch_size, num_agents, self.num_heads, -1).transpose(1, 2)
+        # 关键变量 V：全局常量或配置项，会影响环境规模、训练过程或实验输出。
         V = V.view(batch_size, num_agents, self.num_heads, -1).transpose(1, 2)
 
         # Mask to exclude self-attention (agent i does not attend to agent i)
@@ -220,8 +264,10 @@ class AttentionCriticBase(nn.Module):
 
         # Fusion: concatenate original embeddings with the attended context
         combined: torch.Tensor = torch.cat([embeddings, context], dim=-1)
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return combined
 
+    # 函数 get_q_embedding：关键函数，承载本模块的一段可复用实验逻辑，主要参数：obs_tensor, action_tensor, agent_index。
     def get_q_embedding(self, obs_tensor: torch.Tensor, action_tensor: torch.Tensor, agent_index: int) -> torch.Tensor:
         """
         Calculates the embedding for agent i (for Q-value) by attending to all other agents.
