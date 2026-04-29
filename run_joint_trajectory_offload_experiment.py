@@ -48,6 +48,7 @@ import numpy as np
 import torch
 
 import config
+from analyze_experiment_statistics import build_statistics, extract_policy_units
 from environment.env import Env
 from environment.uavs import UAV
 from marl_models.base_model import MARLModel
@@ -75,6 +76,35 @@ SUMMARY_METRIC_NAMES: tuple[str, ...] = (
     "service_fallback_count",
     "service_predict_exception_fallback_count",
 )
+
+POLICY_ALIASES: dict[str, str] = {
+    "heuristic": "heuristic",
+    "surrogate": "surrogate",
+    "oracle_guided": "surrogate",
+    "oracle-guided": "surrogate",
+    "rich_reduced": "rich_reduced",
+}
+
+
+def _parse_key_value_entries(entries: list[str] | None, option_name: str) -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for entry in entries or []:
+        if "=" not in entry:
+            raise ValueError(f"{option_name} entries must use NAME=VALUE format, got: {entry}")
+        key, value = entry.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key or not value:
+            raise ValueError(f"{option_name} entries must use non-empty NAME=VALUE pairs, got: {entry}")
+        mapping[key] = value
+    return mapping
+
+
+def _normalize_offload_policy(policy_label: str) -> str:
+    normalized = POLICY_ALIASES.get(policy_label)
+    if normalized is None:
+        raise ValueError(f"Unsupported joint-eval policy label: {policy_label}")
+    return normalized
 
 
 # 函数 configure_fp32_precision：关键函数，承载本模块的一段可复用实验逻辑。
@@ -142,7 +172,7 @@ def _get_episode_runtime_audit(env: Env) -> dict[str, object]:
 
 
 # 函数 resolve_latest_training_artifacts：关键函数，承载本模块的一段可复用实验逻辑，主要参数：trajectory_run_root, model_name。
-def resolve_latest_training_artifacts(trajectory_run_root: str | Path, model_name: str) -> tuple[Path | None, Path]:
+def resolve_latest_training_artifacts(trajectory_run_root: str | Path, model_name: str) -> tuple[Path | None, Path | None]:
     run_root = Path(trajectory_run_root)
     config_candidates: list[Path] = []
     primary_config_dir = run_root / "train_logs" / model_name
@@ -177,9 +207,10 @@ def resolve_latest_training_artifacts(trajectory_run_root: str | Path, model_nam
         key=lambda path: path.stat().st_mtime,
         reverse=True,
     )
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if not model_candidates:
-        # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
+        if model_name.endswith("_greedy") or model_name in {"random", "static", "nearest_greedy", "uncoordinated_greedy"}:
+            resolved_config = config_candidates[0] if config_candidates else None
+            return resolved_config, None
         raise FileNotFoundError(
             f"No saved model run with a 'final' directory found under either '{primary_model_root}' "
             f"or '{fallback_model_root}' for model '{model_name}'."
@@ -229,12 +260,13 @@ def aggregate_metric_dicts(metric_dicts: list[dict[str, float]]) -> dict[str, di
 
 # 函数 set_service_offload_policy：关键函数，承载本模块的一段可复用实验逻辑，主要参数：policy_label, checkpoint_path。
 def set_service_offload_policy(policy_label: str, checkpoint_path: str | None) -> None:
+    normalized_policy = _normalize_offload_policy(policy_label)
     # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    if policy_label == "heuristic":
+    if normalized_policy == "heuristic":
         config.SERVICE_OFFLOAD_POLICY = "heuristic"
         config.SERVICE_OFFLOAD_POLICY_CHECKPOINT = None
     # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif policy_label in {"surrogate", "rich_reduced"}:
+    elif normalized_policy in {"surrogate", "rich_reduced"}:
         config.SERVICE_OFFLOAD_POLICY = "learned"
         config.SERVICE_OFFLOAD_POLICY_CHECKPOINT = checkpoint_path
     else:
@@ -243,10 +275,35 @@ def set_service_offload_policy(policy_label: str, checkpoint_path: str | None) -
     UAV._policy_cache.clear()
 
 
+def capture_spatial_trace_step(env: Env, step: int, metrics: dict[str, float]) -> dict[str, object]:
+    return {
+        "step": int(step),
+        "uav_positions": [[float(v) for v in uav.pos[:2]] for uav in env.uavs],
+        "ue_positions": [[float(v) for v in ue.pos[:2]] for ue in env.ues],
+        "metrics": {
+            "deadline_satisfaction_rate": float(metrics.get("deadline_satisfaction_rate", 0.0)),
+            "offloading_ratio_local": float(metrics.get("offloading_ratio_local", 0.0)),
+            "offloading_ratio_cooperative": float(metrics.get("offloading_ratio_cooperative", 0.0)),
+            "offloading_ratio_mbs": float(metrics.get("offloading_ratio_mbs", 0.0)),
+            "mbs_load_ratio": float(metrics.get("mbs_load_ratio", 0.0)),
+            "service_requests_generated": float(metrics.get("service_requests_generated", 0.0)),
+            "service_requests_processed": float(metrics.get("service_requests_processed", 0.0)),
+            "service_fallback_count": float(metrics.get("service_fallback_count", 0.0)),
+        },
+    }
+
+
 # 函数 run_single_episode：训练或测试的回合编号，主要参数：env, model。
-def run_single_episode(env: Env, model: MARLModel) -> tuple[dict[str, float], dict[str, object]]:
+def run_single_episode(
+    env: Env,
+    model: MARLModel,
+    *,
+    record_spatial_trace: bool = False,
+    spatial_trace_interval: int = 20,
+) -> tuple[dict[str, float], dict[str, object], list[dict[str, object]]]:
     obs = env.reset()
     model.reset()
+    trace_steps: list[dict[str, object]] = []
 
     episode_reward: float = 0.0
     episode_latency: float = 0.0
@@ -265,6 +322,8 @@ def run_single_episode(env: Env, model: MARLModel) -> tuple[dict[str, float], di
         actions = model.select_actions(obs_arr, exploration=False)
         next_obs, rewards, metrics = env.step(actions)
         obs = next_obs
+        if record_spatial_trace and (step == 1 or step % max(int(spatial_trace_interval), 1) == 0):
+            trace_steps.append(capture_spatial_trace_step(env, step, metrics))
 
         episode_reward += float(np.sum(rewards))
         episode_latency += float(metrics["latency"])
@@ -300,21 +359,24 @@ def run_single_episode(env: Env, model: MARLModel) -> tuple[dict[str, float], di
         "service_predict_exception_fallback_count": float(runtime_audit["service_predict_exception_fallback_count"]),
     }
     # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-    return episode_metrics, runtime_audit
+    return episode_metrics, runtime_audit, trace_steps
 
 
 # 函数 evaluate_joint_policy：关键函数，承载本模块的一段可复用实验逻辑。
 def evaluate_joint_policy(
     *,
+    combo_label: str,
     policy_label: str,
     checkpoint_path: str | None,
     trajectory_model_name: str,
-    trajectory_model_dir: str | Path,
+    trajectory_model_dir: str | Path | None,
     trajectory_config_path: str | Path | None,
     seeds: list[int],
     episodes_per_seed: int,
     steps_per_episode: int | None,
     run_root: Path,
+    record_spatial_trace: bool = False,
+    spatial_trace_interval: int = 20,
 ) -> dict[str, object]:
     # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if trajectory_config_path is not None:
@@ -326,9 +388,10 @@ def evaluate_joint_policy(
 
     set_service_offload_policy(policy_label, checkpoint_path)
 
-    timestamp = datetime.now().strftime(f"%Y%m%d_%H%M%S_{policy_label}")
-    log_dir = run_root / "test_logs" / policy_label / timestamp
-    plot_dir = run_root / "test_plots" / policy_label / timestamp
+    safe_combo_label = combo_label.replace("/", "__").replace(" ", "_")
+    timestamp = datetime.now().strftime(f"%Y%m%d_%H%M%S_{safe_combo_label}")
+    log_dir = run_root / "test_logs" / safe_combo_label / timestamp
+    plot_dir = run_root / "test_plots" / safe_combo_label / timestamp
     logger = Logger(str(log_dir), timestamp)
     logger.log_configs()
     episode_log = Log()
@@ -336,6 +399,7 @@ def evaluate_joint_policy(
     start_time = time.time()
     per_seed_runs: list[dict[str, object]] = []
     aggregate_units: list[dict[str, float]] = []
+    spatial_trace_records: list[dict[str, object]] = []
     global_episode_idx = 0
 
     # 循环处理：遍历 seed 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
@@ -344,7 +408,8 @@ def evaluate_joint_policy(
         torch.manual_seed(seed)
         env = Env()
         model = get_model(trajectory_model_name)
-        model.load(str(trajectory_model_dir))
+        if trajectory_model_dir is not None:
+            model.load(str(trajectory_model_dir))
 
         episode_metrics_for_seed: list[dict[str, float]] = []
         # 循环处理：遍历 episode_idx 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
@@ -353,9 +418,25 @@ def evaluate_joint_policy(
             np.random.seed(run_seed)
             torch.manual_seed(run_seed)
 
-            episode_metrics, runtime_audit = run_single_episode(env, model)
+            episode_metrics, runtime_audit, trace_steps = run_single_episode(
+                env,
+                model,
+                record_spatial_trace=record_spatial_trace,
+                spatial_trace_interval=spatial_trace_interval,
+            )
             episode_metrics_for_seed.append(episode_metrics)
             aggregate_units.append(episode_metrics)
+            if record_spatial_trace:
+                spatial_trace_records.append(
+                    {
+                        "combo": combo_label,
+                        "trajectory_model": trajectory_model_name,
+                        "offload_policy": policy_label,
+                        "seed": int(seed),
+                        "episode": int(episode_idx),
+                        "steps": trace_steps,
+                    }
+                )
 
             episode_log.append(
                 episode_metrics["reward"],
@@ -394,6 +475,20 @@ def evaluate_joint_policy(
         )
 
     generate_plots(str(logger.json_file_path), str(plot_dir), "joint_test", timestamp, smoothing_window=2)
+    spatial_trace_path: str | None = None
+    if record_spatial_trace:
+        trace_dir = run_root / "spatial_traces"
+        trace_dir.mkdir(parents=True, exist_ok=True)
+        trace_path = trace_dir / f"{safe_combo_label}_spatial_trace.json"
+        trace_payload = {
+            "combo": combo_label,
+            "trajectory_model": trajectory_model_name,
+            "offload_policy": policy_label,
+            "spatial_trace_interval": int(spatial_trace_interval),
+            "records": spatial_trace_records,
+        }
+        trace_path.write_text(json.dumps(trace_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+        spatial_trace_path = str(trace_path)
     # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "log_dir": str(log_dir),
@@ -401,6 +496,10 @@ def evaluate_joint_policy(
         "log_json_path": str(logger.json_file_path),
         "config_path": str(logger.config_file_path),
         "trajectory_config_source_path": str(trajectory_config_path) if trajectory_config_path is not None else None,
+        "trajectory_model": trajectory_model_name,
+        "trajectory_model_dir": str(trajectory_model_dir) if trajectory_model_dir is not None else None,
+        "offload_policy": policy_label,
+        "spatial_trace_path": spatial_trace_path,
         "aggregate": aggregate_metric_dicts(aggregate_units),
         "per_seed": per_seed_runs,
     }
@@ -439,6 +538,63 @@ def build_delta_vs_reference(
     return deltas
 
 
+def build_combo_specs(args: argparse.Namespace) -> list[dict[str, str]]:
+    if args.four_way_ablation:
+        return [
+            {"label": "uncoordinated_greedy__heuristic", "trajectory_model": "uncoordinated_greedy", "offload_policy": "heuristic"},
+            {"label": "attention_mappo__heuristic", "trajectory_model": "attention_mappo", "offload_policy": "heuristic"},
+            {"label": "uncoordinated_greedy__oracle_guided", "trajectory_model": "uncoordinated_greedy", "offload_policy": "oracle_guided"},
+            {"label": "attention_mappo__oracle_guided", "trajectory_model": "attention_mappo", "offload_policy": "oracle_guided"},
+        ]
+
+    if args.combos:
+        combos: list[dict[str, str]] = []
+        for entry in args.combos:
+            parts = [part.strip() for part in entry.split(":")]
+            if len(parts) != 3 or not all(parts):
+                raise ValueError("--combos entries must use LABEL:TRAJECTORY_MODEL:OFFLOAD_POLICY format.")
+            label, trajectory_model, offload_policy = parts
+            combos.append({"label": label, "trajectory_model": trajectory_model, "offload_policy": offload_policy})
+        return combos
+
+    return [
+        {
+            "label": f"{args.trajectory_model}__{policy_label}",
+            "trajectory_model": args.trajectory_model,
+            "offload_policy": policy_label,
+        }
+        for policy_label in args.policies
+    ]
+
+
+def resolve_trajectory_artifacts_for_combos(args: argparse.Namespace, combo_specs: list[dict[str, str]]) -> dict[str, dict[str, str | None]]:
+    run_roots = _parse_key_value_entries(args.trajectory_run_roots, "--trajectory_run_roots")
+    config_paths = _parse_key_value_entries(args.trajectory_configs, "--trajectory_configs")
+    model_dirs = _parse_key_value_entries(args.trajectory_model_dirs, "--trajectory_model_dirs")
+    trajectory_models = sorted({combo["trajectory_model"] for combo in combo_specs})
+    artifacts: dict[str, dict[str, str | None]] = {}
+
+    for model_name in trajectory_models:
+        explicit_config = config_paths.get(model_name)
+        explicit_model_dir = model_dirs.get(model_name)
+        run_root = run_roots.get(model_name, args.trajectory_run_root)
+        if explicit_config is not None or explicit_model_dir is not None:
+            artifacts[model_name] = {
+                "config": str(Path(explicit_config)) if explicit_config is not None else None,
+                "model_dir": str(Path(explicit_model_dir)) if explicit_model_dir is not None else None,
+                "run_root": str(Path(run_root).resolve()) if run_root is not None else None,
+            }
+            continue
+
+        resolved_config, resolved_model_dir = resolve_latest_training_artifacts(run_root, model_name)
+        artifacts[model_name] = {
+            "config": str(resolved_config) if resolved_config is not None else None,
+            "model_dir": str(resolved_model_dir) if resolved_model_dir is not None else None,
+            "run_root": str(Path(run_root).resolve()),
+        }
+    return artifacts
+
+
 # 函数 parse_args：解析命令行参数，并为实验脚本提供可覆盖的默认配置。
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run joint trajectory-control + offloading-policy comparison experiments.")
@@ -447,6 +603,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--trajectory_model", type=str, default="attention_mappo", help="Trajectory model name to load.")
     parser.add_argument("--trajectory_config", type=str, default=None, help="Optional explicit config_*.json path.")
     parser.add_argument("--trajectory_model_dir", type=str, default=None, help="Optional explicit saved model final directory.")
+    parser.add_argument(
+        "--trajectory_run_roots",
+        nargs="*",
+        default=None,
+        help="Optional NAME=PATH overrides for multiple trajectory models in combo mode.",
+    )
+    parser.add_argument(
+        "--trajectory_configs",
+        nargs="*",
+        default=None,
+        help="Optional NAME=PATH config overrides for multiple trajectory models in combo mode.",
+    )
+    parser.add_argument(
+        "--trajectory_model_dirs",
+        nargs="*",
+        default=None,
+        help="Optional NAME=PATH saved-model overrides for multiple trajectory models in combo mode.",
+    )
     parser.add_argument("--offload_experiment_root", type=str, required=True, help="Offload experiment root containing checkpoints/.")
     parser.add_argument("--surrogate_checkpoint", type=str, default=None, help="Optional explicit surrogate checkpoint path.")
     parser.add_argument("--rich_checkpoint", type=str, default=None, help="Optional explicit rich reduced checkpoint path.")
@@ -454,13 +628,26 @@ def parse_args() -> argparse.Namespace:
         "--policies",
         nargs="+",
         default=["heuristic", "surrogate", "rich_reduced"],
-        choices=["heuristic", "surrogate", "rich_reduced"],
+        choices=["heuristic", "surrogate", "oracle_guided", "oracle-guided", "rich_reduced"],
         help="Offloading policies to compare.",
+    )
+    parser.add_argument(
+        "--combos",
+        nargs="+",
+        default=None,
+        help="Explicit LABEL:TRAJECTORY_MODEL:OFFLOAD_POLICY combinations for orthogonal joint evaluation.",
+    )
+    parser.add_argument(
+        "--four_way_ablation",
+        action="store_true",
+        help="Evaluate uncoordinated/heuristic, attention_mappo/heuristic, uncoordinated/oracle_guided, and attention_mappo/oracle_guided.",
     )
     parser.add_argument("--seeds", type=int, nargs="+", default=[42, 84, 126, 168], help="Evaluation seeds.")
     parser.add_argument("--episodes_per_seed", type=int, default=8, help="Episodes per seed and policy.")
     parser.add_argument("--steps_per_episode", type=int, default=None, help="Optional override for STEPS_PER_EPISODE.")
     parser.add_argument("--comparison_smoothing", type=int, default=3, help="Smoothing window for cross-policy comparison plots.")
+    parser.add_argument("--record_spatial_trace", action="store_true", help="Record sampled UAV/UE positions and per-step offload ratios.")
+    parser.add_argument("--spatial_trace_interval", type=int, default=20, help="Step interval used when recording spatial trace.")
     # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return parser.parse_args()
 
@@ -474,25 +661,16 @@ def main() -> None:
     base_snapshot = snapshot_config()
     run_root = results_path("joint_experiments", args.name)
     run_root.mkdir(parents=True, exist_ok=True)
+    combo_specs = build_combo_specs(args)
 
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    if args.trajectory_config is None or args.trajectory_model_dir is None:
-        inferred_config_path, inferred_model_dir = resolve_latest_training_artifacts(
-            args.trajectory_run_root,
-            args.trajectory_model,
-        )
-        trajectory_config_path = Path(args.trajectory_config) if args.trajectory_config is not None else inferred_config_path
-        trajectory_model_dir = Path(args.trajectory_model_dir) if args.trajectory_model_dir is not None else inferred_model_dir
-    else:
-        trajectory_config_path = Path(args.trajectory_config)
-        trajectory_model_dir = Path(args.trajectory_model_dir)
-
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    if trajectory_config_path is None:
-        print(
-            "[joint] warning: no training config_*.json was found for the trajectory model; "
-            "falling back to the current config.py values."
-        )
+    if args.trajectory_config is not None:
+        args.trajectory_configs = list(args.trajectory_configs or []) + [f"{args.trajectory_model}={args.trajectory_config}"]
+    if args.trajectory_model_dir is not None:
+        args.trajectory_model_dirs = list(args.trajectory_model_dirs or []) + [f"{args.trajectory_model}={args.trajectory_model_dir}"]
+    trajectory_artifacts = resolve_trajectory_artifacts_for_combos(args, combo_specs)
+    for model_name, artifact in trajectory_artifacts.items():
+        if artifact["config"] is None:
+            print(f"[joint] warning: no config_*.json was found for trajectory model '{model_name}'; using current config.py values.")
 
     # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if args.surrogate_checkpoint is None or args.rich_checkpoint is None:
@@ -506,53 +684,78 @@ def main() -> None:
     policy_to_checkpoint = {
         "heuristic": None,
         "surrogate": str(surrogate_checkpoint),
+        "oracle_guided": str(surrogate_checkpoint),
+        "oracle-guided": str(surrogate_checkpoint),
         "rich_reduced": str(rich_checkpoint),
     }
 
-    results_by_policy: dict[str, dict[str, object]] = {}
+    results_by_combo: dict[str, dict[str, object]] = {}
     # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
     try:
-        # 循环处理：遍历 policy_label 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
-        for policy_label in args.policies:
-            print(f"[joint] evaluating policy={policy_label}")
+        for combo in combo_specs:
+            combo_label = combo["label"]
+            trajectory_model = combo["trajectory_model"]
+            policy_label = combo["offload_policy"]
+            checkpoint_key = _normalize_offload_policy(policy_label)
+            artifact = trajectory_artifacts[trajectory_model]
+            print(f"[joint] evaluating combo={combo_label} trajectory={trajectory_model} offload={policy_label}")
             restore_config(base_snapshot)
-            results_by_policy[policy_label] = evaluate_joint_policy(
+            results_by_combo[combo_label] = evaluate_joint_policy(
+                combo_label=combo_label,
                 policy_label=policy_label,
-                checkpoint_path=policy_to_checkpoint[policy_label],
-                trajectory_model_name=args.trajectory_model,
-                trajectory_model_dir=trajectory_model_dir,
-                trajectory_config_path=trajectory_config_path,
+                checkpoint_path=policy_to_checkpoint[checkpoint_key],
+                trajectory_model_name=trajectory_model,
+                trajectory_model_dir=artifact["model_dir"],
+                trajectory_config_path=artifact["config"],
                 seeds=[int(seed) for seed in args.seeds],
                 episodes_per_seed=args.episodes_per_seed,
                 steps_per_episode=args.steps_per_episode,
                 run_root=run_root,
+                record_spatial_trace=bool(args.record_spatial_trace),
+                spatial_trace_interval=int(args.spatial_trace_interval),
             )
 
-        log_dirs = [results_by_policy[policy_label]["log_dir"] for policy_label in args.policies]
+        combo_labels = [combo["label"] for combo in combo_specs]
+        log_dirs = [results_by_combo[combo_label]["log_dir"] for combo_label in combo_labels]
         comparison_dir = run_root / "comparisons"
-        compare_algorithms(log_dirs, args.policies, str(comparison_dir), smoothing_window=args.comparison_smoothing)
+        compare_algorithms(log_dirs, combo_labels, str(comparison_dir), smoothing_window=args.comparison_smoothing)
 
         summary = {
             "metadata": {
                 "experiment_name": args.name,
                 "trajectory_run_root": str(Path(args.trajectory_run_root).resolve()),
                 "trajectory_model": args.trajectory_model,
-                "trajectory_config_path": str(trajectory_config_path.resolve()) if trajectory_config_path is not None else None,
-                "trajectory_model_dir": str(trajectory_model_dir.resolve()),
+                "trajectory_artifacts": trajectory_artifacts,
                 "offload_experiment_root": str(Path(args.offload_experiment_root).resolve()),
                 "surrogate_checkpoint": str(surrogate_checkpoint.resolve()),
                 "rich_checkpoint": str(rich_checkpoint.resolve()),
                 "policies": args.policies,
+                "combos": combo_specs,
                 "seeds": [int(seed) for seed in args.seeds],
                 "episodes_per_seed": int(args.episodes_per_seed),
                 "steps_per_episode": int(args.steps_per_episode) if args.steps_per_episode is not None else None,
                 "comparison_dir": str(comparison_dir),
+                "record_spatial_trace": bool(args.record_spatial_trace),
+                "spatial_trace_interval": int(args.spatial_trace_interval),
             },
-            "per_policy": results_by_policy,
-            "delta_vs_heuristic": build_delta_vs_reference(results_by_policy=results_by_policy, reference_policy="heuristic")
-            if "heuristic" in results_by_policy
+            "per_policy": results_by_combo,
+            "per_combo": results_by_combo,
+            "delta_vs_reference": build_delta_vs_reference(results_by_policy=results_by_combo, reference_policy=combo_labels[0])
+            if combo_labels
+            else {},
+            "delta_vs_heuristic": build_delta_vs_reference(results_by_policy=results_by_combo, reference_policy="heuristic")
+            if "heuristic" in results_by_combo
             else {},
         }
+        try:
+            summary["statistics"] = build_statistics(
+                extract_policy_units(summary),
+                reference=combo_labels[0],
+                confidence=0.95,
+                bootstrap_samples=3000,
+            )
+        except Exception as exc:
+            summary["statistics_error"] = str(exc)
         summary_path = run_root / "joint_experiment_summary.json"
         summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
         print(json.dumps(summary, indent=2, ensure_ascii=False))
