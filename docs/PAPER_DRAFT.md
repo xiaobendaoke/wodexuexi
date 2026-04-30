@@ -156,14 +156,9 @@
 
 ### 4.4 上层结果分析
 
-这里先留模板：
+上层多训练 seed 稳健性实验表明，`attention_mappo` 相比 `uncoordinated_greedy` 在 reward、energy 和 fairness 上具有更稳定优势。具体而言，attention-MAPPO 的 reward delta 为 +223.9，95% CI 为 [198.2, 249.7]，paired t-test 的 `p_t=0.000104`；energy delta 为 -10.90M，95% CI 为 [-19.99M, -1.81M]，`p_t=0.0316`；fairness delta 为 +0.1536，95% CI 为 [0.1140, 0.1931]，`p_t=0.00114`。latency、DSR、MBS ratio 和 MBS load 在独立上层多 seed 实验中不显著，因此这些服务质量收益主要以端到端四组联合消融作为主证据。
 
-- 若 `attention_mappo` 更优：强调其在动态环境中的学习能力
-- 若 `uncoordinated_greedy` 更优：强调强启发式基线的竞争力，同时说明学习型控制器具备更好的扩展潜力
-
-可填空模板：
-
-“实验结果表明，在 ______ 指标上，`attention_mappo` / `uncoordinated_greedy` 表现更优；在 ______ 指标上，另一方法具有一定优势。综合考虑 ______，本文选取 `attention_mappo` 作为双层协同框架的上层控制器。”
+综合来看，attention-MAPPO 更适合作为双层协同框架的上层控制器：它能够提升协同覆盖公平性和整体 reward，并在完整双层实验中与下层 oracle-guided 卸载形成互补。
 
 ## 第5章 下层学习式任务卸载方法
 
@@ -216,96 +211,88 @@
 
 ### 5.5 下层结果分析
 
-模板：
+实验结果表明，基于增强 oracle 的 `surrogate_baseline` 在基本保持 latency 和 DSR 的同时显著降低 MBS 依赖。相对 `heuristic_offloading`，`surrogate_baseline` 的 latency 仅增加约 0.0205%，DSR 下降约 0.70%，但 MBS ratio 降低约 44.16%，MBS load 降低约 41.97%。这说明 oracle-guided 标签能够把系统从过度依赖 MBS 的集中式处理引导到本地、协作和 MBS 混合分担。
 
-“实验结果表明，基于增强 oracle 的 `surrogate_baseline` 在基本保持 ______ 的同时显著降低 ______，说明 oracle-guided 标签能够把系统从过度依赖 MBS 的集中式处理引导到本地、协作和 MBS 混合分担。`rich_reduced_runtime_policy` 进一步降低 ______，但代价是 ______，因此本文将其作为更激进负载分散的消融策略。”
+`rich_reduced_runtime_policy` 进一步降低 MBS ratio 和 MBS load，但其 DSR 与能耗代价更明显。因此，本文将 `surrogate_baseline` 作为下层主策略，将 `rich_reduced_runtime_policy` 作为更激进负载分散的消融策略。
 
 ## 第6章 实验设计与结果分析
 
 ### 6.1 实验环境与参数设置
 
-这里后续补：
+默认仿真区域为 `700 m x 700 m`，系统包含 5 架 UAV、100 个 UE 和 1 个 MBS。每个 episode 包含 1000 个 time slots，每个 time slot 时长为 1 s。UAV 飞行高度为 100 m，最大速度为 15 m/s，覆盖半径为 100 m，感知范围为 460 m，最小 UAV 间距为 200 m。系统包含 25 类服务和 50 类内容文件，服务 deadline 在 `[0.65, 2.10] s` 范围内生成。
 
-- UAV 数量
-- UE 数量
-- 区域尺寸
-- 时间步长
-- 训练轮数
-- 测试轮数
-- 硬件环境
+主联合实验使用 10 个 workload seeds：`42, 84, 126, 168, 210, 252, 294, 336, 378, 420`。每个 seed 运行 6 个 episodes，统计单元为 seed-level episode mean，并报告 mean、std、95% CI、paired delta、paired t-test 和 Wilcoxon 检验。
 
 ### 6.2 上层轨迹控制筛选结果
 
-可插入：
-
-- 图：训练/测试曲线
-- 表：`attention_mappo` vs `uncoordinated_greedy`
-
-表格模板：
+数据来源：`results/full_runs/supplement_upper_multiseed/reports/upper_multiseed_statistics.md`。
 
 | 方法 | Deadline Satisfaction | Latency | Energy | Fairness |
 | --- | ---: | ---: | ---: | ---: |
-| attention_mappo | TBD | TBD | TBD | TBD |
-| uncoordinated_greedy | TBD | TBD | TBD | TBD |
+| `attention_mappo` | 43.02% | 1141829.30 | 113841059.59 | 0.9252 |
+| `uncoordinated_greedy` | 44.59% | 1087948.78 | 124741462.53 | 0.7716 |
+
+多 seed paired comparison 显示，attention-MAPPO 的 reward、energy 和 fairness 改善更稳定；latency 与 DSR 在该独立上层实验中不显著。因此，上层筛选结果主要用于支撑 attention-MAPPO 的协同控制和公平性优势，正式服务质量收益以四组联合消融为主证据。
 
 ### 6.3 下层卸载策略筛选结果
 
-表格模板 1：离线泛化
+下层分类器质量如下：
 
-| 策略 | IID Accuracy | IID Macro-F1 | Cross-scenario Accuracy | Cross-scenario Macro-F1 |
-| --- | ---: | ---: | ---: | ---: |
-| heuristic | - | - | - | - |
-| surrogate | TBD | TBD | TBD | TBD |
-| rich_reduced | TBD | TBD | TBD | TBD |
+| 指标 | 数值 |
+| --- | ---: |
+| Validation samples | 3600 |
+| Accuracy | 0.9447 |
+| Macro-F1 | 0.9448 |
+| ECE | 0.0224 |
+| Brier score | 0.0845 |
 
-表格模板 2：系统级表现
+下层在线系统级表现如下。数据来源：`results/full_offload_experiments/wpt_fix_thesis_run_offload/reports/runtime_offload_policy_statistics.md`。
 
 | 策略 | Latency | Deadline Satisfaction | MBS Load Ratio |
 | --- | ---: | ---: | ---: |
-| heuristic | TBD | TBD | TBD |
-| surrogate | TBD | TBD | TBD |
-| rich_reduced | TBD | TBD | TBD |
+| `heuristic_offloading` | 1477.33 | 24.64% | 8.41% |
+| `surrogate_baseline` | 1477.64 | 24.47% | 4.88% |
+| `rich_reduced_runtime_policy` | 1478.12 | 23.92% | 3.89% |
+
+`surrogate_baseline` 能够在 latency 和 DSR 变化较小的情况下显著降低 MBS load；`rich_reduced_runtime_policy` 的减负更激进，但 DSR 与能耗代价更明显。因此，后续联合实验采用 `surrogate_baseline` 对应的 oracle-guided runtime policy 作为下层主策略。
 
 ### 6.4 联合实验结果
 
-最终主实验至少展示四组：
+数据来源：
 
-- `uncoordinated_greedy + heuristic`
-- `attention_mappo + heuristic`
-- `uncoordinated_greedy + oracle_guided`
-- `attention_mappo + oracle_guided`
-
-表格模板：
+- `results/joint_experiments/joint_four_way_journal/joint_experiment_summary.json`
+- `results/joint_experiments/joint_four_way_journal/reports/joint_four_way_statistics_vs_uncoordinated_heuristic.md`
+- `results/joint_experiments/joint_four_way_journal/reports/joint_four_way_statistics_vs_attention_heuristic.md`
 
 | 组合方案 | Latency | Energy | Deadline Satisfaction | Fairness | MBS Load Ratio |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| uncoordinated_greedy + heuristic | TBD | TBD | TBD | TBD | TBD |
-| attention_mappo + heuristic | TBD | TBD | TBD | TBD | TBD |
-| uncoordinated_greedy + oracle_guided | TBD | TBD | TBD | TBD | TBD |
-| attention_mappo + oracle_guided | TBD | TBD | TBD | TBD | TBD |
+| `uncoordinated_greedy + heuristic` | 1147588.82 | 124688169.38 | 41.80% | 0.7585 | 9.43% |
+| `attention_mappo + heuristic` | 949043.86 | 116501996.54 | 52.89% | 0.9434 | 15.19% |
+| `uncoordinated_greedy + oracle_guided` | 1148210.60 | 108502049.08 | 41.72% | 0.7586 | 2.57% |
+| `attention_mappo + oracle_guided` | 947602.60 | 101925121.62 | 52.83% | 0.9461 | 4.73% |
 
-统计呈现要求：
+相对 `uncoordinated_greedy + heuristic`，完整方法 `attention_mappo + oracle_guided` 的 latency 降低 17.43%，energy 降低 18.26%，DSR 提升 11.02 个百分点，fairness 提升 0.1876，MBS load ratio 降低 49.90%。相对 `attention_mappo + heuristic`，完整方法在 reward 与 DSR 不显著下降的情况下，energy 降低 12.51%，MBS ratio 降低 69.86%，MBS load ratio 降低 68.87%。这说明上层 attention-MAPPO 主要提升协同轨迹控制和服务质量，下层 oracle-guided 卸载主要压缩 MBS fallback 依赖。
+
+统计协议：
 
 - 所有组合使用同一批 workload seeds、UE 地图和任务到达过程。
 - 对主要指标报告 mean ± std、95% CI、相对参考组的 paired delta。
 - 对 seed-wise paired comparison 报告 paired t-test；若分布不稳定，同时报告 Wilcoxon。
-- 对 DSR、MBS ratio、MBS load 等比例指标，至少给出 bootstrap CI；若后续保存请求级成功/总数，可补充 binomial CI。
+- 对 DSR、MBS ratio、MBS load 等比例指标，报告中保留 ratio metric note；当前统计单元为 seed-level mean。
 
 ### 6.5 结果讨论
 
-可以围绕三点展开：
+实验结果可以从三个层次理解：
 
-1. 上层轨迹控制是否显著影响下层策略效果
-2. oracle-guided 学习策略与启发式规则的差别
-3. 当前双层框架的优势与局限
+1. 上层 attention-MAPPO 主要影响 UAV 协同轨迹、覆盖公平性和服务质量。在四组联合消融中，仅替换上层控制器即可明显提升 reward、latency、DSR 和 fairness，但同时也会提高 MBS fallback 依赖。
+2. 下层 oracle-guided 学习策略主要改变请求去向。相对 heuristic，它显著减少 MBS ratio 和 MBS load，并将更多请求转移到 local 与 cooperative 执行路径。
+3. 完整双层方法的优势不是单纯刷新 reward，而是在保持上层服务质量收益的同时显著降低 energy 和 MBS load。这说明轨迹控制和请求级卸载在系统目标上具有互补性。
 
 ## 第7章 总结与展望
 
 ### 7.1 总结
 
-模板：
-
-本文围绕多无人机移动边缘计算中的轨迹控制与任务卸载问题，提出了一种双层协同优化框架。该框架在上层采用 ______ 进行 UAV 轨迹控制，在下层采用 ______ 进行请求级卸载决策。通过分阶段筛选实验与最终联合实验，验证了双层建模对刻画系统耦合关系的有效性。实验结果表明，______。因此，本文工作为多无人机 MEC 场景下轨迹控制与任务卸载的协同优化提供了一种可运行、可分析的研究范式。
+本文围绕多无人机移动边缘计算中的轨迹控制与任务卸载问题，提出了一种双层协同优化框架。该框架在上层采用 attention-MAPPO 进行 UAV 轨迹控制，在下层采用 oracle-guided request-level policy learning 进行请求级卸载决策。通过分阶段筛选实验与最终四组联合消融，本文验证了双层建模对刻画系统耦合关系的有效性。实验结果表明，上层 attention-MAPPO 能提升协同轨迹控制和服务质量，下层 oracle-guided 卸载能显著降低 MBS fallback 依赖；完整方法在保持上层 reward 与 DSR 收益的同时进一步降低 energy、MBS ratio 和 MBS load。因此，本文工作为多无人机 MEC 场景下轨迹控制与任务卸载的协同优化提供了一种可运行、可分析的研究范式。
 
 ### 7.2 展望
 
@@ -314,12 +301,11 @@
 - 引入更多动态场景和非模板分布测试
 - 将缓存、能量和轨迹进一步统一建模
 
-## 结果填写提醒
+## 已同步结果清单
 
-后续你跑完实验后，优先把下面这些位置补上：
+当前草稿已经同步以下正式结果：
 
-- 第4章上层筛选结果
-- 第5章下层筛选结果
-- 第6章联合实验表格
-- 摘要中的核心实验结论
-- 第7章总结中的结果句子
+- 第4章上层多训练 seed 稳健性结果
+- 第5章下层在线卸载策略结果
+- 第6章四组联合消融主表
+- 第7章总结中的核心实验结论
