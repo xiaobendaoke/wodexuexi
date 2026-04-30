@@ -1,4 +1,6 @@
-# 面向多无人机移动边缘计算的双层协同优化研究：轨迹控制与 Oracle-Guided 任务卸载
+# 面向多无人机移动边缘计算的双层协同优化研究：轨迹控制与 Constrained CQL-DQN 任务卸载
+
+> 当前代码已支持将下层从 `oracle-guided` 监督分类器升级为 `constrained CQL-DQN` 请求级卸载策略。旧的 oracle-guided classifier 仍保留为 imitation-learning baseline；若使用本文档中既有实验数值，需要注意这些数值主要来自升级前的 oracle-guided 下层实验，切换到 `attention_mappo__cql_dqn` 后应重新运行 paired seed 在线评估并同步更新表格和图。
 
 ## 摘要
 

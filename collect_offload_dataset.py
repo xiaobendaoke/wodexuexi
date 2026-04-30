@@ -52,6 +52,7 @@ from marl_models.offload_policy import (
     OFFLOAD_FEATURE_FAMILY_FULL,
     OFFLOAD_FEATURE_FAMILY_RICH_REDUCED,
     OFFLOAD_NUM_CLASSES,
+    OFFLOAD_LATENCY_RATIO_CLIP,
     OFFLOAD_TARGET_COOPERATIVE,
     OFFLOAD_TARGET_LOCAL,
     OFFLOAD_TARGET_MBS,
@@ -224,6 +225,264 @@ def _save_dataset(output_path: str | Path, recorder: OffloadDatasetRecorder, met
     metadata_path = output_file.with_suffix(".meta.json")
     metadata_path.write_text(json.dumps(final_metadata, indent=2, ensure_ascii=False), encoding="utf-8")
     # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+    return final_metadata
+
+
+def _legal_action_mask(cooperative_available: int | bool) -> np.ndarray:
+    mask = np.ones((OFFLOAD_NUM_CLASSES,), dtype=np.float32)
+    if not bool(cooperative_available):
+        mask[OFFLOAD_TARGET_COOPERATIVE] = 0.0
+    return mask
+
+
+def _compute_cql_reward(
+    *,
+    latencies: np.ndarray,
+    deadline: float,
+    local_queue_length: int,
+    cooperative_available: int | bool,
+    action: int,
+) -> float:
+    valid_action = bool(_legal_action_mask(cooperative_available)[int(action)] > 0.0)
+    latency = float(latencies[int(action)]) if valid_action else float("inf")
+    if not np.isfinite(latency):
+        latency_ratio = OFFLOAD_LATENCY_RATIO_CLIP
+    else:
+        latency_ratio = float(np.clip(latency / max(float(deadline), float(config.EPSILON)), 0.0, OFFLOAD_LATENCY_RATIO_CLIP))
+    deadline_violation = max(latency_ratio - 1.0, 0.0)
+    queue_pressure = float(np.clip(local_queue_length / max(float(config.MAX_ASSOCIATED_UES), 1.0), 0.0, 1.0))
+    reward = -latency_ratio
+    reward -= float(config.CQL_OFFLOAD_DEADLINE_WEIGHT) * deadline_violation
+    reward -= float(config.CQL_OFFLOAD_MBS_WEIGHT) * float(int(action) == OFFLOAD_TARGET_MBS)
+    reward -= float(config.CQL_OFFLOAD_QUEUE_WEIGHT) * queue_pressure
+    reward -= float(config.CQL_OFFLOAD_INVALID_ACTION_PENALTY) * float(not valid_action)
+    return float(reward)
+
+
+def _compute_action_costs(
+    *,
+    latencies: np.ndarray,
+    deadline: float,
+    local_queue_length: int,
+    cooperative_available: int | bool,
+    deadline_weight: float,
+    mbs_weight: float,
+    coop_weight: float,
+    queue_weight: float,
+    invalid_action_penalty: float,
+) -> np.ndarray:
+    costs = np.zeros((OFFLOAD_NUM_CLASSES,), dtype=np.float32)
+    mask = _legal_action_mask(cooperative_available)
+    queue_pressure = float(np.clip(local_queue_length / max(float(config.MAX_ASSOCIATED_UES), 1.0), 0.0, 1.0))
+    for action in range(OFFLOAD_NUM_CLASSES):
+        valid_action = bool(mask[action] > 0.0)
+        latency = float(latencies[action]) if valid_action else float("inf")
+        if not np.isfinite(latency):
+            latency_ratio = OFFLOAD_LATENCY_RATIO_CLIP
+        else:
+            latency_ratio = float(np.clip(latency / max(float(deadline), float(config.EPSILON)), 0.0, OFFLOAD_LATENCY_RATIO_CLIP))
+        deadline_violation = max(latency_ratio - 1.0, 0.0)
+        cost = latency_ratio
+        cost += float(deadline_weight) * deadline_violation
+        cost += float(mbs_weight) * float(action == OFFLOAD_TARGET_MBS)
+        cost += float(coop_weight) * float(action == OFFLOAD_TARGET_COOPERATIVE)
+        cost += float(queue_weight) * queue_pressure
+        cost += float(invalid_action_penalty) * float(not valid_action)
+        costs[action] = float(cost)
+    return costs
+
+
+def _build_radcc_quantile_targets(action_costs: np.ndarray, *, num_quantiles: int) -> np.ndarray:
+    quantile_levels = np.linspace(0.05, 0.95, int(num_quantiles), dtype=np.float32)
+    base_costs = np.asarray(action_costs, dtype=np.float32)
+    tail_spread = np.maximum(base_costs - 1.0, 0.0)
+    return base_costs[:, None] + tail_spread[:, None] * quantile_levels[None, :]
+
+
+def _save_radcc_cost_dataset(
+    output_path: str | Path,
+    recorder: OffloadDatasetRecorder,
+    metadata: dict[str, object],
+    *,
+    num_quantiles: int,
+    deadline_weight: float,
+    mbs_weight: float,
+    coop_weight: float,
+    queue_weight: float,
+    invalid_action_penalty: float,
+) -> dict[str, object]:
+    arrays = recorder.export()
+    states = np.asarray(arrays["features_rich_reduced"], dtype=np.float32)
+    sample_count = int(states.shape[0])
+    action_masks = np.asarray([_legal_action_mask(value) for value in arrays["cooperative_available"]], dtype=np.float32)
+    action_costs = np.zeros((sample_count, OFFLOAD_NUM_CLASSES), dtype=np.float32)
+    quantile_targets = np.zeros((sample_count, OFFLOAD_NUM_CLASSES, int(num_quantiles)), dtype=np.float32)
+    for idx in range(sample_count):
+        costs = _compute_action_costs(
+            latencies=np.asarray(arrays["raw_latencies"][idx], dtype=np.float32),
+            deadline=float(arrays["deadlines"][idx]),
+            local_queue_length=int(arrays["local_queue_lengths"][idx]),
+            cooperative_available=int(arrays["cooperative_available"][idx]),
+            deadline_weight=deadline_weight,
+            mbs_weight=mbs_weight,
+            coop_weight=coop_weight,
+            queue_weight=queue_weight,
+            invalid_action_penalty=invalid_action_penalty,
+        )
+        action_costs[idx] = costs
+        quantile_targets[idx] = _build_radcc_quantile_targets(costs, num_quantiles=num_quantiles)
+
+    dataset_metadata: dict[str, object] = {
+        **metadata,
+        "mode": "radcc_cost_mixed",
+        "feature_family": OFFLOAD_FEATURE_FAMILY_RICH_REDUCED,
+        "feature_specs": get_offload_feature_specs(OFFLOAD_FEATURE_FAMILY_RICH_REDUCED),
+        "num_quantiles": int(num_quantiles),
+        "cost_weights": {
+            "deadline": float(deadline_weight),
+            "mbs": float(mbs_weight),
+            "cooperative": float(coop_weight),
+            "queue": float(queue_weight),
+            "invalid_action": float(invalid_action_penalty),
+        },
+        "action_mapping": {str(idx): name for idx, name in enumerate(OFFLOAD_TARGET_NAMES)},
+        "notes": "RADCC cost dataset with per-action cost targets and risk-shaped quantile targets.",
+    }
+
+    output_file = Path(output_path)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(
+        output_file,
+        states=states,
+        action_costs=action_costs,
+        quantile_targets=quantile_targets,
+        action_masks=action_masks,
+        labels=np.asarray(arrays["labels"], dtype=np.int64),
+        raw_latencies=np.asarray(arrays["raw_latencies"], dtype=np.float32),
+        deadlines=np.asarray(arrays["deadlines"], dtype=np.float32),
+        cooperative_available=np.asarray(arrays["cooperative_available"], dtype=np.int64),
+        metadata=np.asarray(json.dumps(dataset_metadata, ensure_ascii=False)),
+    )
+    valid_costs = np.where(action_masks > 0.0, action_costs, np.nan)
+    final_metadata = {
+        **dataset_metadata,
+        "dataset_path": str(output_file),
+        "collected_samples": sample_count,
+        "state_dim": int(states.shape[1]) if states.ndim == 2 else 0,
+        "mean_valid_action_costs": {
+            OFFLOAD_TARGET_NAMES[idx]: float(np.nanmean(valid_costs[:, idx])) for idx in range(OFFLOAD_NUM_CLASSES)
+        },
+    }
+    output_file.with_suffix(".meta.json").write_text(json.dumps(final_metadata, indent=2, ensure_ascii=False), encoding="utf-8")
+    return final_metadata
+
+
+def _save_cql_transition_dataset(
+    output_path: str | Path,
+    recorder: OffloadDatasetRecorder,
+    metadata: dict[str, object],
+    *,
+    seed: int,
+    epsilon_random: float,
+    transition_horizon: int,
+) -> dict[str, object]:
+    arrays = recorder.export()
+    states = np.asarray(arrays["features_rich_reduced"], dtype=np.float32)
+    labels = np.asarray(arrays["labels"], dtype=np.int64)
+    sample_count = int(states.shape[0])
+    rng = np.random.default_rng(seed)
+
+    action_masks = np.asarray([_legal_action_mask(value) for value in arrays["cooperative_available"]], dtype=np.float32)
+    actions = np.zeros((sample_count,), dtype=np.int64)
+    rewards = np.zeros((sample_count,), dtype=np.float32)
+    behavior_sources: list[str] = []
+
+    for idx in range(sample_count):
+        legal_actions = np.flatnonzero(action_masks[idx] > 0.0)
+        if legal_actions.size == 0:
+            legal_actions = np.array([OFFLOAD_TARGET_LOCAL, OFFLOAD_TARGET_MBS], dtype=np.int64)
+        if rng.random() < epsilon_random:
+            action = int(rng.choice(legal_actions))
+            behavior_sources.append("epsilon_random")
+        else:
+            label = int(labels[idx])
+            action = label if label in legal_actions else int(legal_actions[0])
+            behavior_sources.append("oracle_label")
+        actions[idx] = action
+        rewards[idx] = _compute_cql_reward(
+            latencies=np.asarray(arrays["raw_latencies"][idx], dtype=np.float32),
+            deadline=float(arrays["deadlines"][idx]),
+            local_queue_length=int(arrays["local_queue_lengths"][idx]),
+            cooperative_available=int(arrays["cooperative_available"][idx]),
+            action=action,
+        )
+
+    next_states = np.zeros_like(states)
+    dones = np.ones((sample_count,), dtype=np.float32)
+    if sample_count > 1:
+        next_states[:-1] = states[1:]
+        next_states[-1] = states[-1]
+        dones[:-1] = 0.0
+        if transition_horizon > 0:
+            dones[np.arange(sample_count) % int(transition_horizon) == int(transition_horizon) - 1] = 1.0
+            next_states[dones > 0.0] = states[dones > 0.0]
+
+    behavior_source_names = np.asarray(["oracle_label", "epsilon_random"], dtype="<U32")
+    behavior_source_ids = np.asarray([0 if source == "oracle_label" else 1 for source in behavior_sources], dtype=np.int64)
+    transition_metadata: dict[str, object] = {
+        **metadata,
+        "mode": "cql_transition_mixed",
+        "feature_family": OFFLOAD_FEATURE_FAMILY_RICH_REDUCED,
+        "feature_specs": get_offload_feature_specs(OFFLOAD_FEATURE_FAMILY_RICH_REDUCED),
+        "reward_weights": {
+            "deadline": float(config.CQL_OFFLOAD_DEADLINE_WEIGHT),
+            "mbs": float(config.CQL_OFFLOAD_MBS_WEIGHT),
+            "queue": float(config.CQL_OFFLOAD_QUEUE_WEIGHT),
+            "invalid_action": float(config.CQL_OFFLOAD_INVALID_ACTION_PENALTY),
+        },
+        "gamma": float(config.CQL_OFFLOAD_GAMMA),
+        "cql_alpha": float(config.CQL_OFFLOAD_ALPHA),
+        "epsilon_random": float(epsilon_random),
+        "transition_horizon": int(transition_horizon),
+        "action_mapping": {str(idx): name for idx, name in enumerate(OFFLOAD_TARGET_NAMES)},
+        "notes": "CQL-DQN transition dataset built from request-level rich_reduced_features with legal action masks.",
+    }
+
+    output_file = Path(output_path)
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+    np.savez_compressed(
+        output_file,
+        states=states,
+        actions=actions,
+        rewards=rewards,
+        next_states=next_states,
+        dones=dones,
+        action_masks=action_masks,
+        labels=labels,
+        raw_latencies=np.asarray(arrays["raw_latencies"], dtype=np.float32),
+        deadlines=np.asarray(arrays["deadlines"], dtype=np.float32),
+        cooperative_available=np.asarray(arrays["cooperative_available"], dtype=np.int64),
+        behavior_source_ids=behavior_source_ids,
+        behavior_source_names=behavior_source_names,
+        metadata=np.asarray(json.dumps(transition_metadata, ensure_ascii=False)),
+    )
+
+    action_counts = np.bincount(actions, minlength=OFFLOAD_NUM_CLASSES)
+    behavior_counts = np.bincount(behavior_source_ids, minlength=2)
+    final_metadata = {
+        **transition_metadata,
+        "dataset_path": str(output_file),
+        "collected_transitions": sample_count,
+        "state_dim": int(states.shape[1]) if states.ndim == 2 else 0,
+        "action_counts": {OFFLOAD_TARGET_NAMES[idx]: int(action_counts[idx]) for idx in range(OFFLOAD_NUM_CLASSES)},
+        "behavior_counts": {
+            "oracle_label": int(behavior_counts[0]),
+            "epsilon_random": int(behavior_counts[1]),
+        },
+        "reward_mean": float(np.mean(rewards)) if rewards.size else 0.0,
+        "reward_std": float(np.std(rewards)) if rewards.size else 0.0,
+    }
+    output_file.with_suffix(".meta.json").write_text(json.dumps(final_metadata, indent=2, ensure_ascii=False), encoding="utf-8")
     return final_metadata
 
 
@@ -958,6 +1217,114 @@ def collect_rich_candidate_dataset(
     return _save_dataset(output_path, recorder, metadata)
 
 
+def collect_cql_transition_dataset(
+    *,
+    output_path: str | Path,
+    template_per_class_target: int = 2000,
+    template_max_attempts: int = 60000,
+    procedural_train_per_class: int = 1800,
+    seed: int = config.SEED,
+    label_mode: str = "enhanced_oracle",
+    epsilon_random: float = config.CQL_OFFLOAD_EPSILON_RANDOM,
+    transition_horizon: int = 1000,
+    deadline_weight: float | None = None,
+    mbs_weight: float | None = None,
+    queue_weight: float | None = None,
+    invalid_action_penalty: float | None = None,
+) -> dict[str, object]:
+    """Collect a masked offline-RL transition dataset for constrained CQL-DQN offloading."""
+
+    base_snapshot = snapshot_config()
+    if deadline_weight is not None:
+        config.CQL_OFFLOAD_DEADLINE_WEIGHT = float(deadline_weight)
+    if mbs_weight is not None:
+        config.CQL_OFFLOAD_MBS_WEIGHT = float(mbs_weight)
+    if queue_weight is not None:
+        config.CQL_OFFLOAD_QUEUE_WEIGHT = float(queue_weight)
+    if invalid_action_penalty is not None:
+        config.CQL_OFFLOAD_INVALID_ACTION_PENALTY = float(invalid_action_penalty)
+
+    recorder = OffloadDatasetRecorder(default_scenario_name="cql_transition_mixed", label_mode=label_mode)
+    try:
+        metadata: dict[str, object] = {
+            "label_mode": label_mode,
+            "source_contexts": "balanced template scenarios plus procedural raw-state contexts",
+            **_collect_multi_scenario_samples(
+                recorder,
+                per_class_target=template_per_class_target,
+                max_attempts=template_max_attempts,
+                seed=seed,
+                label_mode=label_mode,
+            ),
+            **_generate_procedural_contexts(
+                recorder,
+                split="train",
+                samples_per_class=procedural_train_per_class,
+                seed=seed + 101,
+                label_mode=label_mode,
+            ),
+        }
+        return _save_cql_transition_dataset(
+            output_path,
+            recorder,
+            metadata,
+            seed=seed + 211,
+            epsilon_random=epsilon_random,
+            transition_horizon=transition_horizon,
+        )
+    finally:
+        restore_config(base_snapshot)
+
+
+def collect_radcc_cost_dataset(
+    *,
+    output_path: str | Path,
+    template_per_class_target: int = 2000,
+    template_max_attempts: int = 60000,
+    procedural_train_per_class: int = 1800,
+    seed: int = config.SEED,
+    label_mode: str = "enhanced_oracle",
+    num_quantiles: int = config.RADCC_OFFLOAD_NUM_QUANTILES,
+    deadline_weight: float = config.RADCC_OFFLOAD_DEADLINE_WEIGHT,
+    mbs_weight: float = config.RADCC_OFFLOAD_MBS_WEIGHT,
+    coop_weight: float = config.RADCC_OFFLOAD_COOP_WEIGHT,
+    queue_weight: float = config.RADCC_OFFLOAD_QUEUE_WEIGHT,
+    invalid_action_penalty: float = config.RADCC_OFFLOAD_INVALID_ACTION_PENALTY,
+) -> dict[str, object]:
+    """Collect per-action cost targets for RADCC-Offload."""
+
+    recorder = OffloadDatasetRecorder(default_scenario_name="radcc_cost_mixed", label_mode=label_mode)
+    metadata: dict[str, object] = {
+        "label_mode": label_mode,
+        "source_contexts": "balanced template scenarios plus procedural raw-state contexts",
+        **_collect_multi_scenario_samples(
+            recorder,
+            per_class_target=template_per_class_target,
+            max_attempts=template_max_attempts,
+            seed=seed,
+            label_mode=label_mode,
+        ),
+        **_generate_procedural_contexts(
+            recorder,
+            split="train",
+            samples_per_class=procedural_train_per_class,
+            seed=seed + 101,
+            label_mode=label_mode,
+        ),
+    }
+    return _save_radcc_cost_dataset(
+        output_path,
+        recorder,
+        metadata,
+        num_quantiles=num_quantiles,
+        deadline_weight=deadline_weight,
+        mbs_weight=mbs_weight,
+        coop_weight=coop_weight,
+        queue_weight=queue_weight,
+        invalid_action_penalty=invalid_action_penalty,
+    )
+
+
 # 函数 collect_offload_dataset：任务卸载监督学习数据集或样本集合。
 def collect_offload_dataset(
     *,
@@ -970,6 +1337,18 @@ def collect_offload_dataset(
     max_attempts: int = 60000,
     procedural_train_per_class: int = 1800,
     label_mode: str = config.OFFLOAD_LABEL_MODE,
+    epsilon_random: float = config.CQL_OFFLOAD_EPSILON_RANDOM,
+    transition_horizon: int = 1000,
+    cql_deadline_weight: float | None = None,
+    cql_mbs_weight: float | None = None,
+    cql_queue_weight: float | None = None,
+    cql_invalid_action_penalty: float | None = None,
+    radcc_num_quantiles: int = config.RADCC_OFFLOAD_NUM_QUANTILES,
+    radcc_deadline_weight: float = config.RADCC_OFFLOAD_DEADLINE_WEIGHT,
+    radcc_mbs_weight: float = config.RADCC_OFFLOAD_MBS_WEIGHT,
+    radcc_coop_weight: float = config.RADCC_OFFLOAD_COOP_WEIGHT,
+    radcc_queue_weight: float = config.RADCC_OFFLOAD_QUEUE_WEIGHT,
+    radcc_invalid_action_penalty: float = config.RADCC_OFFLOAD_INVALID_ACTION_PENALTY,
 ) -> dict[str, object]:
     # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if mode == "random_rollout":
@@ -1002,6 +1381,36 @@ def collect_offload_dataset(
             seed=seed,
             label_mode=label_mode,
         )
+    if mode == "cql_transition_mixed":
+        return collect_cql_transition_dataset(
+            output_path=output_path,
+            template_per_class_target=per_class_target,
+            template_max_attempts=max_attempts,
+            procedural_train_per_class=procedural_train_per_class,
+            seed=seed,
+            label_mode=label_mode,
+            epsilon_random=epsilon_random,
+            transition_horizon=transition_horizon,
+            deadline_weight=cql_deadline_weight,
+            mbs_weight=cql_mbs_weight,
+            queue_weight=cql_queue_weight,
+            invalid_action_penalty=cql_invalid_action_penalty,
+        )
+    if mode == "radcc_cost_mixed":
+        return collect_radcc_cost_dataset(
+            output_path=output_path,
+            template_per_class_target=per_class_target,
+            template_max_attempts=max_attempts,
+            procedural_train_per_class=procedural_train_per_class,
+            seed=seed,
+            label_mode=label_mode,
+            num_quantiles=radcc_num_quantiles,
+            deadline_weight=radcc_deadline_weight,
+            mbs_weight=radcc_mbs_weight,
+            coop_weight=radcc_coop_weight,
+            queue_weight=radcc_queue_weight,
+            invalid_action_penalty=radcc_invalid_action_penalty,
+        )
     # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
     raise ValueError(f"Unsupported collection mode: {mode}")
 
@@ -1010,13 +1419,25 @@ def collect_offload_dataset(
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Collect request-level service offloading imitation data.")
     parser.add_argument("--output", type=str, default="offload_datasets/offload_dataset_minimal.npz", help="Path to the dataset .npz file.")
-    parser.add_argument("--mode", type=str, default="random_rollout", choices=["random_rollout", "scenario_mixed", "rich_candidate_mixed"], help="Collection mode.")
+    parser.add_argument("--mode", type=str, default="random_rollout", choices=["random_rollout", "scenario_mixed", "rich_candidate_mixed", "cql_transition_mixed", "radcc_cost_mixed"], help="Collection mode.")
     parser.add_argument("--samples", type=int, default=5000, help="Target number of service-request samples for random rollout mode.")
     parser.add_argument("--max_steps", type=int, default=20000, help="Maximum environment steps for random rollout mode.")
     parser.add_argument("--per_class_target", type=int, default=2000, help="Target number of samples per class for scenario-mixed mode.")
     parser.add_argument("--max_attempts", type=int, default=60000, help="Maximum synthetic sampling attempts for scenario-mixed mode.")
     parser.add_argument("--procedural_train_per_class", type=int, default=1800, help="Samples per class from procedural raw-state generation for rich_candidate_mixed mode.")
     parser.add_argument("--label_mode", type=str, default=config.OFFLOAD_LABEL_MODE, choices=["heuristic", "enhanced_oracle"], help="Label generator for supervised offload training.")
+    parser.add_argument("--epsilon_random", type=float, default=config.CQL_OFFLOAD_EPSILON_RANDOM, help="Legal random-action rate for CQL behavior policy.")
+    parser.add_argument("--transition_horizon", type=int, default=1000, help="Synthetic episode horizon for CQL done flags.")
+    parser.add_argument("--cql_deadline_weight", type=float, default=None, help="Override CQL deadline violation reward weight.")
+    parser.add_argument("--cql_mbs_weight", type=float, default=None, help="Override CQL MBS action reward penalty.")
+    parser.add_argument("--cql_queue_weight", type=float, default=None, help="Override CQL queue pressure reward penalty.")
+    parser.add_argument("--cql_invalid_action_penalty", type=float, default=None, help="Override CQL invalid action penalty.")
+    parser.add_argument("--radcc_num_quantiles", type=int, default=config.RADCC_OFFLOAD_NUM_QUANTILES, help="Number of RADCC cost quantiles.")
+    parser.add_argument("--radcc_deadline_weight", type=float, default=config.RADCC_OFFLOAD_DEADLINE_WEIGHT, help="RADCC deadline violation cost weight.")
+    parser.add_argument("--radcc_mbs_weight", type=float, default=config.RADCC_OFFLOAD_MBS_WEIGHT, help="RADCC MBS action cost weight.")
+    parser.add_argument("--radcc_coop_weight", type=float, default=config.RADCC_OFFLOAD_COOP_WEIGHT, help="RADCC cooperative action cost weight.")
+    parser.add_argument("--radcc_queue_weight", type=float, default=config.RADCC_OFFLOAD_QUEUE_WEIGHT, help="RADCC queue pressure cost weight.")
+    parser.add_argument("--radcc_invalid_action_penalty", type=float, default=config.RADCC_OFFLOAD_INVALID_ACTION_PENALTY, help="RADCC invalid action cost penalty.")
     parser.add_argument("--seed", type=int, default=config.SEED, help="Random seed for dataset collection.")
     # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return parser.parse_args()
@@ -1035,6 +1456,18 @@ def main() -> None:
         max_attempts=args.max_attempts,
         procedural_train_per_class=args.procedural_train_per_class,
         label_mode=args.label_mode,
+        epsilon_random=args.epsilon_random,
+        transition_horizon=args.transition_horizon,
+        cql_deadline_weight=args.cql_deadline_weight,
+        cql_mbs_weight=args.cql_mbs_weight,
+        cql_queue_weight=args.cql_queue_weight,
+        cql_invalid_action_penalty=args.cql_invalid_action_penalty,
+        radcc_num_quantiles=args.radcc_num_quantiles,
+        radcc_deadline_weight=args.radcc_deadline_weight,
+        radcc_mbs_weight=args.radcc_mbs_weight,
+        radcc_coop_weight=args.radcc_coop_weight,
+        radcc_queue_weight=args.radcc_queue_weight,
+        radcc_invalid_action_penalty=args.radcc_invalid_action_penalty,
     )
     print(json.dumps(metadata, indent=2, ensure_ascii=False))
 

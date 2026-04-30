@@ -209,6 +209,12 @@ def set_runtime_policy(policy_mode: str, checkpoint_path: str | None) -> None:
     elif policy_mode == "learned":
         config.SERVICE_OFFLOAD_POLICY = "learned"
         config.SERVICE_OFFLOAD_POLICY_CHECKPOINT = checkpoint_path
+    elif policy_mode == "cql":
+        config.SERVICE_OFFLOAD_POLICY = "cql"
+        config.SERVICE_OFFLOAD_POLICY_CHECKPOINT = checkpoint_path
+    elif policy_mode == "radcc":
+        config.SERVICE_OFFLOAD_POLICY = "radcc"
+        config.SERVICE_OFFLOAD_POLICY_CHECKPOINT = checkpoint_path
     else:
         # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise ValueError(f"Unsupported runtime policy mode: {policy_mode}")
@@ -237,6 +243,7 @@ def run_policy_for_seed(
     *,
     scenario: RuntimeScenario,
     policy_label: str,
+    policy_mode: str,
     checkpoint_path: str | None,
     base_snapshot: dict[str, object],
     seed: int,
@@ -248,7 +255,7 @@ def run_policy_for_seed(
     # 循环处理：遍历 episode_idx 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
     for episode_idx in range(episodes_per_seed):
         apply_runtime_scenario(scenario, base_snapshot)
-        set_runtime_policy("heuristic" if checkpoint_path is None else "learned", checkpoint_path)
+        set_runtime_policy(policy_mode, checkpoint_path)
 
         run_seed = int(seed + episode_idx * 1000)
         np.random.seed(run_seed)
@@ -288,6 +295,8 @@ def compare_runtime_offload_policies(
     *,
     surrogate_checkpoint: str | Path,
     rich_reduced_checkpoint: str | Path,
+    cql_checkpoint: str | Path | None = None,
+    radcc_checkpoint: str | Path | None = None,
     seeds: list[int],
     episodes_per_seed: int,
     steps_per_episode: int,
@@ -295,11 +304,15 @@ def compare_runtime_offload_policies(
 ) -> dict[str, object]:
     base_snapshot = snapshot_config()
     scenarios = build_runtime_scenarios()
-    policy_specs = {
-        "heuristic_offloading": None,
-        "surrogate_baseline": str(surrogate_checkpoint),
-        "rich_reduced_runtime_policy": str(rich_reduced_checkpoint),
+    policy_specs: dict[str, tuple[str, str | None]] = {
+        "heuristic_offloading": ("heuristic", None),
+        "surrogate_baseline": ("learned", str(surrogate_checkpoint)),
+        "rich_reduced_runtime_policy": ("learned", str(rich_reduced_checkpoint)),
     }
+    if cql_checkpoint is not None:
+        policy_specs["cql_dqn_offloading"] = ("cql", str(cql_checkpoint))
+    if radcc_checkpoint is not None:
+        policy_specs["radcc_offloading"] = ("radcc", str(radcc_checkpoint))
 
     scenario_results: dict[str, dict[str, object]] = {}
     overall_seed_summaries: dict[str, list[dict[str, float]]] = {policy_name: [] for policy_name in policy_specs}
@@ -310,7 +323,7 @@ def compare_runtime_offload_policies(
         for scenario in scenarios:
             scenario_policy_results: dict[str, object] = {}
             # 循环处理：遍历 (policy_name, checkpoint_path) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
-            for policy_name, checkpoint_path in policy_specs.items():
+            for policy_name, (policy_mode, checkpoint_path) in policy_specs.items():
                 per_seed_runs: list[dict[str, object]] = []
                 per_seed_means: list[dict[str, float]] = []
                 # 循环处理：遍历 seed 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
@@ -318,6 +331,7 @@ def compare_runtime_offload_policies(
                     run_result = run_policy_for_seed(
                         scenario=scenario,
                         policy_label=policy_name,
+                        policy_mode=policy_mode,
                         checkpoint_path=checkpoint_path,
                         base_snapshot=base_snapshot,
                         seed=seed,
@@ -344,8 +358,9 @@ def compare_runtime_offload_policies(
 
     delta_vs_heuristic: dict[str, dict[str, object]] = {}
     heuristic_seed_units = overall_seed_summaries["heuristic_offloading"]
+    comparison_policy_names = [policy_name for policy_name in policy_specs if policy_name != "heuristic_offloading"]
     # 循环处理：遍历 policy_name 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
-    for policy_name in ("surrogate_baseline", "rich_reduced_runtime_policy"):
+    for policy_name in comparison_policy_names:
         policy_seed_units = overall_seed_summaries[policy_name]
         delta_vs_heuristic[policy_name] = {
             metric_name: {
@@ -371,7 +386,7 @@ def compare_runtime_offload_policies(
 
     scenario_wins: dict[str, dict[str, int]] = {}
     # 循环处理：遍历 policy_name 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
-    for policy_name in ("surrogate_baseline", "rich_reduced_runtime_policy"):
+    for policy_name in comparison_policy_names:
         latency_wins = 0
         energy_wins = 0
         deadline_wins = 0
@@ -400,6 +415,8 @@ def compare_runtime_offload_policies(
         "metadata": {
             "surrogate_checkpoint": str(surrogate_checkpoint),
             "rich_reduced_checkpoint": str(rich_reduced_checkpoint),
+            "cql_checkpoint": str(cql_checkpoint) if cql_checkpoint is not None else None,
+            "radcc_checkpoint": str(radcc_checkpoint) if radcc_checkpoint is not None else None,
             "seeds": seeds,
             "episodes_per_seed": episodes_per_seed,
             "steps_per_episode": steps_per_episode,
@@ -422,9 +439,11 @@ def compare_runtime_offload_policies(
 
 # 函数 parse_args：解析命令行参数，并为实验脚本提供可覆盖的默认配置。
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Compare heuristic, surrogate, and rich reduced runtime offloading policies.")
+    parser = argparse.ArgumentParser(description="Compare heuristic, learned classifier, and CQL-DQN runtime offloading policies.")
     parser.add_argument("--surrogate_checkpoint", type=str, required=True, help="Full-feature surrogate checkpoint.")
     parser.add_argument("--rich_checkpoint", type=str, required=True, help="Rich reduced runtime checkpoint.")
+    parser.add_argument("--cql_checkpoint", type=str, default=None, help="Optional constrained CQL-DQN checkpoint.")
+    parser.add_argument("--radcc_checkpoint", type=str, default=None, help="Optional RADCC-Offload checkpoint.")
     parser.add_argument(
         "--output",
         type=str,
@@ -444,6 +463,8 @@ def main() -> None:
     report = compare_runtime_offload_policies(
         surrogate_checkpoint=args.surrogate_checkpoint,
         rich_reduced_checkpoint=args.rich_checkpoint,
+        cql_checkpoint=args.cql_checkpoint,
+        radcc_checkpoint=args.radcc_checkpoint,
         seeds=[int(seed) for seed in args.seeds],
         episodes_per_seed=args.episodes_per_seed,
         steps_per_episode=args.steps_per_episode,

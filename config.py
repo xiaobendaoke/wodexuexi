@@ -162,9 +162,29 @@ OFFLOAD_ORACLE_QUEUE_WEIGHT: float = 0.06
 # 关键变量 OFFLOAD_ORACLE_COOP_QUEUE_RELIEF_BONUS：用户设备对象，产生任务请求并等待服务。
 OFFLOAD_ORACLE_COOP_QUEUE_RELIEF_BONUS: float = 0.02
 # Default to heuristic so old configs and baselines retain the original behavior unless explicitly switched.
-SERVICE_OFFLOAD_POLICY: str = "heuristic"  # options: "heuristic", "learned"
+SERVICE_OFFLOAD_POLICY: str = "heuristic"  # options: "heuristic", "learned", "cql", "radcc"
 # 关键变量 SERVICE_OFFLOAD_POLICY_CHECKPOINT：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 SERVICE_OFFLOAD_POLICY_CHECKPOINT: str | None = None  # checkpoint for the standalone request-level classifier
+
+# Constrained CQL-DQN lower-layer offloading defaults.
+CQL_OFFLOAD_DEADLINE_WEIGHT: float = 3.0
+CQL_OFFLOAD_MBS_WEIGHT: float = 0.15
+CQL_OFFLOAD_QUEUE_WEIGHT: float = 0.05
+CQL_OFFLOAD_INVALID_ACTION_PENALTY: float = 5.0
+CQL_OFFLOAD_GAMMA: float = 0.95
+CQL_OFFLOAD_ALPHA: float = 1.0
+CQL_OFFLOAD_EPSILON_RANDOM: float = 0.15
+CQL_OFFLOAD_TARGET_UPDATE_FREQ: int = 100
+
+# Risk-aware distributional cost critic lower-layer offloading defaults.
+RADCC_OFFLOAD_DEADLINE_WEIGHT: float = 5.0
+RADCC_OFFLOAD_MBS_WEIGHT: float = 0.08
+RADCC_OFFLOAD_COOP_WEIGHT: float = 0.05
+RADCC_OFFLOAD_QUEUE_WEIGHT: float = 0.05
+RADCC_OFFLOAD_INVALID_ACTION_PENALTY: float = 5.0
+RADCC_OFFLOAD_RISK_BETA: float = 0.35
+RADCC_OFFLOAD_CVAR_ALPHA: float = 0.80
+RADCC_OFFLOAD_NUM_QUANTILES: int = 16
 
 # Caching Parameters
 T_CACHE_UPDATE_INTERVAL: int = 50  # T_cache
