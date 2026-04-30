@@ -215,6 +215,9 @@ def set_runtime_policy(policy_mode: str, checkpoint_path: str | None) -> None:
     elif policy_mode == "radcc":
         config.SERVICE_OFFLOAD_POLICY = "radcc"
         config.SERVICE_OFFLOAD_POLICY_CHECKPOINT = checkpoint_path
+    elif policy_mode == "sc_ogo":
+        config.SERVICE_OFFLOAD_POLICY = "sc_ogo"
+        config.SERVICE_OFFLOAD_POLICY_CHECKPOINT = checkpoint_path
     else:
         # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise ValueError(f"Unsupported runtime policy mode: {policy_mode}")
@@ -297,6 +300,7 @@ def compare_runtime_offload_policies(
     rich_reduced_checkpoint: str | Path,
     cql_checkpoint: str | Path | None = None,
     radcc_checkpoint: str | Path | None = None,
+    sc_ogo_checkpoint: str | Path | None = None,
     seeds: list[int],
     episodes_per_seed: int,
     steps_per_episode: int,
@@ -313,6 +317,8 @@ def compare_runtime_offload_policies(
         policy_specs["cql_dqn_offloading"] = ("cql", str(cql_checkpoint))
     if radcc_checkpoint is not None:
         policy_specs["radcc_offloading"] = ("radcc", str(radcc_checkpoint))
+    if sc_ogo_checkpoint is not None:
+        policy_specs["sc_ogo_offloading"] = ("sc_ogo", str(sc_ogo_checkpoint))
 
     scenario_results: dict[str, dict[str, object]] = {}
     overall_seed_summaries: dict[str, list[dict[str, float]]] = {policy_name: [] for policy_name in policy_specs}
@@ -417,6 +423,7 @@ def compare_runtime_offload_policies(
             "rich_reduced_checkpoint": str(rich_reduced_checkpoint),
             "cql_checkpoint": str(cql_checkpoint) if cql_checkpoint is not None else None,
             "radcc_checkpoint": str(radcc_checkpoint) if radcc_checkpoint is not None else None,
+            "sc_ogo_checkpoint": str(sc_ogo_checkpoint) if sc_ogo_checkpoint is not None else None,
             "seeds": seeds,
             "episodes_per_seed": episodes_per_seed,
             "steps_per_episode": steps_per_episode,
@@ -444,6 +451,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--rich_checkpoint", type=str, required=True, help="Rich reduced runtime checkpoint.")
     parser.add_argument("--cql_checkpoint", type=str, default=None, help="Optional constrained CQL-DQN checkpoint.")
     parser.add_argument("--radcc_checkpoint", type=str, default=None, help="Optional RADCC-Offload checkpoint.")
+    parser.add_argument("--sc_ogo_checkpoint", type=str, default=None, help="Optional SC-OGO surrogate checkpoint.")
     parser.add_argument(
         "--output",
         type=str,
@@ -465,6 +473,7 @@ def main() -> None:
         rich_reduced_checkpoint=args.rich_checkpoint,
         cql_checkpoint=args.cql_checkpoint,
         radcc_checkpoint=args.radcc_checkpoint,
+        sc_ogo_checkpoint=args.sc_ogo_checkpoint,
         seeds=[int(seed) for seed in args.seeds],
         episodes_per_seed=args.episodes_per_seed,
         steps_per_episode=args.steps_per_episode,

@@ -162,7 +162,7 @@ OFFLOAD_ORACLE_QUEUE_WEIGHT: float = 0.06
 # 关键变量 OFFLOAD_ORACLE_COOP_QUEUE_RELIEF_BONUS：用户设备对象，产生任务请求并等待服务。
 OFFLOAD_ORACLE_COOP_QUEUE_RELIEF_BONUS: float = 0.02
 # Default to heuristic so old configs and baselines retain the original behavior unless explicitly switched.
-SERVICE_OFFLOAD_POLICY: str = "heuristic"  # options: "heuristic", "learned", "cql", "radcc"
+SERVICE_OFFLOAD_POLICY: str = "heuristic"  # options: "heuristic", "learned", "cql", "radcc", "sc_ogo"
 # 关键变量 SERVICE_OFFLOAD_POLICY_CHECKPOINT：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 SERVICE_OFFLOAD_POLICY_CHECKPOINT: str | None = None  # checkpoint for the standalone request-level classifier
 
@@ -185,6 +185,16 @@ RADCC_OFFLOAD_INVALID_ACTION_PENALTY: float = 5.0
 RADCC_OFFLOAD_RISK_BETA: float = 0.35
 RADCC_OFFLOAD_CVAR_ALPHA: float = 0.80
 RADCC_OFFLOAD_NUM_QUANTILES: int = 16
+
+# Safety-constrained oracle-guided surrogate offloading defaults.
+SC_OGO_DEADLINE_WEIGHT: float = 3.0
+SC_OGO_MARGIN_WEIGHT: float = 0.45
+SC_OGO_DEADLINE_MARGIN: float = 0.90
+SC_OGO_MBS_WEIGHT: float = 0.08
+SC_OGO_QUEUE_WEIGHT: float = 0.04
+SC_OGO_COOP_WEIGHT: float = 0.04
+SC_OGO_RERANK_TOLERANCE: float = 0.02
+SC_OGO_HARD_DEADLINE_RATIO: float = 1.0
 
 # Caching Parameters
 T_CACHE_UPDATE_INTERVAL: int = 50  # T_cache

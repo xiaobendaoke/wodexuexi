@@ -1,16 +1,16 @@
-# 面向多无人机移动边缘计算的双层协同优化研究：轨迹控制与 Constrained CQL-DQN 任务卸载
+# 面向多无人机移动边缘计算的双层协同优化研究：轨迹控制与 SC-OGO 请求级任务卸载
 
-> 当前代码已支持将下层从 `oracle-guided` 监督分类器升级为 `constrained CQL-DQN` 请求级卸载策略。旧的 oracle-guided classifier 仍保留为 imitation-learning baseline；若使用本文档中既有实验数值，需要注意这些数值主要来自升级前的 oracle-guided 下层实验，切换到 `attention_mappo__cql_dqn` 后应重新运行 paired seed 在线评估并同步更新表格和图。
+> 当前代码已支持多种下层请求级卸载策略：`heuristic`、`learned`、`cql`、`radcc` 和 `sc_ogo`。最新实验表明，Constrained CQL-DQN 与 RADCC-Offload 能降低部分 MBS load，但会带来较明显 DSR 损失或能耗代价；更适合作为主方法的是 **SC-OGO（Safety-Constrained Oracle-Guided Offloading）**：它在 oracle-guided surrogate classifier 之后加入安全约束重排序，在基本守住 DSR 的同时降低 MBS load、MBS ratio 和能耗。最新组件消融进一步表明，MBS fallback penalty 是 MBS 依赖压缩的主要来源；尺度泛化实验显示 SC-OGO 在 12 组 UAV/UE/热点/backhaul 变化场景中均能降低 MBS ratio 和 MBS load。旧的 oracle-guided classifier 仍保留为 imitation-learning baseline，CQL-DQN 和 RADCC 可作为深度强化学习探索性对照或消融方法。
 
 ## 摘要
 
 多无人机辅助移动边缘计算（multi-UAV assisted mobile edge computing, multi-UAV MEC）通过在空中部署具备通信、计算、缓存和移动能力的无人机节点，能够为热点区域通信、临时网络部署、灾害应急保障和边缘智能服务提供灵活支撑。与固定基站或固定边缘服务器相比，无人机节点可以根据地面用户分布和业务压力动态调整位置，从而改善覆盖质量、缩短接入距离并提升边缘服务能力。然而，多无人机 MEC 系统中的轨迹控制、用户覆盖、服务缓存、任务卸载、协作链路、计算队列和宏基站（macro base station, MBS）回退负载存在强耦合关系。若将所有决策统一建模为单层端到端联合优化问题，动作空间会随无人机数量、用户数量和请求数量快速扩大，在线决策复杂度和训练难度显著增加；若仅优化无人机轨迹或仅优化任务卸载，又难以刻画二者之间的动态反馈。
 
-针对上述问题，本文构建一种面向多无人机 MEC 的双层协同优化框架。上层采用 attention-MAPPO 学习多无人机轨迹与协同控制策略，使每架无人机能够根据自身位置、邻居无人机、关联用户、请求状态和服务压力调整运动方向与移动距离。下层采用 oracle-guided request-level offloading policy，在每个服务请求到达或被处理时，从本地无人机执行、协作无人机执行和 MBS 回退执行三类候选路径中选择服务执行位置。下层标签由增强 oracle 生成，其代价函数同时考虑候选路径时延、deadline 违约惩罚、本地队列压力、MBS fallback 代理惩罚和协作队列缓解收益；在线推理阶段则仅使用当前请求上下文，不使用未来请求、未来轨迹或未来链路信息。
+针对上述问题，本文构建一种面向多无人机 MEC 的双层协同优化框架。上层采用 attention-MAPPO 学习多无人机轨迹与协同控制策略，使每架无人机能够根据自身位置、邻居无人机、关联用户、请求状态和服务压力调整运动方向与移动距离。下层采用 SC-OGO request-level offloading policy，在每个服务请求到达或被处理时，从本地无人机执行、协作无人机执行和 MBS 回退执行三类候选路径中选择服务执行位置。SC-OGO 以 oracle-guided surrogate classifier 为基础，先由增强 oracle 监督训练轻量分类器，再在在线推理阶段根据 deadline safety margin、MBS fallback 代价、队列压力和协作可用性进行安全约束重排序。该方法仅使用当前请求上下文，不使用未来请求、未来轨迹或未来链路信息。
 
-基于正式四组端到端联合消融实验，完整方法 `attention_mappo__oracle_guided` 相比强基线 `uncoordinated_greedy__heuristic` 的 reward 提升 212.4，latency 降低 17.43%，energy 降低 18.26%，deadline satisfaction rate（DSR）提升 11.02 个百分点，fairness 提升 0.1876，MBS ratio 降低 57.88%，MBS load ratio 降低 49.90%。相比仅采用上层学习控制器的 `attention_mappo__heuristic`，完整方法在 reward 和 DSR 不显著下降的情况下，energy 进一步降低 12.51%，MBS ratio 降低 69.86%，MBS load ratio 降低 68.87%。实验结果表明，上层 attention-MAPPO 主要提升多无人机协同轨迹控制、覆盖公平性和服务质量；下层 oracle-guided 卸载主要压缩 MBS fallback 依赖；完整双层方法的核心价值在于保持上层服务质量收益的同时显著降低中心节点负载和系统能耗。
+基于正式四组端到端联合消融实验，完整方法 `attention_mappo__oracle_guided` 相比强基线 `uncoordinated_greedy__heuristic` 的 reward 提升 212.4，latency 降低 17.43%，energy 降低 18.26%，deadline satisfaction rate（DSR）提升 11.02 个百分点，fairness 提升 0.1876，MBS ratio 降低 57.88%，MBS load ratio 降低 49.90%。在最新下层在线对比中，`sc_ogo_offloading` 相比 `heuristic_offloading` 的 DSR 基本不下降（+0.002 个百分点），同时 MBS load ratio 降低 1.275 个百分点、MBS ratio 降低 4.946 个百分点、energy 降低 2843.78。进一步的组件消融显示，移除 MBS fallback penalty 后 SC-OGO 的 MBS ratio 和 MBS load 优势基本消失；尺度泛化结果显示，SC-OGO 在 12 组规模与 backhaul 条件变化中均降低 MBS load，平均 DSR 变化仅约 -0.011 个百分点。相比 CQL-DQN 和 RADCC-Offload，SC-OGO 更符合“守住 DSR，降低 MBS load”的论文主目标。因此，本文建议将 `attention_mappo__sc_ogo` 作为后续主方法口径，将 oracle-guided surrogate classifier 作为 imitation baseline，将 CQL-DQN 和 RADCC 作为探索性深度学习对照。
 
-**关键词**：多无人机；移动边缘计算；双层协同优化；多智能体强化学习；attention-MAPPO；任务卸载；oracle-guided policy learning
+**关键词**：多无人机；移动边缘计算；双层协同优化；多智能体强化学习；attention-MAPPO；任务卸载；SC-OGO；oracle-guided policy learning
 
 ## 第1章 绪论
 
@@ -56,11 +56,11 @@ UAV-MEC 相关研究通常围绕以下几条主线展开。
 
 2. 设计基于 attention-MAPPO 的上层多智能体轨迹控制器。每架 UAV 根据自身状态、邻居 UAV 信息、关联 UE 请求状态和缓存状态输出二维连续移动动作；注意力模块用于建模 UAV 间关系和服务压力差异。
 
-3. 设计 oracle-guided request-level offloading policy。下层卸载器将每个服务请求建模为 local、cooperative 和 MBS 三分类问题，利用增强 oracle 生成训练标签，在线阶段由轻量分类模型近似 oracle 决策。
+3. 设计 SC-OGO request-level offloading policy。下层卸载器将每个服务请求建模为 local、cooperative 和 MBS 三分类问题，利用增强 oracle 生成训练标签，在线阶段先由轻量分类模型近似 oracle 决策，再通过安全约束代价对候选动作进行重排序。
 
-4. 在增强 oracle 中引入 deadline 违约惩罚、MBS fallback 代理惩罚、本地队列压力和协作队列缓解收益，使下层策略不只是复制最小时延规则，而是学习更符合系统目标的负载分散策略。
+4. 在增强 oracle 与 SC-OGO 重排序中引入 deadline 违约惩罚、deadline margin、本地队列压力、MBS fallback 代理惩罚和协作执行代价，使下层策略不只是复制最小时延规则，而是在守住 DSR 的前提下学习更符合系统目标的负载分散策略。
 
-5. 通过上层多训练 seed 稳健性实验、下层在线运行实验、下层分类质量分析、MBS penalty 敏感性扫描和正式四组端到端联合消融验证方法有效性，并使用同 seed paired comparison、95% CI、paired t-test 与 Wilcoxon 检验增强实验可信度。
+5. 通过上层多训练 seed 稳健性实验、下层在线运行实验、SC-OGO 组件消融、尺度泛化实验、复杂度部署分析和正式四组端到端联合消融验证方法有效性，并使用同 seed paired comparison、95% CI、paired t-test 与 Wilcoxon 检验增强实验可信度。
 
 ## 第2章 系统模型与问题建模
 
@@ -366,7 +366,7 @@ $$
 y_i\in\{\mathrm{local},\mathrm{coop},\mathrm{mbs}\}.
 $$
 
-因此，上层强化学习可以专注于多 UAV 协同覆盖和移动控制，下层监督学习可以专注于 local、cooperative 和 MBS 三类执行路径之间的细粒度权衡。
+因此，上层强化学习可以专注于多 UAV 协同覆盖和移动控制，下层请求级策略可以专注于 local、cooperative 和 MBS 三类执行路径之间的细粒度权衡。本文最新实现中，下层主策略采用 SC-OGO：先使用 oracle-guided surrogate classifier 给出候选卸载动作，再通过安全约束代价函数检查该动作是否会引入明显 deadline 风险或不必要的 MBS fallback。
 
 ### 3.3 在线执行流程
 
@@ -375,7 +375,7 @@ $$
 1. 环境收集当前 UAV 位置、UE 位置、缓存状态、请求状态、邻居 UAV 信息和电量状态。
 2. 上层 attention-MAPPO 根据每架 UAV 的局部观测输出二维移动动作。
 3. 环境更新 UAV 位置、覆盖关系、邻居关系和链路状态。
-4. 当服务请求需要处理时，下层 oracle-guided offloading policy 根据当前请求上下文输出执行位置。
+4. 当服务请求需要处理时，下层 SC-OGO offloading policy 根据当前请求上下文输出执行位置；若 surrogate 预测动作不安全或代价明显高于其他合法动作，则使用安全约束重排序后的动作。
 5. 环境根据执行路径计算通信时延、计算时延、队列压力、能耗和 deadline 是否满足。
 6. 系统记录 reward、latency、energy、DSR、fairness、请求去向比例和 MBS load。
 
@@ -505,7 +505,7 @@ $$
 
 不过，仅优化轨迹并不必然降低 MBS 依赖。正式联合实验中，`attention_mappo__heuristic` 虽然显著改善 latency、DSR 和 fairness，但 MBS ratio 与 MBS load ratio 相对无协调启发式基线反而增加。这说明上层轨迹控制和下层卸载策略必须协同设计，否则上层策略可能在提升服务质量的同时增加中心节点 fallback 负担。
 
-## 第5章 下层 Oracle-Guided 请求级任务卸载方法
+## 第5章 下层 SC-OGO 请求级任务卸载方法
 
 ### 5.1 请求级卸载问题定义
 
@@ -517,7 +517,7 @@ $$
 
 其中 local 表示由当前覆盖 UE 的本地 UAV 执行，coop 表示转发给可达协作 UAV 执行，mbs 表示通过回传链路卸载到 MBS 执行。传统启发式方法通常偏向选择时延较小或规则优先级较高的路径，但这种方式难以同时表达 MBS 负载控制、本地队列压力和协作分担收益。
 
-本文将下层卸载建模为 oracle-guided policy learning。训练阶段，增强 oracle 根据当前请求上下文计算三类候选路径的代价，并生成分类标签；在线阶段，轻量分类器根据当前特征直接预测卸载类别。该方法接近 behavior cloning，但标签并非来自人类专家，也不是简单复制原始启发式规则，而是由面向系统目标设计的增强代价函数生成。
+本文将下层卸载建模为 safety-constrained oracle-guided policy learning。训练阶段，增强 oracle 根据当前请求上下文计算三类候选路径的代价，并生成分类标签；在线阶段，轻量分类器先根据当前特征预测卸载类别，随后 SC-OGO 使用安全约束代价函数对预测动作进行检查和必要重排序。该方法接近 behavior cloning，但标签并非来自人类专家，也不是简单复制原始启发式规则，而是由面向系统目标设计的增强代价函数生成。SC-OGO 的额外作用是避免 surrogate 在少数边界状态中过度追求 MBS 减负或误选高 deadline 风险动作。
 
 ### 5.2 增强 Oracle 代价函数
 
@@ -579,9 +579,36 @@ $$
 
 图 3 展示下层分类器与增强 oracle 标签的一致性。混淆矩阵用于观察三类标签是否被正确预测，calibration curve 用于观察模型置信度是否与真实准确率匹配。验证集 accuracy 和 macro-F1 约为 0.945，说明分类器能够较好拟合增强 oracle 的决策边界。
 
-### 5.4 下层方法作用
+### 5.4 SC-OGO 在线安全约束重排序
 
-下层 oracle-guided 策略主要改变请求去向结构。它并不直接控制 UAV 轨迹，而是在当前轨迹和链路条件下决定请求是否由本地 UAV、协作 UAV 或 MBS 执行。若启发式策略过度依赖 MBS，则下层 oracle-guided 策略可以通过 MBS fallback 代理惩罚将部分请求重新分配至本地或协作 UAV，从而降低中心节点负载。
+仅使用 oracle-guided classifier 时，模型会近似增强 oracle 的离线标签，但在线系统中的队列、链路和协作可用性可能出现边界状态。为提升运行稳定性，SC-OGO 在分类器输出后增加一层轻量安全约束重排序。对于三类候选动作，定义在线代价：
+
+$$
+\tilde{C}_c=
+\rho_c
++\lambda_D\max(\rho_c-1,0)
++\lambda_S\max(\rho_c-\rho_{\mathrm{safe}},0)
++\mathbb{I}[c=\mathrm{mbs}]\lambda_M
++\mathbb{I}[c=\mathrm{coop}]\lambda_C
++\mathbb{I}[c=\mathrm{local}]\lambda_Q q_{\mathrm{local}}.
+$$
+
+其中 `rho_safe` 是 deadline safety margin，`lambda_D` 表示 deadline 违约惩罚，`lambda_S` 表示接近 deadline 时的安全边际惩罚，`lambda_M` 表示 MBS fallback 代价，`lambda_C` 表示协作执行代价，`lambda_Q` 表示本地执行路径上的队列压力代价。队列项只作用于 local 候选，否则会对三类动作同加常数而无法改变在线重排序。当前默认配置为：
+
+$$
+\lambda_D=3.0,\quad
+\lambda_S=0.45,\quad
+\rho_{\mathrm{safe}}=0.90,\quad
+\lambda_M=0.08,\quad
+\lambda_Q=0.04,\quad
+\lambda_C=0.04.
+$$
+
+在线推理时，SC-OGO 首先保留 surrogate classifier 的预测动作；若该动作非法、deadline ratio 超过硬阈值且存在更安全动作，或其代价高于最优合法动作超过 `SC_OGO_RERANK_TOLERANCE=0.02`，则改选在线代价最小的合法动作。该设计使方法仍保持轻量推理和可解释性，同时比单纯分类器更强调 DSR 安全约束。
+
+### 5.5 下层方法作用
+
+下层 SC-OGO 策略主要改变请求去向结构。它并不直接控制 UAV 轨迹，而是在当前轨迹和链路条件下决定请求是否由本地 UAV、协作 UAV 或 MBS 执行。若启发式策略过度依赖 MBS，则下层策略可以通过 MBS fallback 代理惩罚将部分请求重新分配至本地或协作 UAV，从而降低中心节点负载；若 surrogate 分类器在边界状态下给出高风险动作，则 SC-OGO 的安全约束重排序会优先保护 deadline 满足率。
 
 ![图 4 请求去向比例堆叠图](docs/figures/fig_request_destination_stack.png)
 
@@ -660,9 +687,15 @@ $$
 
 ### 6.5 下层在线性能与权衡分析
 
-下层独立实验用于说明 oracle-guided 卸载策略本身的机制。数据来源为：
+下层独立实验用于说明请求级卸载策略本身的机制。旧版本 oracle-guided 下层实验数据来源为：
 
 - `results/full_offload_experiments/wpt_fix_thesis_run_offload/reports/runtime_offload_policy_statistics.md`
+
+最新 SC-OGO / CQL-DQN / RADCC 对比数据来源为：
+
+- `results/reports/runtime_offload_policy_comparison_sc_ogo.json`
+
+旧版 oracle-guided classifier 的在线表现如下：
 
 | 策略 | Latency | Deadline Satisfaction | MBS Load Ratio |
 | --- | ---: | ---: | ---: |
@@ -670,17 +703,83 @@ $$
 | `surrogate_baseline` | 1477.64 | 24.47% | 4.88% |
 | `rich_reduced_runtime_policy` | 1478.12 | 23.92% | 3.89% |
 
-`surrogate_baseline` 能够在 latency 和 DSR 变化较小的情况下显著降低 MBS load；`rich_reduced_runtime_policy` 的减负更激进，但 DSR 与能耗代价更明显。因此，本文将 `surrogate_baseline` 对应的 oracle-guided runtime policy 作为下层主策略，将 `rich_reduced_runtime_policy` 作为更激进负载分散的消融策略。
+最新 10 seeds、每 seed 4 episodes、每 episode 100 steps 的运行时对比结果如下：
+
+| 策略 | DSR | MBS Load | MBS Ratio | Energy | Latency |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `heuristic_offloading` | 25.673% | 8.958% | 33.303% | 111494.23 | 1447.82 |
+| `surrogate_baseline` | 25.571% | 6.465% | 23.680% | 114892.92 | 1448.14 |
+| `cql_dqn_offloading` | 24.616% | 7.131% | 27.462% | 96209.88 | 1448.81 |
+| `radcc_offloading` | 24.718% | 6.767% | 25.381% | 124861.02 | 1448.60 |
+| `sc_ogo_offloading` | 25.674% | 7.682% | 28.357% | 108650.45 | 1447.88 |
+
+相对 `heuristic_offloading`，各方法的关键变化为：
+
+| 策略 | DSR Delta | MBS Load Delta | MBS Ratio Delta | Energy Delta | Latency Delta |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `surrogate_baseline` | -0.101 pp | -2.493 pp | -9.623 pp | +3398.69 | +0.32 |
+| `cql_dqn_offloading` | -1.057 pp | -1.827 pp | -5.841 pp | -15284.34 | +0.99 |
+| `radcc_offloading` | -0.954 pp | -2.191 pp | -7.922 pp | +13366.80 | +0.78 |
+| `sc_ogo_offloading` | +0.002 pp | -1.275 pp | -4.946 pp | -2843.78 | +0.06 |
+
+`surrogate_baseline` 的 MBS load 降低最明显，但 DSR 略降且能耗略升；`cql_dqn_offloading` 和 `radcc_offloading` 说明更复杂的深度强化学习式下层并不必然更适合作主方法，因为二者都带来接近 1 个百分点的 DSR 损失。`sc_ogo_offloading` 的减负幅度没有 surrogate 那么激进，但它几乎不牺牲 DSR，并同时降低 MBS load、MBS ratio 和 energy，更符合本文“守住 DSR，降低 MBS load”的约束优先级。因此，后续论文主方法建议采用 `attention_mappo__sc_ogo`，并将 `surrogate_baseline`、`cql_dqn_offloading` 和 `radcc_offloading` 作为下层对照或消融。
 
 ![图 5 下层卸载策略在线性能](docs/figures/fig_lower_runtime.png)
 
-图 5 展示下层策略在线运行时的 latency、DSR、MBS ratio 和 MBS load ratio。该图适合用于说明下层策略的主要贡献是降低 MBS fallback 依赖，而不是单独刷新 latency 或 DSR。
+图 5 展示下层策略在线运行时的 latency、DSR、MBS ratio 和 MBS load ratio。若后续采用 SC-OGO 作为主方法，建议重新生成该图，将 `sc_ogo_offloading` 加入对比，并在图注中强调 SC-OGO 的核心优势是 DSR 安全性更稳，而不是单纯最大化 MBS load 降幅。
 
 ![图 6 MBS load 与 DSR 的 Pareto-style 权衡](docs/figures/fig_pareto_tradeoff_scatter.png)
 
-图 6 展示不同策略和场景在 MBS load ratio 与 DSR 之间的权衡关系。横轴 MBS load ratio 越低越好，纵轴 DSR 越高越好。oracle-guided 相关点若整体更靠左且 DSR 未明显下滑，说明该策略将系统推向更低中心节点依赖区域。需要注意，该图是 Pareto-style 可视化，不是严格多目标优化求得的理论 Pareto 前沿。
+图 6 展示不同策略和场景在 MBS load ratio 与 DSR 之间的权衡关系。横轴 MBS load ratio 越低越好，纵轴 DSR 越高越好。SC-OGO 若相对 heuristic 更靠左且纵向基本不下降，说明该策略将系统推向更低中心节点依赖区域，同时保留服务 deadline 安全性。需要注意，该图是 Pareto-style 可视化，不是严格多目标优化求得的理论 Pareto 前沿。
 
-### 6.6 Paired Seed 稳健性分析
+### 6.6 SC-OGO 组件消融与机制验证
+
+为进一步回答“SC-OGO 为什么有效”，本文补充运行时组件消融。该实验固定同一个 surrogate classifier checkpoint，仅改变 SC-OGO 在线重排序项，因而主要用于解释在线安全约束层的机制来源。数据来源为：
+
+- `results/reports/sc_ogo_component_ablation.json`
+
+实验使用 5 个 workload seeds：`42,84,126,168,210`；每个 seed 运行 4 个 episodes，每个 episode 100 steps，并在默认运行时场景集合上统计。相对 `heuristic_offloading` 的结果如下：
+
+| 策略 | Latency Delta | Energy Delta | DSR Delta | MBS Ratio Delta | MBS Load Delta |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `classifier_only` | +0.3462 | +6494.37 | -0.130 pp | -9.650 pp | -2.507 pp |
+| `sc_ogo_full` | +0.0586 | -2031.35 | -0.008 pp | -4.827 pp | -1.221 pp |
+| `sc_ogo_no_mbs_penalty` | -0.0013 | -5285.67 | +0.029 pp | +0.448 pp | +0.111 pp |
+| `sc_ogo_no_deadline_margin` | +0.0598 | -2003.38 | -0.010 pp | -4.867 pp | -1.229 pp |
+| `sc_ogo_no_queue_pressure` | +0.0655 | -2011.16 | -0.006 pp | -4.949 pp | -1.252 pp |
+| `sc_ogo_no_coop_term` | +0.0588 | +954.45 | -0.022 pp | -5.570 pp | -1.426 pp |
+
+这组结果说明三点。第一，MBS fallback penalty 是压缩 MBS 依赖的核心机制：一旦移除 `SC_OGO_MBS_WEIGHT`，MBS ratio 和 MBS load 不再下降，甚至相对 heuristic 略有上升。第二，`classifier_only` 能更激进地降低 MBS load，但会带来能耗增加和 DSR 轻微下降；SC-OGO 的价值不是最大化减负幅度，而是在减负、能耗和 DSR 之间做更保守的安全重排序。第三，deadline margin、queue pressure 和 coop term 在当前运行时场景中的边际影响相对较小，其中 deadline margin 未被强烈触发，queue pressure 只产生轻微请求流向调整，coop term 更像协作路径的能耗/代价调节项。
+
+因此，论文中最稳妥的机制表述是：**SC-OGO 的主要可验证机制是显式 MBS fallback penalty 压缩中心节点依赖，安全重排序用于避免 surrogate 分类器过度激进；deadline margin 和 queue/coop 项是辅助稳定项，不应被夸大为主要收益来源。**
+
+### 6.7 尺度泛化与部署复杂度分析
+
+为验证下层请求级策略在不同系统规模和链路条件下是否仍保持稳定趋势，本文补充一因子尺度泛化实验。该实验使用静态 UAV 位置与零移动动作，隔离下层 offloading policy 的泛化能力；若未来要验证完整 `attention_mappo + sc_ogo` 在不同 UAV 数量下的端到端泛化，仍需要重新训练或准备兼容的上层模型。数据来源为：
+
+- `results/reports/scale_generalization_runtime.json`
+
+尺度扫描包括 UAV 数量 `3/5/7`、UE 数量 `50/100/150`、热点数量 `1/2/3/4` 和 backhaul bandwidth `120 kHz/350 kHz/750 kHz/1.5 MHz/5 MHz`。相对 heuristic，SC-OGO 在 12 组尺度场景中的统计结论如下：
+
+| 指标 | 结果 |
+| --- | ---: |
+| MBS load 降低场景数 | 12 / 12 |
+| MBS ratio 降低场景数 | 12 / 12 |
+| Energy 降低场景数 | 11 / 12 |
+| DSR 非下降场景数 | 6 / 12 |
+| DSR delta 最小值 | -0.094 pp |
+| DSR delta 平均值 | -0.011 pp |
+
+该结果说明 SC-OGO 的 MBS 减负趋势具有较好的跨规模一致性：无论改变 UAV 数量、UE 数量、热点数量还是 backhaul 条件，MBS ratio 与 MBS load 均下降，且 DSR 平均变化很小。需要注意，latency 在所有尺度场景中均没有下降，说明 SC-OGO 的目标不是降低单请求最小时延，而是以极小 latency 代价换取更低中心节点依赖。`backhaul=5 MHz` 场景中 SC-OGO 仍显著降低 MBS load，但 energy 上升，说明当 MBS 回传足够强时，过度压缩 MBS fallback 可能不再节能；这可以作为方法适用边界，而不是失败结果。
+
+复杂度与部署分析数据来源为：
+
+- `results/reports/complexity_deployment_analysis.md`
+- `results/reports/complexity_deployment_analysis.json`
+
+默认 `U=5` 时，上层轨迹控制每个 time slot 只输出 `2U=10` 维连续动作；下层请求级策略输出 local、cooperative 和 MBS 三分类结果。当前 surrogate checkpoint 包含 4931 个参数，每个请求约 4800 次 linear MAC。若一个 time slot 内有 `R_t` 个服务请求，单层枚举式三分类请求去向组合为 `3^{R_t}`，显式 UAV/MBS 执行节点枚举为 `(U+1)^{R_t}`；而本文框架保持上层动作接口固定，并将请求相关离散选择拆成每请求一次轻量推理。该分析支撑本文“可部署双层分解”的定位，但不应被写成全局最优复杂度证明。
+
+### 6.8 Paired Seed 稳健性分析
 
 正式联合实验采用同一批 workload seeds 进行 paired comparison，因此能够观察同一随机种子下不同策略的变化方向。相比只报告均值，paired seed 分析更能说明改善是否由个别随机种子偶然造成。
 
@@ -688,7 +787,7 @@ $$
 
 图 7 中，每条线连接同一个 seed 下 heuristic 与 oracle-guided 的指标值。对于 MBS load 和 MBS ratio，线从左到右下降是有利变化；对于 DSR，线从左到右上升是有利变化。如果多数 seed 的 MBS load 和 MBS ratio 均下降，而 DSR 变化较小，则说明 oracle-guided 策略的减负效果具有跨 seed 一致性。
 
-### 6.7 空间机制解释
+### 6.9 空间机制解释
 
 多无人机 MEC 的一个重要特点是空间结构会影响服务路径。热点区域、UAV 轨迹和 MBS fallback 的空间分布可以帮助理解为什么某些请求更容易回退到 MBS，为什么协作 UAV 能够缓解局部压力。
 
@@ -700,15 +799,15 @@ $$
 
 ### 7.1 总结
 
-本文围绕多无人机移动边缘计算中的轨迹控制与任务卸载问题，提出了一种双层协同优化框架。该框架在上层采用 attention-MAPPO 进行多 UAV 轨迹控制，在下层采用 oracle-guided request-level policy learning 进行请求级卸载决策。上层通过注意力机制建模 UAV 间关系和服务压力差异，下层通过增强 oracle 将 deadline 违约、队列压力、MBS fallback 惩罚和协作缓解收益纳入标签生成过程。
+本文围绕多无人机移动边缘计算中的轨迹控制与任务卸载问题，提出了一种双层协同优化框架。该框架在上层采用 attention-MAPPO 进行多 UAV 轨迹控制，在下层采用 SC-OGO request-level policy learning 进行请求级卸载决策。上层通过注意力机制建模 UAV 间关系和服务压力差异，下层通过增强 oracle 将 deadline 违约、队列压力、MBS fallback 惩罚和协作缓解收益纳入标签生成过程，并在在线阶段通过安全约束重排序进一步控制 deadline 风险。
 
-实验结果表明，上层 attention-MAPPO 能够显著改善协同轨迹控制、服务质量和覆盖公平性，但仅依靠上层方法可能增加 MBS fallback 依赖；下层 oracle-guided 卸载能够显著降低 MBS ratio 和 MBS load ratio，并将更多请求转移至 local 或 cooperative 执行路径；完整双层方法在保持上层 reward 和 DSR 收益的同时，进一步降低 energy 和 MBS load。由此可见，轨迹控制与请求级卸载在多无人机 MEC 中具有明显互补性，双层学习式分解能够在动作空间可控、在线推理可部署和结果可解释之间取得较好平衡。
+实验结果表明，上层 attention-MAPPO 能够显著改善协同轨迹控制、服务质量和覆盖公平性，但仅依靠上层方法可能增加 MBS fallback 依赖；下层 oracle-guided / SC-OGO 卸载能够降低 MBS ratio 和 MBS load ratio，并将更多请求转移至 local 或 cooperative 执行路径。最新下层在线对比显示，SC-OGO 相比 heuristic 在 DSR 基本不下降的前提下降低 MBS load、MBS ratio 和能耗，比 CQL-DQN 与 RADCC-Offload 更适合作为当前主方法。组件消融进一步表明，MBS fallback penalty 是 SC-OGO 压缩中心节点依赖的主要机制，而 deadline margin、queue pressure 和 coop term 更多体现为辅助稳定和代价调节。尺度泛化实验显示，SC-OGO 在 12 组 UAV/UE/热点/backhaul 变化场景中均降低 MBS ratio 和 MBS load，说明该请求级策略具有较稳定的减负趋势。复杂度分析则表明，双层分解能够保持上层 `2U` 连续动作接口固定，并将请求相关离散选择转化为轻量三分类推理。由此可见，轨迹控制与请求级卸载在多无人机 MEC 中具有明显互补性，双层学习式分解能够在动作空间可控、在线推理可部署和结果可解释之间取得较好平衡。
 
 ### 7.2 展望
 
 后续工作可以从以下方向继续扩展。
 
-第一，引入更强的下层学习策略。当前下层策略采用监督学习近似增强 oracle，未来可以进一步探索离线强化学习、约束强化学习或多目标学习方法，使下层策略在 MBS 减负、DSR 和能耗之间形成更细致的自适应权衡。
+第一，引入更强的下层学习策略。当前代码已经实现并初步测试了 Constrained CQL-DQN 与 RADCC-Offload，但现有结果表明更复杂的深度强化学习方法并不自动优于安全约束 surrogate。未来可以继续探索 offline RL、distributional RL 或多目标学习，但应以 DSR 安全性、MBS load 和能耗的在线系统指标为准，而不是仅以训练损失或分类准确率判断方法强弱。
 
 第二，实现更紧密的双层联合训练。当前框架中，上层和下层通过环境反馈耦合，但训练过程仍以分阶段和组合验证为主。未来可研究在不显著扩大动作空间的前提下，使上层轨迹控制器感知下层卸载策略变化，从而形成更强的协同学习。
 
@@ -817,14 +916,29 @@ $$
 | `results/full_runs/supplement_upper_multiseed/reports/upper_multiseed_statistics.md` | 上层多 seed 统计报告 |
 | `results/full_offload_experiments/wpt_fix_thesis_run_offload/` | 下层卸载实验与分类器质量 |
 | `results/full_offload_experiments/wpt_fix_thesis_run_offload/reports/runtime_offload_policy_statistics.md` | 下层在线运行统计报告 |
+| `results/reports/runtime_offload_policy_comparison_sc_ogo.json` | SC-OGO、CQL-DQN、RADCC 与 heuristic/surrogate 的最新运行时对比 |
+| `results/reports/sc_ogo_component_ablation.json` | SC-OGO 在线重排序组件消融，验证 MBS penalty、deadline margin、queue pressure 和 coop term 的作用 |
+| `results/reports/scale_generalization_runtime.json` | UAV/UE/热点/backhaul 一因子尺度泛化实验 |
+| `results/reports/complexity_deployment_analysis.md` | 双层框架复杂度与部署分析的论文文字报告 |
+| `results/reports/complexity_deployment_analysis.json` | 双层框架复杂度与部署分析的结构化结果 |
+| `results/reports/runtime_offload_policy_comparison_cql.json` | Constrained CQL-DQN 初始运行时对比 |
+| `results/reports/runtime_offload_policy_comparison_radcc.json` | RADCC-Offload 初始运行时对比 |
+| `results/full_offload_experiments/cql_sensitivity/` | CQL-DQN 下层敏感性实验 |
+| `results/full_offload_experiments/radcc_sensitivity_coop/` | RADCC-Offload 协作代价敏感性实验 |
+| `saved_offload_policies/offload_policy_cql.pt` | CQL-DQN 下层 checkpoint |
+| `saved_offload_policies/offload_policy_radcc.pt` | RADCC-Offload 下层 checkpoint |
+| `saved_offload_policies/offload_policy_surrogate_runtime.pt` | surrogate / SC-OGO 使用的分类器 checkpoint |
 | `results/full_offload_experiments/mbs_penalty_sensitivity_summary.json` | MBS penalty 敏感性扫描汇总 |
 | `docs/figures/` | 当前论文候选图表 |
+| `run_sc_ogo_ablation.py` | 重跑 SC-OGO 组件消融 |
+| `run_scale_generalization.py` | 重跑尺度泛化实验 |
+| `analyze_complexity_deployment.py` | 生成复杂度与部署分析报告 |
 | `run_supplement_experiments.py` | 期刊/论文补充实验调度入口 |
 | `generate_thesis_figures.py` | 论文图表生成脚本 |
 
 ## 附录 C 复现实验命令
 
-以下命令用于复现、抽查或在改动代码后重新生成结果，不是待办清单。当前 README2 使用的核心结果已经来自正式四组联合消融、上层多训练 seed、下层分类质量分析和 MBS penalty 敏感性扫描。
+以下命令用于复现、抽查或在改动代码后重新生成结果，不是待办清单。当前 README2 使用的核心结果已经来自正式四组联合消融、上层多训练 seed、下层分类质量分析、SC-OGO 组件消融、尺度泛化、复杂度部署分析和 MBS penalty 敏感性扫描。
 
 重新生成统计报告和图表：
 
@@ -859,6 +973,82 @@ powershell -ExecutionPolicy Bypass -File .\run_all_thesis_figures.ps1
 .\.venv\Scripts\python.exe run_supplement_experiments.py --phase sensitivity
 ```
 
+生成 CQL-DQN transition dataset：
+
+```powershell
+.\.venv\Scripts\python.exe collect_offload_dataset.py `
+  --mode cql_transition_mixed `
+  --output offload_datasets/offload_dataset_cql_transition.npz `
+  --label_mode enhanced_oracle
+```
+
+训练 CQL-DQN 下层策略：
+
+```powershell
+.\.venv\Scripts\python.exe train_cql_offload_policy.py `
+  --dataset offload_datasets/offload_dataset_cql_transition.npz `
+  --output saved_offload_policies/offload_policy_cql.pt
+```
+
+训练 RADCC-Offload 下层策略：
+
+```powershell
+.\.venv\Scripts\python.exe collect_offload_dataset.py `
+  --mode radcc_cost_mixed `
+  --output offload_datasets/offload_dataset_radcc_cost.npz `
+  --label_mode enhanced_oracle
+
+.\.venv\Scripts\python.exe train_radcc_offload_policy.py `
+  --dataset offload_datasets/offload_dataset_radcc_cost.npz `
+  --output saved_offload_policies/offload_policy_radcc.pt
+```
+
+重跑最新下层运行时对比，包括 heuristic、surrogate、CQL-DQN、RADCC 和 SC-OGO：
+
+```powershell
+.\.venv\Scripts\python.exe compare_runtime_offload_policies.py `
+  --surrogate_checkpoint saved_offload_policies/offload_policy_surrogate_runtime.pt `
+  --rich_checkpoint saved_offload_policies/offload_policy_rich_runtime.pt `
+  --cql_checkpoint saved_offload_policies/offload_policy_cql.pt `
+  --radcc_checkpoint saved_offload_policies/offload_policy_radcc.pt `
+  --sc_ogo_checkpoint saved_offload_policies/offload_policy_surrogate_runtime.pt `
+  --output results/reports/runtime_offload_policy_comparison_sc_ogo.json `
+  --seeds 42 84 126 168 210 252 294 336 378 420 `
+  --episodes_per_seed 4 `
+  --steps_per_episode 100
+```
+
+重跑 SC-OGO 组件消融：
+
+```powershell
+.\.venv\Scripts\python.exe run_sc_ogo_ablation.py `
+  --surrogate_checkpoint saved_offload_policies/offload_policy_surrogate_runtime.pt `
+  --output results/reports/sc_ogo_component_ablation.json `
+  --seeds 42 84 126 168 210 `
+  --episodes_per_seed 4 `
+  --steps_per_episode 100
+```
+
+重跑尺度泛化实验：
+
+```powershell
+.\.venv\Scripts\python.exe run_scale_generalization.py `
+  --surrogate_checkpoint saved_offload_policies/offload_policy_surrogate_runtime.pt `
+  --output results/reports/scale_generalization_runtime.json `
+  --seeds 42 84 126 168 `
+  --episodes_per_seed 3 `
+  --steps_per_episode 100
+```
+
+生成复杂度与部署分析：
+
+```powershell
+.\.venv\Scripts\python.exe analyze_complexity_deployment.py `
+  --checkpoint saved_offload_policies/offload_policy_surrogate_runtime.pt `
+  --output results/reports/complexity_deployment_analysis.md `
+  --json_output results/reports/complexity_deployment_analysis.json
+```
+
 ## 附录 D 写作口径与注意事项
 
 1. 不建议把本文方法写成“全局最优端到端联合优化”。更准确的表述是“双层学习式协同优化框架”，其中上层和下层分别学习轨迹控制与请求级卸载。
@@ -867,11 +1057,19 @@ powershell -ExecutionPolicy Bypass -File .\run_all_thesis_figures.ps1
 
 3. 不建议将下层 oracle-guided 策略描述为简单最小时延规则。增强 oracle 中显式包含 deadline 违约、MBS fallback 惩罚、本地队列压力和协作缓解收益。
 
-4. 使用空间解释图时要谨慎。`fig_trajectory_coverage.png` 和 `fig_uav_hotspot_fallback_heatmap.png` 适合解释机制，不适合作为严格统计性能证据。
+4. 若采用最新主方法口径，建议将下层写为 SC-OGO，而不是简单写成 CQL-DQN 或 RADCC。当前实验中 CQL-DQN 和 RADCC 都能降低一部分 MBS load，但 DSR 下降接近 1 个百分点，不符合“守住 DSR，降低 MBS load”的优先级；SC-OGO 的优势是 DSR 基本不降，同时降低 MBS load、MBS ratio 和 energy。
 
-5. 使用比例指标时要注明统计单元。当前 DSR、MBS ratio 和 MBS load ratio 的统计单元为 seed-level episode mean，报告中保留 ratio metric note。
+5. 组件消融中最强的机制证据是 MBS fallback penalty。移除该项后 MBS ratio 和 MBS load 优势基本消失，因此论文中应把它写成 SC-OGO 减负的主要来源；deadline margin、queue pressure 和 coop term 可写为辅助稳定或代价调节，不宜夸大。
 
-6. 投稿或毕业论文定稿前，需要人工补全 BibTeX，尤其是 UAV-MEC 综述、轨迹-卸载联合优化、服务放置/缓存、多智能体强化学习、MAPPO、attention mechanism、Jain fairness 和 imitation learning / behavior cloning 相关文献。
+6. 尺度泛化实验主要隔离下层请求级策略，使用静态 UAV 位置和零移动动作。它可以证明 SC-OGO 在不同规模下有稳定减负趋势，但不能替代 `attention_mappo + sc_ogo` 在不同 UAV 数量下的端到端重新训练实验。
+
+7. 复杂度分析应作为部署可行性和动作空间分解的论据，而不是理论最优性证明。更稳妥的表述是：本文保持上层 `2U` 连续动作接口固定，并将请求相关离散决策转化为每请求一次轻量三分类推理。
+
+8. 使用空间解释图时要谨慎。`fig_trajectory_coverage.png` 和 `fig_uav_hotspot_fallback_heatmap.png` 适合解释机制，不适合作为严格统计性能证据。
+
+9. 使用比例指标时要注明统计单元。当前 DSR、MBS ratio 和 MBS load ratio 的统计单元为 seed-level episode mean，报告中保留 ratio metric note。
+
+10. 投稿或毕业论文定稿前，需要人工补全 BibTeX，尤其是 UAV-MEC 综述、轨迹-卸载联合优化、服务放置/缓存、多智能体强化学习、MAPPO、attention mechanism、Jain fairness、imitation learning / behavior cloning、offline RL、CQL 和 distributional / risk-sensitive RL 相关文献。
 
 ## 附录 E 投稿前人工检查清单
 

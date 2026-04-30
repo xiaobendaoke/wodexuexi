@@ -552,6 +552,35 @@ def action_mask_from_context(context: ServiceOffloadContext) -> np.ndarray:
     return mask
 
 
+def _safe_latency_ratio(latency: float, deadline: float) -> float:
+    if not np.isfinite(float(latency)):
+        return OFFLOAD_LATENCY_RATIO_CLIP
+    return float(np.clip(float(latency) / max(float(deadline), float(config.EPSILON)), 0.0, OFFLOAD_LATENCY_RATIO_CLIP))
+
+
+def sc_ogo_action_costs(context: ServiceOffloadContext) -> np.ndarray:
+    """Safety-constrained costs for runtime oracle-guided surrogate reranking."""
+
+    latencies = np.array([context.local_latency, context.cooperative_latency, context.mbs_latency], dtype=np.float64)
+    mask = action_mask_from_context(context)
+    queue_pressure = float(np.clip(context.local_queue_length / max(float(config.MAX_ASSOCIATED_UES), 1.0), 0.0, 1.0))
+    costs = np.zeros((OFFLOAD_NUM_CLASSES,), dtype=np.float32)
+    for action in range(OFFLOAD_NUM_CLASSES):
+        ratio = _safe_latency_ratio(float(latencies[action]), context.deadline)
+        deadline_violation = max(ratio - 1.0, 0.0)
+        deadline_margin = max(ratio - float(config.SC_OGO_DEADLINE_MARGIN), 0.0)
+        cost = ratio
+        cost += float(config.SC_OGO_DEADLINE_WEIGHT) * deadline_violation
+        cost += float(config.SC_OGO_MARGIN_WEIGHT) * deadline_margin
+        cost += float(config.SC_OGO_MBS_WEIGHT) * float(action == OFFLOAD_TARGET_MBS)
+        cost += float(config.SC_OGO_COOP_WEIGHT) * float(action == OFFLOAD_TARGET_COOPERATIVE)
+        cost += float(config.SC_OGO_QUEUE_WEIGHT) * queue_pressure * float(action == OFFLOAD_TARGET_LOCAL)
+        if mask[action] <= 0.0:
+            cost += 1.0e6
+        costs[action] = float(cost)
+    return costs
+
+
 # 类 LearnedClassifierOffloadPolicy：核心类，封装本模块中的主要状态和行为。
 class LearnedClassifierOffloadPolicy:
     """Inference wrapper for a trained request-level offloading classifier."""
@@ -592,6 +621,33 @@ class LearnedClassifierOffloadPolicy:
             prediction: torch.Tensor = torch.argmax(logits, dim=1)
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return int(prediction.item())
+
+
+class SCOracleGuidedOffloadPolicy(LearnedClassifierOffloadPolicy):
+    """Safety-constrained wrapper around an oracle-guided surrogate classifier."""
+
+    def predict(self, context: ServiceOffloadContext) -> int:
+        base_action = super().predict(context)
+        mask = action_mask_from_context(context)
+        costs = sc_ogo_action_costs(context)
+        best_action = int(np.argmin(costs))
+        if base_action < 0 or base_action >= OFFLOAD_NUM_CLASSES or mask[base_action] <= 0.0:
+            return best_action
+
+        base_ratio = _safe_latency_ratio(
+            [context.local_latency, context.cooperative_latency, context.mbs_latency][base_action],
+            context.deadline,
+        )
+        best_ratio = _safe_latency_ratio(
+            [context.local_latency, context.cooperative_latency, context.mbs_latency][best_action],
+            context.deadline,
+        )
+
+        if base_ratio > float(config.SC_OGO_HARD_DEADLINE_RATIO) and best_ratio < base_ratio:
+            return best_action
+        if costs[base_action] > costs[best_action] + float(config.SC_OGO_RERANK_TOLERANCE):
+            return best_action
+        return int(base_action)
 
 
 class RADCCOffloadPolicy:
@@ -1007,7 +1063,7 @@ def build_offload_policy(policy_name: str, checkpoint_path: str | None = None, d
     """Factory for runtime service-request offloading policies."""
 
     # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    if policy_name not in {"learned", "cql", "radcc"}:
+    if policy_name not in {"learned", "cql", "radcc", "sc_ogo"}:
         # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise ValueError(f"Unsupported service offload policy: {policy_name}")
 
@@ -1022,4 +1078,6 @@ def build_offload_policy(policy_name: str, checkpoint_path: str | None = None, d
         return CQLDQNOffloadPolicy(resolved_checkpoint, device=device)
     if policy_name == "radcc":
         return RADCCOffloadPolicy(resolved_checkpoint, device=device)
+    if policy_name == "sc_ogo":
+        return SCOracleGuidedOffloadPolicy(resolved_checkpoint, device=device)
     return LearnedClassifierOffloadPolicy(resolved_checkpoint, device=device)
