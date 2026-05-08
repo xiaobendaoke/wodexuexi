@@ -176,7 +176,7 @@ class OffloadDatasetRecorder:
 
 
 # 类 ScenarioSpec：描述一个模板采样场景及其期望生成的主要卸载标签。
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ScenarioSpec:
     name: str
     intended_label: int

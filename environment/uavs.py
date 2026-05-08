@@ -342,12 +342,30 @@ class UAV:
                 self._current_service_request_count += 1
 
     # 函数 process_requests：当前环境中的任务请求集合，主要参数：sample_recorder。
-    def process_requests(self, sample_recorder: Callable[[ServiceOffloadContext, int], None] | None = None) -> None:
+    def process_requests(
+        self,
+        sample_recorder: Callable[[ServiceOffloadContext, int], None] | None = None,
+        offload_actions: np.ndarray | None = None,
+    ) -> None:
         """Process requests while optionally recording heuristic service samples."""
         self._working_cache = self.cache.copy()
         self._uav_mbs_rate = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(self.pos, config.MBS_POS))
 
-        shuffled_indices: np.ndarray = np.random.permutation(len(self._current_covered_ues))
+        if offload_actions is not None:
+            service_indices = [
+                idx for idx, ue in enumerate(self._current_covered_ues) if ue.current_request.is_service
+            ]
+            service_indices = sorted(
+                service_indices,
+                key=lambda idx: float(np.linalg.norm(self.pos[:2] - self._current_covered_ues[idx].pos[:2])),
+            )
+            other_indices = [
+                idx for idx, ue in enumerate(self._current_covered_ues) if not ue.current_request.is_service
+            ]
+            shuffled_indices = np.asarray(service_indices + other_indices, dtype=np.int64)
+        else:
+            shuffled_indices = np.random.permutation(len(self._current_covered_ues))
+        service_action_cursor: int = 0
         # 循环处理：遍历 idx 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for idx in shuffled_indices:
             ue: UE = self._current_covered_ues[idx]
@@ -369,14 +387,26 @@ class UAV:
                 # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                 if sample_recorder is not None:
                     sample_recorder(service_context, heuristic_target_idx)
-                best_target_idx, best_target_uav = self._select_service_offloading_target(
-                    current_req,
-                    ue_uav_rate,
-                    context=service_context,
-                    cooperative_uav=cooperative_uav,
-                    heuristic_target_idx=heuristic_target_idx,
-                    heuristic_target_uav=heuristic_target_uav,
-                )
+                if offload_actions is not None and service_action_cursor < int(config.MAX_OFFLOAD_REQUESTS_PER_UAV):
+                    requested_target_idx = int(offload_actions[service_action_cursor])
+                    best_target_idx, best_target_uav = self._resolve_external_service_offload_action(
+                        requested_target_idx,
+                        service_context,
+                        cooperative_uav,
+                        heuristic_target_idx,
+                        heuristic_target_uav,
+                    )
+                    self._service_learned_decision_count += 1
+                    service_action_cursor += 1
+                else:
+                    best_target_idx, best_target_uav = self._select_service_offloading_target(
+                        current_req,
+                        ue_uav_rate,
+                        context=service_context,
+                        cooperative_uav=cooperative_uav,
+                        heuristic_target_idx=heuristic_target_idx,
+                        heuristic_target_uav=heuristic_target_uav,
+                    )
                 self._service_request_count += 1
                 self._record_service_offload_choice(best_target_idx)
             else:
@@ -402,6 +432,29 @@ class UAV:
                 self._process_content_request(ue, ue_uav_rate, best_target_idx, best_target_uav)
 
             assert ue.latency_current_request >= 0.0
+
+    def _resolve_external_service_offload_action(
+        self,
+        target_idx: int,
+        context: ServiceOffloadContext,
+        cooperative_uav: "UAV" | None,
+        heuristic_target_idx: int,
+        heuristic_target_uav: "UAV" | None,
+    ) -> tuple[int, "UAV" | None]:
+        """Resolve a lower-layer MARL offloading action into an executable target."""
+        if target_idx == OFFLOAD_TARGET_LOCAL:
+            return OFFLOAD_TARGET_LOCAL, None
+        if target_idx == OFFLOAD_TARGET_COOPERATIVE:
+            if cooperative_uav is not None and context.cooperative_available:
+                return OFFLOAD_TARGET_COOPERATIVE, cooperative_uav
+            self._service_fallback_count += 1
+            if context.local_latency <= context.deadline or context.local_latency <= context.mbs_latency:
+                return OFFLOAD_TARGET_LOCAL, None
+            return OFFLOAD_TARGET_MBS, None
+        if target_idx == OFFLOAD_TARGET_MBS:
+            return OFFLOAD_TARGET_MBS, None
+        self._service_fallback_count += 1
+        return heuristic_target_idx, heuristic_target_uav
 
     # 函数 _record_service_offload_choice：关键函数，承载本模块的一段可复用实验逻辑，主要参数：target_idx。
     def _record_service_offload_choice(self, target_idx: int) -> None:

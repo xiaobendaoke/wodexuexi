@@ -36,7 +36,7 @@ REQUEST_TYPE_ENERGY: int = 2
 
 
 # 类 Request：用户设备产生的任务请求。
-@dataclass(slots=True)
+@dataclass
 class Request:
     """Explicit request structure used across the environment.
 

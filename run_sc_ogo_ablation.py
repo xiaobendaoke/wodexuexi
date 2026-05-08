@@ -32,7 +32,7 @@ from marl_models.static_baseline.static_model import StaticModel
 from paths import results_path
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class AblationVariant:
     name: str
     policy_mode: str

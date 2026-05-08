@@ -61,7 +61,7 @@ METRIC_NAMES: tuple[str, ...] = (
 
 
 # 类 RuntimeScenario：核心类，封装本模块中的主要状态和行为。
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class RuntimeScenario:
     name: str
     description: str

@@ -17,7 +17,7 @@ from train_cql_offload_policy import train_cql_offload_policy
 from train_offload_policy import parse_hidden_dims
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class CQLVariant:
     name: str
     deadline_weight: float

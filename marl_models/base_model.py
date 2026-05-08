@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 中文注释说明：marl_models/base_model.py
 
@@ -25,14 +27,14 @@
 from abc import ABC, abstractmethod
 import numpy as np
 import torch
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
 
 # 关键变量 OffPolicyExperienceBatch：模块级变量，在本文件后续流程中被复用。
 OffPolicyExperienceBatch = tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
 # 关键变量 OnPolicyExperienceBatch：模块级变量，在本文件后续流程中被复用。
 OnPolicyExperienceBatch = dict[str, torch.Tensor]
 # 关键变量 ExperienceBatch：模块级变量，在本文件后续流程中被复用。
-ExperienceBatch = OffPolicyExperienceBatch | OnPolicyExperienceBatch
+ExperienceBatch = Union[OffPolicyExperienceBatch, OnPolicyExperienceBatch]
 
 
 # 类 MARLModel，继承自 ABC：核心类，封装本模块中的主要状态和行为。

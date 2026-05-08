@@ -31,6 +31,7 @@ from marl_models.attention_maddpg.attention_maddpg import AttentionMADDPG
 from marl_models.attention_matd3.attention_matd3 import AttentionMATD3
 from marl_models.attention_mappo.attention_mappo import AttentionMAPPO
 from marl_models.attention_masac.attention_masac import AttentionMASAC
+from marl_models.offload_mappo.offload_mappo import OffloadMAPPO
 from marl_models.random_baseline.random_model import RandomModel
 from marl_models.static_baseline.static_model import StaticModel
 from marl_models.nearest_greedy_baseline.nearest_greedy_model import NearestGreedyModel
@@ -94,6 +95,14 @@ def get_model(model_name: str) -> MARLModel:
     elif model_name == "attention_masac":
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return AttentionMASAC(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
+    elif model_name == "offload_mappo":
+        return OffloadMAPPO(
+            model_name=model_name,
+            num_agents=config.NUM_UAVS,
+            obs_dim=config.OFFLOAD_OBS_DIM_SINGLE,
+            action_dim=config.MAX_OFFLOAD_REQUESTS_PER_UAV,
+            device=device,
+        )
     # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     elif model_name == "random":
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。

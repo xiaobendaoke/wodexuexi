@@ -17,7 +17,7 @@ from train_offload_policy import parse_hidden_dims
 from train_radcc_offload_policy import train_radcc_offload_policy
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class RADCCVariant:
     name: str
     deadline_weight: float

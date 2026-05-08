@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 中文注释说明：marl_models/attention.py
 

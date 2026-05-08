@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 中文注释说明：utils/logger.py
 
@@ -47,6 +49,10 @@ def refresh_derived_config_fields() -> None:
         default_config.SELF_OBS_DIM
         + (default_config.MAX_UAV_NEIGHBORS * default_config.NEIGHBOR_OBS_DIM)
         + (default_config.MAX_ASSOCIATED_UES * default_config.UE_OBS_DIM)
+    )
+    default_config.MAX_OFFLOAD_REQUESTS_PER_UAV = default_config.MAX_ASSOCIATED_UES
+    default_config.OFFLOAD_OBS_DIM_SINGLE = (
+        5 + (default_config.MAX_OFFLOAD_REQUESTS_PER_UAV * default_config.OFFLOAD_REQUEST_FEATURE_DIM)
     )
 
 

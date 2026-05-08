@@ -36,6 +36,8 @@
     本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
 """
 
+from __future__ import annotations
+
 import numpy as np
 
 # Training Parameters
@@ -165,6 +167,22 @@ OFFLOAD_ORACLE_COOP_QUEUE_RELIEF_BONUS: float = 0.02
 SERVICE_OFFLOAD_POLICY: str = "heuristic"  # options: "heuristic", "learned", "cql", "radcc", "sc_ogo"
 # 关键变量 SERVICE_OFFLOAD_POLICY_CHECKPOINT：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 SERVICE_OFFLOAD_POLICY_CHECKPOINT: str | None = None  # checkpoint for the standalone request-level classifier
+
+# Hierarchical lower-layer MAPPO offloading defaults.
+# Each UAV is a lower-layer agent and makes at most MAX_OFFLOAD_REQUESTS_PER_UAV
+# request-level decisions per environment step.
+MAX_OFFLOAD_REQUESTS_PER_UAV: int = MAX_ASSOCIATED_UES
+OFFLOAD_NUM_ACTIONS: int = 3  # 0: local UAV, 1: cooperative UAV, 2: MBS
+OFFLOAD_LATENCY_RATIO_CLIP: float = 10.0
+OFFLOAD_REQUEST_FEATURE_DIM: int = 14
+OFFLOAD_OBS_DIM_SINGLE: int = 5 + (MAX_OFFLOAD_REQUESTS_PER_UAV * OFFLOAD_REQUEST_FEATURE_DIM)
+OFFLOAD_REWARD_DEADLINE_WEIGHT: float = 3.0
+OFFLOAD_REWARD_LATENCY_WEIGHT: float = 0.35
+OFFLOAD_REWARD_ENERGY_WEIGHT: float = 0.10
+OFFLOAD_REWARD_MBS_WEIGHT: float = 0.35
+OFFLOAD_REWARD_COOP_BONUS: float = 0.08
+OFFLOAD_REWARD_SUCCESS_BONUS: float = 0.40
+OFFLOAD_REWARD_SCALING_FACTOR: float = 1.0
 
 # Constrained CQL-DQN lower-layer offloading defaults.
 CQL_OFFLOAD_DEADLINE_WEIGHT: float = 3.0

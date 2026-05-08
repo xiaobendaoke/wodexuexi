@@ -85,7 +85,7 @@ OFFLOAD_FEATURE_FAMILY_RICH_REDUCED: str = "rich_reduced_features"
 
 
 # 类 ServiceOffloadContext：核心类，封装本模块中的主要状态和行为。
-@dataclass(slots=True)
+@dataclass
 class ServiceOffloadContext:
     """Compact service-request context passed to the pluggable offload policy."""
 
@@ -111,7 +111,7 @@ class ServiceOffloadContext:
 
 
 # 类 OffloadFeatureSpec：核心类，封装本模块中的主要状态和行为。
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class OffloadFeatureSpec:
     name: str
     description: str

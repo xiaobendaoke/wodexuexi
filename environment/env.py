@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 中文注释说明：environment/env.py
 
@@ -98,7 +100,12 @@ class Env:
         return self._get_obs()
 
     # 函数 step：推进环境一个时间步并返回状态转移结果，主要参数：actions, sample_recorder。
-    def step(self, actions: np.ndarray, sample_recorder=None) -> tuple[list[np.ndarray], list[float], dict[str, float]]:
+    def step(
+        self,
+        actions: np.ndarray,
+        sample_recorder=None,
+        offloading_actions: np.ndarray | None = None,
+    ) -> tuple[list[np.ndarray], list[float], dict[str, float]]:
         """Execute one time step of the simulation.
 
         sample_recorder is an optional callable used by the request-level
@@ -108,11 +115,15 @@ class Env:
 
         # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for uav in self._uavs:
+            uav._current_service_request_count = 0
             uav.calculate_initial_load()
 
         # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
-        for uav in self._uavs:
-            uav.process_requests(sample_recorder=sample_recorder)
+        for uav_idx, uav in enumerate(self._uavs):
+            uav_offload_actions = None
+            if offloading_actions is not None:
+                uav_offload_actions = np.asarray(offloading_actions[uav_idx], dtype=np.int64)
+            uav.process_requests(sample_recorder=sample_recorder, offload_actions=uav_offload_actions)
 
         # 循环处理：遍历 ue 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for ue in self._ues:
@@ -149,6 +160,89 @@ class Env:
         next_obs: list[np.ndarray] = self._get_obs()
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return next_obs, rewards, metrics
+
+    def get_offloading_obs_and_masks(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return lower-layer request-level observations and legal action masks."""
+        for uav in self._uavs:
+            uav._current_service_request_count = 0
+            uav.calculate_initial_load()
+
+        all_obs = np.zeros((config.NUM_UAVS, config.OFFLOAD_OBS_DIM_SINGLE), dtype=np.float32)
+        all_masks = np.zeros(
+            (config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV, config.OFFLOAD_NUM_ACTIONS),
+            dtype=np.float32,
+        )
+
+        for uav_idx, uav in enumerate(self._uavs):
+            uav_mbs_rate = getattr(uav, "_uav_mbs_rate", 0.0)
+            if uav_mbs_rate <= 0.0:
+                from environment import comm_model as comms
+
+                uav_mbs_rate = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(uav.pos, config.MBS_POS))
+                uav._uav_mbs_rate = float(uav_mbs_rate)
+
+            own_pos = uav.pos[:2] / np.array([config.AREA_WIDTH, config.AREA_HEIGHT], dtype=np.float32)
+            own_queue = float(getattr(uav, "_current_service_request_count", 0)) / max(float(config.MAX_ASSOCIATED_UES), 1.0)
+            own_neighbor_count = float(len(uav.neighbors)) / max(float(config.MAX_UAV_NEIGHBORS), 1.0)
+            own_mbs_rate = np.log10(max(float(uav_mbs_rate), float(config.EPSILON))) / 10.0
+            own_features = np.array([own_pos[0], own_pos[1], own_queue, own_neighbor_count, own_mbs_rate], dtype=np.float32)
+
+            request_features = np.zeros(
+                (config.MAX_OFFLOAD_REQUESTS_PER_UAV, config.OFFLOAD_REQUEST_FEATURE_DIM),
+                dtype=np.float32,
+            )
+            service_ues = [ue for ue in uav.current_covered_ues if ue.current_request.is_service]
+            service_ues = sorted(service_ues, key=lambda ue: float(np.linalg.norm(uav.pos[:2] - ue.pos[:2])))
+            service_ues = service_ues[: config.MAX_OFFLOAD_REQUESTS_PER_UAV]
+
+            for req_idx, ue in enumerate(service_ues):
+                request = ue.current_request
+                from environment import comm_model as comms
+
+                ue_uav_rate = comms.calculate_ue_uav_rate(
+                    comms.calculate_channel_gain(ue.pos, uav.pos),
+                    max(len(uav.current_covered_ues), 1),
+                )
+                context, _ = uav._build_service_offload_context(request, ue_uav_rate)
+                local_ratio = self._safe_ratio(context.local_latency, context.deadline)
+                coop_ratio = self._safe_ratio(context.cooperative_latency, context.deadline)
+                mbs_ratio = self._safe_ratio(context.mbs_latency, context.deadline)
+                delta_pos = (ue.pos[:2] - uav.pos[:2]) / np.array([config.AREA_WIDTH, config.AREA_HEIGHT], dtype=np.float32)
+                request_features[req_idx] = np.array(
+                    [
+                        1.0,
+                        float(request.req_size) / float(config.MAX_INPUT_SIZE),
+                        float(request.req_id) / float(max(config.NUM_SERVICES, 1)),
+                        float(request.deadline) / float(config.SERVICE_DEADLINE_MAX),
+                        float(request.priority) / float(config.SERVICE_PRIORITY_MAX),
+                        float(context.local_cache_hit),
+                        float(context.cooperative_available),
+                        float(context.local_queue_length) / max(float(config.MAX_ASSOCIATED_UES), 1.0),
+                        local_ratio,
+                        coop_ratio,
+                        mbs_ratio,
+                        float(context.best_neighbor_compute_share) / max(float(np.max(config.UAV_COMPUTING_CAPACITY)), 1.0),
+                        float(delta_pos[0]),
+                        float(delta_pos[1]),
+                    ],
+                    dtype=np.float32,
+                )
+                all_masks[uav_idx, req_idx, :] = 1.0
+                if not context.cooperative_available:
+                    all_masks[uav_idx, req_idx, 1] = 0.0
+                if context.mbs_latency >= float(config.OFFLOAD_LATENCY_RATIO_CLIP) * max(context.deadline, config.EPSILON):
+                    all_masks[uav_idx, req_idx, 2] = 0.0
+                if np.sum(all_masks[uav_idx, req_idx]) <= 0.0:
+                    all_masks[uav_idx, req_idx, 0] = 1.0
+
+            all_obs[uav_idx] = np.concatenate([own_features, request_features.reshape(-1)])
+
+        return all_obs, all_masks
+
+    @staticmethod
+    def _safe_ratio(value: float, denominator: float) -> float:
+        ratio = float(value) / max(float(denominator), float(config.EPSILON))
+        return float(np.clip(ratio / float(config.OFFLOAD_LATENCY_RATIO_CLIP), 0.0, 1.0))
 
     # 函数 _get_obs：关键函数，承载本模块的一段可复用实验逻辑。
     def _get_obs(self) -> list[np.ndarray]:

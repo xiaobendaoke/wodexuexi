@@ -122,7 +122,7 @@ RICH_REDUCED_FEATURE_NAMES: tuple[str, ...] = (
 
 
 # 类 TrainedClassifier：核心类，封装本模块中的主要状态和行为。
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class TrainedClassifier:
     name: str
     model: OffloadMLP
@@ -151,7 +151,7 @@ class TrainedClassifier:
 
 
 # 类 TemplateSample：核心类，封装本模块中的主要状态和行为。
-@dataclass(slots=True)
+@dataclass
 class TemplateSample:
     full_features: np.ndarray
     latency_only_features: np.ndarray

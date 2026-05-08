@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 中文注释说明：marl_models/buffer_and_helpers.py
 
@@ -223,6 +225,96 @@ class AttentionRolloutBuffer(RolloutBuffer):
                 "returns": t_returns[idx],
                 "old_values": t_values[idx],
             }
+
+
+class DiscreteOffloadRolloutBuffer:
+    """Rollout buffer for lower-layer request-level discrete MAPPO."""
+
+    def __init__(
+        self,
+        num_agents: int,
+        obs_dim: int,
+        max_requests: int,
+        num_actions: int,
+        buffer_size: int,
+        device: str,
+    ) -> None:
+        self.num_agents = num_agents
+        self.obs_dim = obs_dim
+        self.max_requests = max_requests
+        self.num_actions = num_actions
+        self.buffer_size = buffer_size
+        self.device = device
+
+        self.observations = np.zeros((buffer_size, num_agents, obs_dim), dtype=np.float32)
+        self.actions = np.zeros((buffer_size, num_agents, max_requests), dtype=np.int64)
+        self.masks = np.zeros((buffer_size, num_agents, max_requests, num_actions), dtype=np.float32)
+        self.valid_slots = np.zeros((buffer_size, num_agents, max_requests), dtype=np.float32)
+        self.log_probs = np.zeros((buffer_size, num_agents), dtype=np.float32)
+        self.rewards = np.zeros((buffer_size, num_agents), dtype=np.float32)
+        self.dones = np.zeros((buffer_size, num_agents), dtype=np.float32)
+        self.values = np.zeros((buffer_size, num_agents), dtype=np.float32)
+        self.advantages = np.zeros((buffer_size, num_agents), dtype=np.float32)
+        self.returns = np.zeros((buffer_size, num_agents), dtype=np.float32)
+        self.step = 0
+
+    def add(
+        self,
+        obs: np.ndarray,
+        actions: np.ndarray,
+        masks: np.ndarray,
+        log_probs: np.ndarray,
+        rewards: list[float] | np.ndarray,
+        done: bool,
+        values: np.ndarray,
+    ) -> None:
+        if self.step >= self.buffer_size:
+            raise ValueError("Discrete offload rollout buffer overflow")
+        self.observations[self.step] = obs
+        self.actions[self.step] = actions
+        self.masks[self.step] = masks
+        self.valid_slots[self.step] = (np.sum(masks, axis=-1) > 0.0).astype(np.float32)
+        self.log_probs[self.step] = log_probs
+        self.rewards[self.step] = np.asarray(rewards, dtype=np.float32)
+        self.dones[self.step] = np.full(self.num_agents, float(done), dtype=np.float32)
+        self.values[self.step] = values
+        self.step += 1
+
+    def compute_returns_and_advantages(self, last_values: np.ndarray, gamma: float, gae_lambda: float) -> None:
+        last_gae_lam: float = 0.0
+        for t in reversed(range(self.buffer_size)):
+            next_values = last_values if t == self.buffer_size - 1 else self.values[t + 1]
+            delta = self.rewards[t] + gamma * next_values * (1.0 - self.dones[t]) - self.values[t]
+            self.advantages[t] = last_gae_lam = delta + gamma * gae_lambda * (1.0 - self.dones[t]) * last_gae_lam
+        self.returns = self.advantages + self.values
+        self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + 1e-8)
+
+    def get_batches(self, batch_size: int):
+        t_obs = torch.from_numpy(self.observations).to(self.device)
+        t_actions = torch.from_numpy(self.actions).to(self.device)
+        t_masks = torch.from_numpy(self.masks).to(self.device)
+        t_valid_slots = torch.from_numpy(self.valid_slots).to(self.device)
+        t_log_probs = torch.from_numpy(self.log_probs).to(self.device)
+        t_advantages = torch.from_numpy(self.advantages).to(self.device)
+        t_returns = torch.from_numpy(self.returns).to(self.device)
+        t_values = torch.from_numpy(self.values).to(self.device)
+
+        indices = torch.randperm(self.buffer_size, device=self.device)
+        for start in range(0, self.buffer_size, batch_size):
+            idx = indices[start : start + batch_size]
+            yield {
+                "obs": t_obs[idx],
+                "actions": t_actions[idx],
+                "masks": t_masks[idx],
+                "valid_slots": t_valid_slots[idx],
+                "old_log_probs": t_log_probs[idx],
+                "advantages": t_advantages[idx],
+                "returns": t_returns[idx],
+                "old_values": t_values[idx],
+            }
+
+    def clear(self) -> None:
+        self.step = 0
 
 
 # 函数 soft_update：更新模型、环境或统计量的状态，主要参数：target_net, source_net, tau。

@@ -29,7 +29,7 @@ from marl_models.static_baseline.static_model import StaticModel
 from paths import results_path
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class ScaleCase:
     name: str
     num_uavs: int
@@ -39,7 +39,7 @@ class ScaleCase:
     description: str
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True)
 class PolicyVariant:
     name: str
     policy_mode: str
