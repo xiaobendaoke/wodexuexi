@@ -16,6 +16,15 @@ from marl_models.utils import get_model, save_models
 from utils.logger import Log, Logger, load_configs
 
 
+def set_global_seed(seed: int | None) -> None:
+    if seed is None:
+        return
+    np.random.seed(int(seed))
+    torch.manual_seed(int(seed))
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(int(seed))
+
+
 def apply_lower_ablation(ablation: str) -> str:
     if ablation == "full":
         config.OFFLOAD_MASK_MODE = "quality"
@@ -124,6 +133,8 @@ def train_hierarchical_mappo(
     num_episodes: int,
     timestamp: str | None = None,
     mode: str = "full_hierarchical",
+    seed: int | None = None,
+    trajectory_model_name: str = "attention_mappo",
     offload_model_name: str | None = None,
     trajectory_model_dir: str | None = None,
     trajectory_config_path: str | None = None,
@@ -133,6 +144,7 @@ def train_hierarchical_mappo(
 ) -> dict[str, object]:
     if trajectory_config_path is not None:
         load_configs(trajectory_config_path)
+    set_global_seed(seed)
 
     timestamp = timestamp or datetime.now().strftime("%Y%m%d_%H%M%S_hierarchical_mappo")
     resolved_offload_model_name = offload_model_name or apply_lower_ablation(lower_ablation)
@@ -145,7 +157,7 @@ def train_hierarchical_mappo(
     use_offload_actions = train_offload
 
     env = Env()
-    trajectory_model = get_model("attention_mappo")
+    trajectory_model = get_model(trajectory_model_name)
     if trajectory_model_dir is not None:
         trajectory_model.load(trajectory_model_dir)
     offload_model = get_model(resolved_offload_model_name) if train_offload else None
@@ -156,7 +168,17 @@ def train_hierarchical_mappo(
     logger = Logger(log_dir="train_logs/hierarchical_mappo", timestamp=timestamp)
     logger.log_configs()
     episode_log = Log()
-    recent_losses = {"actor": 0.0, "critic": 0.0, "entropy": 0.0}
+    recent_losses = {
+        "actor": 0.0,
+        "critic": 0.0,
+        "entropy": 0.0,
+        "trajectory_actor": 0.0,
+        "trajectory_critic": 0.0,
+        "trajectory_entropy": 0.0,
+        "lower_actor": 0.0,
+        "lower_critic": 0.0,
+        "lower_entropy": 0.0,
+    }
     start_time = time.time()
 
     obs = env.reset()
@@ -284,6 +306,9 @@ def train_hierarchical_mappo(
                     constraint_penalty=episode_totals["constraint_penalty"] / episode_length,
                     coop_masked_count=episode_totals["coop_masked"],
                     mbs_masked_count=episode_totals["mbs_masked"],
+                    actor_loss=recent_losses.get("actor"),
+                    critic_loss=recent_losses.get("critic"),
+                    entropy_loss=recent_losses.get("entropy"),
                 )
                 if episode % config.LOG_FREQ == 0:
                     logger.log_metrics(episode, episode_log, config.LOG_FREQ, time.time() - start_time, losses=recent_losses)
@@ -321,6 +346,12 @@ def train_hierarchical_mappo(
             "actor": float((traj_losses["actor"] + offload_losses["actor"]) / divisor),
             "critic": float((traj_losses["critic"] + offload_losses["critic"]) / divisor),
             "entropy": float((traj_losses["entropy"] + offload_losses["entropy"]) / divisor),
+            "trajectory_actor": float(traj_losses["actor"]),
+            "trajectory_critic": float(traj_losses["critic"]),
+            "trajectory_entropy": float(traj_losses["entropy"]),
+            "lower_actor": float(offload_losses["actor"]),
+            "lower_critic": float(offload_losses["critic"]),
+            "lower_entropy": float(offload_losses["entropy"]),
         }
 
     trajectory_model_dir_out: str | None = trajectory_model_dir
@@ -337,6 +368,8 @@ def train_hierarchical_mappo(
     summary = {
         "timestamp": timestamp,
         "mode": mode,
+        "seed": int(seed) if seed is not None else None,
+        "trajectory_model_name": trajectory_model_name,
         "lower_ablation": lower_ablation,
         "num_episodes": num_episodes,
         "mean_recent_reward": float(np.mean(recent_rewards[-max(1, int(num_episodes * 0.1)) :])) if recent_rewards else 0.0,
@@ -348,6 +381,7 @@ def train_hierarchical_mappo(
         "constraint_mode": str(getattr(config, "OFFLOAD_CONSTRAINT_MODE", "lagrange")),
         "final_lambda_dsr": float(lambda_dsr),
         "final_lambda_mbs": float(lambda_mbs),
+        "final_losses": {key: float(value) for key, value in recent_losses.items()},
         "offload_dsr_target": float(config.OFFLOAD_DSR_TARGET),
         "offload_mbs_load_ceiling": float(config.OFFLOAD_MBS_LOAD_CEILING),
         "log_json": logger.json_file_path,
@@ -365,6 +399,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--num_episodes", type=int, default=50)
     parser.add_argument("--timestamp", type=str, default=None)
     parser.add_argument("--mode", type=str, default="full_hierarchical", choices=["upper_only", "lower_only_fixed_upper", "full_hierarchical"])
+    parser.add_argument("--seed", type=int, default=None, help="Training seed for NumPy and PyTorch.")
+    parser.add_argument(
+        "--trajectory_model",
+        type=str,
+        default="attention_mappo",
+        help="Upper-layer trajectory controller used during hierarchical training.",
+    )
     parser.add_argument("--lower_ablation", type=str, default="full", choices=["full", "no_mask", "no_lagrange", "no_attention"])
     parser.add_argument("--offload_model", type=str, default=None)
     parser.add_argument("--trajectory_model_dir", type=str, default=None)
@@ -390,6 +431,8 @@ def main() -> None:
         num_episodes=args.num_episodes,
         timestamp=args.timestamp,
         mode=args.mode,
+        seed=args.seed,
+        trajectory_model_name=args.trajectory_model,
         offload_model_name=args.offload_model,
         trajectory_model_dir=args.trajectory_model_dir,
         trajectory_config_path=args.trajectory_config_path,

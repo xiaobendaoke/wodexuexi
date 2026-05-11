@@ -1,218 +1,230 @@
-# Multi-UAV Assisted Wireless Powered Mobile Edge Computing: A Hybrid Optimization Approach
+# Quality-aware Constrained Hierarchical MARL for Multi-UAV MEC
 
-## Objective
+这个仓库讲的是一个很明确的故事：
 
-The primary objective of this research is to develop a framework for a **multi-UAV-assisted collaborative Mobile Edge Computing (MEC)** network. We aim to jointly optimize the interdependent components: **task offloading decisions, service caching placement, content caching strategies, UAV trajectories and wireless power transfer**. The goal is to minimize service latency, system-wide energy consumption, device offline rate while simultaneously maximizing user fairness.
+> 多无人机 MEC 系统里，服务质量不是只靠 UAV 飞得好就能解决，也不是只靠请求卸载策略聪明就够了。UAV 轨迹决定链路、覆盖、邻居协作机会和 MBS 回传条件；请求级卸载又反过来决定时延、能耗、deadline satisfaction 和 MBS 负载。直接把轨迹和所有请求卸载揉成一个巨大联合动作空间很难训练、也很难解释。因此，本项目把问题拆成上下两层 MARL：上层管 UAV 轨迹，下层管服务请求卸载。
 
-We are aiming to implement a hybrid optimization approach that combines multi-agent deep reinforcement learning with collaborative and adaptive caching policies. We are trying to create a generic framework that can be used with different models for finding the best-suited one for our purpose. We are also exploring incorporating **attention mechanisms** within the multi-agent reinforcement learning models for scalability and improved performance.
+本文主方法是 **Quality-aware Constrained Hierarchical MARL**：
 
-Also trying to incorporate modern Python practices and type annotations (Python 3.12+).
+- 上层：`attention_mappo` 控制多 UAV 轨迹。
+- 下层：`constrained_attention_offload_mappo` 对每个服务请求选择 `local UAV / cooperative UAV / MBS`。
+- 质量感知动作 mask：避免明显不可行的协作 UAV 或过慢 MBS 动作。
+- Lagrange 约束：显式控制 deadline satisfaction 和 MBS load 的权衡。
+- `oracle_guided` 不再是主方法，只作为 teacher/reference baseline。
 
-## 🎯 What's Included?
+## 为什么这样拆
 
-**MARL algorithms included:**
-- **MADDPG**
-- **MATD3**
-- **MAPPO**
-- **MASAC**
-- **4 Attention Variants of above algorithms**
+在多 UAV MEC 场景里，轨迹控制和请求卸载是强耦合的：
 
-See [marl_models/README.md](marl_models/README.md) for further details.
+- UAV 位置影响 UE-UAV 链路速率。
+- UAV 位置影响是否存在合适的协作 UAV。
+- UAV-MBS 回传质量影响 MBS fallback 是否值得用。
+- 卸载决策影响请求时延、UAV 队列压力、能耗和 MBS 负载。
 
-**Advanced Features:**
-- ✅ Offline rate tracking - Monitors device battery health
-- ✅ Wireless Power Transfer - UAVs charge devices under critical battery levels
-- ✅ Smart caching - Adaptive content placement
-- ✅ Multi-agent coordination - Through MARL algorithms enhanced with attention mechanisms
-- ✅ 3-stage tuning - Optimize reward weights, agent params, architecture
+如果上层策略只优化轨迹，系统可能覆盖得很好，但服务请求仍然大量回落到 MBS。  
+如果下层策略只优化卸载，它只能被动适应当前 UAV 分布，无法创造更好的协作机会。  
+所以这里采用双层结构：**上层塑造服务环境，下层在当前环境里做请求级质量控制**。
 
-### Request-Level Offloading Extension
+## 方法结构
 
-The current codebase also includes a **request-level offloading extension** for **service requests** while keeping the original UAV trajectory-control interface unchanged. UAV mobility actions are still `(NUM_UAVS, 2)`, and only the service-request offloading path is extended with a pluggable policy interface.
+每个环境 step 的流程是：
 
-- `SERVICE_OFFLOAD_POLICY="heuristic"` keeps the original heuristic-style service offloading path as the baseline/fallback.
-- `SERVICE_OFFLOAD_POLICY="learned"` switches service requests to a lightweight 3-way offloading policy: `local`, `cooperative`, or `MBS`.
-- If `cooperative` is selected, the specific neighbor UAV is still chosen by the existing heuristic neighbor-selection logic.
-- `content request` and `emergency energy request` behavior remain on the original logic path.
+1. 环境生成当前 UAV/UE/request 状态。
+2. 下层调用 `env.get_offloading_obs_and_masks()` 得到请求级观测和动作 mask。
+3. 下层 MAPPO 为每架 UAV 的服务请求 slot 输出离散卸载动作。
+4. 环境执行请求处理，统计 latency、energy、DSR、MBS load 等指标。
+5. 上层 attention-MAPPO 输出 UAV 轨迹动作，更新下一时刻位置。
 
-Important:
-- The current `learned` policy expects a separately trained request-level classifier checkpoint.
-- If the classifier checkpoint is missing or fails to load, the environment safely falls back to the original heuristic path.
-- The request-level extension adds `deadline` and `priority` fields for service requests.
-- `service_coverage` keeps its original fairness-oriented meaning and is not replaced by deadline satisfaction.
+下层动作空间固定为：
 
-![System Model](docs/system_model.jpg)
+| 动作 | 含义 |
+| --- | --- |
+| `0` | local UAV 执行 |
+| `1` | cooperative UAV 执行 |
+| `2` | MBS 执行 |
 
-## 📁 Project Structure
+下层消融设计：
 
-```
+| 方法 | Attention | Quality mask | Lagrange |
+| --- | --- | --- | --- |
+| `full` | yes | yes | yes |
+| `no_mask` | yes | no | yes |
+| `no_lagrange` | yes | yes | no |
+| `no_attention` | no | yes | yes |
+
+## 仓库结构
+
+```text
 .
-├── environment/                 # Simulation
-│   ├── env.py                   # Main simulation loop
-│   ├── uavs.py                  # UAV dynamics
-│   ├── user_equipments.py       # Device battery & requests
-│   └── comm_model.py            # Communication & WPT
-│
-├── marl_models/                 # RL algorithms (see marl_models/README.md for detailed structure)
-│
-├── utils/                       # Utilities
-│   ├── logger.py                # Training logs & metrics
-│   ├── plot_logs.py             # Single run visualization
-│   ├── plot_snapshots.py        # Snapshots of environment and trajectories
-│   └── comparative_plots.py     # Multi-algorithm comparison
-│
-├── config.py                   # All parameters
-├── train.py                    # Training script
-├── test.py                     # Testing script
-├── tune.py                     # Hyperparameter tuning with Optuna
-└── main.py                     # Legacy interface
+├── run_hierarchical_mappo_experiment.py      # 上下层 MAPPO 训练入口
+├── run_joint_trajectory_offload_experiment.py # 联合评估入口
+├── analyze_experiment_statistics.py          # paired unit 统计分析
+├── config.py                                 # 环境、奖励、约束与 PPO 配置
+├── environment/                              # 多 UAV MEC 仿真环境
+├── marl_models/
+│   ├── attention_mappo/                      # 上层 attention-MAPPO
+│   ├── offload_mappo/                        # 下层 constrained offload MAPPO
+│   ├── uncoordinated_greedy_baseline/        # 必要轨迹基线
+│   ├── attention.py                          # attention 模块
+│   ├── buffer_and_helpers.py                 # PPO buffer 与工具
+│   ├── offload_policy.py                     # oracle-guided teacher/reference 加载接口
+│   └── utils.py                              # 精简后的模型工厂
+├── utils/                                    # 日志、绘图和对比工具
+└── docs/
+    ├── PAPER_DRAFT.md                        # 论文草稿
+    ├── doc_attention.md
+    └── system_model.jpg
 ```
 
-## ⚡ Setup Instructions
+仓库已经清理掉旧的 MADDPG / MATD3 / MASAC / classifier training pipeline / 历史实验结果，只保留双层 MAPPO 主线和必要基线。
 
-To run this project, you need to install PyTorch specifically for your system's hardware first, followed by the rest of the dependencies.
+## 训练
 
-For Windows users with NVIDIA GPUs (CUDA 12.4), use:
+### 完整双层 MARL
 
-```bash
-pip install torch --index-url https://download.pytorch.org/whl/cu124
+```powershell
+python run_hierarchical_mappo_experiment.py `
+  --mode full_hierarchical `
+  --lower_ablation full `
+  --seed 42 `
+  --num_episodes 50 `
+  --timestamp full_hmarl_seed42
 ```
 
-```bash
-# Clone repository
-git clone <repo_url>
-cd Multi-UAV-Mobile-Edge-Computing-Hybrid-Optimization
+### 只训练上层
 
-# Create virtual environment (Python 3.12+)
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-# or: source .venv/bin/activate  # Linux/Mac
-
-# Install dependencies
-pip install -r requirements.txt
+```powershell
+python run_hierarchical_mappo_experiment.py `
+  --mode upper_only `
+  --trajectory_model attention_mappo `
+  --seed 42 `
+  --num_episodes 50 `
+  --timestamp upper_attention_seed42
 ```
 
-## 🚀 How to Use
+### 固定上层训练下层
 
-### 📋 Requirements
-
-- **Python** (3.12.0+)
-- **PyTorch** (version as per your GPU and OS, along with any other dependencies)
-- **NumPy**, **Matplotlib**, **Optuna** (and Plotly, Kaleido, Scikit-Learn for Optuna visualisation)
-
-### Training
-
-It can be used to start training from scratch or resume training from a previously saved checkpoint.
-
-Before running, choose the service offloading mode in `config.py`:
-
-```python
-SERVICE_OFFLOAD_POLICY = "heuristic"  # or "learned"
-SERVICE_OFFLOAD_POLICY_CHECKPOINT = None  # set this when SERVICE_OFFLOAD_POLICY == "learned"
+```powershell
+python run_hierarchical_mappo_experiment.py `
+  --mode lower_only_fixed_upper `
+  --trajectory_model attention_mappo `
+  --trajectory_model_dir saved_models/attention_mappo_xxx/final `
+  --lower_ablation full `
+  --seed 42 `
+  --num_episodes 50 `
+  --timestamp lower_attention_seed42
 ```
 
-Notes:
-- Use `heuristic` if you want the closest behavior to the original repository.
-- Use `learned` if you want to exercise the new request-level service offloading path with a trained classifier checkpoint.
-- If `learned` is selected without a valid checkpoint, the runtime safely falls back to the heuristic offloading path.
+下层消融通过 `--lower_ablation` 切换：
 
-Minimal request-classifier workflow:
-
-```bash
-python collect_offload_dataset.py --samples 5000 --output offload_datasets/offload_dataset_minimal.npz
-python train_offload_policy.py --dataset offload_datasets/offload_dataset_minimal.npz --output saved_offload_policies/offload_policy_minimal.pt
+```powershell
+--lower_ablation full
+--lower_ablation no_mask
+--lower_ablation no_lagrange
+--lower_ablation no_attention
 ```
 
-```bash
-# Start training from scratch
-python main.py train --num_episodes=<total_episodes>
+## 评估
 
-# To resume training from a saved checkpoint, specify no. of additional episodes, path to the saved checkpoint, and path to the saved config file (to load and use the same settings).
-python main.py train --num_episodes=<additional_episodes> --resume_path="<path_to_checkpoint_directory>" --config_path="<path_to_saved_config>"
+主表建议比较六组：
 
+| 组合 | 作用 |
+| --- | --- |
+| `uncoordinated_greedy + heuristic` | 基础参考 |
+| `attention_mappo + heuristic` | 只看上层 attention-MAPPO 贡献 |
+| `attention_mappo + oracle_guided` | teacher/reference baseline |
+| `uncoordinated_greedy + lower_mappo` | 下层 MARL 在弱上层分布下的表现 |
+| `attention_mappo + lower_mappo` | 分别训练的上下层组合 |
+| `full_hierarchical_marl` | 主方法 |
+
+示例：
+
+```powershell
+python run_joint_trajectory_offload_experiment.py `
+  --hmarl_main_table `
+  --trajectory_run_root . `
+  --training_seeds 42 84 126 `
+  --seeds 42 84 126 168 210 252 294 336 378 420 `
+  --episodes_per_seed 6 `
+  --steps_per_episode 1000 `
+  --lower_model_dirs `
+    uncoordinated_greedy__lower_mappo@42=saved_models/offload_mappo_lower_uncoord_seed42/final `
+    attention_mappo__lower_mappo@42=saved_models/offload_mappo_lower_attention_seed42/final `
+    full_hierarchical_marl@42=saved_models/offload_mappo_full_hmarl_seed42/final
 ```
 
-### Hyperparameter Tuning
+如果要评估 `oracle_guided` teacher/reference，需要显式提供外部 checkpoint：
 
-Optimize reward weights and agent parameters with **3-stage tuning**:
-
-```bash
-# Stage 1: Optimize reward weights (ALPHA_1, ALPHA_2, ALPHA_3, ALPHA_4): helps understand reward trade-offs
-python tune.py --stage 1 --episodes 500 --trials 50
-
-# Stage 2: Optimize learning rates, batch sizes, network architecture: find best agent hyperparameters
-python tune.py --stage 2 --episodes 1000 --trials 50
-
-# Stage 3: Optimize attention architecture (attention models only): tune ATTN_HIDDEN_DIM and ATTN_NUM_HEADS
-python tune.py --stage 3 --episodes 500 --trials 30
+```powershell
+--surrogate_checkpoint path/to/offload_policy_surrogate_runtime.pt
 ```
 
-### Testing
+本仓库不再内置旧 classifier checkpoint。
 
-It can be used to test a saved model for a specified number of episodes.
-To test a saved model, you must provide the path to the model's directory and its corresponding configuration file.
+## 统计口径
 
-```bash
-# Start testing, with saved model path and config file saved during that model's training run (to load and use the same settings).
-python main.py test --num_episodes=<total_episodes> --model_path="<path_to_model_directory>" --config_path="<path_to_saved_config>"
+推荐实验设置：
+
+- training seeds：`42, 84, 126`
+- workload seeds：`42, 84, 126, 168, 210, 252, 294, 336, 378, 420`
+- 每个 workload seed：`6` episodes
+- 每个 episode：`1000` steps
+
+统计单位是：
+
+```text
+(training_seed, workload_seed) 的 episode mean
 ```
 
-### New Metrics
+报告指标：
 
-The request-level extension adds the following logged metrics:
+- reward
+- latency
+- energy
+- deadline satisfaction rate
+- fairness
+- offline rate
+- local / cooperative / MBS ratio
+- MBS load ratio
+- lower actor loss、critic loss、entropy
+- `lambda_dsr`、`lambda_mbs`
+- constraint penalty
+- cooperative/MBS masked count
 
-- `deadline_satisfaction_rate`
-- `offloading_ratio_local`
-- `offloading_ratio_cooperative`
-- `offloading_ratio_mbs`
-- `mbs_load_ratio`
+统计脚本：
 
-Current interpretation:
-- `deadline_satisfaction_rate` is defined for **service requests only**.
-- `offloading_ratio_local`, `offloading_ratio_cooperative`, and `offloading_ratio_mbs` are service-request offloading ratios.
-- `mbs_load_ratio` tracks the fraction of generated service requests routed to MBS.
-- In the current `train.py` / `test.py` pipeline, these metrics are logged as **per-step ratios averaged across the episode**. They are **not** yet strict count-weighted episode aggregates.
-
-### Minimal Example
-
-Set the offloading mode in `config.py`:
-
-```python
-SERVICE_OFFLOAD_POLICY = "heuristic"
+```powershell
+python analyze_experiment_statistics.py `
+  results/joint_experiments/<exp_name>/joint_experiment_summary.json `
+  --reference uncoordinated_greedy__heuristic `
+  --output_md results/joint_experiments/<exp_name>/statistics.md
 ```
 
-or:
+## 这篇工作的论文故事
 
-```python
-SERVICE_OFFLOAD_POLICY = "learned"
-SERVICE_OFFLOAD_POLICY_CHECKPOINT = "saved_offload_policies/offload_policy_minimal.pt"
-```
+这项工作不是声称“第一次联合优化轨迹和卸载”。已有工作已经大量讨论 UAV-MEC 中的轨迹、卸载、资源分配、缓存和服务放置联合优化。
 
-Then run:
+这个仓库的核心定位是：
 
-```bash
-python main.py train --num_episodes=5
-python main.py test --num_episodes=2 --model_path="<path_to_model_directory>" --config_path="<path_to_saved_config>"
-```
+1. **用双层 MARL 拆解复杂动作空间**  
+   上层只处理 UAV 轨迹，下层只处理请求级卸载，避免端到端联合动作爆炸。
 
-### Visualization
+2. **让下层卸载从 classifier 回到纯 RL**  
+   旧的 oracle-guided 分类器降级为 teacher/reference，主方法改为 constrained attention offload MAPPO。
 
-```bash
-# Compare multiple algorithms
-python compare_algorithms.py \
-    --logs train_logs/maddpg_run train_logs/matd3_run train_logs/mappo_run \
-    --names MADDPG MATD3 MAPPO \
-    --output comparison_plots \
-    --smoothing 10
-```
+3. **把服务质量写进动作可行性和约束里**  
+   quality-aware mask 负责屏蔽坏动作，Lagrange 约束负责调节 DSR 与 MBS load。
 
-Refer [Plotting Module](./docs/PLOTTING_MODULE.md) for detailed plotting plan.
+4. **用成对统计证明贡献来自哪里**  
+   主表拆分上层、下层、teacher/reference 和 full hierarchical MARL；消融表拆分 mask、Lagrange 和 attention。
 
-## 👨‍💻 Contributors
+一句话版本：
 
-- Roopam Taneja
-- Vraj Tamakuwala
+> 本文提出一种面向多 UAV MEC 的质量感知约束式双层 MARL 框架：上层 attention-MAPPO 学习 UAV 协同轨迹，下层 constrained attention offload MAPPO 学习请求级卸载，并通过质量 mask 与 Lagrange 约束控制 deadline satisfaction 和 MBS load 的权衡。
 
-**PS: Currently under rapid development and may be subject to significant changes.**
+## 当前状态
 
-### Made with ❤️
+- 代码已精简到双层 MAPPO 主线。
+- 旧实验结果、旧 checkpoint、旧 dataset 已删除。
+- `docs/PAPER_DRAFT.md` 保留论文草稿。
+- 后续需要重新跑主表和消融表，生成新的 results。

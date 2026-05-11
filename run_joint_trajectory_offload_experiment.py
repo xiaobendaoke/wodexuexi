@@ -77,6 +77,8 @@ SUMMARY_METRIC_NAMES: tuple[str, ...] = (
     "service_predict_exception_fallback_count",
 )
 
+DEFAULT_TRAINING_SEED = "default"
+
 POLICY_ALIASES: dict[str, str] = {
     "heuristic": "heuristic",
     "surrogate": "surrogate",
@@ -100,6 +102,18 @@ def _parse_key_value_entries(entries: list[str] | None, option_name: str) -> dic
             raise ValueError(f"{option_name} entries must use non-empty NAME=VALUE pairs, got: {entry}")
         mapping[key] = value
     return mapping
+
+
+def _parse_seeded_key(raw_key: str) -> tuple[str, str | None]:
+    key = raw_key.strip()
+    for separator in ("@", "#"):
+        if separator in key:
+            label, seed = key.rsplit(separator, 1)
+            label = label.strip()
+            seed = seed.strip()
+            if label and seed:
+                return label, seed
+    return key, None
 
 
 def _normalize_offload_policy(policy_label: str) -> str:
@@ -210,7 +224,7 @@ def resolve_latest_training_artifacts(trajectory_run_root: str | Path, model_nam
         reverse=True,
     )
     if not model_candidates:
-        if model_name.endswith("_greedy") or model_name in {"random", "static", "nearest_greedy", "uncoordinated_greedy"}:
+        if model_name == "uncoordinated_greedy":
             resolved_config = config_candidates[0] if config_candidates else None
             return resolved_config, None
         raise FileNotFoundError(
@@ -376,6 +390,26 @@ def run_single_episode(
     return episode_metrics, runtime_audit, trace_steps
 
 
+def _resolve_lower_model_dir_for_training_seed(
+    lower_model_dir: str | Path | dict[str, str] | None,
+    training_seed: int | None,
+) -> str | Path | None:
+    if isinstance(lower_model_dir, dict):
+        seed_key = str(training_seed) if training_seed is not None else DEFAULT_TRAINING_SEED
+        return lower_model_dir.get(seed_key) or lower_model_dir.get(DEFAULT_TRAINING_SEED)
+    return lower_model_dir
+
+
+def _resolve_seeded_value(
+    value: str | Path | dict[str, str] | None,
+    training_seed: int | None,
+) -> str | Path | None:
+    if isinstance(value, dict):
+        seed_key = str(training_seed) if training_seed is not None else DEFAULT_TRAINING_SEED
+        return value.get(seed_key) or value.get(DEFAULT_TRAINING_SEED)
+    return value
+
+
 # 函数 evaluate_joint_policy：关键函数，承载本模块的一段可复用实验逻辑。
 def evaluate_joint_policy(
     *,
@@ -383,10 +417,11 @@ def evaluate_joint_policy(
     policy_label: str,
     checkpoint_path: str | None,
     trajectory_model_name: str,
-    trajectory_model_dir: str | Path | None,
-    trajectory_config_path: str | Path | None,
-    lower_model_dir: str | Path | None,
+    trajectory_model_dir: str | Path | dict[str, str] | None,
+    trajectory_config_path: str | Path | dict[str, str] | None,
+    lower_model_dir: str | Path | dict[str, str] | None,
     lower_model_name: str,
+    training_seeds: list[int] | None,
     seeds: list[int],
     episodes_per_seed: int,
     steps_per_episode: int | None,
@@ -394,11 +429,10 @@ def evaluate_joint_policy(
     record_spatial_trace: bool = False,
     spatial_trace_interval: int = 20,
 ) -> dict[str, object]:
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    if trajectory_config_path is not None:
+    eval_config_snapshot = snapshot_config()
+    if trajectory_config_path is not None and not isinstance(trajectory_config_path, dict):
         load_configs(str(trajectory_config_path))
     config.MODEL = trajectory_model_name
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     if steps_per_episode is not None:
         config.STEPS_PER_EPISODE = int(steps_per_episode)
 
@@ -419,84 +453,114 @@ def evaluate_joint_policy(
     spatial_trace_records: list[dict[str, object]] = []
     global_episode_idx = 0
 
-    # 循环处理：遍历 seed 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
-    for seed in seeds:
-        np.random.seed(seed)
-        torch.manual_seed(seed)
-        env = Env()
-        model = get_model(trajectory_model_name)
-        if trajectory_model_dir is not None:
-            model.load(str(trajectory_model_dir))
-        offload_model = None
-        if normalized_offload_policy == "lower_mappo":
-            if lower_model_dir is None:
-                raise ValueError(f"lower_model_dir is required for combo '{combo_label}'.")
-            offload_model = get_model(lower_model_name)
-            offload_model.load(str(lower_model_dir))
+    training_seed_keys: list[int | None] = [None]
+    if training_seeds is not None and len(training_seeds) > 0:
+        training_seed_keys = [int(seed) for seed in training_seeds]
 
-        episode_metrics_for_seed: list[dict[str, float]] = []
-        # 循环处理：遍历 episode_idx 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
-        for episode_idx in range(episodes_per_seed):
-            run_seed = int(seed + episode_idx * 1000)
-            np.random.seed(run_seed)
-            torch.manual_seed(run_seed)
+    for training_seed in training_seed_keys:
+        restore_config(eval_config_snapshot)
+        resolved_trajectory_config_path = _resolve_seeded_value(trajectory_config_path, training_seed)
+        resolved_trajectory_model_dir = _resolve_seeded_value(trajectory_model_dir, training_seed)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if resolved_trajectory_config_path is not None:
+            load_configs(str(resolved_trajectory_config_path))
+        config.MODEL = trajectory_model_name
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if steps_per_episode is not None:
+            config.STEPS_PER_EPISODE = int(steps_per_episode)
+        set_service_offload_policy(policy_label, checkpoint_path)
+        resolved_lower_model_dir = _resolve_lower_model_dir_for_training_seed(lower_model_dir, training_seed)
+        # 循环处理：遍历 seed 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+        for seed in seeds:
+            np.random.seed(seed)
+            torch.manual_seed(seed)
+            env = Env()
+            model = get_model(trajectory_model_name)
+            if resolved_trajectory_model_dir is not None:
+                model.load(str(resolved_trajectory_model_dir))
+            offload_model = None
+            if normalized_offload_policy == "lower_mappo":
+                if resolved_lower_model_dir is None:
+                    raise ValueError(f"lower_model_dir is required for combo '{combo_label}'.")
+                offload_model = get_model(lower_model_name)
+                offload_model.load(str(resolved_lower_model_dir))
 
-            episode_metrics, runtime_audit, trace_steps = run_single_episode(
-                env,
-                model,
-                offload_model=offload_model,
-                record_spatial_trace=record_spatial_trace,
-                spatial_trace_interval=spatial_trace_interval,
-            )
-            episode_metrics_for_seed.append(episode_metrics)
-            aggregate_units.append(episode_metrics)
-            if record_spatial_trace:
-                spatial_trace_records.append(
-                    {
-                        "combo": combo_label,
-                        "trajectory_model": trajectory_model_name,
-                        "offload_policy": policy_label,
-                        "seed": int(seed),
-                        "episode": int(episode_idx),
-                        "steps": trace_steps,
-                    }
+            episode_metrics_for_seed: list[dict[str, float]] = []
+            # 循环处理：遍历 episode_idx 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+            for episode_idx in range(episodes_per_seed):
+                run_seed = int(seed + episode_idx * 1000)
+                np.random.seed(run_seed)
+                torch.manual_seed(run_seed)
+
+                episode_metrics, runtime_audit, trace_steps = run_single_episode(
+                    env,
+                    model,
+                    offload_model=offload_model,
+                    record_spatial_trace=record_spatial_trace,
+                    spatial_trace_interval=spatial_trace_interval,
                 )
+                episode_metrics_for_seed.append(episode_metrics)
+                aggregate_units.append(episode_metrics)
+                if record_spatial_trace:
+                    spatial_trace_records.append(
+                        {
+                            "combo": combo_label,
+                            "trajectory_model": trajectory_model_name,
+                            "offload_policy": policy_label,
+                            "training_seed": int(training_seed) if training_seed is not None else None,
+                            "workload_seed": int(seed),
+                            "seed": int(seed),
+                            "episode": int(episode_idx),
+                            "steps": trace_steps,
+                        }
+                    )
 
-            episode_log.append(
-                episode_metrics["reward"],
-                episode_metrics["latency"],
-                episode_metrics["energy"],
-                episode_metrics["fairness"],
-                episode_metrics["offline_rate"],
-                deadline_satisfaction_rate=episode_metrics["deadline_satisfaction_rate"],
-                offloading_ratio_local=episode_metrics["offloading_ratio_local"],
-                offloading_ratio_cooperative=episode_metrics["offloading_ratio_cooperative"],
-                offloading_ratio_mbs=episode_metrics["offloading_ratio_mbs"],
-                mbs_load_ratio=episode_metrics["mbs_load_ratio"],
-                service_learned_decision_count=episode_metrics["service_learned_decision_count"],
-                service_heuristic_decision_count=episode_metrics["service_heuristic_decision_count"],
-                service_fallback_count=episode_metrics["service_fallback_count"],
-                service_predict_exception_fallback_count=episode_metrics["service_predict_exception_fallback_count"],
-                service_offload_policy_requested=str(runtime_audit["service_offload_policy_requested"]),
-                service_offload_policy_loaded=bool(runtime_audit["service_offload_policy_loaded"]) or offload_model is not None,
-                service_offload_policy_checkpoint_path=runtime_audit["service_offload_policy_checkpoint_path"],
-                service_offload_policy_feature_family=runtime_audit["service_offload_policy_feature_family"] or normalized_offload_policy,
-            )
-            global_episode_idx += 1
-            logger.log_metrics(global_episode_idx, episode_log, 1, time.time() - start_time)
+                episode_log.append(
+                    episode_metrics["reward"],
+                    episode_metrics["latency"],
+                    episode_metrics["energy"],
+                    episode_metrics["fairness"],
+                    episode_metrics["offline_rate"],
+                    deadline_satisfaction_rate=episode_metrics["deadline_satisfaction_rate"],
+                    offloading_ratio_local=episode_metrics["offloading_ratio_local"],
+                    offloading_ratio_cooperative=episode_metrics["offloading_ratio_cooperative"],
+                    offloading_ratio_mbs=episode_metrics["offloading_ratio_mbs"],
+                    mbs_load_ratio=episode_metrics["mbs_load_ratio"],
+                    service_learned_decision_count=episode_metrics["service_learned_decision_count"],
+                    service_heuristic_decision_count=episode_metrics["service_heuristic_decision_count"],
+                    service_fallback_count=episode_metrics["service_fallback_count"],
+                    service_predict_exception_fallback_count=episode_metrics["service_predict_exception_fallback_count"],
+                    service_offload_policy_requested=str(runtime_audit["service_offload_policy_requested"]),
+                    service_offload_policy_loaded=bool(runtime_audit["service_offload_policy_loaded"]) or offload_model is not None,
+                    service_offload_policy_checkpoint_path=runtime_audit["service_offload_policy_checkpoint_path"],
+                    service_offload_policy_feature_family=runtime_audit["service_offload_policy_feature_family"] or normalized_offload_policy,
+                )
+                global_episode_idx += 1
+                logger.log_metrics(global_episode_idx, episode_log, 1, time.time() - start_time)
 
-        per_seed_mean = {
-            metric_name: float(np.mean([entry[metric_name] for entry in episode_metrics_for_seed]))
-            for metric_name in SUMMARY_METRIC_NAMES
-        }
-        per_seed_runs.append(
-            {
-                "policy": policy_label,
-                "seed": int(seed),
-                "episodes": episode_metrics_for_seed,
-                "per_seed_mean": per_seed_mean,
+            per_seed_mean = {
+                metric_name: float(np.mean([entry[metric_name] for entry in episode_metrics_for_seed]))
+                for metric_name in SUMMARY_METRIC_NAMES
             }
-        )
+            per_seed_runs.append(
+                {
+                    "policy": policy_label,
+                    "training_seed": int(training_seed) if training_seed is not None else None,
+                    "workload_seed": int(seed),
+                    "seed": int(seed),
+                    "unit_id": (
+                        f"train{int(training_seed)}__workload{int(seed)}"
+                        if training_seed is not None
+                        else f"workload{int(seed)}"
+                    ),
+                    "lower_model_dir": str(resolved_lower_model_dir) if resolved_lower_model_dir is not None else None,
+                    "trajectory_model_dir": str(resolved_trajectory_model_dir) if resolved_trajectory_model_dir is not None else None,
+                    "trajectory_config_path": str(resolved_trajectory_config_path) if resolved_trajectory_config_path is not None else None,
+                    "episodes": episode_metrics_for_seed,
+                    "per_seed_mean": per_seed_mean,
+                    "unit_mean": per_seed_mean,
+                }
+            )
 
     generate_plots(str(logger.json_file_path), str(plot_dir), "joint_test", timestamp, smoothing_window=2)
     spatial_trace_path: str | None = None
@@ -519,11 +583,23 @@ def evaluate_joint_policy(
         "plot_dir": str(plot_dir),
         "log_json_path": str(logger.json_file_path),
         "config_path": str(logger.config_file_path),
-        "trajectory_config_source_path": str(trajectory_config_path) if trajectory_config_path is not None else None,
+        "trajectory_config_source_path": trajectory_config_path
+        if isinstance(trajectory_config_path, dict)
+        else str(trajectory_config_path)
+        if trajectory_config_path is not None
+        else None,
         "trajectory_model": trajectory_model_name,
-        "trajectory_model_dir": str(trajectory_model_dir) if trajectory_model_dir is not None else None,
+        "trajectory_model_dir": trajectory_model_dir
+        if isinstance(trajectory_model_dir, dict)
+        else str(trajectory_model_dir)
+        if trajectory_model_dir is not None
+        else None,
         "offload_policy": policy_label,
-        "lower_model_dir": str(lower_model_dir) if lower_model_dir is not None else None,
+        "lower_model_dir": lower_model_dir
+        if isinstance(lower_model_dir, dict)
+        else str(lower_model_dir)
+        if lower_model_dir is not None
+        else None,
         "lower_model_name": lower_model_name if lower_model_dir is not None else None,
         "spatial_trace_path": spatial_trace_path,
         "aggregate": aggregate_metric_dicts(aggregate_units),
@@ -603,22 +679,45 @@ def build_combo_specs(args: argparse.Namespace) -> list[dict[str, str]]:
     ]
 
 
-def resolve_trajectory_artifacts_for_combos(args: argparse.Namespace, combo_specs: list[dict[str, str]]) -> dict[str, dict[str, str | None]]:
+def _split_seeded_entries(entries: dict[str, str]) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
+    plain: dict[str, str] = {}
+    seeded: dict[str, dict[str, str]] = {}
+    for raw_key, value in entries.items():
+        label, seed = _parse_seeded_key(raw_key)
+        if seed is None:
+            plain[label] = value
+        else:
+            seeded.setdefault(label, {})[seed] = value
+    return plain, seeded
+
+
+def resolve_trajectory_artifacts_for_combos(
+    args: argparse.Namespace,
+    combo_specs: list[dict[str, str]],
+) -> dict[str, dict[str, str | dict[str, str] | None]]:
     run_roots = _parse_key_value_entries(args.trajectory_run_roots, "--trajectory_run_roots")
-    config_paths = _parse_key_value_entries(args.trajectory_configs, "--trajectory_configs")
-    model_dirs = _parse_key_value_entries(args.trajectory_model_dirs, "--trajectory_model_dirs")
-    artifacts: dict[str, dict[str, str | None]] = {}
+    config_paths, seeded_config_paths = _split_seeded_entries(_parse_key_value_entries(args.trajectory_configs, "--trajectory_configs"))
+    model_dirs, seeded_model_dirs = _split_seeded_entries(_parse_key_value_entries(args.trajectory_model_dirs, "--trajectory_model_dirs"))
+    artifacts: dict[str, dict[str, str | dict[str, str] | None]] = {}
 
     for combo in combo_specs:
         label = combo["label"]
         model_name = combo["trajectory_model"]
+        seeded_config = {
+            **seeded_config_paths.get(model_name, {}),
+            **seeded_config_paths.get(label, {}),
+        }
+        seeded_model_dir = {
+            **seeded_model_dirs.get(model_name, {}),
+            **seeded_model_dirs.get(label, {}),
+        }
         explicit_config = config_paths.get(label) or config_paths.get(model_name)
         explicit_model_dir = model_dirs.get(label) or model_dirs.get(model_name)
         run_root = run_roots.get(label) or run_roots.get(model_name) or args.trajectory_run_root
-        if explicit_config is not None or explicit_model_dir is not None:
+        if explicit_config is not None or explicit_model_dir is not None or seeded_config or seeded_model_dir:
             artifacts[label] = {
-                "config": str(Path(explicit_config)) if explicit_config is not None else None,
-                "model_dir": str(Path(explicit_model_dir)) if explicit_model_dir is not None else None,
+                "config": seeded_config or (str(Path(explicit_config)) if explicit_config is not None else None),
+                "model_dir": seeded_model_dir or (str(Path(explicit_model_dir)) if explicit_model_dir is not None else None),
                 "run_root": str(Path(run_root).resolve()) if run_root is not None else None,
             }
             continue
@@ -632,20 +731,43 @@ def resolve_trajectory_artifacts_for_combos(args: argparse.Namespace, combo_spec
     return artifacts
 
 
-def resolve_lower_model_dirs(args: argparse.Namespace, combo_specs: list[dict[str, str]]) -> dict[str, str | None]:
-    explicit_dirs = _parse_key_value_entries(args.lower_model_dirs, "--lower_model_dirs")
-    lower_dirs: dict[str, str | None] = {}
+def resolve_lower_model_dirs(args: argparse.Namespace, combo_specs: list[dict[str, str]]) -> dict[str, str | dict[str, str] | None]:
+    explicit_entries = _parse_key_value_entries(args.lower_model_dirs, "--lower_model_dirs")
+    explicit_dirs: dict[str, str] = {}
+    explicit_seeded_dirs: dict[str, dict[str, str]] = {}
+    for raw_key, value in explicit_entries.items():
+        label, seed = _parse_seeded_key(raw_key)
+        if seed is None:
+            explicit_dirs[label] = value
+        else:
+            explicit_seeded_dirs.setdefault(label, {})[seed] = value
+
+    lower_dirs: dict[str, str | dict[str, str] | None] = {}
     for combo in combo_specs:
         label = combo["label"]
         policy = _normalize_offload_policy(combo["offload_policy"])
         if policy != "lower_mappo":
             lower_dirs[label] = None
             continue
+
+        seeded_candidates = {
+            **explicit_seeded_dirs.get(combo["offload_policy"], {}),
+            **explicit_seeded_dirs.get(label, {}),
+        }
+        if seeded_candidates:
+            for seed, candidate in seeded_candidates.items():
+                path = Path(candidate)
+                if not (path / "offload_mappo.pth").exists():
+                    raise FileNotFoundError(f"Lower MAPPO checkpoint not found for {label}@{seed}: {path / 'offload_mappo.pth'}")
+            lower_dirs[label] = seeded_candidates
+            continue
+
         candidate = explicit_dirs.get(label) or explicit_dirs.get(combo["offload_policy"]) or args.lower_model_dir
         if candidate is None:
             raise ValueError(
                 f"Combo '{label}' uses lower_mappo but no lower model dir was provided. "
-                "Use --lower_model_dir or --lower_model_dirs LABEL=PATH."
+                "Use --lower_model_dir or --lower_model_dirs LABEL=PATH. "
+                "For multiple training seeds, use LABEL@SEED=PATH."
             )
         path = Path(candidate)
         if not (path / "offload_mappo.pth").exists():
@@ -682,13 +804,13 @@ def parse_args() -> argparse.Namespace:
         "--trajectory_configs",
         nargs="*",
         default=None,
-        help="Optional NAME=PATH config overrides for multiple trajectory models in combo mode.",
+        help="Optional NAME=PATH or NAME@TRAINING_SEED=PATH config overrides for multiple trajectory models in combo mode.",
     )
     parser.add_argument(
         "--trajectory_model_dirs",
         nargs="*",
         default=None,
-        help="Optional NAME=PATH saved-model overrides for multiple trajectory models in combo mode.",
+        help="Optional NAME=PATH or NAME@TRAINING_SEED=PATH saved-model overrides for multiple trajectory models in combo mode.",
     )
     parser.add_argument("--offload_experiment_root", type=str, default=None, help="Offload experiment root containing classifier checkpoints/.")
     parser.add_argument("--surrogate_checkpoint", type=str, default=None, help="Optional explicit surrogate checkpoint path.")
@@ -699,7 +821,7 @@ def parse_args() -> argparse.Namespace:
         "--lower_model_dirs",
         nargs="*",
         default=None,
-        help="Optional LABEL=PATH lower-MAPPO final-directory overrides for combo mode.",
+        help="Optional LABEL=PATH or LABEL@TRAINING_SEED=PATH lower-MAPPO final-directory overrides for combo mode.",
     )
     parser.add_argument(
         "--lower_model_names",
@@ -729,6 +851,13 @@ def parse_args() -> argparse.Namespace:
         "--hmarl_main_table",
         action="store_true",
         help="Evaluate the six-combo thesis table, including lower-MAPPO and full hierarchical MARL.",
+    )
+    parser.add_argument(
+        "--training_seeds",
+        type=int,
+        nargs="*",
+        default=None,
+        help="Training seeds used to form paired (training_seed, workload_seed) statistical units.",
     )
     parser.add_argument("--seeds", type=int, nargs="+", default=[42, 84, 126, 168], help="Evaluation seeds.")
     parser.add_argument("--episodes_per_seed", type=int, default=8, help="Episodes per seed and policy.")
@@ -802,6 +931,7 @@ def main() -> None:
                 trajectory_config_path=artifact["config"],
                 lower_model_dir=lower_model_dirs[combo_label],
                 lower_model_name=lower_model_names[combo_label],
+                training_seeds=[int(seed) for seed in args.training_seeds] if args.training_seeds else None,
                 seeds=[int(seed) for seed in args.seeds],
                 episodes_per_seed=args.episodes_per_seed,
                 steps_per_episode=args.steps_per_episode,
@@ -828,7 +958,9 @@ def main() -> None:
                 "rich_checkpoint": str(rich_checkpoint.resolve()) if rich_checkpoint is not None else None,
                 "policies": args.policies,
                 "combos": combo_specs,
+                "training_seeds": [int(seed) for seed in args.training_seeds] if args.training_seeds else None,
                 "seeds": [int(seed) for seed in args.seeds],
+                "workload_seeds": [int(seed) for seed in args.seeds],
                 "episodes_per_seed": int(args.episodes_per_seed),
                 "steps_per_episode": int(args.steps_per_episode) if args.steps_per_episode is not None else None,
                 "comparison_dir": str(comparison_dir),

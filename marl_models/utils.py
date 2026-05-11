@@ -23,18 +23,8 @@
 """
 
 from marl_models.base_model import MARLModel
-from marl_models.maddpg.maddpg import MADDPG
-from marl_models.matd3.matd3 import MATD3
-from marl_models.mappo.mappo import MAPPO
-from marl_models.masac.masac import MASAC
-from marl_models.attention_maddpg.attention_maddpg import AttentionMADDPG
-from marl_models.attention_matd3.attention_matd3 import AttentionMATD3
 from marl_models.attention_mappo.attention_mappo import AttentionMAPPO
-from marl_models.attention_masac.attention_masac import AttentionMASAC
 from marl_models.offload_mappo.offload_mappo import OffloadMAPPO
-from marl_models.random_baseline.random_model import RandomModel
-from marl_models.static_baseline.static_model import StaticModel
-from marl_models.nearest_greedy_baseline.nearest_greedy_model import NearestGreedyModel
 from marl_models.uncoordinated_greedy_baseline.uncoordinated_greedy_model import UncoordinatedGreedyModel
 import config
 import torch
@@ -64,37 +54,9 @@ def get_device() -> str:
 def get_model(model_name: str) -> MARLModel:
     device = get_device()
     # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    if model_name == "maddpg":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return MADDPG(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif model_name == "matd3":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return MATD3(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif model_name == "mappo":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return MAPPO(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif model_name == "masac":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return MASAC(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif model_name == "attention_maddpg":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return AttentionMADDPG(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif model_name == "attention_matd3":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return AttentionMATD3(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif model_name == "attention_mappo":
+    if model_name == "attention_mappo":
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return AttentionMAPPO(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif model_name == "attention_masac":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return AttentionMASAC(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
     elif model_name in {"offload_mappo", "constrained_attention_offload_mappo", "no_attention_offload_mappo"}:
         return OffloadMAPPO(
             model_name=model_name,
@@ -103,18 +65,6 @@ def get_model(model_name: str) -> MARLModel:
             action_dim=config.MAX_OFFLOAD_REQUESTS_PER_UAV,
             device=device,
         )
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif model_name == "random":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return RandomModel(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif model_name == "static":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return StaticModel(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
-    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-    elif model_name == "nearest_greedy":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return NearestGreedyModel(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
     # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
     elif model_name == "uncoordinated_greedy":
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。

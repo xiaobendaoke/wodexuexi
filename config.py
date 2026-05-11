@@ -42,7 +42,7 @@ import numpy as np
 
 # Training Parameters
 # Thesis-oriented default: use the learning-based upper-layer controller as the default entry model.
-MODEL: str = "attention_mappo"  # options: 'maddpg', 'matd3', 'mappo', 'masac', 'attention_<model>', 'random'
+MODEL: str = "attention_mappo"  # options: "attention_mappo", "uncoordinated_greedy"
 # 关键变量 SEED：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 SEED: int = 42  # random seed for reproducibility
 np.random.seed(SEED)  # set numpy random seed

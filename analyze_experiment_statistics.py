@@ -72,8 +72,11 @@ def extract_joint_units(data: dict[str, Any]) -> dict[str, list[dict[str, float]
             continue
         units = []
         for entry in details.get("per_seed", []):
-            if isinstance(entry, dict) and isinstance(entry.get("per_seed_mean"), dict):
-                units.append({key: float(value) for key, value in entry["per_seed_mean"].items()})
+            if not isinstance(entry, dict):
+                continue
+            unit_mean = entry.get("unit_mean") or entry.get("per_seed_mean")
+            if isinstance(unit_mean, dict):
+                units.append({key: float(value) for key, value in unit_mean.items()})
         if units:
             policy_units[str(policy_name)] = units
     return policy_units
@@ -197,7 +200,8 @@ def build_statistics(
             "reference": reference,
             "confidence": confidence,
             "ci_method": "t interval when scipy is available, otherwise bootstrap",
-            "ratio_metric_note": "Ratio metrics are treated as paired per-seed means; use request-level counts for exact binomial intervals when available.",
+            "unit_note": "Joint H-MARL summaries use paired (training_seed, workload_seed) episode means when training_seed is present; older summaries fall back to workload-seed means.",
+            "ratio_metric_note": "Ratio metrics are treated as paired unit means; use request-level counts for exact binomial intervals when available.",
         },
         "metrics": {},
         "paired_vs_reference": {},
@@ -286,7 +290,7 @@ def markdown_report(stats: dict[str, Any]) -> str:
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build seed-wise confidence intervals and paired tests from experiment summaries.")
+    parser = argparse.ArgumentParser(description="Build paired-unit confidence intervals and tests from experiment summaries.")
     parser.add_argument("summary_json", type=str, help="Path to joint_experiment_summary.json or experiment_summary.json.")
     parser.add_argument("--reference", type=str, default=None, help="Reference policy/combo. Defaults to the first policy in the summary.")
     parser.add_argument("--output_json", type=str, default=None, help="Optional JSON output path.")
@@ -302,7 +306,7 @@ def main() -> None:
     data = load_json(summary_path)
     policy_units = extract_policy_units(data)
     if not policy_units:
-        raise ValueError("No per-seed policy units were found in the summary JSON.")
+        raise ValueError("No paired policy units were found in the summary JSON.")
 
     reference = args.reference or next(iter(policy_units))
     stats = build_statistics(
