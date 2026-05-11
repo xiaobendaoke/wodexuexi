@@ -19,19 +19,60 @@ class OffloadActor(nn.Module):
         super().__init__()
         self.max_requests = max_requests
         self.num_actions = num_actions
-        self.net = nn.Sequential(
-            layer_init(nn.Linear(obs_dim, config.MLP_HIDDEN_DIM)),
-            nn.LayerNorm(config.MLP_HIDDEN_DIM),
-            nn.ReLU(),
-            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, config.MLP_HIDDEN_DIM)),
-            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+        self.own_dim = 5
+        self.request_dim = config.OFFLOAD_REQUEST_FEATURE_DIM
+        expected_obs_dim = self.own_dim + self.max_requests * self.request_dim
+        if obs_dim != expected_obs_dim:
+            raise ValueError(f"Unexpected offload obs dim: {obs_dim} != {expected_obs_dim}")
+
+        self.own_encoder = nn.Sequential(
+            layer_init(nn.Linear(self.own_dim, config.ATTN_HIDDEN_DIM)),
+            nn.LayerNorm(config.ATTN_HIDDEN_DIM),
             nn.ReLU(),
         )
-        self.head = layer_init(nn.Linear(config.MLP_HIDDEN_DIM, max_requests * num_actions), std=0.01)
+        self.request_encoder = nn.Sequential(
+            layer_init(nn.Linear(self.request_dim, config.ATTN_HIDDEN_DIM)),
+            nn.LayerNorm(config.ATTN_HIDDEN_DIM),
+            nn.ReLU(),
+        )
+        self.request_attention = nn.MultiheadAttention(
+            embed_dim=config.ATTN_HIDDEN_DIM,
+            num_heads=config.ATTN_NUM_HEADS,
+            batch_first=True,
+        )
+        self.head = nn.Sequential(
+            layer_init(nn.Linear(config.ATTN_HIDDEN_DIM * 3, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, num_actions), std=0.01),
+        )
 
     def forward(self, obs: torch.Tensor, masks: torch.Tensor | None = None) -> torch.Tensor:
-        features = self.net(obs)
-        logits = self.head(features).view(*obs.shape[:-1], self.max_requests, self.num_actions)
+        original_shape = obs.shape[:-1]
+        flat_obs = obs.reshape(-1, obs.shape[-1])
+        own_features = flat_obs[:, : self.own_dim]
+        request_features = flat_obs[:, self.own_dim :].reshape(-1, self.max_requests, self.request_dim)
+        request_valid = (torch.abs(request_features).sum(dim=-1) > 1.0e-6)
+
+        own_embedding = self.own_encoder(own_features)
+        request_embedding = self.request_encoder(request_features)
+        key_padding_mask = ~request_valid
+        all_padding = key_padding_mask.all(dim=1)
+        if torch.any(all_padding):
+            key_padding_mask = key_padding_mask.clone()
+            key_padding_mask[all_padding, 0] = False
+
+        request_context, _ = self.request_attention(
+            request_embedding,
+            request_embedding,
+            request_embedding,
+            key_padding_mask=key_padding_mask,
+            need_weights=False,
+        )
+        request_context = torch.nan_to_num(request_context, nan=0.0)
+        own_context = own_embedding.unsqueeze(1).expand(-1, self.max_requests, -1)
+        fused = torch.cat([request_embedding, request_context, own_context], dim=-1)
+        logits = self.head(fused).view(*original_shape, self.max_requests, self.num_actions)
         if masks is not None:
             logits = logits.masked_fill(masks <= 0.0, -1.0e9)
         return logits
@@ -67,6 +108,57 @@ class OffloadCritic(nn.Module):
         return self.value(fused).squeeze(-1)
 
 
+class OffloadMLPActor(nn.Module):
+    def __init__(self, obs_dim: int, max_requests: int, num_actions: int) -> None:
+        super().__init__()
+        self.max_requests = max_requests
+        self.num_actions = num_actions
+        self.own_dim = 5
+        self.request_dim = config.OFFLOAD_REQUEST_FEATURE_DIM
+        expected_obs_dim = self.own_dim + self.max_requests * self.request_dim
+        if obs_dim != expected_obs_dim:
+            raise ValueError(f"Unexpected offload obs dim: {obs_dim} != {expected_obs_dim}")
+
+        self.net = nn.Sequential(
+            layer_init(nn.Linear(self.own_dim + self.request_dim, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, num_actions), std=0.01),
+        )
+
+    def forward(self, obs: torch.Tensor, masks: torch.Tensor | None = None) -> torch.Tensor:
+        original_shape = obs.shape[:-1]
+        flat_obs = obs.reshape(-1, obs.shape[-1])
+        own_features = flat_obs[:, : self.own_dim]
+        request_features = flat_obs[:, self.own_dim :].reshape(-1, self.max_requests, self.request_dim)
+        own_context = own_features.unsqueeze(1).expand(-1, self.max_requests, -1)
+        fused = torch.cat([own_context, request_features], dim=-1)
+        logits = self.net(fused).view(*original_shape, self.max_requests, self.num_actions)
+        if masks is not None:
+            logits = logits.masked_fill(masks <= 0.0, -1.0e9)
+        return logits
+
+
+class OffloadMLPCritic(nn.Module):
+    def __init__(self, obs_dim: int) -> None:
+        super().__init__()
+        self.value = nn.Sequential(
+            layer_init(nn.Linear(obs_dim, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, 1), std=1.0),
+        )
+
+    def forward(self, obs: torch.Tensor) -> torch.Tensor:
+        return self.value(obs).squeeze(-1)
+
+
 class OffloadMAPPO(MARLModel):
     """Discrete lower-layer MAPPO for request-level service offloading."""
 
@@ -83,8 +175,13 @@ class OffloadMAPPO(MARLModel):
         super().__init__(model_name, num_agents, obs_dim, action_dim, device)
         self.max_requests = int(max_requests or config.MAX_OFFLOAD_REQUESTS_PER_UAV)
         self.num_actions = int(num_actions or config.OFFLOAD_NUM_ACTIONS)
-        self.actor = OffloadActor(obs_dim, self.max_requests, self.num_actions).to(device)
-        self.critic = OffloadCritic(obs_dim).to(device)
+        self.use_attention = bool(getattr(config, "OFFLOAD_USE_ATTENTION", True)) and model_name != "no_attention_offload_mappo"
+        if self.use_attention:
+            self.actor = OffloadActor(obs_dim, self.max_requests, self.num_actions).to(device)
+            self.critic = OffloadCritic(obs_dim).to(device)
+        else:
+            self.actor = OffloadMLPActor(obs_dim, self.max_requests, self.num_actions).to(device)
+            self.critic = OffloadMLPCritic(obs_dim).to(device)
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.ACTOR_LR)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=config.CRITIC_LR)
 
@@ -183,6 +280,7 @@ class OffloadMAPPO(MARLModel):
                     "max_requests": self.max_requests,
                     "num_actions": self.num_actions,
                     "obs_dim": self.obs_dim,
+                    "constrained_attention_actor": self.use_attention,
                 },
             },
             os.path.join(directory, "offload_mappo.pth"),

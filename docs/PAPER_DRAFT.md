@@ -225,7 +225,7 @@
 
 ### 6.2 上层轨迹控制筛选结果
 
-数据来源：`results/full_runs/supplement_upper_multiseed/reports/upper_multiseed_statistics.md`。
+数据来源：`results/full_runs/` 下的主线上层多 seed 训练与测试日志。
 
 | 方法 | Deadline Satisfaction | Latency | Energy | Fairness |
 | --- | ---: | ---: | ---: | ---: |

@@ -7,6 +7,17 @@ cd "$ROOT_DIR"
 RUN_TAG="${RUN_TAG:-paper_full_$(date +%Y%m%d_%H%M%S)}"
 PYTHON_BIN="${PYTHON_BIN:-$ROOT_DIR/.venv/bin/python}"
 DEVICE="${DEVICE:-cpu}"
+RUN_MODE="${RUN_MODE:-all}"  # all or remaining
+CPU_THREADS="${CPU_THREADS:-$(nproc)}"
+
+export PYTHONUNBUFFERED=1
+export OMP_NUM_THREADS="$CPU_THREADS"
+export MKL_NUM_THREADS="$CPU_THREADS"
+export OPENBLAS_NUM_THREADS="$CPU_THREADS"
+export BLIS_NUM_THREADS="$CPU_THREADS"
+export NUMEXPR_MAX_THREADS="$CPU_THREADS"
+export VECLIB_MAXIMUM_THREADS="$CPU_THREADS"
+export TORCH_NUM_THREADS="$CPU_THREADS"
 
 HIER_EPISODES="${HIER_EPISODES:-200}"
 RL_TRAIN_EPISODES="${RL_TRAIN_EPISODES:-100}"
@@ -20,13 +31,7 @@ RUNTIME_SEEDS="${RUNTIME_SEEDS:-42 84 126 168}"
 EPISODES_PER_SEED="${EPISODES_PER_SEED:-4}"
 STEPS_PER_EPISODE="${STEPS_PER_EPISODE:-100}"
 
-SENSITIVITY_EPOCHS="${SENSITIVITY_EPOCHS:-30}"
-SENSITIVITY_EPISODES_PER_SEED="${SENSITIVITY_EPISODES_PER_SEED:-4}"
-SCALE_EPISODES_PER_SEED="${SCALE_EPISODES_PER_SEED:-3}"
-SC_OGO_EPISODES_PER_SEED="${SC_OGO_EPISODES_PER_SEED:-4}"
-
 RUN_ROOT="results/full_runs/${RUN_TAG}"
-OFFLOAD_ROOT="results/full_offload_experiments/${RUN_TAG}_offload"
 LOG_DIR="run_outputs/${RUN_TAG}"
 mkdir -p "$LOG_DIR" results/reports
 
@@ -63,8 +68,10 @@ if [[ ! -x "$PYTHON_BIN" ]]; then
 fi
 
 log "RUN_TAG=${RUN_TAG}"
+log "RUN_MODE=${RUN_MODE}"
 log "ROOT_DIR=${ROOT_DIR}"
 log "PYTHON_BIN=${PYTHON_BIN}"
+log "CPU_THREADS=${CPU_THREADS}"
 log "Logs: ${LOG_DIR}"
 
 run_step "00_python_env" "$PYTHON_BIN" - <<'PY'
@@ -79,91 +86,55 @@ except Exception as exc:
     print("torch_check_error", repr(exc))
 PY
 
-run_step "01_hierarchical_mappo" \
-  "$PYTHON_BIN" run_hierarchical_mappo_experiment.py \
-    --num_episodes "$HIER_EPISODES" \
-    --timestamp "${RUN_TAG}_hierarchical_mappo_${HIER_EPISODES}ep"
-
 HIER_SUMMARY="results/reports/hierarchical_mappo_summary_${RUN_TAG}_hierarchical_mappo_${HIER_EPISODES}ep.json"
 HIER_LOG="train_logs/hierarchical_mappo/log_data_${RUN_TAG}_hierarchical_mappo_${HIER_EPISODES}ep.json"
 
-run_step "02_main_full_suite" \
-  "$PYTHON_BIN" run_all_experiments.py \
-    --name "$RUN_TAG" \
-    --train_episodes "$RL_TRAIN_EPISODES" \
-    --test_episodes "$RL_TEST_EPISODES" \
-    --per_class_target "$PER_CLASS_TARGET" \
-    --procedural_train_per_class "$PROCEDURAL_TRAIN_PER_CLASS" \
-    --max_attempts "$MAX_ATTEMPTS" \
-    --runtime_seeds $RUNTIME_SEEDS \
-    --offload_epochs "$OFFLOAD_EPOCHS" \
-    --validity_epochs "$VALIDITY_EPOCHS" \
-    --device "$DEVICE" \
-    --episodes_per_seed "$EPISODES_PER_SEED" \
-    --steps_per_episode "$STEPS_PER_EPISODE"
-
-SURROGATE_CKPT="${OFFLOAD_ROOT}/checkpoints/offload_policy_surrogate_runtime.pt"
-RICH_CKPT="${OFFLOAD_ROOT}/checkpoints/offload_policy_rich_runtime.pt"
-
-if [[ ! -f "$SURROGATE_CKPT" || ! -f "$RICH_CKPT" ]]; then
-  log "Expected offload checkpoints not found under ${OFFLOAD_ROOT}; falling back to saved_offload_policies."
-  SURROGATE_CKPT="saved_offload_policies/offload_policy_surrogate_runtime.pt"
-  RICH_CKPT="saved_offload_policies/offload_policy_rich_runtime.pt"
+if [[ -f "$HIER_SUMMARY" && -f "$HIER_LOG" ]]; then
+  log "SKIP  01_hierarchical_mappo; existing outputs found for ${RUN_TAG}"
+else
+  run_step "01_hierarchical_mappo" \
+    "$PYTHON_BIN" run_hierarchical_mappo_experiment.py \
+      --num_episodes "$HIER_EPISODES" \
+      --timestamp "${RUN_TAG}_hierarchical_mappo_${HIER_EPISODES}ep"
 fi
 
-run_step "03_cql_sensitivity" \
-  "$PYTHON_BIN" run_cql_sensitivity.py \
-    --output_root "results/full_offload_experiments/${RUN_TAG}_cql_sensitivity" \
-    --surrogate_checkpoint "$SURROGATE_CKPT" \
-    --rich_checkpoint "$RICH_CKPT" \
-    --per_class_target "$PER_CLASS_TARGET" \
-    --procedural_train_per_class "$PROCEDURAL_TRAIN_PER_CLASS" \
-    --max_attempts "$MAX_ATTEMPTS" \
-    --epochs "$SENSITIVITY_EPOCHS" \
-    --device "$DEVICE" \
-    --runtime_seeds $RUNTIME_SEEDS \
-    --episodes_per_seed "$SENSITIVITY_EPISODES_PER_SEED" \
-    --steps_per_episode "$STEPS_PER_EPISODE"
+RL_DONE_MARKER="${RUN_ROOT}/comparisons/training/comparison_summary.png"
 
-CQL_CKPT="results/full_offload_experiments/${RUN_TAG}_cql_sensitivity/dsr_guard_dw6_mbs008/checkpoints/offload_policy_cql.pt"
-if [[ ! -f "$CQL_CKPT" ]]; then
-  CQL_CKPT="saved_offload_policies/offload_policy_cql.pt"
+if [[ "$RUN_MODE" == "remaining" && -f "$RL_DONE_MARKER" ]]; then
+  log "SKIP  02_main_full_suite RL; existing RL comparison found at ${RL_DONE_MARKER}"
+  run_step "02_offload_suite_remaining" \
+    "$PYTHON_BIN" -u run_all_experiments.py \
+      --name "$RUN_TAG" \
+      --skip_rl \
+      --per_class_target "$PER_CLASS_TARGET" \
+      --procedural_train_per_class "$PROCEDURAL_TRAIN_PER_CLASS" \
+      --max_attempts "$MAX_ATTEMPTS" \
+      --runtime_seeds $RUNTIME_SEEDS \
+      --offload_epochs "$OFFLOAD_EPOCHS" \
+      --validity_epochs "$VALIDITY_EPOCHS" \
+      --device "$DEVICE" \
+      --episodes_per_seed "$EPISODES_PER_SEED" \
+      --steps_per_episode "$STEPS_PER_EPISODE"
+else
+  run_step "02_main_full_suite" \
+    "$PYTHON_BIN" -u run_all_experiments.py \
+      --name "$RUN_TAG" \
+      --train_episodes "$RL_TRAIN_EPISODES" \
+      --test_episodes "$RL_TEST_EPISODES" \
+      --per_class_target "$PER_CLASS_TARGET" \
+      --procedural_train_per_class "$PROCEDURAL_TRAIN_PER_CLASS" \
+      --max_attempts "$MAX_ATTEMPTS" \
+      --runtime_seeds $RUNTIME_SEEDS \
+      --offload_epochs "$OFFLOAD_EPOCHS" \
+      --validity_epochs "$VALIDITY_EPOCHS" \
+      --device "$DEVICE" \
+      --episodes_per_seed "$EPISODES_PER_SEED" \
+      --steps_per_episode "$STEPS_PER_EPISODE"
 fi
-
-run_step "04_radcc_sensitivity" \
-  "$PYTHON_BIN" run_radcc_sensitivity.py \
-    --output_root "results/full_offload_experiments/${RUN_TAG}_radcc_sensitivity" \
-    --surrogate_checkpoint "$SURROGATE_CKPT" \
-    --rich_checkpoint "$RICH_CKPT" \
-    --cql_checkpoint "$CQL_CKPT" \
-    --per_class_target "$PER_CLASS_TARGET" \
-    --procedural_train_per_class "$PROCEDURAL_TRAIN_PER_CLASS" \
-    --max_attempts "$MAX_ATTEMPTS" \
-    --epochs "$SENSITIVITY_EPOCHS" \
-    --device "$DEVICE" \
-    --runtime_seeds $RUNTIME_SEEDS \
-    --episodes_per_seed "$SENSITIVITY_EPISODES_PER_SEED" \
-    --steps_per_episode "$STEPS_PER_EPISODE"
-
-run_step "05_sc_ogo_ablation" \
-  "$PYTHON_BIN" run_sc_ogo_ablation.py \
-    --surrogate_checkpoint "$SURROGATE_CKPT" \
-    --seeds $RUNTIME_SEEDS \
-    --episodes_per_seed "$SC_OGO_EPISODES_PER_SEED" \
-    --steps_per_episode "$STEPS_PER_EPISODE" \
-    --output "results/reports/${RUN_TAG}_sc_ogo_ablation.json"
-
-run_step "06_scale_generalization" \
-  "$PYTHON_BIN" run_scale_generalization.py \
-    --surrogate_checkpoint "$SURROGATE_CKPT" \
-    --seeds $RUNTIME_SEEDS \
-    --episodes_per_seed "$SCALE_EPISODES_PER_SEED" \
-    --steps_per_episode "$STEPS_PER_EPISODE" \
-    --output "results/reports/${RUN_TAG}_scale_generalization.json"
 
 if [[ -f "$HIER_LOG" ]]; then
-  run_step "07_hierarchical_figures" \
-    "$PYTHON_BIN" generate_hierarchical_mappo_figures.py \
+  run_step "03_hierarchical_figures" \
+    "$PYTHON_BIN" -u generate_hierarchical_mappo_figures.py \
       --train_log "$HIER_LOG"
 else
   log "SKIP hierarchical figures; missing ${HIER_LOG}"

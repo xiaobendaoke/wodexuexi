@@ -22,6 +22,8 @@
     本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
 """
 
+from __future__ import annotations
+
 from marl_models.base_model import MARLModel
 from marl_models.buffer_and_helpers import ReplayBuffer, RolloutBuffer, AttentionRolloutBuffer
 from marl_models.utils import save_models

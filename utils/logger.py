@@ -78,6 +78,13 @@ class Log:
         self.service_offload_policy_loaded: list[bool] = []
         self.service_offload_policy_checkpoint_path: list[str | None] = []
         self.service_offload_policy_feature_family: list[str | None] = []
+        self.lambda_dsr: list[float] = []
+        self.lambda_mbs: list[float] = []
+        self.dsr_violations: list[float] = []
+        self.mbs_load_violations: list[float] = []
+        self.constraint_penalties: list[float] = []
+        self.coop_masked_counts: list[float] = []
+        self.mbs_masked_counts: list[float] = []
         # Training losses (optional, may be empty for baselines)
         self.actor_losses: list[float | None] = []
         self.critic_losses: list[float | None] = []
@@ -106,6 +113,13 @@ class Log:
         service_offload_policy_loaded: bool = False,
         service_offload_policy_checkpoint_path: str | None = None,
         service_offload_policy_feature_family: str | None = None,
+        lambda_dsr: float = 0.0,
+        lambda_mbs: float = 0.0,
+        dsr_violation: float = 0.0,
+        mbs_load_violation: float = 0.0,
+        constraint_penalty: float = 0.0,
+        coop_masked_count: float = 0.0,
+        mbs_masked_count: float = 0.0,
         actor_loss: float | None = None,
         critic_loss: float | None = None,
         entropy_loss: float | None = None,
@@ -135,6 +149,13 @@ class Log:
         self.service_offload_policy_loaded.append(service_offload_policy_loaded)
         self.service_offload_policy_checkpoint_path.append(service_offload_policy_checkpoint_path)
         self.service_offload_policy_feature_family.append(service_offload_policy_feature_family)
+        self.lambda_dsr.append(lambda_dsr)
+        self.lambda_mbs.append(lambda_mbs)
+        self.dsr_violations.append(dsr_violation)
+        self.mbs_load_violations.append(mbs_load_violation)
+        self.constraint_penalties.append(constraint_penalty)
+        self.coop_masked_counts.append(coop_masked_count)
+        self.mbs_masked_counts.append(mbs_masked_count)
 
         self.actor_losses.append(actor_loss)
         self.critic_losses.append(critic_loss)
@@ -214,6 +235,13 @@ class Logger:
         policy_loaded_slice: list[bool] = log.service_offload_policy_loaded[-log_freq:]
         checkpoint_path_slice: list[str | None] = log.service_offload_policy_checkpoint_path[-log_freq:]
         feature_family_slice: list[str | None] = log.service_offload_policy_feature_family[-log_freq:]
+        lambda_dsr_slice: np.ndarray = np.array(log.lambda_dsr[-log_freq:])
+        lambda_mbs_slice: np.ndarray = np.array(log.lambda_mbs[-log_freq:])
+        dsr_violation_slice: np.ndarray = np.array(log.dsr_violations[-log_freq:])
+        mbs_load_violation_slice: np.ndarray = np.array(log.mbs_load_violations[-log_freq:])
+        constraint_penalty_slice: np.ndarray = np.array(log.constraint_penalties[-log_freq:])
+        coop_masked_slice: np.ndarray = np.array(log.coop_masked_counts[-log_freq:])
+        mbs_masked_slice: np.ndarray = np.array(log.mbs_masked_counts[-log_freq:])
 
         reward_avg: float = float(np.mean(rewards_slice))
         latency_avg: float = float(np.mean(latencies_slice))
@@ -229,6 +257,13 @@ class Logger:
         heuristic_decision_avg: float = float(np.mean(heuristic_decision_slice))
         fallback_avg: float = float(np.mean(fallback_slice))
         predict_exception_fallback_avg: float = float(np.mean(predict_exception_fallback_slice))
+        lambda_dsr_avg: float = float(np.mean(lambda_dsr_slice)) if lambda_dsr_slice.size else 0.0
+        lambda_mbs_avg: float = float(np.mean(lambda_mbs_slice)) if lambda_mbs_slice.size else 0.0
+        dsr_violation_avg: float = float(np.mean(dsr_violation_slice)) if dsr_violation_slice.size else 0.0
+        mbs_load_violation_avg: float = float(np.mean(mbs_load_violation_slice)) if mbs_load_violation_slice.size else 0.0
+        constraint_penalty_avg: float = float(np.mean(constraint_penalty_slice)) if constraint_penalty_slice.size else 0.0
+        coop_masked_avg: float = float(np.mean(coop_masked_slice)) if coop_masked_slice.size else 0.0
+        mbs_masked_avg: float = float(np.mean(mbs_masked_slice)) if mbs_masked_slice.size else 0.0
 
         # 函数 _resolve_constant_or_mixed：关键函数，承载本模块的一段可复用实验逻辑，主要参数：values, fallback。
         def _resolve_constant_or_mixed(values: list[object], fallback: object) -> object:
@@ -314,6 +349,9 @@ class Logger:
             f"Mean Offload L/C/M: {offload_local_avg:.3f}/{offload_coop_avg:.3f}/{offload_mbs_avg:.3f} | "
             f"Mean MBS Load: {mbs_load_avg:.3f} | "
             f"Offload Policy: req={policy_requested_value} loaded={policy_loaded_value} family={feature_family_value} | "
+            f"Constraints λ(D/M): {lambda_dsr_avg:.3f}/{lambda_mbs_avg:.3f} "
+            f"viol(D/M): {dsr_violation_avg:.4f}/{mbs_load_violation_avg:.4f} "
+            f"penalty: {constraint_penalty_avg:.4f} mask(C/M): {coop_masked_avg:.1f}/{mbs_masked_avg:.1f} | "
             f"Mean Audit Learned/Heuristic/Fallback/Exception: "
             f"{learned_decision_avg:.3f}/{heuristic_decision_avg:.3f}/{fallback_avg:.3f}/{predict_exception_fallback_avg:.3f} | "
             + loss_str
@@ -345,6 +383,13 @@ class Logger:
             "service_offload_policy_loaded": policy_loaded_value,
             "service_offload_policy_checkpoint_path": checkpoint_path_value,
             "service_offload_policy_feature_family": feature_family_value,
+            "lambda_dsr": lambda_dsr_avg,
+            "lambda_mbs": lambda_mbs_avg,
+            "dsr_violation": dsr_violation_avg,
+            "mbs_load_violation": mbs_load_violation_avg,
+            "constraint_penalty": constraint_penalty_avg,
+            "coop_masked_count": coop_masked_avg,
+            "mbs_masked_count": mbs_masked_avg,
             "time": elapsed_time,
         }
         # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。

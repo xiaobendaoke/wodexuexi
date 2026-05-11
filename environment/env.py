@@ -172,6 +172,8 @@ class Env:
             (config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV, config.OFFLOAD_NUM_ACTIONS),
             dtype=np.float32,
         )
+        coop_masked_count = 0
+        mbs_masked_count = 0
 
         for uav_idx, uav in enumerate(self._uavs):
             uav_mbs_rate = getattr(uav, "_uav_mbs_rate", 0.0)
@@ -228,15 +230,34 @@ class Env:
                     dtype=np.float32,
                 )
                 all_masks[uav_idx, req_idx, :] = 1.0
-                if not context.cooperative_available:
+                best_noncoop_latency = min(float(context.local_latency), float(context.mbs_latency))
+                local_compute_share = max(float(context.local_compute_share), float(config.EPSILON))
+                coop_compute_ratio = float(context.best_neighbor_compute_share) / local_compute_share
+                coop_deadline_ratio = float(context.cooperative_latency) / max(float(context.deadline), float(config.EPSILON))
+                coop_relative_latency = float(context.cooperative_latency) / max(best_noncoop_latency, float(config.EPSILON))
+                coop_feasible = (
+                    bool(context.cooperative_available)
+                    and np.isfinite(float(context.cooperative_latency))
+                    and coop_deadline_ratio <= float(config.OFFLOAD_COOP_MAX_DEADLINE_RATIO)
+                    and coop_relative_latency <= float(config.OFFLOAD_COOP_MAX_RELATIVE_LATENCY)
+                    and coop_compute_ratio >= float(config.OFFLOAD_COOP_MIN_COMPUTE_SHARE_RATIO)
+                )
+                if getattr(config, "OFFLOAD_MASK_MODE", "quality") == "quality" and not coop_feasible:
                     all_masks[uav_idx, req_idx, 1] = 0.0
-                if context.mbs_latency >= float(config.OFFLOAD_LATENCY_RATIO_CLIP) * max(context.deadline, config.EPSILON):
+                    coop_masked_count += 1
+                if (
+                    getattr(config, "OFFLOAD_MASK_MODE", "quality") == "quality"
+                    and context.mbs_latency >= float(config.OFFLOAD_LATENCY_RATIO_CLIP) * max(context.deadline, config.EPSILON)
+                ):
                     all_masks[uav_idx, req_idx, 2] = 0.0
+                    mbs_masked_count += 1
                 if np.sum(all_masks[uav_idx, req_idx]) <= 0.0:
                     all_masks[uav_idx, req_idx, 0] = 1.0
 
             all_obs[uav_idx] = np.concatenate([own_features, request_features.reshape(-1)])
 
+        self._last_runtime_audit["step_coop_masked_count"] = int(coop_masked_count)
+        self._last_runtime_audit["step_mbs_masked_count"] = int(mbs_masked_count)
         return all_obs, all_masks
 
     @staticmethod

@@ -164,13 +164,14 @@ OFFLOAD_ORACLE_QUEUE_WEIGHT: float = 0.06
 # 关键变量 OFFLOAD_ORACLE_COOP_QUEUE_RELIEF_BONUS：用户设备对象，产生任务请求并等待服务。
 OFFLOAD_ORACLE_COOP_QUEUE_RELIEF_BONUS: float = 0.02
 # Default to heuristic so old configs and baselines retain the original behavior unless explicitly switched.
-SERVICE_OFFLOAD_POLICY: str = "heuristic"  # options: "heuristic", "learned", "cql", "radcc", "sc_ogo"
+SERVICE_OFFLOAD_POLICY: str = "heuristic"  # options: "heuristic", "learned"
 # 关键变量 SERVICE_OFFLOAD_POLICY_CHECKPOINT：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 SERVICE_OFFLOAD_POLICY_CHECKPOINT: str | None = None  # checkpoint for the standalone request-level classifier
 
 # Hierarchical lower-layer MAPPO offloading defaults.
 # Each UAV is a lower-layer agent and makes at most MAX_OFFLOAD_REQUESTS_PER_UAV
 # request-level decisions per environment step.
+OFFLOAD_MODEL_NAME: str = "constrained_attention_offload_mappo"
 MAX_OFFLOAD_REQUESTS_PER_UAV: int = MAX_ASSOCIATED_UES
 OFFLOAD_NUM_ACTIONS: int = 3  # 0: local UAV, 1: cooperative UAV, 2: MBS
 OFFLOAD_LATENCY_RATIO_CLIP: float = 10.0
@@ -183,36 +184,16 @@ OFFLOAD_REWARD_MBS_WEIGHT: float = 0.35
 OFFLOAD_REWARD_COOP_BONUS: float = 0.08
 OFFLOAD_REWARD_SUCCESS_BONUS: float = 0.40
 OFFLOAD_REWARD_SCALING_FACTOR: float = 1.0
-
-# Constrained CQL-DQN lower-layer offloading defaults.
-CQL_OFFLOAD_DEADLINE_WEIGHT: float = 3.0
-CQL_OFFLOAD_MBS_WEIGHT: float = 0.15
-CQL_OFFLOAD_QUEUE_WEIGHT: float = 0.05
-CQL_OFFLOAD_INVALID_ACTION_PENALTY: float = 5.0
-CQL_OFFLOAD_GAMMA: float = 0.95
-CQL_OFFLOAD_ALPHA: float = 1.0
-CQL_OFFLOAD_EPSILON_RANDOM: float = 0.15
-CQL_OFFLOAD_TARGET_UPDATE_FREQ: int = 100
-
-# Risk-aware distributional cost critic lower-layer offloading defaults.
-RADCC_OFFLOAD_DEADLINE_WEIGHT: float = 5.0
-RADCC_OFFLOAD_MBS_WEIGHT: float = 0.08
-RADCC_OFFLOAD_COOP_WEIGHT: float = 0.05
-RADCC_OFFLOAD_QUEUE_WEIGHT: float = 0.05
-RADCC_OFFLOAD_INVALID_ACTION_PENALTY: float = 5.0
-RADCC_OFFLOAD_RISK_BETA: float = 0.35
-RADCC_OFFLOAD_CVAR_ALPHA: float = 0.80
-RADCC_OFFLOAD_NUM_QUANTILES: int = 16
-
-# Safety-constrained oracle-guided surrogate offloading defaults.
-SC_OGO_DEADLINE_WEIGHT: float = 3.0
-SC_OGO_MARGIN_WEIGHT: float = 0.45
-SC_OGO_DEADLINE_MARGIN: float = 0.90
-SC_OGO_MBS_WEIGHT: float = 0.08
-SC_OGO_QUEUE_WEIGHT: float = 0.04
-SC_OGO_COOP_WEIGHT: float = 0.04
-SC_OGO_RERANK_TOLERANCE: float = 0.02
-SC_OGO_HARD_DEADLINE_RATIO: float = 1.0
+OFFLOAD_CONSTRAINT_MODE: str = "lagrange"  # options: "none", "lagrange"
+OFFLOAD_MASK_MODE: str = "quality"  # options: "quality", "none"
+OFFLOAD_USE_ATTENTION: bool = True
+OFFLOAD_DSR_TARGET: float = 0.234
+OFFLOAD_MBS_LOAD_CEILING: float = 0.0589
+OFFLOAD_LAGRANGE_LR: float = 0.05
+OFFLOAD_LAGRANGE_MAX: float = 20.0
+OFFLOAD_COOP_MAX_DEADLINE_RATIO: float = 1.50
+OFFLOAD_COOP_MAX_RELATIVE_LATENCY: float = 1.35
+OFFLOAD_COOP_MIN_COMPUTE_SHARE_RATIO: float = 0.25
 
 # Caching Parameters
 T_CACHE_UPDATE_INTERVAL: int = 50  # T_cache

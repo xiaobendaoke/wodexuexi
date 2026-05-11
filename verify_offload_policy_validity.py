@@ -924,7 +924,7 @@ def evaluate_policy_on_arrays(
     predictions = np.asarray([policy.predict_from_array(row) for row in np.asarray(features, dtype=np.float32)], dtype=np.int64)
     confusion = np.zeros((OFFLOAD_NUM_CLASSES, OFFLOAD_NUM_CLASSES), dtype=np.int64)
     # 循环处理：遍历 (true_label, predicted_label) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
-    for true_label, predicted_label in zip(labels, predictions, strict=False):
+    for true_label, predicted_label in zip(labels, predictions):
         confusion[int(true_label), int(predicted_label)] += 1
 
     per_class_metrics: dict[str, dict[str, float]] = {}

@@ -175,7 +175,7 @@ def compute_accuracy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
 def compute_confusion_matrix(y_true: np.ndarray, y_pred: np.ndarray) -> np.ndarray:
     matrix = np.zeros((OFFLOAD_NUM_CLASSES, OFFLOAD_NUM_CLASSES), dtype=np.int64)
     # 循环处理：遍历 (true_label, predicted_label) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
-    for true_label, predicted_label in zip(y_true, y_pred, strict=False):
+    for true_label, predicted_label in zip(y_true, y_pred):
         matrix[int(true_label), int(predicted_label)] += 1
     # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return matrix

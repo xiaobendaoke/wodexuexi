@@ -95,7 +95,7 @@ def get_model(model_name: str) -> MARLModel:
     elif model_name == "attention_masac":
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return AttentionMASAC(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
-    elif model_name == "offload_mappo":
+    elif model_name in {"offload_mappo", "constrained_attention_offload_mappo", "no_attention_offload_mappo"}:
         return OffloadMAPPO(
             model_name=model_name,
             num_agents=config.NUM_UAVS,
