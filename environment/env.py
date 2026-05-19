@@ -229,30 +229,54 @@ class Env:
                     ],
                     dtype=np.float32,
                 )
-                all_masks[uav_idx, req_idx, :] = 1.0
+                all_masks[uav_idx, req_idx, config.OFFLOAD_ACTION_LOCAL] = 1.0
+                all_masks[uav_idx, req_idx, config.OFFLOAD_ACTION_MBS] = 1.0
                 best_noncoop_latency = min(float(context.local_latency), float(context.mbs_latency))
                 local_compute_share = max(float(context.local_compute_share), float(config.EPSILON))
-                coop_compute_ratio = float(context.best_neighbor_compute_share) / local_compute_share
-                coop_deadline_ratio = float(context.cooperative_latency) / max(float(context.deadline), float(config.EPSILON))
-                coop_relative_latency = float(context.cooperative_latency) / max(best_noncoop_latency, float(config.EPSILON))
-                coop_feasible = (
-                    bool(context.cooperative_available)
-                    and np.isfinite(float(context.cooperative_latency))
-                    and coop_deadline_ratio <= float(config.OFFLOAD_COOP_MAX_DEADLINE_RATIO)
-                    and coop_relative_latency <= float(config.OFFLOAD_COOP_MAX_RELATIVE_LATENCY)
-                    and coop_compute_ratio >= float(config.OFFLOAD_COOP_MIN_COMPUTE_SHARE_RATIO)
-                )
-                if getattr(config, "OFFLOAD_MASK_MODE", "quality") == "quality" and not coop_feasible:
-                    all_masks[uav_idx, req_idx, 1] = 0.0
-                    coop_masked_count += 1
+                req_size = float(request.req_size)
+                file_size = float(config.FILE_SIZES[request.req_id])
+                cpu_cycles = float(config.CPU_CYCLES_PER_BYTE[request.req_id]) * req_size
+                ue_uav_upload_latency = req_size * float(config.BITS_PER_BYTE) / max(float(ue_uav_rate), float(config.EPSILON))
+                for neighbor in uav.neighbors:
+                    if neighbor.id == uav_idx or neighbor.id < 0 or neighbor.id >= config.NUM_UAVS:
+                        continue
+                    belief_prob = uav._get_service_neighbor_cache_belief(request.req_id, neighbor)
+                    uav_uav_rate = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(uav.pos, neighbor.pos))
+                    neighbor_mbs_rate = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(neighbor.pos, config.MBS_POS))
+                    exp_neighbor_fetch_latency = (1.0 - belief_prob) * file_size * float(config.BITS_PER_BYTE) / max(
+                        float(neighbor_mbs_rate),
+                        float(config.EPSILON),
+                    )
+                    neighbor_load = max(int(getattr(neighbor, "_current_service_request_count", 0)) + 1, 1)
+                    neighbor_compute_share = float(config.UAV_COMPUTING_CAPACITY[neighbor.id]) / float(neighbor_load)
+                    cooperative_latency = (
+                        ue_uav_upload_latency
+                        + req_size * float(config.BITS_PER_BYTE) / max(float(uav_uav_rate), float(config.EPSILON))
+                        + exp_neighbor_fetch_latency
+                        + cpu_cycles / max(neighbor_compute_share, float(config.EPSILON))
+                    )
+                    coop_compute_ratio = float(neighbor_compute_share) / local_compute_share
+                    coop_deadline_ratio = float(cooperative_latency) / max(float(context.deadline), float(config.EPSILON))
+                    coop_relative_latency = float(cooperative_latency) / max(best_noncoop_latency, float(config.EPSILON))
+                    coop_feasible = (
+                        np.isfinite(float(cooperative_latency))
+                        and coop_deadline_ratio <= float(config.OFFLOAD_COOP_MAX_DEADLINE_RATIO)
+                        and coop_relative_latency <= float(config.OFFLOAD_COOP_MAX_RELATIVE_LATENCY)
+                        and coop_compute_ratio >= float(config.OFFLOAD_COOP_MIN_COMPUTE_SHARE_RATIO)
+                    )
+                    action_idx = int(config.OFFLOAD_ACTION_COOP_BASE + neighbor.id)
+                    if getattr(config, "OFFLOAD_MASK_MODE", "quality") != "quality" or coop_feasible:
+                        all_masks[uav_idx, req_idx, action_idx] = 1.0
+                    else:
+                        coop_masked_count += 1
                 if (
                     getattr(config, "OFFLOAD_MASK_MODE", "quality") == "quality"
                     and context.mbs_latency >= float(config.OFFLOAD_LATENCY_RATIO_CLIP) * max(context.deadline, config.EPSILON)
                 ):
-                    all_masks[uav_idx, req_idx, 2] = 0.0
+                    all_masks[uav_idx, req_idx, config.OFFLOAD_ACTION_MBS] = 0.0
                     mbs_masked_count += 1
                 if np.sum(all_masks[uav_idx, req_idx]) <= 0.0:
-                    all_masks[uav_idx, req_idx, 0] = 1.0
+                    all_masks[uav_idx, req_idx, config.OFFLOAD_ACTION_LOCAL] = 1.0
 
             all_obs[uav_idx] = np.concatenate([own_features, request_features.reshape(-1)])
 
@@ -450,11 +474,17 @@ class Env:
             offloading_ratio_mbs = total_mbs_offloads / total_service_requests_processed
             assert np.isclose(offloading_ratio_local + offloading_ratio_cooperative + offloading_ratio_mbs, 1.0)
 
-        r_fairness: float = config.ALPHA_3 * np.log(jfi + config.EPSILON)
-        r_latency: float = config.ALPHA_1 * np.log(total_latency + config.EPSILON)
-        r_energy: float = config.ALPHA_2 * np.log(total_energy + config.EPSILON)
-        r_offline: float = config.ALPHA_4 * np.log(1.0 + offline_rate)
-        reward: float = r_fairness - r_latency - r_energy - r_offline
+        # Linear normalized reward (replaces legacy log-form):
+        #   reward = W_FAIR*jfi - W_LAT*norm_lat - W_ENERGY*norm_energy - W_OFFLINE*offline_rate + W_DSR*dsr - W_MBS*mbs_load
+        norm_latency: float = total_latency / (config.NUM_UES * config.NON_SERVED_LATENCY_PENALTY + config.EPSILON)
+        norm_energy: float = total_energy / (config.NUM_UAVS * config.REWARD_NORM_ENERGY_REF + config.EPSILON)
+        r_fairness: float = config.REWARD_W_FAIR * jfi
+        r_latency: float = config.REWARD_W_LAT * norm_latency
+        r_energy: float = config.REWARD_W_ENERGY * norm_energy
+        r_offline: float = config.REWARD_W_OFFLINE * offline_rate
+        r_dsr: float = config.REWARD_W_DSR * deadline_satisfaction_rate
+        r_mbs: float = 0.5 * mbs_load_ratio  # lightweight MBS load penalty for upper layer
+        reward: float = r_fairness - r_latency - r_energy - r_offline + r_dsr - r_mbs
         rewards: list[float] = [reward] * config.NUM_UAVS
         # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for uav in self._uavs:

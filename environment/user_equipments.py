@@ -189,9 +189,10 @@ class UE:
         self._wait_time = np.random.randint(0, config.UE_MAX_WAIT_TIME + 1)
 
     # 函数 update_battery：更新模型、环境或统计量的状态，主要参数：harv_energy, ue_transmit_time。
-    def update_battery(self, harv_energy: float, ue_transmit_time: float) -> None:
+    def update_battery(self, harv_energy: float, ue_transmit_time: float, ue_receive_time: float = 0.0) -> None:
         """Updates battery level based on consumption and harvesting."""
         consumed_energy: float = config.UE_STATIC_POWER * config.TIME_SLOT_DURATION
         consumed_energy += config.TRANSMIT_POWER * ue_transmit_time
+        consumed_energy += config.UE_RECEIVE_POWER * ue_receive_time
         self.battery_level = min(config.UE_BATTERY_CAPACITY, self.battery_level - consumed_energy + harv_energy)
         self.battery_level = max(0.0, self.battery_level)

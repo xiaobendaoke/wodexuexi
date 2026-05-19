@@ -43,6 +43,16 @@ from marl_models.offload_policy import (
 )
 
 
+def _tx_latency_bytes(size_bytes: float, rate_bps: float) -> float:
+    """Return transmission latency for a byte-sized payload over a bit/s link."""
+    return float(size_bytes) * float(config.BITS_PER_BYTE) / max(float(rate_bps), float(config.EPSILON))
+
+
+def _comm_energy(power_watts: float, duration_seconds: float) -> float:
+    """Return communication energy in Joules for a link active during duration_seconds."""
+    return float(power_watts) * max(float(duration_seconds), 0.0)
+
+
 # 函数 _get_belief_probability：关键函数，承载本模块的一段可复用实验逻辑，主要参数：file_id, neighbor_id。
 def _get_belief_probability(file_id: int, neighbor_id: int) -> float:
     """Returns the estimated probability P_{v,i} that a neighbor has file_i."""
@@ -442,16 +452,20 @@ class UAV:
         heuristic_target_uav: "UAV" | None,
     ) -> tuple[int, "UAV" | None]:
         """Resolve a lower-layer MARL offloading action into an executable target."""
-        if target_idx == OFFLOAD_TARGET_LOCAL:
+        del cooperative_uav
+        if target_idx == int(getattr(config, "OFFLOAD_ACTION_LOCAL", OFFLOAD_TARGET_LOCAL)):
             return OFFLOAD_TARGET_LOCAL, None
-        if target_idx == OFFLOAD_TARGET_COOPERATIVE:
-            if cooperative_uav is not None and context.cooperative_available:
-                return OFFLOAD_TARGET_COOPERATIVE, cooperative_uav
+        if target_idx == int(getattr(config, "OFFLOAD_ACTION_MBS", OFFLOAD_TARGET_MBS)):
+            return OFFLOAD_TARGET_MBS, None
+        coop_base = int(getattr(config, "OFFLOAD_ACTION_COOP_BASE", 2))
+        if target_idx >= coop_base:
+            requested_uav_id = int(target_idx - coop_base)
+            for neighbor in self._neighbors:
+                if neighbor.id == requested_uav_id:
+                    return OFFLOAD_TARGET_COOPERATIVE, neighbor
             self._service_fallback_count += 1
             if context.local_latency <= context.deadline or context.local_latency <= context.mbs_latency:
                 return OFFLOAD_TARGET_LOCAL, None
-            return OFFLOAD_TARGET_MBS, None
-        if target_idx == OFFLOAD_TARGET_MBS:
             return OFFLOAD_TARGET_MBS, None
         self._service_fallback_count += 1
         return heuristic_target_idx, heuristic_target_uav
@@ -632,8 +646,8 @@ class UAV:
         file_size: int = int(config.FILE_SIZES[req_id])
         cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[req_id]) * float(req_size)
         p_local: float = 1.0 if self.cache[req_id] else 0.0
-        ue_uav_upload_latency: float = req_size / ue_uav_rate
-        exp_fetch_latency: float = (1.0 - p_local) * (file_size / self._uav_mbs_rate)
+        ue_uav_upload_latency: float = _tx_latency_bytes(req_size, ue_uav_rate)
+        exp_fetch_latency: float = (1.0 - p_local) * _tx_latency_bytes(file_size, self._uav_mbs_rate)
         service_load: int = max(self._current_service_request_count, 1)
         est_comp_latency: float = cpu_cycles / (config.UAV_COMPUTING_CAPACITY[self.id] / service_load)
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
@@ -641,10 +655,12 @@ class UAV:
 
     # 函数 _estimate_mbs_service_latency：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
     def _estimate_mbs_service_latency(self, current_req: Request, ue_uav_rate: float) -> float:
-        ue_uav_upload_latency: float = current_req.req_size / ue_uav_rate
-        uav_mbs_upload_latency: float = current_req.req_size / self._uav_mbs_rate
+        cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[current_req.req_id]) * float(current_req.req_size)
+        ue_uav_upload_latency: float = _tx_latency_bytes(current_req.req_size, ue_uav_rate)
+        uav_mbs_upload_latency: float = _tx_latency_bytes(current_req.req_size, self._uav_mbs_rate)
+        mbs_compute_latency: float = cpu_cycles / float(config.MBS_COMPUTING_CAPACITY)
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return ue_uav_upload_latency + uav_mbs_upload_latency
+        return ue_uav_upload_latency + uav_mbs_upload_latency + mbs_compute_latency
 
     # 函数 _estimate_best_cooperative_service_candidate：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
     def _estimate_best_cooperative_service_candidate(
@@ -657,7 +673,7 @@ class UAV:
         req_id: int = current_req.req_id
         file_size: int = int(config.FILE_SIZES[req_id])
         cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[req_id]) * float(req_size)
-        ue_uav_upload_latency: float = req_size / ue_uav_rate
+        ue_uav_upload_latency: float = _tx_latency_bytes(req_size, ue_uav_rate)
 
         best_latency: float = np.inf
         best_neighbor: UAV | None = None
@@ -670,11 +686,11 @@ class UAV:
             belief_prob: float = _get_belief_probability(req_id, neighbor.id)
             uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, neighbor.pos))
             neighbor_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(neighbor.pos, config.MBS_POS))
-            exp_neighbor_fetch_latency: float = (1.0 - belief_prob) * (file_size / neighbor_mbs_rate)
+            exp_neighbor_fetch_latency: float = (1.0 - belief_prob) * _tx_latency_bytes(file_size, neighbor_mbs_rate)
             neigh_load: int = max(neighbor._current_service_request_count + 1, 1)
             neighbor_compute_share: float = float(config.UAV_COMPUTING_CAPACITY[neighbor.id]) / float(neigh_load)
             est_comp_latency: float = cpu_cycles / neighbor_compute_share
-            uav_uav_upload_latency: float = req_size / uav_uav_rate
+            uav_uav_upload_latency: float = _tx_latency_bytes(req_size, uav_uav_rate)
             exp_neighbor_latency: float = ue_uav_upload_latency + uav_uav_upload_latency + exp_neighbor_fetch_latency + est_comp_latency
             # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if exp_neighbor_latency < best_latency:
@@ -695,6 +711,9 @@ class UAV:
             best_neighbor_cache_belief,
         )
 
+    def _get_service_neighbor_cache_belief(self, req_id: int, neighbor: "UAV") -> float:
+        return _get_belief_probability(req_id, neighbor.id)
+
     # 函数 _estimate_best_cooperative_service_latency：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
     def _estimate_best_cooperative_service_latency(self, current_req: Request, ue_uav_rate: float) -> tuple[float, "UAV" | None]:
         best_latency, best_neighbor, _, _, _, _ = self._estimate_best_cooperative_service_candidate(current_req, ue_uav_rate)
@@ -706,16 +725,16 @@ class UAV:
         req_id: int = current_req.req_id
         file_size: int = int(config.FILE_SIZES[req_id])
         p_local: float = 1.0 if self.cache[req_id] else 0.0
-        ue_uav_download_latency: float = file_size / ue_uav_rate
-        exp_fetch_latency: float = (1.0 - p_local) * (file_size / self._uav_mbs_rate)
+        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)
+        exp_fetch_latency: float = (1.0 - p_local) * _tx_latency_bytes(file_size, self._uav_mbs_rate)
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return exp_fetch_latency + ue_uav_download_latency
 
     # 函数 _estimate_mbs_content_latency：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
     def _estimate_mbs_content_latency(self, current_req: Request, ue_uav_rate: float) -> float:
         file_size: int = int(config.FILE_SIZES[current_req.req_id])
-        uav_mbs_download_latency: float = file_size / self._uav_mbs_rate
-        ue_uav_download_latency: float = file_size / ue_uav_rate
+        uav_mbs_download_latency: float = _tx_latency_bytes(file_size, self._uav_mbs_rate)
+        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return uav_mbs_download_latency + ue_uav_download_latency
 
@@ -723,7 +742,7 @@ class UAV:
     def _estimate_best_cooperative_content_latency(self, current_req: Request, ue_uav_rate: float) -> tuple[float, "UAV" | None]:
         req_id: int = current_req.req_id
         file_size: int = int(config.FILE_SIZES[req_id])
-        ue_uav_download_latency: float = file_size / ue_uav_rate
+        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)
 
         best_latency: float = np.inf
         best_neighbor: UAV | None = None
@@ -732,8 +751,8 @@ class UAV:
             belief_prob: float = _get_belief_probability(req_id, neighbor.id)
             uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, neighbor.pos))
             uav_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(neighbor.pos, config.MBS_POS))
-            uav_uav_download_latency: float = file_size / uav_uav_rate
-            exp_neighbor_fetch_latency: float = (1.0 - belief_prob) * (file_size / uav_mbs_rate)
+            uav_uav_download_latency: float = _tx_latency_bytes(file_size, uav_uav_rate)
+            exp_neighbor_fetch_latency: float = (1.0 - belief_prob) * _tx_latency_bytes(file_size, uav_mbs_rate)
             exp_neighbor_latency: float = exp_neighbor_fetch_latency + uav_uav_download_latency + ue_uav_download_latency
             # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if exp_neighbor_latency < best_latency:
@@ -752,14 +771,16 @@ class UAV:
         cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[req_id]) * float(req_size)
         file_size: int = int(config.FILE_SIZES[req_id])
 
-        ue_uav_upload_latency: float = req_size / ue_uav_rate
+        ue_uav_upload_latency: float = _tx_latency_bytes(req_size, ue_uav_rate)
         ue.update_battery(0.0, ue_uav_upload_latency)
+        self._energy_current_slot += _comm_energy(config.UAV_COMM_RX_POWER, ue_uav_upload_latency)
         # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if target_idx == OFFLOAD_TARGET_LOCAL:
             fetch_latency: float = 0.0
             # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if not self.cache[req_id]:
-                fetch_latency = file_size / self._uav_mbs_rate
+                fetch_latency = _tx_latency_bytes(file_size, self._uav_mbs_rate)
+                self._energy_current_slot += _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
                 _try_add_file_to_cache(self, req_id)
 
             comp_latency, comp_energy = _get_computing_latency_and_energy(self, cpu_cycles)
@@ -771,12 +792,15 @@ class UAV:
             assert target_uav is not None
             uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, target_uav.pos))
             uav_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(target_uav.pos, config.MBS_POS))
-            uav_uav_upload_latency: float = req_size / uav_uav_rate
+            uav_uav_upload_latency: float = _tx_latency_bytes(req_size, uav_uav_rate)
+            self._energy_current_slot += _comm_energy(config.UAV_COMM_TX_POWER, uav_uav_upload_latency)
+            target_uav._energy_current_slot += _comm_energy(config.UAV_COMM_RX_POWER, uav_uav_upload_latency)
 
             fetch_latency = 0.0
             # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if not target_uav.cache[req_id]:
-                fetch_latency = file_size / uav_mbs_rate
+                fetch_latency = _tx_latency_bytes(file_size, uav_mbs_rate)
+                target_uav._energy_current_slot += _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
                 _try_add_file_to_cache(target_uav, req_id)
 
             comp_latency, comp_energy = _get_computing_latency_and_energy(target_uav, cpu_cycles)
@@ -785,8 +809,10 @@ class UAV:
             _try_add_file_to_cache(self, req_id)
 
         else:
-            uav_mbs_upload_latency: float = req_size / self._uav_mbs_rate
-            ue.latency_current_request = ue_uav_upload_latency + uav_mbs_upload_latency
+            uav_mbs_upload_latency: float = _tx_latency_bytes(req_size, self._uav_mbs_rate)
+            mbs_compute_latency: float = cpu_cycles / float(config.MBS_COMPUTING_CAPACITY)
+            self._energy_current_slot += _comm_energy(config.UAV_BACKHAUL_TX_POWER, uav_mbs_upload_latency)
+            ue.latency_current_request = ue_uav_upload_latency + uav_mbs_upload_latency + mbs_compute_latency
             _try_add_file_to_cache(self, req_id)
 
     # 函数 _process_content_request：用户设备产生的任务请求，主要参数：ue, ue_uav_rate, target_idx, target_uav。
@@ -796,14 +822,16 @@ class UAV:
         assert req_id >= config.NUM_SERVICES
         file_size: int = int(config.FILE_SIZES[req_id])
 
-        ue_uav_download_latency: float = file_size / ue_uav_rate
-        ue.update_battery(0.0, 0.0)
+        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)
+        ue.update_battery(0.0, 0.0, ue_receive_time=ue_uav_download_latency)
+        self._energy_current_slot += _comm_energy(config.UAV_COMM_TX_POWER, ue_uav_download_latency)
         # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if target_idx == OFFLOAD_TARGET_LOCAL:
             fetch_latency: float = 0.0
             # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if not self.cache[req_id]:
-                fetch_latency = file_size / self._uav_mbs_rate
+                fetch_latency = _tx_latency_bytes(file_size, self._uav_mbs_rate)
+                self._energy_current_slot += _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
                 _try_add_file_to_cache(self, req_id)
 
             ue.latency_current_request = fetch_latency + ue_uav_download_latency
@@ -813,19 +841,23 @@ class UAV:
             assert target_uav is not None
             uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, target_uav.pos))
             uav_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(target_uav.pos, config.MBS_POS))
-            uav_uav_download_latency: float = file_size / uav_uav_rate
+            uav_uav_download_latency: float = _tx_latency_bytes(file_size, uav_uav_rate)
+            target_uav._energy_current_slot += _comm_energy(config.UAV_COMM_TX_POWER, uav_uav_download_latency)
+            self._energy_current_slot += _comm_energy(config.UAV_COMM_RX_POWER, uav_uav_download_latency)
 
             fetch_latency = 0.0
             # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if not target_uav.cache[req_id]:
-                fetch_latency = file_size / uav_mbs_rate
+                fetch_latency = _tx_latency_bytes(file_size, uav_mbs_rate)
+                target_uav._energy_current_slot += _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
                 _try_add_file_to_cache(target_uav, req_id)
 
             ue.latency_current_request = fetch_latency + uav_uav_download_latency + ue_uav_download_latency
             _try_add_file_to_cache(self, req_id)
 
         else:
-            uav_mbs_download_latency: float = file_size / self._uav_mbs_rate
+            uav_mbs_download_latency: float = _tx_latency_bytes(file_size, self._uav_mbs_rate)
+            self._energy_current_slot += _comm_energy(config.UAV_BACKHAUL_RX_POWER, uav_mbs_download_latency)
             ue.latency_current_request = uav_mbs_download_latency + ue_uav_download_latency
             _try_add_file_to_cache(self, req_id)
 

@@ -170,16 +170,18 @@
 对于每个服务请求，下层策略需要在以下三种执行方式之间进行选择：
 
 - 本地 UAV 执行
-- 协作 UAV 执行
-- MBS 执行
+- 协作类别执行，具体协作 UAV 由运行时可用性与最小时延规则解析
+- MBS execution，包含 UE-UAV 上传、UAV-MBS 回传和 MBS 计算时延
+
+本文实现中请求大小和文件大小以 bytes 记录，而无线链路速率为 bit/s，因此所有传输时延统一写为 `8 * size_bytes / rate_bps`。MBS 采用固定算力 `200e9 cycles/s`。指标中的 `energy` 保留历史命名，但表示 UAV-side energy，包含 UAV 飞行/悬停、WPT、UAV 计算和 UAV 通信能耗，不包含 MBS 计算能耗和 UE 电池消耗。
 
 ### 5.2 Constrained attention offload MAPPO
 
 下层主方法是 constrained attention offload MAPPO。每架 UAV 是一个下层 agent，观测由 UAV 自身状态和最多 `MAX_OFFLOAD_REQUESTS_PER_UAV` 个服务请求 slot 组成；每个有效 slot 的动作空间为：
 
 - `0`：local UAV 执行
-- `1`：cooperative UAV 执行
-- `2`：MBS 执行
+- `1`：cooperative 类别，具体协作 UAV 由运行时可用性与最小时延规则解析
+- `2`：MBS execution
 
 actor 使用 request attention 编码同一 UAV 内多个请求之间的相对重要性，critic 使用 UAV 间 attention 估计集中式 value。reward 同时包含 deadline satisfaction、latency、energy、MBS load 和 cooperative bonus，并在 Lagrange 模式下加入 DSR 与 MBS load 约束惩罚。训练过程完全来自环境交互，不使用 oracle imitation 或 warm-start。
 
@@ -211,7 +213,7 @@ oracle-guided 策略与 imitation / behavior cloning 接近，但本文不再把
 
 下层主实验报告：
 
-- reward、latency、energy、deadline satisfaction、fairness、offline rate。
+- reward、latency、energy（UAV-side energy, including UAV communication energy）、deadline satisfaction、fairness、offline rate。
 - local/cooperative/MBS ratio、MBS load ratio。
 - lower actor loss、critic loss、entropy。
 - `lambda_dsr`、`lambda_mbs`、constraint penalty、coop/MBS masked count。
@@ -228,13 +230,15 @@ oracle-guided 策略与 imitation / behavior cloning 接近，但本文不再把
 
 ### 6.1 实验环境与参数设置
 
-默认仿真区域为 `700 m x 700 m`，系统包含 5 架 UAV、100 个 UE 和 1 个 MBS。每个 episode 包含 1000 个 time slots，每个 time slot 时长为 1 s。UAV 飞行高度为 100 m，最大速度为 15 m/s，覆盖半径为 100 m，感知范围为 460 m，最小 UAV 间距为 200 m。系统包含 25 类服务和 50 类内容文件，服务 deadline 在 `[0.65, 2.10] s` 范围内生成。
+默认仿真区域为 `700 m x 700 m`，系统包含 5 架 UAV、100 个 UE 和 1 个 MBS。每个 episode 包含 1000 个 time slots，每个 time slot 时长为 1 s。UAV 飞行高度为 100 m，最大速度为 15 m/s，覆盖半径为 100 m，感知范围为 460 m，最小 UAV 间距为 200 m。系统包含 25 类服务和 50 类内容文件，服务 deadline 在 `[0.65, 2.10] s` 范围内生成。任务输入和文件大小使用 bytes，链路速率使用 bit/s，MBS 固定算力为 `200e9 cycles/s`。
+
+注意：当前传输单位、MBS 计算时延和 UE 接收能耗已经修正。修正前产生的 checkpoint、results 和图表只作为 legacy/reference，不作为当前公式口径下的正式论文主表证据。
 
 主联合实验使用 3 个训练 seeds：`42, 84, 126`，以及 10 个 workload seeds：`42, 84, 126, 168, 210, 252, 294, 336, 378, 420`。每个 workload seed 运行 6 个 episodes，每个 episode 1000 steps。统计单元为 `(training_seed, workload_seed)` 的 episode mean，并报告 mean、std、95% CI、paired delta、paired t-test 和 Wilcoxon 检验。
 
 ### 6.2 上层轨迹控制筛选结果
 
-数据来源：`results/full_runs/` 下的主线上层多 seed 训练与测试日志。
+数据来源：`results/full_runs/` 下的主线上层多 seed 训练与测试日志。该表为 legacy 口径结果，仅用于说明旧实验趋势；正式结论需在当前公式口径下重新生成。
 
 | 方法 | Deadline Satisfaction | Latency | Energy | Fairness |
 | --- | ---: | ---: | ---: | ---: |

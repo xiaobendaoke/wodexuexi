@@ -122,9 +122,9 @@ assert MAX_UAV_NEIGHBORS >= 0 and MAX_UAV_NEIGHBORS <= NUM_UAVS - 1
 assert MAX_ASSOCIATED_UES >= 1 and MAX_ASSOCIATED_UES <= NUM_UES
 
 # 关键变量 POWER_MOVE：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-POWER_MOVE: float = 100.0  # P_move in Watts
+POWER_MOVE: float = 300.0  # P_move in Watts
 # 关键变量 POWER_HOVER：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-POWER_HOVER: float = 80.0  # P_hover in Watts
+POWER_HOVER: float = 150.0  # P_hover in Watts
 
 # Request Parameters
 NUM_SERVICES: int = 25  # S
@@ -144,6 +144,13 @@ MAX_INPUT_SIZE: int = 5 * 10**6  # in bytes
 ZIPF_BETA: float = 0.8  # beta^Zipf
 # 关键变量 K_CPU：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 K_CPU: float = 1e-27  # CPU capacitance coefficient
+BITS_PER_BYTE: float = 8.0  # conversion factor for byte-sized workloads over bit/s wireless rates
+MBS_COMPUTING_CAPACITY: float = 200 * 10**9  # F_mbs in cycles/sec
+UE_RECEIVE_POWER: float = 0.10  # UE receive power in Watts for downlink content delivery
+UAV_COMM_TX_POWER: float = 0.5  # UAV access/inter-UAV transmit power in Watts
+UAV_COMM_RX_POWER: float = 0.10  # UAV access/inter-UAV receive power in Watts
+UAV_BACKHAUL_TX_POWER: float = 0.5  # UAV-MBS backhaul transmit power in Watts
+UAV_BACKHAUL_RX_POWER: float = 0.10  # UAV-MBS backhaul receive power in Watts
 # 关键变量 SERVICE_DEADLINE_MIN：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 SERVICE_DEADLINE_MIN: float = 0.65 * TIME_SLOT_DURATION  # moderate deadline pressure for richer local/cooperative/MBS trade-offs
 # 关键变量 SERVICE_DEADLINE_MAX：全局常量或配置项，会影响环境规模、训练过程或实验输出。
@@ -173,7 +180,10 @@ SERVICE_OFFLOAD_POLICY_CHECKPOINT: str | None = None  # checkpoint for the stand
 # request-level decisions per environment step.
 OFFLOAD_MODEL_NAME: str = "constrained_attention_offload_mappo"
 MAX_OFFLOAD_REQUESTS_PER_UAV: int = MAX_ASSOCIATED_UES
-OFFLOAD_NUM_ACTIONS: int = 3  # 0: local UAV, 1: cooperative UAV, 2: MBS
+OFFLOAD_ACTION_LOCAL: int = 0
+OFFLOAD_ACTION_MBS: int = 1
+OFFLOAD_ACTION_COOP_BASE: int = 2
+OFFLOAD_NUM_ACTIONS: int = OFFLOAD_ACTION_COOP_BASE + NUM_UAVS  # 0: local, 1: MBS, 2+i: cooperative UAV i
 OFFLOAD_LATENCY_RATIO_CLIP: float = 10.0
 OFFLOAD_REQUEST_FEATURE_DIM: int = 14
 OFFLOAD_OBS_DIM_SINGLE: int = 5 + (MAX_OFFLOAD_REQUESTS_PER_UAV * OFFLOAD_REQUEST_FEATURE_DIM)
@@ -187,10 +197,10 @@ OFFLOAD_REWARD_SCALING_FACTOR: float = 1.0
 OFFLOAD_CONSTRAINT_MODE: str = "lagrange"  # options: "none", "lagrange"
 OFFLOAD_MASK_MODE: str = "quality"  # options: "quality", "none"
 OFFLOAD_USE_ATTENTION: bool = True
-OFFLOAD_DSR_TARGET: float = 0.234
-OFFLOAD_MBS_LOAD_CEILING: float = 0.0589
-OFFLOAD_LAGRANGE_LR: float = 0.05
-OFFLOAD_LAGRANGE_MAX: float = 20.0
+OFFLOAD_DSR_TARGET: float = 0.18
+OFFLOAD_MBS_LOAD_CEILING: float = 0.03
+OFFLOAD_LAGRANGE_LR: float = 0.1
+OFFLOAD_LAGRANGE_MAX: float = 10.0
 OFFLOAD_COOP_MAX_DEADLINE_RATIO: float = 1.50
 OFFLOAD_COOP_MAX_RELATIVE_LATENCY: float = 1.35
 OFFLOAD_COOP_MIN_COMPUTE_SHARE_RATIO: float = 0.25
@@ -219,30 +229,42 @@ BANDWIDTH_EDGE: int = 40 * 10**6  # B^edge in Hz
 BANDWIDTH_BACKHAUL: int = 750_000  # B^backhaul in Hz; constrained backhaul reduces the all-to-MBS collapse
 
 # WPT Parameters
-UE_BATTERY_CAPACITY: float = 100.0  # B_max in Joules
+UE_BATTERY_CAPACITY: float = 500.0  # B_max in Joules
 # 关键变量 UE_CRITICAL_THRESHOLD：用户设备对象，产生任务请求并等待服务。
-UE_CRITICAL_THRESHOLD: float = 0.3 * UE_BATTERY_CAPACITY  # B_low in Joules
+UE_CRITICAL_THRESHOLD: float = 0.1 * UE_BATTERY_CAPACITY  # B_low in Joules
 # 关键变量 WPT_TRANSMIT_POWER：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 WPT_TRANSMIT_POWER: float = 50.0  # P^WPT in Watts (actual UAV WPT power cost)
 # 关键变量 WPT_HARVEST_GAIN：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-WPT_HARVEST_GAIN: float = 1e5  # equivalent WPT harvest gain for the simplified channel model
+WPT_HARVEST_GAIN: float = 5e5  # equivalent WPT harvest gain for the simplified channel model
 # 关键变量 WPT_EFFICIENCY：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-WPT_EFFICIENCY: float = 0.6  # eta (energy harvesting efficiency, 60%)
+WPT_EFFICIENCY: float = 0.8  # eta (energy harvesting efficiency, 60%)
 # 关键变量 UE_STATIC_POWER：用户设备对象，产生任务请求并等待服务。
-UE_STATIC_POWER: float = 0.05  # Idle power consumption in Watts
+UE_STATIC_POWER: float = 0.01  # Idle power consumption in Watts
 
 # Model Parameters
-# Reward formula: reward = ALPHA_3*log(fairness) - ALPHA_1*log(latency) - ALPHA_2*log(energy) - ALPHA_4*log(1+offline_rate)
-# Then scaled by REWARD_SCALING_FACTOR.
-ALPHA_1 = 1.0  # weightage for latency (negative term, higher = stronger penalty for latency)
+# Linear reward weights (new normalized form):
+#   reward = W_FAIR*jfi - W_LAT*norm_latency - W_ENERGY*norm_energy - W_OFFLINE*offline_rate + W_DSR*dsr
+# Where:
+#   norm_latency = total_latency / (NUM_UES * NON_SERVED_LATENCY_PENALTY)
+#   norm_energy = total_energy / (NUM_UAVS * REWARD_NORM_ENERGY_REF)
+REWARD_W_FAIR: float = 1.0    # fairness bonus weight
+REWARD_W_LAT: float = 1.0     # latency penalty weight
+REWARD_W_ENERGY: float = 0.5  # energy penalty weight
+REWARD_W_OFFLINE: float = 5.0 # offline UE penalty weight
+REWARD_W_DSR: float = 1.0     # DSR bonus weight
+# Normalization reference values for linear reward
+REWARD_NORM_ENERGY_REF: float = 5000.0  # per-UAV per-step max energy reference (Joules)
+
+# Legacy log-form weights (kept for backward compatibility)
+ALPHA_1 = 1.0  # weightage for latency (legacy log-form)
 # 关键变量 ALPHA_2：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-ALPHA_2 = 0.4  # weightage for energy (negative term, lower priority than latency)
+ALPHA_2 = 0.4  # weightage for energy (legacy log-form)
 # 关键变量 ALPHA_3：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-ALPHA_3 = 2.0  # weightage for fairness (positive term, encourage equal service)
+ALPHA_3 = 2.0  # weightage for fairness (legacy log-form)
 # 关键变量 ALPHA_4：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-ALPHA_4 = 50.0  # weightage for offline rate (negative term, penalizes UEs running out of battery)
+ALPHA_4 = 50.0  # weightage for offline rate (legacy log-form)
 # 关键变量 REWARD_SCALING_FACTOR：当前时间步或当前回合的奖励值。
-REWARD_SCALING_FACTOR: float = 0.01  # scaling factor for rewards (prevents exploding values)
+REWARD_SCALING_FACTOR: float = 0.1  # scaling factor for rewards (prevents exploding values)
 
 # 关键变量 SELF_OBS_DIM：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 SELF_OBS_DIM: int = 2 + NUM_FILES  # pos (2) + cache (NUM_FILES)

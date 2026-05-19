@@ -42,6 +42,7 @@ import numpy as np
 import config
 from environment.env import Env
 from environment.request_types import Request
+from environment.uavs import OFFLOAD_TARGET_MBS, _tx_latency_bytes
 from utils.logger import load_configs, refresh_derived_config_fields
 from utils.plot_logs import generate_plots
 
@@ -82,6 +83,100 @@ def check_request_api_and_observation_shape() -> dict[str, object]:
         "obs_agents": len(obs),
         "obs_dim": int(obs[0].shape[0]),
         "request_type": int(sample_request.req_type),
+    }
+
+
+def check_transmission_unit_conversion() -> dict[str, object]:
+    latency = _tx_latency_bytes(1.0, 8.0)
+    assert np.isclose(latency, 1.0)
+    return {"one_byte_over_8bps_latency": float(latency)}
+
+
+def check_mbs_service_compute_latency() -> dict[str, object]:
+    np.random.seed(404)
+    env = Env()
+    env.reset()
+    uav = env.uavs[0]
+    uav._uav_mbs_rate = 16.0
+    request = Request.service(req_size=4, req_id=0, deadline=10.0, priority=config.SERVICE_PRIORITY_MAX)
+    ue_uav_rate = 32.0
+    cpu_cycles = float(config.CPU_CYCLES_PER_BYTE[0]) * float(request.req_size)
+    pure_transmission = _tx_latency_bytes(request.req_size, ue_uav_rate) + _tx_latency_bytes(request.req_size, uav._uav_mbs_rate)
+    expected_compute = cpu_cycles / float(config.MBS_COMPUTING_CAPACITY)
+    estimated = uav._estimate_mbs_service_latency(request, ue_uav_rate)
+    assert np.isclose(estimated - pure_transmission, expected_compute)
+    return {
+        "pure_transmission_latency": float(pure_transmission),
+        "mbs_compute_latency": float(expected_compute),
+        "estimated_mbs_latency": float(estimated),
+    }
+
+
+def check_content_receive_energy() -> dict[str, object]:
+    np.random.seed(505)
+    env = Env()
+    env.reset()
+    uav = env.uavs[0]
+    ue = env.ues[0]
+    req_id = config.NUM_SERVICES
+    ue.current_request = Request.content(req_id=req_id)
+    ue.battery_level = config.UE_BATTERY_CAPACITY
+    before = float(ue.battery_level)
+    rate = float(config.FILE_SIZES[req_id]) * float(config.BITS_PER_BYTE)
+    expected_receive_time = _tx_latency_bytes(config.FILE_SIZES[req_id], rate)
+    uav._uav_mbs_rate = rate
+    uav._process_content_request(ue, rate, OFFLOAD_TARGET_MBS, None)
+    expected_drop = config.UE_STATIC_POWER * config.TIME_SLOT_DURATION + config.UE_RECEIVE_POWER * expected_receive_time
+    actual_drop = before - float(ue.battery_level)
+    assert np.isclose(actual_drop, expected_drop)
+    return {
+        "receive_time": float(expected_receive_time),
+        "battery_drop": float(actual_drop),
+    }
+
+
+def check_uav_communication_energy_mbs_paths() -> dict[str, object]:
+    np.random.seed(606)
+    env = Env()
+    env.reset()
+    uav = env.uavs[0]
+    service_ue = env.ues[0]
+    content_ue = env.ues[1]
+
+    service_req = Request.service(req_size=4, req_id=0, deadline=10.0, priority=config.SERVICE_PRIORITY_MAX)
+    service_ue.current_request = service_req
+    service_ue.battery_level = config.UE_BATTERY_CAPACITY
+    ue_uav_rate = 32.0
+    uav._uav_mbs_rate = 16.0
+    uav._energy_current_slot = 0.0
+    service_upload = _tx_latency_bytes(service_req.req_size, ue_uav_rate)
+    service_backhaul = _tx_latency_bytes(service_req.req_size, uav._uav_mbs_rate)
+    expected_service_comm = (
+        config.UAV_COMM_RX_POWER * service_upload
+        + config.UAV_BACKHAUL_TX_POWER * service_backhaul
+    )
+    uav._process_service_request(service_ue, ue_uav_rate, OFFLOAD_TARGET_MBS, None)
+    assert np.isclose(float(uav.energy), expected_service_comm)
+
+    content_req_id = config.NUM_SERVICES
+    content_ue.current_request = Request.content(req_id=content_req_id)
+    content_ue.battery_level = config.UE_BATTERY_CAPACITY
+    file_size = float(config.FILE_SIZES[content_req_id])
+    content_rate = file_size * float(config.BITS_PER_BYTE)
+    uav._uav_mbs_rate = content_rate
+    uav._energy_current_slot = 0.0
+    content_ue_uav_download = _tx_latency_bytes(file_size, content_rate)
+    content_backhaul = _tx_latency_bytes(file_size, uav._uav_mbs_rate)
+    expected_content_comm = (
+        config.UAV_COMM_TX_POWER * content_ue_uav_download
+        + config.UAV_BACKHAUL_RX_POWER * content_backhaul
+    )
+    uav._process_content_request(content_ue, content_rate, OFFLOAD_TARGET_MBS, None)
+    assert np.isclose(float(uav.energy), expected_content_comm)
+
+    return {
+        "service_mbs_comm_energy": float(expected_service_comm),
+        "content_mbs_comm_energy": float(expected_content_comm),
     }
 
 
@@ -183,6 +278,10 @@ def check_metric_conventions(policy_name: str) -> dict[str, object]:
         assert np.isclose(float(metrics["mbs_load_ratio"]), 0.0)
         assert np.isclose(float(metrics["deadline_satisfaction_rate"]), 0.0)
     assert 0.0 <= float(metrics["deadline_satisfaction_rate"]) <= 1.0
+    assert 0.0 <= float(metrics["mbs_load_ratio"]) <= 1.0
+    assert 0.0 <= float(metrics["offloading_ratio_local"]) <= 1.0
+    assert 0.0 <= float(metrics["offloading_ratio_cooperative"]) <= 1.0
+    assert 0.0 <= float(metrics["offloading_ratio_mbs"]) <= 1.0
     # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
     return {
         "policy": policy_name,
@@ -296,6 +395,18 @@ def main() -> None:
     # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
     try:
         results["request_api_and_observation_shape"] = check_request_api_and_observation_shape()
+        restore_config(snapshot)
+
+        results["transmission_unit_conversion"] = check_transmission_unit_conversion()
+        restore_config(snapshot)
+
+        results["mbs_service_compute_latency"] = check_mbs_service_compute_latency()
+        restore_config(snapshot)
+
+        results["content_receive_energy"] = check_content_receive_energy()
+        restore_config(snapshot)
+
+        results["uav_communication_energy_mbs_paths"] = check_uav_communication_energy_mbs_paths()
         restore_config(snapshot)
 
         results["controlled_branch_behavior_heuristic"] = check_branch_behavior("heuristic")
