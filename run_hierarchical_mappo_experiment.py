@@ -74,8 +74,8 @@ def lower_rewards_from_metrics(
     lambda_mbs: float = 0.0,
 ) -> tuple[list[float], dict[str, float]]:
     deadline_penalty = 1.0 - float(metrics["deadline_satisfaction_rate"])
-    latency_term = np.log(float(metrics["latency"]) + config.EPSILON)
-    energy_term = np.log(float(metrics["energy"]) + config.EPSILON)
+    latency_term = float(metrics["latency"]) / (config.NUM_UES * config.NON_SERVED_LATENCY_PENALTY + config.EPSILON)
+    energy_term = float(metrics["energy"]) / (config.NUM_UAVS * config.OFFLOAD_ENERGY_NORM_REF + config.EPSILON)
     mbs_term = float(metrics["mbs_load_ratio"])
     coop_term = float(metrics["offloading_ratio_cooperative"])
     success_term = float(metrics["deadline_satisfaction_rate"])

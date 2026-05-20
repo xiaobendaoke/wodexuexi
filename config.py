@@ -187,20 +187,20 @@ OFFLOAD_NUM_ACTIONS: int = OFFLOAD_ACTION_COOP_BASE + NUM_UAVS  # 0: local, 1: M
 OFFLOAD_LATENCY_RATIO_CLIP: float = 10.0
 OFFLOAD_REQUEST_FEATURE_DIM: int = 14
 OFFLOAD_OBS_DIM_SINGLE: int = 5 + (MAX_OFFLOAD_REQUESTS_PER_UAV * OFFLOAD_REQUEST_FEATURE_DIM)
-OFFLOAD_REWARD_DEADLINE_WEIGHT: float = 3.0
-OFFLOAD_REWARD_LATENCY_WEIGHT: float = 0.35
-OFFLOAD_REWARD_ENERGY_WEIGHT: float = 0.10
-OFFLOAD_REWARD_MBS_WEIGHT: float = 0.35
+OFFLOAD_REWARD_DEADLINE_WEIGHT: float = 7.0
+OFFLOAD_REWARD_LATENCY_WEIGHT: float = 2.5
+OFFLOAD_REWARD_ENERGY_WEIGHT: float = 0.5
+OFFLOAD_REWARD_MBS_WEIGHT: float = 0.2
 OFFLOAD_REWARD_COOP_BONUS: float = 0.08
-OFFLOAD_REWARD_SUCCESS_BONUS: float = 0.40
+OFFLOAD_REWARD_SUCCESS_BONUS: float = 1.5
 OFFLOAD_REWARD_SCALING_FACTOR: float = 1.0
 OFFLOAD_CONSTRAINT_MODE: str = "lagrange"  # options: "none", "lagrange"
 OFFLOAD_MASK_MODE: str = "quality"  # options: "quality", "none"
 OFFLOAD_USE_ATTENTION: bool = True
-OFFLOAD_DSR_TARGET: float = 0.18
-OFFLOAD_MBS_LOAD_CEILING: float = 0.03
-OFFLOAD_LAGRANGE_LR: float = 0.1
-OFFLOAD_LAGRANGE_MAX: float = 10.0
+OFFLOAD_DSR_TARGET: float = 0.28
+OFFLOAD_MBS_LOAD_CEILING: float = 0.08
+OFFLOAD_LAGRANGE_LR: float = 0.5
+OFFLOAD_LAGRANGE_MAX: float = 50.0
 OFFLOAD_COOP_MAX_DEADLINE_RATIO: float = 1.50
 OFFLOAD_COOP_MAX_RELATIVE_LATENCY: float = 1.35
 OFFLOAD_COOP_MIN_COMPUTE_SHARE_RATIO: float = 0.25
@@ -249,11 +249,15 @@ UE_STATIC_POWER: float = 0.01  # Idle power consumption in Watts
 #   norm_energy = total_energy / (NUM_UAVS * REWARD_NORM_ENERGY_REF)
 REWARD_W_FAIR: float = 1.0    # fairness bonus weight
 REWARD_W_LAT: float = 1.0     # latency penalty weight
-REWARD_W_ENERGY: float = 0.5  # energy penalty weight
+REWARD_W_ENERGY: float = 0.2  # energy penalty weight
 REWARD_W_OFFLINE: float = 5.0 # offline UE penalty weight
-REWARD_W_DSR: float = 1.0     # DSR bonus weight
+REWARD_W_DSR: float = 3.0     # DSR bonus weight
 # Normalization reference values for linear reward
 REWARD_NORM_ENERGY_REF: float = 5000.0  # per-UAV per-step max energy reference (Joules)
+
+# Lower-level offload linear reward normalization reference (per-UAV per-step, Joules)
+# Baseline max ~22940 J/UAV/step; 25000 gives norm_energy <= 1.0
+OFFLOAD_ENERGY_NORM_REF: float = 25000.0
 
 # Legacy log-form weights (kept for backward compatibility)
 ALPHA_1 = 1.0  # weightage for latency (legacy log-form)

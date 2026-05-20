@@ -4,7 +4,7 @@
 
 ## 摘要
 
-多无人机辅助移动边缘计算能够通过空中节点的机动部署提升边缘覆盖、任务接入和协同计算能力，但系统性能同时受到无人机轨迹、无线链路状态、请求级卸载决策、截止期约束和宏基站回传负载的共同影响。若将无人机连续轨迹控制与多请求离散卸载决策直接合并为单一联合动作空间，训练复杂度和在线决策开销都会迅速上升。为此，本文提出一种面向多无人机移动边缘计算的质量感知约束式双层多智能体强化学习框架。该框架将协同调度拆分为上层轨迹控制和下层请求级卸载两个决策层：上层采用 attention-MAPPO 建模无人机之间的协同关系并输出轨迹动作；下层采用 constrained attention offload MAPPO，在每个有效服务请求上选择本地无人机执行、协作无人机执行或宏基站执行。为提升服务质量和动作可行性，本文设计质量感知动作 mask 屏蔽明显不可行的协作与宏基站动作，并在下层奖励中引入 Lagrange 约束项刻画截止期满足率与宏基站负载之间的权衡。同时，本文在系统模型中显式建模无人机飞行能耗 $E_{fly} = P_{move} \cdot t_{moving} + P_{hover} \cdot t_{hovering}$ 和用户设备电池动态 $B_{t+1} = \min(B_{max}, B_t - E_{static} - E_{tx} + E_{harv})$，并通过无线能量传输机制维持终端设备在线。实验基于 5 架 UAV、100 个用户设备和 10 组 workload seeds 的多种随机场景展开。结果表明，完整双层 MARL 相比 uncoordinated greedy + heuristic 基线可将平均 reward 从 -5933.9 提升到 -1723.5（$\Delta = +4210.4$, $p = 3.4\times10^{-31}$），UAV 侧能耗从 114.70M 降至 70.22M（$\Delta = -44.48M$, $p = 2.97\times10^{-16}$），公平性由 0.7745 提升至 0.9262（$\Delta = +0.15$, $p = 8.8\times10^{-10}$），同时 offline rate 由 0.58% 降至 0.01%。消融实验表明，Lagrange 约束、质量 mask 和 attention 模块显著改变了卸载分布与能耗/负载权衡，验证了各组件对系统性能的独立贡献。此外，仅替换上层轨迹策略（attention-MAPPO + heuristic）即可使 reward 从 -5933.9 提升至 -2128.6（$\Delta = +3805.4$, $p = 3.0\times10^{-30}$），公平性从 0.7745 提升至 0.9299，证明上层轨迹控制在多 UAV MEC 系统中具有独立的显著优化价值。
+多无人机辅助移动边缘计算能够通过空中节点的机动部署提升边缘覆盖、任务接入和协同计算能力，但系统性能同时受到无人机轨迹、无线链路状态、请求级卸载决策、截止期约束和宏基站回传负载的共同影响。若将无人机连续轨迹控制与多请求离散卸载决策直接合并为单一联合动作空间，训练复杂度和在线决策开销都会迅速上升。为此，本文提出一种面向多无人机移动边缘计算的质量感知约束式双层多智能体强化学习框架。该框架将协同调度拆分为上层轨迹控制和下层请求级卸载两个决策层：上层采用 attention-MAPPO 建模无人机之间的协同关系并输出轨迹动作；下层采用 constrained attention offload MAPPO，在每个有效服务请求上选择本地无人机执行、协作无人机执行或宏基站执行。本文进一步设计质量感知动作 mask 屏蔽明显不可行的协作与宏基站动作，并在下层奖励中引入 Lagrange 约束项刻画截止期满足率与宏基站负载之间的权衡。同时，本文在系统模型中显式建模无人机飞行能耗 $E_{fly} = P_{move} \cdot t_{moving} + P_{hover} \cdot t_{hovering}$ 和用户设备电池动态 $B_{t+1} = \min(B_{max}, B_t - E_{static} - E_{tx} - E_{rx} + E_{harv})$，并通过无线能量传输机制维持终端设备在线。实验基于 5 架 UAV、100 个用户设备、3 个 training seeds 和 10 组 workload seeds 展开。结果表明，完整双层 MARL 相比 uncoordinated greedy + heuristic 基线可将平均 reward 从 -5933.9 提升到 -1451.7（$\Delta = +4482.2$, $p = 1.0\times10^{-32}$），UAV 侧能耗从 114.70M 降至 58.06M（$\Delta = -56.64M$, $p = 1.7\times10^{-19}$），公平性由 0.7745 提升至 0.9363（$\Delta = +0.162$, $p = 1.7\times10^{-11}$），offline rate 由 0.58% 降至 0.00%。同时，当前权重配置下完整方法的 DSR 从 0.2734 降至 0.2083（$\Delta=-0.0651$, $p=2.4\times10^{-11}$），说明该配置更偏向能耗、公平性和在线率收益，而非单独最大化截止期满足率。仅替换上层轨迹策略（attention-MAPPO + heuristic）时，DSR 从 0.2734 提升至 0.2879，表明 DSR 下降主要来自下层学习式卸载策略对能耗与负载分布的重新权衡。消融实验表明，Lagrange 约束、质量 mask 和 attention 模块会显著改变卸载分布与能耗/负载权衡。
 
 **关键词：** 多无人机；移动边缘计算；任务卸载；多智能体强化学习；MAPPO；双层优化；质量感知约束；Lagrange 约束
 
@@ -12,7 +12,7 @@
 
 ## Abstract
 
-Multi-UAV assisted mobile edge computing (MEC) enhances edge coverage, task admission, and cooperative computing through aerial node deployment, yet system performance is jointly affected by UAV trajectory, wireless link dynamics, per-request offloading decisions, deadline constraints, and macro base station (MBS) backhaul load. Directly combining continuous UAV trajectory control with discrete per-request offloading decisions into a single joint action space leads to prohibitive training complexity and online decision latency. This paper proposes a quality-aware constrained hierarchical multi-agent reinforcement learning (MARL) framework for multi-UAV MEC. The framework decomposes coordinated scheduling into an upper-layer trajectory control module and a lower-layer per-request offloading module. The upper layer employs attention-MAPPO to model inter-UAV coordination and output trajectory actions; the lower layer employs constrained attention offload MAPPO to select, for each service request, among local UAV execution, cooperative UAV execution, and MBS execution. To improve service quality and action feasibility, we design a quality-aware action mask that prunes clearly infeasible cooperative and MBS actions, and introduce Lagrange constraint terms in the lower-layer reward to characterize the trade-off between deadline satisfaction rate (DSR) and MBS load. Additionally, we explicitly model UAV flight energy as $E_{fly} = P_{move} \cdot t_{moving} + P_{hover} \cdot t_{hovering}$ and user equipment (UE) battery dynamics as $B_{t+1} = \min(B_{max}, B_t - E_{static} - E_{tx} + E_{harv})$, maintaining terminal device availability via wireless power transfer (WPT). Experiments are conducted across 3 training seeds and 10 workload seeds on a system with 5 UAVs and 100 UEs. Results show that the full hierarchical MARL improves mean reward from -5933.9 to -1723.5 relative to the uncoordinated greedy + heuristic baseline ($\Delta = +4210.4$, $p = 3.4\times10^{-31}$), reduces UAV-side energy from 114.70M to 70.22M ($\Delta = -44.48M$, $p = 2.97\times10^{-16}$), and raises fairness from 0.7745 to 0.9262 ($\Delta = +0.15$, $p = 8.8\times10^{-10}$). The offline rate drops from 0.58% to 0.01%. Ablation studies demonstrate that the Lagrange constraint, quality mask, and attention module each independently shape the offloading distribution and energy-load trade-off. Notably, merely substituting the upper-layer trajectory policy (attention-MAPPO + heuristic) improves reward from -5933.9 to -2128.6 ($\Delta = +3805.4$, $p = 3.0\times10^{-30}$) and fairness from 0.7745 to 0.9299, establishing the independent and significant optimization value of trajectory control in multi-UAV MEC systems.
+Multi-UAV assisted mobile edge computing (MEC) enhances edge coverage, task admission, and cooperative computing through aerial node deployment, yet system performance is jointly affected by UAV trajectory, wireless link dynamics, per-request offloading decisions, deadline constraints, and macro base station (MBS) backhaul load. Directly combining continuous UAV trajectory control with discrete per-request offloading decisions into a single joint action space leads to prohibitive training complexity and online decision latency. This paper proposes a quality-aware constrained hierarchical multi-agent reinforcement learning (MARL) framework for multi-UAV MEC. The framework decomposes coordinated scheduling into an upper-layer trajectory control module and a lower-layer per-request offloading module. The upper layer employs attention-MAPPO to model inter-UAV coordination and output trajectory actions; the lower layer employs constrained attention offload MAPPO to select, for each service request, among local UAV execution, cooperative UAV execution, and MBS execution. We design a quality-aware action mask that prunes clearly infeasible cooperative and MBS actions, and introduce Lagrange constraint terms in the lower-layer reward to characterize the trade-off between deadline satisfaction rate (DSR) and MBS load ratio. Additionally, we explicitly model UAV flight energy and UE battery dynamics, maintaining terminal device availability via wireless power transfer (WPT). Experiments are conducted across 3 training seeds and 10 workload seeds on a system with 5 UAVs and 100 UEs. Results show that the full hierarchical MARL improves mean reward from -5933.9 to -1451.7 relative to the uncoordinated greedy + heuristic baseline ($\Delta = +4482.2$, $p = 1.0\times10^{-32}$), reduces UAV-side energy from 114.70M to 58.06M ($\Delta = -56.64M$, $p = 1.7\times10^{-19}$), raises fairness from 0.7745 to 0.9363 ($\Delta = +0.162$, $p = 1.7\times10^{-11}$), and lowers the offline rate from 0.58% to 0.00%. Under the current reward weights, however, DSR decreases from 0.2734 to 0.2083 ($\Delta=-0.0651$, $p=2.4\times10^{-11}$), indicating a working point that favors energy, fairness, and UE availability rather than maximizing DSR alone. In contrast, replacing only the upper-layer trajectory policy with attention-MAPPO improves DSR from 0.2734 to 0.2879, suggesting that the DSR degradation mainly comes from the lower-layer learned offloading trade-off. Ablation studies further show that the Lagrange constraint, quality mask, and attention module shape the offloading distribution and energy-load trade-off in different ways.
 
 **Keywords:** Multi-UAV; mobile edge computing; task offloading; multi-agent reinforcement learning; MAPPO; hierarchical optimization; quality-aware constraints; Lagrange constraints
 
@@ -30,11 +30,11 @@ Multi-UAV assisted mobile edge computing (MEC) enhances edge coverage, task admi
 
 ### 1.2 主要贡献
 
-1. 提出一种质量感知约束式双层 MARL 框架，将多 UAV MEC 中的轨迹控制和请求级卸载拆分为上层 attention-MAPPO 和下层 constrained attention offload MAPPO 两个协同决策层。
-2. 设计请求级质量感知动作 mask，对明显不可行的 cooperative UAV 与 MBS 动作进行运行时屏蔽，减少无效探索。消融实验表明，mask 移除后 MBS offloading ratio 从 11.0% 降至 8.4%。
-3. 在下层奖励中引入 Lagrange 约束机制，将 deadline satisfaction rate 和 MBS load ratio 纳入可解释的约束权衡。消融实验表明，去除 Lagrange 约束后 MBS 卸载率从 11.0% 飙升至 17.1%。
-4. 显式建模 UAV 飞行能耗和 UE 电池动态，将终端设备在线率纳入系统优化目标，通过无线能量传输（WPT）机制维持 UE 可用性。
-5. 基于 training seed 与 workload seed 的成对统计单元（N=30），系统实验并报告均值、95% 置信区间、paired t-test 和 Wilcoxon 检验。
+1. 提出一种质量感知约束式双层 MARL 框架，将多 UAV MEC 中的轨迹控制和请求级卸载拆分为上层 attention-MAPPO 和下层 constrained attention offload MAPPO 两个协同决策层，以降低直接联合建模的动作耦合复杂度。
+2. 设计请求级质量感知动作 mask，对明显不可行的 cooperative UAV 与 MBS 动作进行运行时屏蔽，减少无效探索。消融实验表明，mask 会改变 MBS load ratio 和协作卸载比例。
+3. 在下层奖励中引入 Lagrange 约束机制，将 DSR 和 MBS load ratio 纳入可解释的约束权衡。消融实验表明，去除 Lagrange 约束后 MBS load ratio 从 11.0% 上升至 17.1%。
+
+此外，本文在系统模型中显式考虑 UAV 飞行能耗、UE 电池动态和 WPT 机制，并基于 training seed 与 workload seed 的成对统计单元（N=30）报告均值、95% 置信区间、paired t-test 和 Wilcoxon 检验。这些内容作为系统建模与实验规范支撑上述方法验证，不单独作为算法创新点。
 
 ### 1.3 论文组织
 
@@ -50,7 +50,9 @@ Multi-UAV assisted mobile edge computing (MEC) enhances edge coverage, task admi
 
 系统主要链路包括 UE-UAV 链路、UAV-UAV 协作链路和 UAV-MBS 回传链路。每个时间步 $\tau = 1$s，系统包含 $T=1000$ 个 time slots。UAV 覆盖半径为 $R_c = 100$ m，最大飞行速度 $v_{max} = 15$ m/s，最小安全间距 $d_{min} = 200$ m。
 
-> **图 1 系统工作流程**：参照 docs/figures/fig_system_workflow.png。当前时刻环境首先生成 UAV、UE 与请求状态；下层策略读取请求级观测与动作 mask，输出卸载动作；环境执行服务处理并统计时延、能耗、DSR 和 MBS load；随后上层策略输出 UAV 轨迹动作并更新下一时刻位置。
+![图 1 系统场景与链路模型](docs/figures/fig_system_model.png)
+
+**图 1 系统场景与链路模型**：展示 5 架 UAV、100 个 UE、1 个 MBS 以及 UE-UAV、UAV-UAV、UAV-MBS 三类链路和 WPT/请求要素。
 
 ### 2.2 通信模型
 
@@ -68,7 +70,7 @@ $$R = B \cdot \log_2\left(1 + \frac{P_{tx} \cdot g(d)}{\sigma^2}\right)$$
 
 $$T_{tx} = \frac{8 \cdot D}{R}$$
 
-其中 $D$ 为数据量（bytes），$R$ 为链路速率（bit/s）。此 8× 因子确保了 bytes→bits 的正确单位转换，避免了文献 [3,8] 中常见的单位不一致问题。
+其中 $D$ 为数据量（bytes），$R$ 为链路速率（bit/s）。此 8× 因子确保了 bytes 到 bit/s 的正确单位转换。
 
 ### 2.3 计算模型
 
@@ -77,17 +79,20 @@ $$T_{tx} = \frac{8 \cdot D}{R}$$
 对于每个服务请求，其时延取决于卸载目标：
 
 **本地 UAV 执行**：
-$$T_{local} = T_{tx}^{ue-uav} + T_{comp}^{uav} = \frac{8D_{in}}{R_{ue-uav}} + \frac{C}{f_{uav}}$$
+$$T_{local} = T_{tx}^{ue-uav} + T_{fetch}^{local} + T_{comp}^{uav}
+= \frac{8D_{in}}{R_{ue-uav}} + T_{fetch}^{local} + \frac{C}{f_{uav}}$$
 
 **协作 UAV 执行**：
-$$T_{coop} = \frac{8D_{in}}{R_{ue-uav}} + \frac{8D_{in}}{R_{uav-uav}} + \frac{C}{f_{coop}}$$
+$$T_{coop} = \frac{8D_{in}}{R_{ue-uav}} + \frac{8D_{in}}{R_{uav-uav}} + T_{fetch}^{coop} + \frac{C}{f_{coop}}$$
 
 **MBS 执行**：
 $$T_{mbs} = \frac{8D_{in}}{R_{ue-uav}} + \frac{8D_{in}}{R_{backhaul}} + \frac{C}{f_{mbs}}$$
 
-其中 $C$ 为所需 CPU 周期数（cycles），$f_{uav}$ 和 $f_{mbs}$ 分别为 UAV 和 MBS 的计算能力（cycles/s）。MBS 固定算力为 $f_{mbs} = 200 \times 10^9$ cycles/s。
+其中 $C$ 为所需 CPU 周期数（cycles），$f_{uav}$ 和 $f_{mbs}$ 分别为 UAV 和 MBS 的计算能力（cycles/s）。当本地 UAV 或协作 UAV 未缓存对应服务/文件时，$T_{fetch}^{local}$ 或 $T_{fetch}^{coop}$ 表示从 MBS 回传获取服务/文件产生的额外时延；缓存命中时该项为 0。MBS 固定算力为 $f_{mbs} = 200 \times 10^9$ cycles/s。
 
-> **图 2 时延处理流程**：参照 docs/figures/fig_latency_process.png。展示本地、协作、MBS 三条路径的时延组成。
+![图 2 时延处理流程](docs/figures/fig_latency_process.png)
+
+**图 2 时延处理流程**：展示本地执行、协作执行和 MBS 执行三条路径的时延组成，包含 $T_{tx}=8D/R$、缓存未命中取回和计算时延。
 
 #### 2.3.2 UAV 计算能耗
 
@@ -111,9 +116,9 @@ $$E_{comm} = P_{comm} \cdot T_{tx}$$
 
 每个 UE 配备容量为 $B_{max} = 500$J 的电池。每个时间步的电池动态为：
 
-$$B_{t+1} = \min\left(B_{max}, \; B_t - E_{static} - E_{tx} \cdot \mathbb{1}[\text{transmit}] + E_{harv}\right)$$
+$$B_{t+1} = \min\left(B_{max}, \; B_t - E_{static} - E_{tx} \cdot \mathbb{1}[\text{transmit}] - E_{rx} \cdot \mathbb{1}[\text{receive}] + E_{harv}\right)$$
 
-其中 $E_{static} = P_{static} \cdot \tau = 0.01$W $\times 1$s $= 0.01$J 为待机能耗，$E_{tx} = P_{ue} \cdot T_{tx}$ 为发射能耗。当 UE 电池低于临界阈值 $B_{low} = 0.1 \times B_{max} = 50$J 时，UE 进入 offline 状态，不再生成服务请求，转而生成紧急能量请求。
+其中 $E_{static} = P_{static} \cdot \tau = 0.01$W $\times 1$s $= 0.01$J 为待机能耗，$E_{tx} = P_{ue} \cdot T_{tx}$ 为发射能耗，$E_{rx}$ 为 UE 接收内容或结果时产生的接收能耗。当 UE 电池低于临界阈值 $B_{low} = 0.1 \times B_{max} = 50$J 时，UE 进入 offline 状态，不再生成服务请求，转而生成紧急能量请求。
 
 系统 offline rate 定义为：
 
@@ -151,7 +156,7 @@ $$\max_{\pi^{upper}, \pi^{lower}} \mathbb{E}\left[\sum_{t=0}^{T-1} \gamma^t R_t\
 
 其中系统奖励 $R_t$ 为：
 
-$$R_t = \alpha_J \cdot J_t - \alpha_L \cdot \bar{L}_t - \alpha_E \cdot \bar{E}_t - \alpha_O \cdot O_t + \alpha_D \cdot DSR_t$$
+$$R_t = \alpha_J \cdot J_t - \alpha_L \cdot \bar{L}_t - \alpha_E \cdot \bar{E}_t - \alpha_O \cdot O_t + \alpha_D \cdot DSR_t - \alpha_M \cdot M_t$$
 
 式中各项含义：
 - $J_t \in [0,1]$：Jain 公平性指数
@@ -159,8 +164,9 @@ $$R_t = \alpha_J \cdot J_t - \alpha_L \cdot \bar{L}_t - \alpha_E \cdot \bar{E}_t
 - $\bar{E}_t$：归一化能耗（除以 $N \cdot E_{ref}$）
 - $O_t \in [0,1]$：UE offline rate
 - $DSR_t \in [0,1]$：deadline satisfaction rate
+- $M_t \in [0,1]$：MBS load ratio，即卸载至 MBS 的服务请求比例
 
-权重设置为：$\alpha_J = 1.0$, $\alpha_L = 1.0$, $\alpha_E = 0.5$, $\alpha_O = 5.0$, $\alpha_D = 1.0$。
+权重设置为：$\alpha_J = 1.0$, $\alpha_L = 1.0$, $\alpha_E = 0.5$, $\alpha_O = 5.0$, $\alpha_D = 1.0$, $\alpha_M = 0.5$。实现中若 UAV 发生碰撞或越界，会分别施加 10 的惩罚；最终 reward 乘以 0.1 缩放因子以稳定训练数值。
 
 ---
 
@@ -171,15 +177,21 @@ $$R_t = \alpha_J \cdot J_t - \alpha_L \cdot \bar{L}_t - \alpha_E \cdot \bar{E}_t
 本文框架由两个协同 MARL 决策层组成：
 
 - **上层 attention-MAPPO**：每架 UAV 作为一个 agent，根据自身位置、邻居 UAV 状态、覆盖 UE 和请求负载信息输出连续轨迹动作（2D 方向向量）。
-- **下层 constrained attention offload MAPPO**：每架 UAV 对其当前覆盖的请求 slot 输出离散卸载动作：local（0）、cooperative UAV（1）或 MBS（2）。
+- **下层 constrained attention offload MAPPO**：每架 UAV 对其当前覆盖的请求 slot 输出离散卸载动作；实际动作空间包含 local、MBS 和指定协作 UAV 三类动作。
 
 在每个环境 step 中，系统按如下顺序执行：
 1. 环境生成当前 UAV、UE、链路和请求状态
 2. 下层读取请求级观测与动作 mask，输出卸载动作
-3. 环境执行服务请求处理，统计 latency、energy、DSR、MBS load
+3. 环境执行服务请求处理，统计 latency、energy、DSR、MBS load ratio
 4. 上层输出轨迹动作，环境更新下一时刻位置
 
-> **图 3 双层 MARL 框架**：参照 docs/figures/fig_hmarl_framework.png。展示上层 UAV agent 轨迹控制和下层 offload agent 请求 slot 卸载决策的协同流程。
+![图 3 单时隙系统工作流程](docs/figures/fig_system_workflow.png)
+
+**图 3 单时隙系统工作流程**：展示状态生成、下层卸载、服务执行、上层轨迹控制和下一时隙位置更新的闭环流程。
+
+![图 4 双层 MARL 框架](docs/figures/fig_hmarl_framework.png)
+
+**图 4 双层 MARL 框架**：展示上层 attention-MAPPO、下层 request attention/action mask/Lagrange 约束以及 CTDE 训练结构。
 
 ### 3.2 上层 attention-MAPPO 轨迹控制
 
@@ -187,7 +199,15 @@ $$R_t = \alpha_J \cdot J_t - \alpha_L \cdot \bar{L}_t - \alpha_E \cdot \bar{E}_t
 
 $$d_{moved} = \text{clip}(||a||, 0, 1) \cdot v_{max} \cdot \tau$$
 
-上层奖励为系统级综合奖励 $R_t$（式 7），所有 UAV 共享同一奖励值。训练采用 CTDE（Centralized Training Decentralized Execution）框架。
+上层奖励为第 2.6 节定义的系统级综合奖励 $R_t$，所有 UAV 共享同一奖励值。训练采用 CTDE（Centralized Training Decentralized Execution）框架。
+
+![图 5 轨迹前后对比图](docs/figures/fig_trajectory_before_after.png)
+
+**图 5 轨迹前后对比图**：基于 training seed 42、workload seed 42 的固定 seed 真实 rollout 展示，左右分别为基础参考与完整双层 MARL 的 UAV 轨迹，圆点为起点，三角形为终点。
+
+![图 6 覆盖公平性热力图](docs/figures/fig_service_coverage_fairness.png)
+
+**图 6 覆盖公平性热力图**：与图 5 使用同一固定 seed 真实 rollout，颜色表示采样步中 UE 被 UAV 覆盖的比例，用于直观展示空间覆盖差异；正式结论仍以多 seed 统计表为准。
 
 ### 3.3 下层 constrained attention offload MAPPO
 
@@ -196,12 +216,14 @@ $$d_{moved} = \text{clip}(||a||, 0, 1) \cdot v_{max} \cdot \tau$$
 | 动作编号 | 动作含义 | 说明 |
 |---------|---------|------|
 | 0 | Local UAV execution | 在当前 UAV 本地执行 |
-| 1 | Cooperative UAV execution | 选择协作 UAV，由运行时可用性和最小时延规则解析 |
-| 2 | MBS execution | 通过回传链路卸载到宏基站 |
+| 1 | MBS execution | 通过回传链路卸载到宏基站 |
+| $2+i$ | Cooperative UAV $i$ execution | 选择编号为 $i$ 的邻居 UAV 执行，$i=0,\ldots,N-1$ |
+
+因此当前 $N=5$ 时，下层 actor 的实际动作数为 $|A|=2+N=7$。实验统计中的 cooperative ratio 会将所有 $2+i$ 协作动作汇总为 cooperative 语义类别。
 
 下层 actor 使用 request attention 编码同一 UAV 内多个请求之间的相对重要性；critic 采用集中式信息估计 value。下层奖励函数为：
 
-$$R_{lower} = w_{succ} \cdot DSR + w_{coop} \cdot C_{ratio} - w_{dead} \cdot (1 - DSR) - w_{lat} \cdot \log(L) - w_{en} \cdot \log(E) - w_{mbs} \cdot M_{ratio} - \lambda_{dsr} \cdot \max(0, \tau_{dsr} - DSR) - \lambda_{mbs} \cdot \max(0, M_{ratio} - \tau_{mbs})$$
+$$R_{lower} = w_{succ} \cdot DSR + w_{coop} \cdot C_{ratio} - w_{dead} \cdot (1 - DSR) - w_{lat} \cdot \frac{L}{M \cdot T_{penalty}} - w_{en} \cdot \frac{E}{N \cdot E_{ref}^{offload}} - w_{mbs} \cdot M_{ratio} - \lambda_{dsr} \cdot \max(0, \tau_{dsr} - DSR) - \lambda_{mbs} \cdot \max(0, M_{ratio} - \tau_{mbs})$$
 
 其中权重为：$w_{succ}=0.4$, $w_{coop}=0.08$, $w_{dead}=3.0$, $w_{lat}=0.35$, $w_{en}=0.10$, $w_{mbs}=0.35$。
 
@@ -215,11 +237,15 @@ $$R_{lower} = w_{succ} \cdot DSR + w_{coop} \cdot C_{ratio} - w_{dead} \cdot (1 
 - **Cooperative mask**：当系统不存在可用邻居、协作路径时延过高（$> 1.5 \times$ deadline）、协作相对非协作路径无明显优势（$> 1.35 \times$ 本地时延）或协作计算份额过低（$< 25\%$）时，屏蔽 cooperative 动作。
 - **MBS mask**：当 MBS 路径时延显著超过 deadline clip 阈值时，屏蔽 MBS 动作。
 
+![图 7 动作 mask 与下层决策示意图](docs/figures/fig_action_mask_decision.png)
+
+**图 7 动作 mask 与下层决策示意图**：展示 request slot 的 7 维动作空间、quality mask 屏蔽结果和 cooperative ratio 的汇总口径。
+
 ### 3.5 Lagrange 约束机制
 
 为显式控制 DSR 与 MBS 负载之间的权衡，本文引入 Lagrange 乘子 $\lambda_{dsr}$ 和 $\lambda_{mbs}$：
 
-$$P_t = \lambda_{dsr} \cdot \max(0, \tau_{dsr} - DSR_t) + \lambda_{mbs} \cdot \max(0, MBS_t - \tau_{mbs})$$
+$$P_t = \lambda_{dsr} \cdot \max(0, \tau_{dsr} - DSR_t) + \lambda_{mbs} \cdot \max(0, M_t - \tau_{mbs})$$
 
 约束目标为 $\tau_{dsr} = 0.18$，$\tau_{mbs} = 0.03$。$\lambda$ 在每个 rollout 后更新：
 
@@ -230,15 +256,13 @@ $$\lambda_{mbs} \leftarrow \text{clip}(\lambda_{mbs} + \eta_{\lambda} \cdot \bar
 
 ### 3.6 奖励函数设计
 
-本文采用线性归一化奖励函数替代传统强化学习中常用的对数形式奖励。设计动机如下：
+本文统一采用线性归一化奖励函数。系统级综合奖励 $R_t$（第 2.6 节）和下层局部训练奖励 $R_{lower}$（第 3.3 节）均使用归一化到可比区间的各项指标，通过线性加权组合为标量奖励。
 
-对数形式的奖励（如 $R = \alpha \log(J) - \beta \log(L) - \gamma \log(E) - \delta \log(1+O)$）在数值上会压缩高值区间的梯度，使智能体在性能改善后越来越难区分不同状态的质量差异。此外，对数形式中各惩罚项的数值贡献差异过大（如 offline 惩罚可达 latency 惩罚的 4-5 倍），导致策略产生非预期的行为偏好。
-
-本文的线性归一化奖励通过将各指标归一化到可比的 [0, 1] 区间，确保各优化维度在训练中获得均衡的梯度信号。实验结果表明，该设计在多个策略组合下均能实现稳定收敛。
+具体地，latency 以 $M \cdot T_{penalty}$（所有 UE 未服务的最大惩罚时延）为归一化分母，energy 以 $N \cdot E_{ref}^{offload}$（所有 UAV 在参考功率下的最大单步能耗）为归一化分母。该设计确保各优化维度在训练中获得均衡的梯度信号，且不同策略的 reward 可以在统一口径下直接比较。实验结果表明，该设计在多个策略组合下均能实现稳定收敛。
 
 ### 3.7 复杂度分析
 
-设 UAV 数量为 $N=5$，每架 UAV 的最大请求 slot 数为 $K=30$，下层动作数为 $|A|=3$。若直接构建联合动作空间，单步离散卸载组合可能达到 $|A|^{NK}$，并且还需与连续轨迹动作耦合。本文采用双层分解后，上层只处理 $N$ 个 UAV 的轨迹动作（连续 2D），下层只在每个 UAV 的 $K$ 个请求 slot 上进行局部离散决策。attention 编码带来的主要额外开销为 $O(N^2)$ 或 $O(K^2)$，远小于端到端枚举式联合动作空间。
+设 UAV 数量为 $N=5$，每架 UAV 的最大请求 slot 数为 $K=30$，下层实际动作数为 $|A|=2+N=7$。若直接构建端到端联合 MAPPO，需要同时处理 $N$ 个连续轨迹动作和最多 $N \times K=150$ 个请求级离散卸载动作，单步离散卸载组合可达 $|A|^{NK}$，并带来严重的样本效率与 credit assignment 问题。本文采用双层分解后，上层只处理 $N$ 个 UAV 的轨迹动作（连续 2D），下层只在每个 UAV 的 $K$ 个请求 slot 上进行局部离散决策。attention 编码带来的主要额外开销为 $O(N^2)$ 或 $O(K^2)$。本文当前未报告完整端到端联合 MAPPO 的同规模训练结果，因此这里强调的是结构复杂度与可训练性上的设计动机，而非已经由端到端 baseline 实验证明的性能结论。
 
 ---
 
@@ -275,25 +299,18 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 | `lower_no_lagrange` | yes | yes | **no** |
 | `lower_no_attention` | **no** | yes | yes |
 
-**额外基线方法**：
-
-| 基线方法 | 说明 | 目的 |
-| --- | --- | --- |
-| `all_local` | 所有任务本地执行，UAV 固定位置 | 系统性能下界 |
-| `all_mbs` | 所有任务卸载到 MBS，UAV 固定位置 | MBS 容量上界验证 |
-| `random_offload` | 随机卸载 + 随机轨迹 | 随机决策对比 [3] |
-| `fixed_position__heuristic` | UAV 固定初始位置 + heuristic 卸载 | 隔离轨迹优化贡献 |
+本文当前正式结论仅基于上述主实验五组策略和下层消融实验。其他纯本地执行、纯 MBS 执行、随机决策和固定位置策略等额外基线仍需按当前 reward 与 energy 统计口径重新统一，因此不纳入正文主结论。
 
 ### 4.3 评估指标
 
-- **Reward ($R_t$)**：式 7 定义的综合奖励
+- **Reward ($R_t$)**：第 2.6 节定义的系统级综合奖励
 - **Latency ($L$)**：所有 UE 的总时延（含 $T_{penalty}=20$s 未服务惩罚）
 - **Energy ($E$)**：UAV 侧总能耗（含飞行、悬停、计算、通信、WPT）
-- **Fairness ($J$)**：Jain 公平性指数，衡量 UAV 间服务负载均衡
+- **Fairness ($J$)**：基于各 UE 的 `service_coverage` 计算 Jain 指数，衡量用户服务覆盖公平性
 - **DSR**：deadline satisfaction rate，被服务且满足 deadline 的请求比例
 - **offline_rate ($O$)**：电池低于 $B_{low}$ 的 UE 比例
 - **Offloading ratios**：local/cooperative/MBS 卸载比例
-- **MBS load ratio**：MBS 卸载请求数占总服务请求数的比例
+- **MBS load ratio**：卸载至 MBS 的服务请求数占总服务请求数的比例；表格中的 MBS load% 为其百分比形式
 
 ---
 
@@ -301,33 +318,37 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 
 ### 5.1 主实验结果
 
-表 1 汇总了主实验中各策略的均值和 95% 置信区间。
+表 1 汇总了主实验中各策略的均值和标准差（mean ± std）。
 
-**表 1. 主实验结果（N=30）**
+**表 1. 主实验结果（mean ± std, N=30）**
 
-| 策略 | Reward | Energy (M) | DSR | Fairness | Offline% | Local% | Coop% | MBS% |
+| 策略 | Reward | Energy (M) | DSR | Fairness | Offline% | Local% | Coop% | MBS load% |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| unco+heuristic | -5933.9 [±195.6] | 114.70 [±15.4M] | 0.2734 [±0.029] | 0.7745 [±0.077] | 0.58% | 47.1% | 50.1% | 2.6% |
-| **att+heuristic** | **-2128.6 [±389.7]** | 111.81 [±10.6M] | **0.2879 [±0.032]** | **0.9299 [±0.036]** | 0.10% | 47.2% | 50.0% | 2.7% |
-| unco+lower | -5447.9 [±98.6] | **61.71 [±5.6M]** | 0.2149 [±0.022] | 0.7692 [±0.081] | 0.53% | 55.7% | 34.4% | 9.8% |
-| **att+lower** | **-1688.2 [±293.3]** | 69.42 [±10.6M] | 0.2254 [±0.027] | **0.9309 [±0.034]** | 0.09% | 35.7% | 53.2% | 11.0% |
-| **full_hierarchical** | -1723.5 [±352.9] | 70.22 [±8.3M] | 0.2161 [±0.026] | 0.9262 [±0.046] | **0.01%** | 33.0% | 56.4% | 10.5% |
+| unco+heuristic | -5933.9 ± 195.6 | 114.70 ± 15.4M | 0.2734 ± 0.029 | 0.7745 ± 0.077 | 0.58% | 47.1% | 50.1% | 2.6% |
+| **att+heuristic** | **-2128.6 ± 389.7** | 111.81 ± 10.6M | **0.2879 ± 0.032** | **0.9299 ± 0.036** | 0.10% | 47.2% | 50.0% | 2.7% |
+| unco+lower | -5274.4 ± 141.3 | 42.85 ± 13.6M | 0.1891 ± 0.029 | 0.7737 ± 0.080 | 0.53% | 52.7% | 30.1% | 17.2% |
+| **att+lower** | **-1599.4 ± 330.1** | 53.32 ± 12.4M | 0.2170 ± 0.035 | **0.9281 ± 0.035** | 0.11% | 41.7% | 44.6% | 13.7% |
+| **full_hierarchical** | **-1451.7 ± 373.7** | 58.06 ± 7.0M | 0.2083 ± 0.019 | **0.9363 ± 0.041** | **0.00%** | 46.5% | 42.4% | 11.1% |
 
 **表 2. Full Hierarchical MARL 相对基础参考的 paired comparison**
 
 | 指标 | Mean Delta | 95% CI | paired t p | Effect |
 | --- | ---: | ---: | ---: | --- |
-| Reward | **+4210.4** | [4057.8, 4363.1] | $3.4\times10^{-31}$ | ↑ |
-| Energy | **-44.48M** | [-50.01M, -38.96M] | $2.97\times10^{-16}$ | ↑ |
-| Fairness | **+0.1516** | [0.1167, 0.1865] | $8.8\times10^{-10}$ | ↑ |
-| DSR | -0.0573 | [-0.0713, -0.0434] | $2.9\times10^{-9}$ | ↓ |
-| offline_rate | -0.0058 | [-0.0098, -0.0017] | $0.0068$ | ↑ |
-| Coop ratio | **+0.0624** | [0.0221, 0.1028] | $0.0036$ | ↑ |
-| MBS load | +0.0297 | [0.0198, 0.0396] | $1.1\times10^{-6}$ | ↓ |
+| Reward | **+4482.2** | [4338.3, 4626.1] | $1.0\times10^{-32}$ | ↑ |
+| Energy | **-56.64M** | [-61.97M, -51.31M] | $1.7\times10^{-19}$ | ↑ |
+| Fairness | **+0.1617** | [0.1305, 0.1929] | $1.7\times10^{-11}$ | ↑ |
+| DSR | -0.0651 | [-0.0779, -0.0524] | $2.4\times10^{-11}$ | ↓ |
+| offline_rate | -0.0058 | [-0.0099, -0.0017] | $0.0067$ | ↑ |
+| Coop ratio | -0.0776 | [-0.1005, -0.0546] | $1.3\times10^{-7}$ | ↓ |
+| MBS load ratio | +0.0387 | [0.0319, 0.0454] | $1.7\times10^{-12}$ | 增加（负向变化） |
 
-完整双层 MARL 相比基础参考，reward 提升 4210.4（$p = 3.4\times10^{-31}$），UAV 侧能耗降低 44.48M（$p = 2.97\times10^{-16}$），公平性提升 0.15（$p = 8.8\times10^{-10}$），offline rate 降至近乎 0%。Cooperative ratio 从 50.1% 提升至 56.4%，表明完整双层策略成功将更多请求导向协作路径。
+完整双层 MARL 相比基础参考，reward 提升 4482.2（$p = 1.0\times10^{-32}$），UAV 侧能耗降低 56.64M（$p = 1.7\times10^{-19}$），公平性提升 0.162（$p = 1.7\times10^{-11}$），offline rate 降至 0.00%。Cooperative ratio 从 50.1% 调整至 42.4%，local ratio 从 47.1% 调整至 46.5%，表明完整双层策略在 local 与 cooperative 之间实现了新的平衡。
 
-> **图 4 主实验对比**：柱状图展示 5 种策略在 Reward、Energy、DSR、Fairness 四个维度的对比。参照尤昕阳 [9] 论文中图 4 的风格。
+需要注意的是，DSR 是完整方法相对基础参考的明确负向结果：从 0.2734 降至 0.2161，且差异具有统计显著性。该结果说明当前 reward 权重下，完整方法主要获得的是能耗、公平性、在线率和协作能力收益，而非 DSR 收益。后续若以 DSR 为更高优先级，应提高 $\alpha_D$ 或 $\tau_{dsr}$ 并重新报告 DSR-aware 配置。
+
+![图 8 主实验多指标对比](docs/figures/fig_main_comparison.png)
+
+**图 8 主实验多指标对比**：展示综合奖励、能耗、时延、公平性、DSR 和 MBS load ratio 的 mean ± std，数据来源为 `paper_revised_full_20260518_main_merged/statistics.json`。
 
 ### 5.2 上层贡献分析
 
@@ -338,64 +359,54 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 - Energy：114.70M → 111.81M（$\Delta=-2.89M$, $p=0.086$）
 - DSR：0.2734 → 0.2879（$\Delta=+0.0145$, $p=0.084$）
 
-上层 attention-MAPPO 在多项指标上均显著优于 uncoordinated greedy，特别是在公平性维度上取得了约 20% 的提升。这说明通过 attention 机制建模 UAV 间协同关系，能够显著改善覆盖公平性和整体系统性能。
+上层 attention-MAPPO 在 reward 和公平性维度上显著优于 uncoordinated greedy；energy 和 DSR 呈改善趋势，但未达到统计显著。这说明通过 attention 机制建模 UAV 间协同关系，能够明显改善覆盖公平性和整体系统性能。
 
 ### 5.3 卸载分布分析
 
-> **图 5 卸载分布对比**：堆叠柱状图展示各策略的 local/cooperative/MBS 卸载比例。参照黄子祥 [3] 论文中图 4 的风格。
+![图 9 卸载分布对比](docs/figures/fig_offloading_distribution.png)
+
+**图 9 卸载分布对比**：展示本地执行、协作执行和 MBS 执行比例，其中协作执行汇总所有 $2+i$ 动作，数据来源为正式主实验 statistics。
 
 从表 1 的卸载比例数据可以看到：
-- Heuristic 基线（前两行）主要依赖 local（47%）和 cooperative（50%），MBS 使用极少（2.6%）
-- 下层 MAPPO 系列（后三行）显著提高了协同卸载的灵活性：local 降至 33-56%，cooperative 调整至 34-56%，MBS 增至 10-11%
-- Full hierarchical 在 cooperative 上达到最高（56.4%），同时保持 offline rate 最低（0.01%）
+- Heuristic 基线（前两行）主要依赖 local（47%）和 cooperative（50%），MBS 使用极少（2.6-2.7%）
+- 下层 MAPPO 系列（后三行）显著改变了卸载分布：local 调整至 42-53%，cooperative 调整至 30-45%，MBS 增至 11-17%
+- Full hierarchical 实现了最均衡的卸载分布（local 46.5%、cooperative 42.4%、MBS 11.1%），同时 offline rate 降至 0.00%
 
 ### 5.4 消融实验结果
 
 **表 3. 下层消融实验结果（相对于 lower_full）**
 
-| 消融 | Reward | Energy (M) | DSR | MBS% | Coop% |
+| 消融 | Reward | Energy (M) | DSR | MBS load% | Coop% |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| lower_full | -1688.2 | 69.42 | 0.2254 | 11.0% | 53.2% |
-| no_mask | -1726.6 | 70.38 | 0.2308 | 8.4% | 45.7% |
-| no_lagrange | **-1685.7** | **60.45** | 0.2222 | **17.1%** | 49.8% |
-| no_attention | -1720.0 | 67.92 | **0.2319** | **2.5%** | 47.5% |
+| lower_full | -1599.4 | 53.32 | 0.2170 | 13.7% | 44.6% |
+| no_mask | -1556.3 | 48.26 | 0.1945 | 18.0% | 36.7% |
+| no_lagrange | -1585.9 | 51.12 | 0.1981 | **25.0%** | 42.0% |
+| no_attention | -1626.7 | 54.01 | **0.2094** | 17.3% | 34.4% |
 
 **质量感知 Mask（lower_full vs no_mask）**：
-- 移除 mask 后 MBS ratio 从 11.0% 降至 8.4%，策略变得更保守
-- Reward 略有下降（-38.4, $p=0.34$），但差异不显著
-- 说明质量 mask 帮助策略识别可行的 MBS 卸载机会，避免过度保守
+- 移除 mask 后 MBS load ratio 从 13.7% 升至 18.0%，策略变得对 MBS 更激进
+- Reward 略有上升（+43.1, $p=0.09$），但差异不显著
+- 质量 mask 在控制 MBS 卸载方面起到了一定约束作用
 
 **Lagrange 约束（lower_full vs no_lagrange）**：
-- 移除 Lagrange 后 MBS ratio 从 11.0% 飙升至 **17.1%**
-- 同时 MBS load ratio 从 0.053 升至 0.078（$\Delta=+0.024$, $p=0.07$）
-- 这证实 Lagrange 约束有效抑制了策略对 MBS 的过度依赖
-- 但也带来了 Energy 降低（69.42M → 60.45M，降 13%），说明 MBS 卸载虽然增加时延但确实降低 UAV 侧能耗
+- 移除 Lagrange 后 MBS load ratio 从 13.7% 飙升至 **25.0%**
+- MBS load ratio 从 6.3% 升至 11.6%（$\Delta=+0.053$, $p=5.8\times10^{-5}$）
+- 这说明 Lagrange 约束对 MBS 卸载依赖具有显著抑制作用
+- 但也带来了 Energy 降低（53.32M → 51.12M，降 4%），说明 MBS 卸载虽然增加时延但可降低 UAV 侧能耗
 
 **Attention 机制（lower_full vs no_attention）**：
-- 移除 request attention 后 MBS ratio 从 11.0% 骤降至 **2.5%**
-- 策略极度保守，几乎不尝试 MBS 卸载
-- DSR 反而最高（0.2319），说明在 attention 缺失时策略选择一个更安全但缺乏灵活性的卸载方案
-- attention 机制赋予策略在 local/cooperative/MBS 之间灵活权衡的能力
+- 移除 request attention 后 MBS load ratio 从 13.7% 升至 17.3%
+- DSR 为 0.2094，与 lower_full 的 0.2170 接近
+- 移除 attention 后 cooperative ratio 从 44.6% 降至 34.4%，local ratio 从 41.7% 升至 48.2%
+- attention 机制使策略能更灵活地利用 cooperative 卸载机会
 
-> **图 6 消融实验对比**：分组柱状图展示四种消融配置在 DSR、MBS%、Coop%、Energy 上的对比。
+![图 10 消融实验对比](docs/figures/fig_ablation_comparison.png)
 
-### 5.5 额外基线分析
+**图 10 消融实验对比**：展示 lower_full、no_mask、no_lagrange、no_attention 在 DSR、MBS load ratio、协作卸载比例、能耗上的差异，数据来源为正式消融 statistics。该消融用于分析下层模块行为，不声称覆盖所有上层配置下的完整消融空间。
 
-**表 4. 额外基线实验结果**
+### 5.5 额外基线与结论边界
 
-| Baseline | Reward | Energy | DSR | Offline% |
-| --- | ---: | ---: | ---: | ---: |
-| all_local | 0.0 | 114,214 | 0.2908 | 0.06% |
-| all_mbs | 0.0 | 781 | 0.0572 | 0.06% |
-| random_offload | 0.0 | 115,806 | 0.2383 | 0.00% |
-| fixed_position | 0.0 | 114,214 | 0.2908 | 0.06% |
-
-**关键发现**：
-- `all_local` 和 `fixed_position` 结果一致，说明 UAV 固定位置时本地执行是主要卸载模式，Heuristic 策略默认倾向本地/协作
-- `all_mbs` 的 DSR 仅 0.0572，说明纯 MBS 卸载因回传时延过高导致绝大多数请求无法满足 deadline
-- `random_offload` 的 DSR（0.2383）甚至优于 `full_hierarchical`（0.2161），说明随机探索在某些情况下找到了 DSR 更高的卸载配置，但能耗更高（115,806 vs 70,220）
-
-> **图 7 训练曲线**：reward、DSR、energy 随训练 episode 的收敛曲线。数据来源：服务器 results/full_cpu_runs/paper_revised_full_20260518/*/train_plots/
+除主实验与消融实验外，本文曾设计纯本地执行、纯 MBS 执行、随机决策和固定位置策略等额外基线，用于直观检查系统边界表现。由于这些额外基线的 reward 与 energy 统计口径尚未按当前 `paper_revised_full_20260518` 设置重新统一，本文不将其作为正式 baseline，也不基于这些结果提出正文结论。本文当前可复核的正式结论仅来自第 4.2 节的五组主实验策略和第 5.4 节的下层消融实验。
 
 ### 5.6 讨论
 
@@ -405,37 +416,47 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 
 | 优化方向 | 优势 | 代价 |
 | --- | --- | --- |
-| 降低 Energy | 从 114.7M → 61.7M (-46%) | DSR 从 0.27 → 0.21 |
+| 降低 Energy | 从 114.7M → 42.8M (-63%) | DSR 从 0.27 → 0.19 |
 | 提升 DSR | 0.27 → 0.29 | Energy 维持高位 111.8M |
 | 提升 Fairness | 0.77 → 0.93 | 需要 attention 机制 |
 
-本文的双层 MARL 框架通过 Lagrange 约束和奖励权重提供了调控这一权衡的机制。实验表明，通过调整 $\tau_{dsr}$ 和奖励权重 $\alpha_D$，系统可以在能耗-DSR 权衡曲线上移动工作点。当前配置（$\alpha_E=0.5, \alpha_D=1.0$）选择了能耗与 DSR 的中间平衡点。
+本文的双层 MARL 框架通过 Lagrange 约束和奖励权重提供了调控这一权衡的机制，但当前实验尚未补充 DSR-aware 权重扫描，因此不能声称已经找到 DSR 不下降的工作点。当前配置应理解为偏向能耗降低、公平性提升和 UE 在线率保障的工作点，其代价是完整方法相对基础参考出现 DSR 下降。
+
+进一步对比表 1 可以看到，`attention_mappo__heuristic` 的 DSR 为 0.2879，高于基础参考的 0.2734，说明上层轨迹控制本身没有损害 DSR；DSR 下降主要出现在引入下层 MAPPO 后，这与旧版实验中观察到的趋势一致。原因在于下层策略会更积极地改变 local/cooperative/MBS 分配，以降低 UAV 侧能耗并提高协作卸载比例，但这也可能把部分请求导向时延更高或更易触发 deadline miss 的路径。后续工作需要补充提高 $\alpha_D$ 或 $\tau_{dsr}$ 的 DSR-aware 配置，以验证是否能够在保持能耗收益的同时恢复 DSR。
+
+![图 11 Lagrange 约束动态与 DSR-MBS 权衡](docs/figures/fig_lagrange_dsr_mbs_tradeoff.png)
+
+**图 11 Lagrange 约束动态与 DSR-MBS 权衡**：展示 workload42 评估日志中的 `lambda_dsr`、`lambda_mbs`、DSR 和 MBS load ratio 曲线，用于说明约束权衡过程。
+
+![图 12 固定 workload42 评估曲线](docs/figures/fig_hierarchical_training_curves.png)
+
+**图 12 固定 workload42 评估曲线**：展示 workload42 正式评估日志中的 reward、energy、fairness 和 DSR 曲线，用于观察不同策略在同一 workload 下的指标变化；该图不是训练收敛曲线。
 
 #### 上层轨迹 vs 下层卸载的相对贡献
 
 通过对比 `att+heuristic`（仅上层）和 `unco+lower`（仅下层）可以发现：
-- 上层贡献主要在于 **公平性**（0.93 vs 0.77）和 **整体奖励**（-2129 vs -5448）
-- 下层贡献主要在于 **能耗降低**（61.7M vs 111.8M）和 **卸载灵活性**
-- 完整双层（-1723.5, 70.2M, 0.926, 0.216）综合了两层优势
+- 上层贡献主要在于 **公平性**（0.930 vs 0.775）和 **整体奖励**（-2129 vs -5934）
+- 下层贡献主要在于 **能耗降低**（42.9M vs 114.7M）和 **卸载灵活性**
+- 完整双层（-1451.7, 58.06M, 0.936, 0.208）综合了两层优势
 
 #### 与现有工作的对比
 
-相比黄子祥等 [3] 基于 MADRL 的单层端到端方法，本文的双层分解将动作空间从联合空间 $|A|^{NK}$ 降低到两层分别处理，训练效率更高且可解释性更强。相比尤昕阳等 [9] 的 SAC 端到端方法，本文的 MAPPO 天然支持离散-连续混合动作，不需要额外的动作离散化或重参数化。相比曾耀平等 [6] 的博弈论方法，本文基于 MARL 的方案不需要全局 CSI，具有更好的在线适应性。
+相比黄子祥等 [3] 基于 MADRL 的单层端到端方法，本文的双层分解将轨迹控制与请求级卸载拆开处理，降低了直接联合动作建模的结构复杂度，并提高了策略行为的可解释性。相比尤昕阳等 [9] 的 SAC 方法，本文通过双层拆分分别处理连续轨迹控制与离散请求卸载，减少了直接构造混合联合动作的难度。相比曾耀平等 [6] 的博弈论方法，本文基于 MARL 的在线执行主要依赖局部和邻居观测，具有较好的动态适应性。本文尚未报告同规模端到端联合 MAPPO baseline，因此双层分解相对端到端联合训练的经验优势仍需在后续实验中进一步验证。
 
 ---
 
 ## 6 结论
 
-本文提出了一种面向多无人机移动边缘计算的质量感知约束式双层多智能体强化学习框架。通过将轨迹控制和请求级卸载解耦为两个协同决策层，该框架显著降低了端到端动作空间维度，提高了训练效率和决策可解释性。
+本文提出了一种面向多无人机移动边缘计算的质量感知约束式双层多智能体强化学习框架。通过将轨迹控制和请求级卸载解耦为两个协同决策层，该框架降低了直接端到端联合动作建模的结构复杂度，并提高了决策过程的可解释性。
 
 实验结果表明：
-1. 完整双层 MARL 相比基础基线在 reward（+4210）、能耗（-44.5M）、公平性（+0.15）上均取得统计显著改善（$p < 10^{-9}$）
+1. 完整双层 MARL 相比基础基线在 reward（+4482）、能耗（-56.6M）、公平性（+0.162）上取得统计显著改善，并将 offline rate 从 0.58% 降至 0.00%
 2. 上层 attention-MAPPO 轨迹控制对公平性和整体性能有独立且显著的贡献（$\Delta$reward +3805）
-3. Lagrange 约束有效控制 MBS 卸载依赖（17.1% → 11.0%）
-4. 质量感知 action mask 和 request attention 机制各自独立改善了卸载决策质量
-5. UE 电池模型和 WPT 机制的引入使系统 offline rate 从 89%+ 降至近乎 0%
+3. 当前完整方法的 DSR 从 0.2734 降至 0.2083，这是本文实验中的主要负向结果，说明当前配置更偏向能耗、公平性和在线率收益
+4. Lagrange 约束有效控制 MBS load ratio（25.0% → 13.7%）
+5. 质量感知 action mask 和 request attention 机制各自独立地改变了卸载分布和能耗/负载权衡模式
 
-未来的工作方向包括：(i) 引入三维轨迹控制以更好地模拟真实部署环境；(ii) 研究更高效的 Lagrange 乘子自适应更新策略；(iii) 将服务缓存和内容分发纳入协同优化框架；(iv) 探索联邦学习范式下的隐私保护多 UAV 协同训练。
+未来的工作方向包括：(i) 补充 DSR-aware 权重与约束阈值扫描，验证 DSR 不下降配置；(ii) 增加同规模端到端联合 MAPPO 或报告其训练失败原因；(iii) 引入三维轨迹控制以更好地模拟真实部署环境；(iv) 研究更高效的 Lagrange 乘子自适应更新策略；(v) 将服务缓存和内容分发纳入协同优化框架。
 
 ---
 
@@ -473,4 +494,4 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 
 ---
 
-*本文档最后更新：2026年5月19日。基于 paper_revised_full_20260518 实验结果生成。*
+*本文档最后更新：2026年5月20日。基于 linear_v2_full_20260519 实验结果生成（下层奖励函数已从对数形式切换为线性归一化形式）。*
