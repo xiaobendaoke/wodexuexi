@@ -199,7 +199,7 @@ $$R_t = \alpha_J \cdot J_t - \alpha_L \cdot \bar{L}_t - \alpha_E \cdot \bar{E}_t
 
 $$d_{moved} = \text{clip}(||a||, 0, 1) \cdot v_{max} \cdot \tau$$
 
-上层奖励为第 2.6 节定义的系统级综合奖励 $R_t$，所有 UAV 共享同一奖励值。训练采用 CTDE（Centralized Training Decentralized Execution）框架。
+上层奖励为第 2.6 节定义的系统级综合奖励 $R_t$，所有 UAV 共享同一基础奖励值（额外对单个 UAV 施加碰撞/越界惩罚，见 §2.6）。训练采用 CTDE（Centralized Training Decentralized Execution）框架。
 
 ![图 5 轨迹前后对比图](docs/figures/fig_trajectory_before_after.png)
 
@@ -225,7 +225,7 @@ $$d_{moved} = \text{clip}(||a||, 0, 1) \cdot v_{max} \cdot \tau$$
 
 $$R_{lower} = w_{succ} \cdot DSR + w_{coop} \cdot C_{ratio} - w_{dead} \cdot (1 - DSR) - w_{lat} \cdot \frac{L}{M \cdot T_{penalty}} - w_{en} \cdot \frac{E}{N \cdot E_{ref}^{offload}} - w_{mbs} \cdot M_{ratio} - \lambda_{dsr} \cdot \max(0, \tau_{dsr} - DSR) - \lambda_{mbs} \cdot \max(0, M_{ratio} - \tau_{mbs})$$
 
-其中权重为：$w_{succ}=0.4$, $w_{coop}=0.08$, $w_{dead}=3.0$, $w_{lat}=0.35$, $w_{en}=0.10$, $w_{mbs}=0.35$。注意 $w_{succ}$ 和 $w_{dead}$ 在数学上可合并为单一 DSR 权重（$(w_{succ}+w_{dead}) \cdot DSR - w_{dead}$），但两者在语义上有区别：$w_{succ}$ 奖励成功满足 deadline 的请求，$w_{dead}$ 额外惩罚超时请求，后者提供了更强的 deadline 约束信号。消融实验中默认保持该设计。
+其中权重为：$w_{succ}=0.4$, $w_{coop}=0.08$, $w_{dead}=3.0$, $w_{lat}=4.0$, $w_{en}=1.2$, $w_{mbs}=0.35$。注意 $w_{succ}$ 和 $w_{dead}$ 在数学上可合并为单一 DSR 权重（$(w_{succ}+w_{dead}) \cdot DSR - w_{dead}$），但两者在语义上有区别：$w_{succ}$ 奖励成功满足 deadline 的请求，$w_{dead}$ 额外惩罚超时请求，后者提供了更强的 deadline 约束信号。消融实验中默认保持该设计。
 
 ### 3.4 质量感知动作 Mask
 
@@ -262,7 +262,7 @@ $$\lambda_{mbs} \leftarrow \text{clip}(\lambda_{mbs} + \eta_{\lambda} \cdot \bar
 
 归一化分母的设计如下：
 - **Latency 归一化**：以 $M \cdot T_{penalty}$ 为分母（$M=100$ 个 UE，$T_{penalty}=20$s 为未服务惩罚时延），因此归一化时延 $\bar{L} \in [0, 1]$ 表示当前总时延占最差情况的比例。
-- **Energy 归一化**：以 $N \cdot E_{ref}^{offload}$ 为分母（$N=5$ 架 UAV，$E_{ref}^{offload}=25000$J 为每架 UAV 单步最大参考能耗），因此归一化能耗 $\bar{E} \in [0, 1]$ 表示当前能耗占最大估算能耗的比例。
+- **Energy 归一化**：系统级奖励使用 $N \cdot E_{ref}$ 为分母（$N=5$ 架 UAV，$E_{ref}=5000$J 为每架 UAV 单步参考能耗）；下层奖励使用 $N \cdot E_{ref}^{offload}=125000$J（$N=5$, $E_{ref}^{offload}=25000$J 为下层每架 UAV 单步最大参考能耗）。因此归一化能耗 $\bar{E} \in [0, 1]$ 表示当前能耗占对应参考能耗的比例。
 
 与早期版本使用的对数归一化（$\log(L)$, $\log(E)$）相比，线性归一化的优势在于：(i) 各指标贡献在数值上可加可比，便于权重调参；(ii) 不同策略间的 reward 值可以在统一口径下直接对比；(iii) 避免了 log 函数在接近零值时的数值不稳定性。实验结果表明，线性归一化设计在多个策略组合下均能实现稳定收敛（所有实验 0 次 fallback 异常）。
 
@@ -280,7 +280,7 @@ $$\lambda_{mbs} \leftarrow \text{clip}(\lambda_{mbs} + \eta_{\lambda} \cdot \bar
 
 UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{static}=0.01$W。飞行功率 $P_{move}=300$W，悬停功率 $P_{hover}=150$W。WPT 发射功率 $P_{wpt}=50$W，采集增益 $G=5\times10^5$，采集效率 $\eta=0.8$。
 
-所有 MARL 策略使用 PyTorch 实现，MAPPO 采用 2 层 MLP（hidden dim=256），Adam 优化器，learning rate=$5\times10^{-4}$，PPO clip $\epsilon=0.2$，discount $\gamma=0.99$，GAE $\lambda=0.95$。
+所有 MARL 策略使用 PyTorch 实现，MAPPO 采用 2 层 MLP（hidden dim=128），attention 模块隐层维度为 64（ATTN_HIDDEN_DIM=64），Adam 优化器，learning rate=$3\times10^{-4}$，PPO clip $\epsilon=0.2$，discount $\gamma=0.99$，GAE $\lambda=0.95$。
 
 正式实验采用 3 个 training seeds（42, 84, 126）和 10 个 workload seeds（42-420），每个 workload seed 运行 6 个 episodes。统计单元为 (training seed, workload seed) 的 episode mean，每个策略共有 $N=30$ 个统计样本。本文报告 mean、std、95% CI、paired delta、paired t-test 和 Wilcoxon 检验。
 
@@ -293,7 +293,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 | `uncoordinated_greedy__heuristic` | uncoordinated greedy | heuristic | 基础参考 |
 | `attention_mappo__heuristic` | attention-MAPPO | heuristic | 上层贡献 |
 | `uncoordinated_greedy__lower_mappo` | uncoordinated greedy | lower MAPPO | 下层贡献（固定上层） |
-| `attention_mappo__lower_mappo` | attention-MAPPO | lower MAPPO | 分别训练后组合（上层训练时下层固定为 heuristic，下层训练时上层固定为 uncoordinated greedy） |
+| `attention_mappo__lower_mappo` | attention-MAPPO | lower MAPPO | 分别训练后组合（上层训练时下层固定为 heuristic；下层训练时加载预训练的 attention-MAPPO 并冻结，仅更新下层参数） |
 | `full_hierarchical_marl` | attention-MAPPO | lower MAPPO | **完整双层联合训练**（上下层在同一 episode 中交替 rollout，共享环境状态，但各自独立更新） |
 
 **下层消融实验**以 `lower_full`（即 `attention_mappo__lower_mappo`）为参考：
@@ -316,7 +316,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 - **DSR**：deadline satisfaction rate，被服务且满足 deadline 的请求比例
 - **offline_rate ($O$)**：电池低于 $B_{low}$ 的 UE 比例
 - **Offloading ratios**：local/cooperative/MBS 卸载比例
-- **MBS load ratio**：卸载至 MBS 的服务请求数占总服务请求数的比例；表格中的 MBS load% 为其百分比形式
+- **MBS load ratio**：卸载至 MBS 的服务请求数占**已处理**服务请求数的比例（offloading_ratio_mbs），表 1 和表 3 中的 MBS load% 使用该指标。消融分析中另用了基于**总生成请求数**的 mbs_load_ratio（表 2 配对检验使用该指标），两者分母不同，已在对应位置注明。
 
 ---
 
@@ -332,9 +332,9 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | unco+heuristic | -5933.9 ± 195.6 | 114.70 ± 15.4M | 0.2734 ± 0.029 | 0.7745 ± 0.077 | 0.58% | 47.1% | 50.1% | 2.6% |
 | **att+heuristic** | **-2128.6 ± 389.7** | 111.81 ± 10.6M | **0.2879 ± 0.032** | **0.9299 ± 0.036** | 0.10% | 47.2% | 50.0% | 2.7% |
-| unco+lower | -5274.4 ± 141.3 | 42.85 ± 13.6M | 0.1891 ± 0.029 | 0.7737 ± 0.080 | 0.53% | 52.7% | 30.1% | 17.2% |
+| unco+lower | -5274.4 ± 141.3 | 42.85 ± 13.6M | 0.1891 ± 0.029 | 0.7737 ± 0.080 | 0.53% | 52.6% | 30.1% | 17.1% |
 | **att+lower** | **-1599.4 ± 330.1** | 53.32 ± 12.4M | 0.2170 ± 0.035 | **0.9281 ± 0.035** | 0.11% | 41.7% | 44.6% | 13.7% |
-| **full_hierarchical** | **-1451.7 ± 373.7** | 58.06 ± 7.0M | 0.2083 ± 0.019 | **0.9363 ± 0.041** | **0.00%** | 46.5% | 42.4% | 11.1% |
+| **full_hierarchical** | **-1451.7 ± 373.7** | 58.06 ± 7.0M | 0.2083 ± 0.019 | **0.9363 ± 0.041** | **0.00%** | 46.4% | 42.4% | 11.1% |
 
 **表 2. Full Hierarchical MARL 相对基础参考的 paired comparison**
 
@@ -395,7 +395,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 - 质量 mask 在控制 MBS 卸载方面起到了一定约束作用
 
 **Lagrange 约束（lower_full vs no_lagrange）**：
-- 移除 Lagrange 后 MBS 卸载比例（offloading ratio）从 13.7% 飙升至 **25.0%**（$\Delta=+11.3$pp, $p=5.8\times10^{-5}$）；对应地，MBS 负载比例（占总请求数）从 6.3% 升至 11.6%
+- 移除 Lagrange 后 MBS 卸载比例（offloading ratio）从 13.7% 飙升至 **25.0%**（$\Delta=+11.3$pp, $p=6.5\times10^{-5}$）；对应地，MBS 负载比例（占总请求数）从 6.3% 升至 11.6%
 - 这说明 Lagrange 约束对 MBS 卸载依赖具有显著抑制作用
 - 但也带来了 Energy 降低（53.32M → 51.12M，降 4%），说明 MBS 卸载虽然增加时延但可降低 UAV 侧能耗
 
@@ -415,9 +415,9 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 
 ### 5.6 DSR-Aware 配置实验
 
-为进一步验证框架在服务质量偏好上的可调节性，本文在基础配置（能耗优先）之上，额外测试了一组 DSR 优先配置（记为 DSR-strong），其关键参数调整为：$\alpha_D = 3.0$、$\alpha_E = 0.2$、$\tau_{dsr} = 0.28$（高于 baseline 的 0.2734）、Lagrange 学习率 $\eta_{\lambda} = 0.5$、乘子上界 $\lambda_{max} = 50.0$。
+为进一步验证框架在服务质量偏好上的可调节性，本文在基础配置（能耗优先）之上，额外测试了一组 DSR 优先配置（记为 DSR-strong），其关键参数调整为：系统级权重 $\alpha_D = 3.0$、$\alpha_E = 0.2$；下层 Lagrange 约束目标 $\tau_{dsr} = 0.28$（高于 baseline 的 0.2734）、$\tau_{mbs}=0.08$、Lagrange 学习率 $\eta_{\lambda} = 0.5$、乘子上界 $\lambda_{max} = 50.0$；下层 reward 权重 $w_{dead}=7.0$, $w_{succ}=1.5$, $w_{lat}=2.5$, $w_{en}=0.5$, $w_{mbs}=0.2$。
 
-**表 4. 三种配置下的 Full Hierarchical MARL 对比（N=30）**
+**表 4. 三种配置下的 Full Hierarchical MARL 对比（N=30）**\n\n> 注：baseline 和 base v2 行使用能耗优先配置的 reward 权重（$\alpha_D=1.0$, $\alpha_E=0.5$），DSR-strong 行使用 DSR 优先配置的 reward 权重（$\alpha_D=3.0$, $\alpha_E=0.2$），因此 reward 值不可跨配置直接对比（DSR 优先配置下 baseline 的 reward 为 -4972.3）。其余指标（Energy, DSR, Fairness, MBS Load, Coop%）均为环境性能指标，不受 reward 权重变化影响，可直接对比。
 
 | 配置 | Reward | Energy (M) | DSR | Fairness | MBS Load | Coop% |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -425,7 +425,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 | 能耗优先（base v2） | -1451.7 | **58.06** | 0.2083 | **0.9363** | 11.1% | 42.4% |
 | **DSR 优先（strong）** | **-1147.2** | 83.04 | **0.2435** | 0.9287 | 11.9% | **56.7%** |
 
-DSR 优先配置下，完整方法的 DSR 从 0.2083 提升至 0.2435，与 baseline 的差距从 -0.065 缩小至 -0.030（$p = 1.6\times10^{-6}$），缩小了一倍以上。需要指出，本文也测试了一组中间配置（$\tau_{dsr}=0.26$, $\lambda_{max}=30$, $\alpha_D=5.0$, $\eta_{\lambda}=0.3$），但该配置下 DSR 仅为 0.204，甚至略低于能耗优先配置的 0.208，说明 Lagrange 约束力度不足时无法有效驱动 DSR 恢复。这一 negative result 进一步佐证了：足够的 Lagrange 乘子上界（$\lambda_{max} \geq 50$）和学习率（$\eta_{\lambda} \geq 0.5$）是实现 DSR 显著提升的必要条件。同时能耗为 83.04M，相比 baseline 的 114.70M 仍节省 28%。Cooperative ratio 达到 56.7%，为所有学习式策略中最高。该结果验证了本文框架在不同服务质量目标下的可调节性：通过调整 reward 权重和 Lagrange 约束阈值，系统可以在能耗-DSR 的 Pareto 前沿上选择不同的工作点。
+DSR 优先配置下，完整方法的 DSR 从 0.2083 提升至 0.2435，与 baseline 的差距从 -0.065 缩小至 -0.030（$p = 1.6\times10^{-6}$），缩小了一倍以上。需要指出，本文也测试了一组中间配置（实验名 `linear_v2_dsr_moderate_20260520`，参数 $\tau_{dsr}=0.26$, $\lambda_{max}=30$, $\alpha_D=5.0$, $\eta_{\lambda}=0.3$），但该配置下 DSR 仅为 0.204，甚至略低于能耗优先配置的 0.208，说明 Lagrange 约束力度不足时无法有效驱动 DSR 恢复。这一 negative result 进一步佐证了：足够的 Lagrange 乘子上界（$\lambda_{max} \geq 50$）和学习率（$\eta_{\lambda} \geq 0.5$）是实现 DSR 显著提升的必要条件。同时能耗为 83.04M，相比 baseline 的 114.70M 仍节省 27.6%。Cooperative ratio 达到 56.7%，为所有学习式策略中最高。该结果验证了本文框架在不同服务质量目标下的可调节性：通过调整 reward 权重和 Lagrange 约束阈值，系统可以在能耗-DSR 的 Pareto 前沿上选择不同的工作点。
 
 ### 5.7 讨论
 
@@ -513,4 +513,4 @@ DSR 优先配置下，完整方法的 DSR 从 0.2083 提升至 0.2435，与 base
 
 ---
 
-*本文档最后更新：2026年5月20日。基于 linear_v2_full_20260519（能耗优先）和 linear_v2_dsr_strong_20260520（DSR 优先）实验结果生成。下层奖励函数已统一为线性归一化形式。*
+*本文档最后更新：2026年5月24日。基于 linear_v2_full_20260519（能耗优先）和 linear_v2_dsr_strong_20260520（DSR 优先）实验结果生成。下层奖励函数已统一为线性归一化形式。*

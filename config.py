@@ -237,7 +237,7 @@ WPT_TRANSMIT_POWER: float = 50.0  # P^WPT in Watts (actual UAV WPT power cost)
 # 关键变量 WPT_HARVEST_GAIN：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 WPT_HARVEST_GAIN: float = 5e5  # equivalent WPT harvest gain for the simplified channel model
 # 关键变量 WPT_EFFICIENCY：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-WPT_EFFICIENCY: float = 0.8  # eta (energy harvesting efficiency, 60%)
+WPT_EFFICIENCY: float = 0.8  # eta (energy harvesting efficiency, 80%)
 # 关键变量 UE_STATIC_POWER：用户设备对象，产生任务请求并等待服务。
 UE_STATIC_POWER: float = 0.01  # Idle power consumption in Watts
 
