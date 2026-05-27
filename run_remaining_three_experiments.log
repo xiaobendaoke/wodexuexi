@@ -1,0 +1,4395 @@
+nohup: ignoring input
+========== 0. Check environment ==========
+ROOT=/home/PengYanghan/Lunwen/wodexuexi
+PY=/home/PengYanghan/Lunwen/wodexuexi/.venv/bin/python
+PYTHONPATH=/home/PengYanghan/Lunwen/wodexuexi:
+python: /home/PengYanghan/Lunwen/wodexuexi/.venv/bin/python
+numpy: 2.0.2
+torch: 2.6.0+cu124
+matplotlib: 3.9.4
+config loaded: /home/PengYanghan/Lunwen/wodexuexi/config.py
+cuda available: False
+========== 1. Check required trained upper models ==========
+Found:
+  /home/PengYanghan/Lunwen/wodexuexi/saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final
+  /home/PengYanghan/Lunwen/wodexuexi/saved_models/attention_mappo_upper_attention_seed42_200ep/final
+========== 2. Evaluate vanilla vs attention upper policies with heuristic offloading ==========
+[joint] warning: no config_*.json was found for combo 'vanilla_mappo__heuristic'; using current config.py values.
+[joint] warning: no config_*.json was found for combo 'attention_mappo__heuristic'; using current config.py values.
+[joint] evaluating combo=vanilla_mappo__heuristic trajectory=vanilla_mappo offload=heuristic
+Configs saved to /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic/config_20260527_155316_vanilla_mappo__heuristic.json
+
+No GPU available, using CPU.
+
+
+No GPU available, using CPU.
+
+
+No GPU available, using CPU.
+
+
+No GPU available, using CPU.
+
+All plots saved to /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_plots/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic
+
+[joint] evaluating combo=attention_mappo__heuristic trajectory=attention_mappo offload=heuristic
+Configs saved to /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic/config_20260527_155900_attention_mappo__heuristic.json
+
+No GPU available, using CPU.
+
+
+No GPU available, using CPU.
+
+
+No GPU available, using CPU.
+
+
+No GPU available, using CPU.
+
+All plots saved to /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_plots/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic
+
+Loaded vanilla_mappo__heuristic from /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic/log_data_20260527_155316_vanilla_mappo__heuristic.json
+Loaded attention_mappo__heuristic from /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic/log_data_20260527_155900_attention_mappo__heuristic.json
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_reward.png
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_latency.png
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_energy.png
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_fairness.png
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_offline_rate.png
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_deadline_satisfaction_rate.png
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_offloading_ratio_local.png
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_offloading_ratio_cooperative.png
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_offloading_ratio_mbs.png
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_mbs_load_ratio.png
+WARNING: No valid data for metric: actor_loss
+WARNING: No valid data for metric: critic_loss
+WARNING: No valid data for metric: entropy_loss
+WARNING: No valid data for metric: alpha_loss
+Saved /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons/comparison_summary.png
+
+All comparative plots saved to /home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons
+/home/PengYanghan/Lunwen/wodexuexi/.venv/lib/python3.9/site-packages/scipy/stats/_wilcoxon.py:199: UserWarning: Sample size too small for normal approximation.
+  temp = _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis)
+{
+  "metadata": {
+    "experiment_name": "upper_vanilla_vs_attention_heuristic",
+    "trajectory_run_root": "/home/PengYanghan/Lunwen/wodexuexi",
+    "trajectory_model": "attention_mappo",
+    "trajectory_artifacts": {
+      "vanilla_mappo__heuristic": {
+        "config": null,
+        "model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+        "run_root": "/home/PengYanghan/Lunwen/wodexuexi"
+      },
+      "attention_mappo__heuristic": {
+        "config": null,
+        "model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+        "run_root": "/home/PengYanghan/Lunwen/wodexuexi"
+      }
+    },
+    "lower_model_dirs": {
+      "vanilla_mappo__heuristic": null,
+      "attention_mappo__heuristic": null
+    },
+    "lower_model_names": {
+      "vanilla_mappo__heuristic": "constrained_attention_offload_mappo",
+      "attention_mappo__heuristic": "constrained_attention_offload_mappo"
+    },
+    "offload_experiment_root": null,
+    "surrogate_checkpoint": null,
+    "rich_checkpoint": null,
+    "policies": [
+      "heuristic",
+      "surrogate",
+      "rich_reduced"
+    ],
+    "combos": [
+      {
+        "label": "vanilla_mappo__heuristic",
+        "trajectory_model": "vanilla_mappo",
+        "offload_policy": "heuristic"
+      },
+      {
+        "label": "attention_mappo__heuristic",
+        "trajectory_model": "attention_mappo",
+        "offload_policy": "heuristic"
+      }
+    ],
+    "training_seeds": null,
+    "seeds": [
+      42,
+      84,
+      126,
+      168
+    ],
+    "workload_seeds": [
+      42,
+      84,
+      126,
+      168
+    ],
+    "episodes_per_seed": 8,
+    "steps_per_episode": null,
+    "comparison_dir": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/comparisons",
+    "record_spatial_trace": false,
+    "spatial_trace_interval": 20
+  },
+  "per_policy": {
+    "vanilla_mappo__heuristic": {
+      "log_dir": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic",
+      "plot_dir": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_plots/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic",
+      "log_json_path": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic/log_data_20260527_155316_vanilla_mappo__heuristic.json",
+      "config_path": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic/config_20260527_155316_vanilla_mappo__heuristic.json",
+      "trajectory_config_source_path": null,
+      "trajectory_model": "vanilla_mappo",
+      "trajectory_model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+      "offload_policy": "heuristic",
+      "lower_model_dir": null,
+      "lower_model_name": null,
+      "spatial_trace_path": null,
+      "aggregate": {
+        "reward": {
+          "mean": -1462.6228588656813,
+          "std": 328.67474820353266
+        },
+        "latency": {
+          "mean": 841994.2260840212,
+          "std": 95239.20851965477
+        },
+        "energy": {
+          "mean": 120111148.6159723,
+          "std": 15688220.43249486
+        },
+        "fairness": {
+          "mean": 0.9639640469104052,
+          "std": 0.06588362240241544
+        },
+        "offline_rate": {
+          "mean": 0.005625,
+          "std": 0.012732217992164601
+        },
+        "deadline_satisfaction_rate": {
+          "mean": 0.282184476017696,
+          "std": 0.027773992366066078
+        },
+        "offloading_ratio_local": {
+          "mean": 0.3992254912566109,
+          "std": 0.043101088649007004
+        },
+        "offloading_ratio_cooperative": {
+          "mean": 0.5779556683393623,
+          "std": 0.042544667971919296
+        },
+        "offloading_ratio_mbs": {
+          "mean": 0.022568840404026798,
+          "std": 0.010195893768813644
+        },
+        "mbs_load_ratio": {
+          "mean": 0.014097446158582825,
+          "std": 0.00619946886374422
+        },
+        "service_learned_decision_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "service_heuristic_decision_count": {
+          "mean": 20807.34375,
+          "std": 4331.6349512148345
+        },
+        "service_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "service_predict_exception_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "per_seed": [
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 42,
+          "seed": 42,
+          "unit_id": "workload42",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1003.227226473345,
+              "latency": 696446.0786465019,
+              "energy": 94837705.76276441,
+              "fairness": 0.9674882292747498,
+              "offline_rate": 0.03,
+              "deadline_satisfaction_rate": 0.28924735502256865,
+              "offloading_ratio_local": 0.45126869714764906,
+              "offloading_ratio_cooperative": 0.5248903418703266,
+              "offloading_ratio_mbs": 0.023840960982024973,
+              "mbs_load_ratio": 0.016694699918080334,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 28168.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1591.5897035687397,
+              "latency": 689159.5872662816,
+              "energy": 121092323.74226771,
+              "fairness": 0.9819298982620239,
+              "offline_rate": 0.04,
+              "deadline_satisfaction_rate": 0.2896404348944271,
+              "offloading_ratio_local": 0.3741190636503096,
+              "offloading_ratio_cooperative": 0.6034658111422257,
+              "offloading_ratio_mbs": 0.022415125207464606,
+              "mbs_load_ratio": 0.01561347960048682,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 28135.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1115.3226566735548,
+              "latency": 872399.1061277303,
+              "energy": 109872881.94120705,
+              "fairness": 0.9852134585380554,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2888871743363942,
+              "offloading_ratio_local": 0.4174099681920362,
+              "offloading_ratio_cooperative": 0.5627902794689191,
+              "offloading_ratio_mbs": 0.019799752339044525,
+              "mbs_load_ratio": 0.012142248184083066,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 24076.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1425.4096558759518,
+              "latency": 779596.1063809386,
+              "energy": 94148005.50241081,
+              "fairness": 0.9800724983215332,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3184961652614233,
+              "offloading_ratio_local": 0.43422622494238766,
+              "offloading_ratio_cooperative": 0.5413279586654208,
+              "offloading_ratio_mbs": 0.0244458163921904,
+              "mbs_load_ratio": 0.016457004601534174,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 26189.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1526.7144793335258,
+              "latency": 846805.3324913478,
+              "energy": 127178712.28778303,
+              "fairness": 0.9845592975616455,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2956948475451704,
+              "offloading_ratio_local": 0.3401673342093389,
+              "offloading_ratio_cooperative": 0.639640465891162,
+              "offloading_ratio_mbs": 0.020192199899499184,
+              "mbs_load_ratio": 0.012510458753014599,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 24699.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -827.9538045985335,
+              "latency": 906835.6259048673,
+              "energy": 92659843.36151668,
+              "fairness": 0.9835951924324036,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.288683678847067,
+              "offloading_ratio_local": 0.43911233796769356,
+              "offloading_ratio_cooperative": 0.5373082627508027,
+              "offloading_ratio_mbs": 0.02357939928150332,
+              "mbs_load_ratio": 0.013710666940955641,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 23507.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1799.0469887151694,
+              "latency": 800475.2167465381,
+              "energy": 113378602.7588507,
+              "fairness": 0.952279269695282,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2917763853753042,
+              "offloading_ratio_local": 0.3460393822624212,
+              "offloading_ratio_cooperative": 0.6253314287833497,
+              "offloading_ratio_mbs": 0.023629188954230704,
+              "mbs_load_ratio": 0.015737292835632074,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 25677.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -940.9212047355933,
+              "latency": 877933.6937228737,
+              "energy": 88755942.3769662,
+              "fairness": 0.9885417819023132,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2959684440608249,
+              "offloading_ratio_local": 0.4550548194643733,
+              "offloading_ratio_cooperative": 0.5217082922776,
+              "offloading_ratio_mbs": 0.023236888258026358,
+              "mbs_load_ratio": 0.014077083193873227,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 24030.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1278.7732149968015,
+            "latency": 808706.343410885,
+            "energy": 105240502.21672082,
+            "fairness": 0.9779599532485008,
+            "offline_rate": 0.00875,
+            "deadline_satisfaction_rate": 0.29479931066789744,
+            "offloading_ratio_local": 0.4071747284795262,
+            "offloading_ratio_cooperative": 0.5695578551062258,
+            "offloading_ratio_mbs": 0.02264241641424801,
+            "mbs_load_ratio": 0.014617866753457493,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 25560.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1278.7732149968015,
+            "latency": 808706.343410885,
+            "energy": 105240502.21672082,
+            "fairness": 0.9779599532485008,
+            "offline_rate": 0.00875,
+            "deadline_satisfaction_rate": 0.29479931066789744,
+            "offloading_ratio_local": 0.4071747284795262,
+            "offloading_ratio_cooperative": 0.5695578551062258,
+            "offloading_ratio_mbs": 0.02264241641424801,
+            "mbs_load_ratio": 0.014617866753457493,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 25560.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 84,
+          "seed": 84,
+          "unit_id": "workload84",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1090.2060701606251,
+              "latency": 714158.2181847139,
+              "energy": 117362931.73629694,
+              "fairness": 0.9894293546676636,
+              "offline_rate": 0.02,
+              "deadline_satisfaction_rate": 0.26583962558270974,
+              "offloading_ratio_local": 0.43270932293574155,
+              "offloading_ratio_cooperative": 0.5553599393395442,
+              "offloading_ratio_mbs": 0.011930737724715292,
+              "mbs_load_ratio": 0.008385875078546509,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 26025.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1343.6148933270324,
+              "latency": 812705.7965485408,
+              "energy": 112034517.12074244,
+              "fairness": 0.9897858500480652,
+              "offline_rate": 0.02,
+              "deadline_satisfaction_rate": 0.2888361892999071,
+              "offloading_ratio_local": 0.44336829422970603,
+              "offloading_ratio_cooperative": 0.546431967059577,
+              "offloading_ratio_mbs": 0.010199738710717993,
+              "mbs_load_ratio": 0.006544482954335181,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 24016.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1432.112843920909,
+              "latency": 988951.0254639155,
+              "energy": 149061290.70585236,
+              "fairness": 0.9664865136146545,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2537986800181374,
+              "offloading_ratio_local": 0.3369561072294505,
+              "offloading_ratio_cooperative": 0.6541887294290863,
+              "offloading_ratio_mbs": 0.008855163341463251,
+              "mbs_load_ratio": 0.00465385433418844,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 20501.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1258.8472011474842,
+              "latency": 791594.9946064069,
+              "energy": 143387763.4153566,
+              "fairness": 0.9902385473251343,
+              "offline_rate": 0.05,
+              "deadline_satisfaction_rate": 0.2823743162806957,
+              "offloading_ratio_local": 0.36430726651786577,
+              "offloading_ratio_cooperative": 0.6256121899417098,
+              "offloading_ratio_mbs": 0.0100805435404263,
+              "mbs_load_ratio": 0.006788474504693049,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 24451.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1636.182373510705,
+              "latency": 851451.7159518333,
+              "energy": 100015782.43799132,
+              "fairness": 0.9672362208366394,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2967116107392377,
+              "offloading_ratio_local": 0.46916316974740846,
+              "offloading_ratio_cooperative": 0.5181944169602556,
+              "offloading_ratio_mbs": 0.012642413292335626,
+              "mbs_load_ratio": 0.007914926438339622,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 23198.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1424.0112330199152,
+              "latency": 893099.0449761125,
+              "energy": 115029277.51364918,
+              "fairness": 0.981987476348877,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.25158597960176726,
+              "offloading_ratio_local": 0.43623625645926417,
+              "offloading_ratio_cooperative": 0.5540857498613209,
+              "offloading_ratio_mbs": 0.009677993679415171,
+              "mbs_load_ratio": 0.006034266033296886,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 22389.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1746.834823005909,
+              "latency": 683996.933764606,
+              "energy": 118569653.47370298,
+              "fairness": 0.9862551689147949,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2935190744313667,
+              "offloading_ratio_local": 0.3950048062046611,
+              "offloading_ratio_cooperative": 0.5920579885523028,
+              "offloading_ratio_mbs": 0.012937205243037295,
+              "mbs_load_ratio": 0.009061080380775516,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 26501.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -895.4072313586938,
+              "latency": 762230.194793403,
+              "energy": 124462686.03685835,
+              "fairness": 0.9900150299072266,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.28486482406687724,
+              "offloading_ratio_local": 0.3893719600505915,
+              "offloading_ratio_cooperative": 0.5980743748122401,
+              "offloading_ratio_mbs": 0.012553665137169158,
+              "mbs_load_ratio": 0.008539823229027825,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 25284.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1353.402083681409,
+            "latency": 812273.4905361915,
+            "energy": 122490487.80505627,
+            "fairness": 0.9826792702078819,
+            "offline_rate": 0.01125,
+            "deadline_satisfaction_rate": 0.27719128750258737,
+            "offloading_ratio_local": 0.40838964792183613,
+            "offloading_ratio_cooperative": 0.5805006694945045,
+            "offloading_ratio_mbs": 0.011109682583660012,
+            "mbs_load_ratio": 0.007240347869150378,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 24045.625,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1353.402083681409,
+            "latency": 812273.4905361915,
+            "energy": 122490487.80505627,
+            "fairness": 0.9826792702078819,
+            "offline_rate": 0.01125,
+            "deadline_satisfaction_rate": 0.27719128750258737,
+            "offloading_ratio_local": 0.40838964792183613,
+            "offloading_ratio_cooperative": 0.5805006694945045,
+            "offloading_ratio_mbs": 0.011109682583660012,
+            "mbs_load_ratio": 0.007240347869150378,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 24045.625,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 126,
+          "seed": 126,
+          "unit_id": "workload126",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1598.4848489323742,
+              "latency": 812938.4404961516,
+              "energy": 129504568.61358258,
+              "fairness": 0.9777208566665649,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29896045612359534,
+              "offloading_ratio_local": 0.3963503456779157,
+              "offloading_ratio_cooperative": 0.5838123358570461,
+              "offloading_ratio_mbs": 0.019837318465037924,
+              "mbs_load_ratio": 0.012687835286783978,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17674.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1346.5107521205612,
+              "latency": 836455.5000035494,
+              "energy": 136377578.54066694,
+              "fairness": 0.9597219824790955,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29452900006904686,
+              "offloading_ratio_local": 0.3933345363717851,
+              "offloading_ratio_cooperative": 0.5856155007739031,
+              "offloading_ratio_mbs": 0.02104996285431124,
+              "mbs_load_ratio": 0.013184083456093908,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17409.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1484.5193906291368,
+              "latency": 844315.5775782549,
+              "energy": 139108733.46624798,
+              "fairness": 0.9767923355102539,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29185579437575443,
+              "offloading_ratio_local": 0.37502249882314986,
+              "offloading_ratio_cooperative": 0.6068503669771386,
+              "offloading_ratio_mbs": 0.018127134199710543,
+              "mbs_load_ratio": 0.011365418876543522,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17189.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1408.6493937630883,
+              "latency": 922005.5845058376,
+              "energy": 116256139.18773621,
+              "fairness": 0.9574230313301086,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2849624288392712,
+              "offloading_ratio_local": 0.4220641778731015,
+              "offloading_ratio_cooperative": 0.5587896660321957,
+              "offloading_ratio_mbs": 0.019146156094702684,
+              "mbs_load_ratio": 0.010903626768940917,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 16091.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1505.8958105897982,
+              "latency": 1017708.4088809463,
+              "energy": 132620331.90471834,
+              "fairness": 0.9751859307289124,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.26864123371160004,
+              "offloading_ratio_local": 0.38110562702370215,
+              "offloading_ratio_cooperative": 0.5987359595167323,
+              "offloading_ratio_mbs": 0.01815841345956403,
+              "mbs_load_ratio": 0.009633358835294788,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14817.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1901.1617928042701,
+              "latency": 858793.3741709627,
+              "energy": 124024568.70888096,
+              "fairness": 0.9402333498001099,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.26298340904021733,
+              "offloading_ratio_local": 0.39205335050704027,
+              "offloading_ratio_cooperative": 0.5891615441639952,
+              "offloading_ratio_mbs": 0.018785105328963853,
+              "mbs_load_ratio": 0.011856025624979727,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17065.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1966.8391430414613,
+              "latency": 968869.2149492417,
+              "energy": 125616424.20728558,
+              "fairness": 0.92775559425354,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2762794789044458,
+              "offloading_ratio_local": 0.405822862389498,
+              "offloading_ratio_cooperative": 0.580546726806072,
+              "offloading_ratio_mbs": 0.013630410804429442,
+              "mbs_load_ratio": 0.007923964695203557,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 15335.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1923.3475383267635,
+              "latency": 743131.6449573579,
+              "energy": 120656043.64052062,
+              "fairness": 0.9857469797134399,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.30042714916301244,
+              "offloading_ratio_local": 0.42712383102672047,
+              "offloading_ratio_cooperative": 0.5543558042937903,
+              "offloading_ratio_mbs": 0.01852036467948901,
+              "mbs_load_ratio": 0.012620689644014546,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18718.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1641.9260837759316,
+            "latency": 875527.2181927878,
+            "energy": 128020548.5337049,
+            "fairness": 0.9625725075602531,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2848298687783679,
+            "offloading_ratio_local": 0.3991096537116141,
+            "offloading_ratio_cooperative": 0.5822334880526092,
+            "offloading_ratio_mbs": 0.01840685823577609,
+            "mbs_load_ratio": 0.011271875398481866,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 16787.25,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1641.9260837759316,
+            "latency": 875527.2181927878,
+            "energy": 128020548.5337049,
+            "fairness": 0.9625725075602531,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2848298687783679,
+            "offloading_ratio_local": 0.3991096537116141,
+            "offloading_ratio_cooperative": 0.5822334880526092,
+            "offloading_ratio_mbs": 0.01840685823577609,
+            "mbs_load_ratio": 0.011271875398481866,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 16787.25,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 168,
+          "seed": 168,
+          "unit_id": "workload168",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1745.0830489818036,
+              "latency": 925767.4617343486,
+              "energy": 139887122.97649023,
+              "fairness": 0.9678919315338135,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2875048431187147,
+              "offloading_ratio_local": 0.3411170150285031,
+              "offloading_ratio_cooperative": 0.6261408063155385,
+              "offloading_ratio_mbs": 0.03174217865595798,
+              "mbs_load_ratio": 0.017659741746025397,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 15927.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2249.141835442528,
+              "latency": 780007.6637112044,
+              "energy": 114416263.55249149,
+              "fairness": 0.9797019362449646,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2882115121891361,
+              "offloading_ratio_local": 0.4393536524319757,
+              "offloading_ratio_cooperative": 0.5236332551598066,
+              "offloading_ratio_mbs": 0.03701309240821752,
+              "mbs_load_ratio": 0.025572234384048445,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18258.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1626.0283003002544,
+              "latency": 793972.1385726565,
+              "energy": 126943681.38527024,
+              "fairness": 0.9785358309745789,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.30463175367751916,
+              "offloading_ratio_local": 0.3991344996693147,
+              "offloading_ratio_cooperative": 0.5594472285295757,
+              "offloading_ratio_mbs": 0.04141827180110912,
+              "mbs_load_ratio": 0.026994938191721506,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17744.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1353.164418852298,
+              "latency": 793878.7923066694,
+              "energy": 121399561.47933595,
+              "fairness": 0.9890071749687195,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2935588995593147,
+              "offloading_ratio_local": 0.39859334706909083,
+              "offloading_ratio_cooperative": 0.5675693952786375,
+              "offloading_ratio_mbs": 0.033837257652272704,
+              "mbs_load_ratio": 0.021849176499456686,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18145.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1281.9663772457338,
+              "latency": 829242.3921746236,
+              "energy": 116953954.32954544,
+              "fairness": 0.9837999939918518,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.30212981723051846,
+              "offloading_ratio_local": 0.4036783718969115,
+              "offloading_ratio_cooperative": 0.5569526423568153,
+              "offloading_ratio_mbs": 0.03936898574627334,
+              "mbs_load_ratio": 0.024536754349235683,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17273.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1578.9086871411694,
+              "latency": 1009831.5482701849,
+              "energy": 136512313.75189874,
+              "fairness": 0.6062678098678589,
+              "offline_rate": 0.02,
+              "deadline_satisfaction_rate": 0.15329242665624163,
+              "offloading_ratio_local": 0.29431350108670334,
+              "offloading_ratio_cooperative": 0.6630167490514028,
+              "offloading_ratio_mbs": 0.04266974986189498,
+              "mbs_load_ratio": 0.02421787587737162,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 15327.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1075.995579390209,
+              "latency": 1057627.0505133476,
+              "energy": 97923121.57758924,
+              "fairness": 0.972641110420227,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2509082886018042,
+              "offloading_ratio_local": 0.46319731905945,
+              "offloading_ratio_cooperative": 0.4931422992162664,
+              "offloading_ratio_mbs": 0.04366038172428281,
+              "mbs_load_ratio": 0.021915444508738138,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13944.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1700.8321767146726,
+              "latency": 781431.7702867268,
+              "energy": 143508428.21463597,
+              "fairness": 0.9833098649978638,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2951019559422004,
+              "offloading_ratio_local": 0.3184357730657875,
+              "offloading_ratio_cooperative": 0.646342909724836,
+              "offloading_ratio_mbs": 0.03522131720937622,
+              "mbs_load_ratio": 0.023331391349335026,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18073.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1576.3900530085837,
+            "latency": 871469.8521962203,
+            "energy": 124693055.90840717,
+            "fairness": 0.9326444566249847,
+            "offline_rate": 0.0025,
+            "deadline_satisfaction_rate": 0.27191743712193117,
+            "offloading_ratio_local": 0.38222793491346707,
+            "offloading_ratio_cooperative": 0.5795306607041099,
+            "offloading_ratio_mbs": 0.038116404382423086,
+            "mbs_load_ratio": 0.023259694613241563,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 16836.375,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1576.3900530085837,
+            "latency": 871469.8521962203,
+            "energy": 124693055.90840717,
+            "fairness": 0.9326444566249847,
+            "offline_rate": 0.0025,
+            "deadline_satisfaction_rate": 0.27191743712193117,
+            "offloading_ratio_local": 0.38222793491346707,
+            "offloading_ratio_cooperative": 0.5795306607041099,
+            "offloading_ratio_mbs": 0.038116404382423086,
+            "mbs_load_ratio": 0.023259694613241563,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 16836.375,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        }
+      ]
+    },
+    "attention_mappo__heuristic": {
+      "log_dir": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic",
+      "plot_dir": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_plots/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic",
+      "log_json_path": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic/log_data_20260527_155900_attention_mappo__heuristic.json",
+      "config_path": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic/config_20260527_155900_attention_mappo__heuristic.json",
+      "trajectory_config_source_path": null,
+      "trajectory_model": "attention_mappo",
+      "trajectory_model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+      "offload_policy": "heuristic",
+      "lower_model_dir": null,
+      "lower_model_name": null,
+      "spatial_trace_path": null,
+      "aggregate": {
+        "reward": {
+          "mean": -2222.141079003869,
+          "std": 890.6097743213562
+        },
+        "latency": {
+          "mean": 1135452.7343597556,
+          "std": 132493.19366071565
+        },
+        "energy": {
+          "mean": 114545933.88012736,
+          "std": 13259111.325473506
+        },
+        "fairness": {
+          "mean": 0.8891789894551039,
+          "std": 0.10261693559472944
+        },
+        "offline_rate": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "deadline_satisfaction_rate": {
+          "mean": 0.2798578762086691,
+          "std": 0.031708507041986335
+        },
+        "offloading_ratio_local": {
+          "mean": 0.4597903368645168,
+          "std": 0.039979031463028544
+        },
+        "offloading_ratio_cooperative": {
+          "mean": 0.51875637963573,
+          "std": 0.03991992596975512
+        },
+        "offloading_ratio_mbs": {
+          "mean": 0.02098453349975316,
+          "std": 0.009865761688081462
+        },
+        "mbs_load_ratio": {
+          "mean": 0.009919902889516097,
+          "std": 0.004978036623194681
+        },
+        "service_learned_decision_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "service_heuristic_decision_count": {
+          "mean": 15087.59375,
+          "std": 2896.6683756879966
+        },
+        "service_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "service_predict_exception_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "per_seed": [
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 42,
+          "seed": 42,
+          "unit_id": "workload42",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1213.3859170668686,
+              "latency": 1235095.2346486296,
+              "energy": 96169610.3285911,
+              "fairness": 0.9381584525108337,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.26132471862525386,
+              "offloading_ratio_local": 0.5152521263120544,
+              "offloading_ratio_cooperative": 0.4652400184906818,
+              "offloading_ratio_mbs": 0.019507855197263967,
+              "mbs_load_ratio": 0.008285832538245965,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 16225.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1374.8162042528425,
+              "latency": 1183958.3066196174,
+              "energy": 90722799.2997356,
+              "fairness": 0.9173509478569031,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2533789259223486,
+              "offloading_ratio_local": 0.4971695203848545,
+              "offloading_ratio_cooperative": 0.4823119731226684,
+              "offloading_ratio_mbs": 0.0205185064924768,
+              "mbs_load_ratio": 0.008899037054365079,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17242.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1494.3471376921048,
+              "latency": 1299973.5118216034,
+              "energy": 101890892.35294856,
+              "fairness": 0.9066982269287109,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.26240246717388716,
+              "offloading_ratio_local": 0.5072294888413984,
+              "offloading_ratio_cooperative": 0.47499505167578016,
+              "offloading_ratio_mbs": 0.017775459482821474,
+              "mbs_load_ratio": 0.006610010070475277,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14612.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1183.2440985343414,
+              "latency": 1193106.656305939,
+              "energy": 102582596.52990793,
+              "fairness": 0.9493268132209778,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2544182693025684,
+              "offloading_ratio_local": 0.4709192871263725,
+              "offloading_ratio_cooperative": 0.5071922695235986,
+              "offloading_ratio_mbs": 0.020888443350028277,
+              "mbs_load_ratio": 0.008882426791592105,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17082.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2103.4844436223366,
+              "latency": 1034304.253871781,
+              "energy": 99298817.60552834,
+              "fairness": 0.9472228288650513,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3000044017817881,
+              "offloading_ratio_local": 0.4640878165250428,
+              "offloading_ratio_cooperative": 0.5152143147187864,
+              "offloading_ratio_mbs": 0.020697868756170516,
+              "mbs_load_ratio": 0.011054440824732543,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 20381.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1937.0499018941732,
+              "latency": 1115973.752181353,
+              "energy": 116091195.10192636,
+              "fairness": 0.9790008664131165,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29416701135204626,
+              "offloading_ratio_local": 0.42438264108455637,
+              "offloading_ratio_cooperative": 0.5518978119168264,
+              "offloading_ratio_mbs": 0.023719546998617745,
+              "mbs_load_ratio": 0.011245197210567867,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18745.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1332.5757166060632,
+              "latency": 1119120.5760441415,
+              "energy": 109105914.38270989,
+              "fairness": 0.9253717660903931,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.24902235303445236,
+              "offloading_ratio_local": 0.42836189233809063,
+              "offloading_ratio_cooperative": 0.5414863565477448,
+              "offloading_ratio_mbs": 0.02415175111416503,
+              "mbs_load_ratio": 0.011990155572865493,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18815.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1638.000199966971,
+              "latency": 1002959.7768375294,
+              "energy": 92094020.71715125,
+              "fairness": 0.9423797726631165,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3176973050757637,
+              "offloading_ratio_local": 0.4958786485088357,
+              "offloading_ratio_cooperative": 0.48194717639586865,
+              "offloading_ratio_mbs": 0.022174175095295876,
+              "mbs_load_ratio": 0.011678472819634978,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 21131.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1534.6129524544626,
+            "latency": 1148061.5085413242,
+            "energy": 100994480.78981239,
+            "fairness": 0.9381887093186378,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2740519315335136,
+            "offloading_ratio_local": 0.4754101776401507,
+            "offloading_ratio_cooperative": 0.5025356215489944,
+            "offloading_ratio_mbs": 0.021179200810854962,
+            "mbs_load_ratio": 0.009830696610309914,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 18029.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1534.6129524544626,
+            "latency": 1148061.5085413242,
+            "energy": 100994480.78981239,
+            "fairness": 0.9381887093186378,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2740519315335136,
+            "offloading_ratio_local": 0.4754101776401507,
+            "offloading_ratio_cooperative": 0.5025356215489944,
+            "offloading_ratio_mbs": 0.021179200810854962,
+            "mbs_load_ratio": 0.009830696610309914,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 18029.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 84,
+          "seed": 84,
+          "unit_id": "workload84",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -4070.6924837497136,
+              "latency": 1356882.2884992962,
+              "energy": 132633466.10155663,
+              "fairness": 0.5717400908470154,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2366404851803367,
+              "offloading_ratio_local": 0.4136033847155963,
+              "offloading_ratio_cooperative": 0.5787582347536854,
+              "offloading_ratio_mbs": 0.007638380530717983,
+              "mbs_load_ratio": 0.0025559484650584294,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 12507.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3359.4597292648255,
+              "latency": 1381550.1200484242,
+              "energy": 123642529.82510208,
+              "fairness": 0.7288597822189331,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2310262091462742,
+              "offloading_ratio_local": 0.4705051354242011,
+              "offloading_ratio_cooperative": 0.520264097469842,
+              "offloading_ratio_mbs": 0.009230767105956989,
+              "mbs_load_ratio": 0.0031730011180455165,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 12315.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3006.808362758375,
+              "latency": 1174007.8296654876,
+              "energy": 128523692.38847809,
+              "fairness": 0.8670545816421509,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.28308910703931706,
+              "offloading_ratio_local": 0.449568853190043,
+              "offloading_ratio_cooperative": 0.5415028306585375,
+              "offloading_ratio_mbs": 0.008928316151420644,
+              "mbs_load_ratio": 0.003734994338031044,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 16345.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2614.9708248962347,
+              "latency": 1293970.0705384675,
+              "energy": 111075388.53298485,
+              "fairness": 0.8793104887008667,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2554063949023252,
+              "offloading_ratio_local": 0.5348323701818106,
+              "offloading_ratio_cooperative": 0.45437084531889665,
+              "offloading_ratio_mbs": 0.010796784499292347,
+              "mbs_load_ratio": 0.004010973015543277,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13791.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1322.7787002425466,
+              "latency": 1123706.5030690501,
+              "energy": 95608372.93085852,
+              "fairness": 0.9797576665878296,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2540041433460473,
+              "offloading_ratio_local": 0.4781592069961655,
+              "offloading_ratio_cooperative": 0.5134754501696911,
+              "offloading_ratio_mbs": 0.008365342834143722,
+              "mbs_load_ratio": 0.0038688200299218773,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17635.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2280.9422568856235,
+              "latency": 1243597.9834619602,
+              "energy": 106541607.07814394,
+              "fairness": 0.9074254035949707,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2640067952171124,
+              "offloading_ratio_local": 0.5169619288628703,
+              "offloading_ratio_cooperative": 0.47324815471152004,
+              "offloading_ratio_mbs": 0.00978991642560918,
+              "mbs_load_ratio": 0.003842390993984342,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14977.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1780.1316831536838,
+              "latency": 1024607.708558638,
+              "energy": 104264982.22555842,
+              "fairness": 0.9801329970359802,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2614162202972185,
+              "offloading_ratio_local": 0.47832023352162895,
+              "offloading_ratio_cooperative": 0.5101572056277268,
+              "offloading_ratio_mbs": 0.011522560850644245,
+              "mbs_load_ratio": 0.0065343985495280804,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 19781.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3146.7293356687123,
+              "latency": 1132097.3078228894,
+              "energy": 100765801.83826792,
+              "fairness": 0.7994462847709656,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29271114902008527,
+              "offloading_ratio_local": 0.5109393467713261,
+              "offloading_ratio_cooperative": 0.4800257794628981,
+              "offloading_ratio_mbs": 0.009034873765775784,
+              "mbs_load_ratio": 0.00423148952854512,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17280.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -2697.8141720774643,
+            "latency": 1216302.4764580268,
+            "energy": 112881980.1151188,
+            "fairness": 0.839215911924839,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2597875630185896,
+            "offloading_ratio_local": 0.4816113074579552,
+            "offloading_ratio_cooperative": 0.5089753247715998,
+            "offloading_ratio_mbs": 0.009413367770445113,
+            "mbs_load_ratio": 0.003994002004832211,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 15578.875,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -2697.8141720774643,
+            "latency": 1216302.4764580268,
+            "energy": 112881980.1151188,
+            "fairness": 0.839215911924839,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2597875630185896,
+            "offloading_ratio_local": 0.4816113074579552,
+            "offloading_ratio_cooperative": 0.5089753247715998,
+            "offloading_ratio_mbs": 0.009413367770445113,
+            "mbs_load_ratio": 0.003994002004832211,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 15578.875,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 126,
+          "seed": 126,
+          "unit_id": "workload126",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1937.0198159196243,
+              "latency": 878945.1613191067,
+              "energy": 121169114.02510263,
+              "fairness": 0.8490508198738098,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.31894696991781063,
+              "offloading_ratio_local": 0.4006863632532042,
+              "offloading_ratio_cooperative": 0.5804315710165908,
+              "offloading_ratio_mbs": 0.01888206573020483,
+              "mbs_load_ratio": 0.011454171716402894,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 16444.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3989.877952349437,
+              "latency": 1017474.1566583372,
+              "energy": 138665275.0250058,
+              "fairness": 0.8406234979629517,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3330699835512659,
+              "offloading_ratio_local": 0.4213374680748236,
+              "offloading_ratio_cooperative": 0.5597468037645977,
+              "offloading_ratio_mbs": 0.018915728160578738,
+              "mbs_load_ratio": 0.010049563241539624,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14548.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -4064.7855873973044,
+              "latency": 1342437.4763311578,
+              "energy": 129165262.32024164,
+              "fairness": 0.5537632703781128,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.24288563556515436,
+              "offloading_ratio_local": 0.4375003370038965,
+              "offloading_ratio_cooperative": 0.5465456944371426,
+              "offloading_ratio_mbs": 0.015953968558960814,
+              "mbs_load_ratio": 0.005442955499534025,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 9406.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3342.489790707026,
+              "latency": 1132377.5496022196,
+              "energy": 121164241.73228692,
+              "fairness": 0.8487311005592346,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3163228527379406,
+              "offloading_ratio_local": 0.4955307279708869,
+              "offloading_ratio_cooperative": 0.48746432532030176,
+              "offloading_ratio_mbs": 0.017004946708811305,
+              "mbs_load_ratio": 0.00849129751526301,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 12648.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1833.8883598997884,
+              "latency": 1055226.8498471882,
+              "energy": 119386137.89407723,
+              "fairness": 0.9704420566558838,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3203139928461792,
+              "offloading_ratio_local": 0.4841572333798362,
+              "offloading_ratio_cooperative": 0.4964682386063986,
+              "offloading_ratio_mbs": 0.01937452801376487,
+              "mbs_load_ratio": 0.009399283881693017,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13783.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2964.36848074751,
+              "latency": 1278746.9964863663,
+              "energy": 132641790.14783892,
+              "fairness": 0.924351155757904,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.25011775219397153,
+              "offloading_ratio_local": 0.41311380857181407,
+              "offloading_ratio_cooperative": 0.5719834297649595,
+              "offloading_ratio_mbs": 0.01490276166322571,
+              "mbs_load_ratio": 0.005607162944330032,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 10515.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2881.890760134811,
+              "latency": 832673.956796563,
+              "energy": 135285922.83564666,
+              "fairness": 0.8804770112037659,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.34680117842140584,
+              "offloading_ratio_local": 0.40354805523908516,
+              "offloading_ratio_cooperative": 0.5777247999498069,
+              "offloading_ratio_mbs": 0.01872714481110835,
+              "mbs_load_ratio": 0.011874884333934623,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17354.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1958.9746978454746,
+              "latency": 1058738.5633663884,
+              "energy": 131736605.58777456,
+              "fairness": 0.9074772596359253,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2674967498875074,
+              "offloading_ratio_local": 0.39525406888741577,
+              "offloading_ratio_cooperative": 0.5883156219834761,
+              "offloading_ratio_mbs": 0.01643030912910842,
+              "mbs_load_ratio": 0.008250593900274765,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13967.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -2871.6619306251223,
+            "latency": 1074577.588800916,
+            "energy": 128651793.69599679,
+            "fairness": 0.8468645215034485,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.29949438939015444,
+            "offloading_ratio_local": 0.4313910077976203,
+            "offloading_ratio_cooperative": 0.5510850606054092,
+            "offloading_ratio_mbs": 0.01752393159697038,
+            "mbs_load_ratio": 0.0088212391291215,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 13583.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -2871.6619306251223,
+            "latency": 1074577.588800916,
+            "energy": 128651793.69599679,
+            "fairness": 0.8468645215034485,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.29949438939015444,
+            "offloading_ratio_local": 0.4313910077976203,
+            "offloading_ratio_cooperative": 0.5510850606054092,
+            "offloading_ratio_mbs": 0.01752393159697038,
+            "mbs_load_ratio": 0.0088212391291215,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 13583.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 168,
+          "seed": 168,
+          "unit_id": "workload168",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1374.3915730366698,
+              "latency": 1274827.0696782817,
+              "energy": 109331061.35591811,
+              "fairness": 0.950909435749054,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.25875358183418506,
+              "offloading_ratio_local": 0.5124198506320579,
+              "offloading_ratio_cooperative": 0.4444192259017409,
+              "offloading_ratio_mbs": 0.04216092346620049,
+              "mbs_load_ratio": 0.015803590316258467,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 10606.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1465.9251893753726,
+              "latency": 976949.9056502144,
+              "energy": 117867149.69998896,
+              "fairness": 0.9783753752708435,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29823104736991735,
+              "offloading_ratio_local": 0.41092630746107517,
+              "offloading_ratio_cooperative": 0.5600916837402934,
+              "offloading_ratio_mbs": 0.028982008798632074,
+              "mbs_load_ratio": 0.016779791451980466,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 15119.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1463.9022728799332,
+              "latency": 1076265.3978601175,
+              "energy": 127548852.60776183,
+              "fairness": 0.9737028479576111,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29105087473797736,
+              "offloading_ratio_local": 0.42105744395394085,
+              "offloading_ratio_cooperative": 0.5454172578237677,
+              "offloading_ratio_mbs": 0.033525298222290854,
+              "mbs_load_ratio": 0.016147258385131587,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13537.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3017.405291379955,
+              "latency": 1203971.4860457291,
+              "energy": 122440151.32968087,
+              "fairness": 0.844040036201477,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2742547019946409,
+              "offloading_ratio_local": 0.4347606123796888,
+              "offloading_ratio_cooperative": 0.5279779585044364,
+              "offloading_ratio_mbs": 0.037261429115874975,
+              "mbs_load_ratio": 0.015116351956767131,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 11497.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1038.4015386418944,
+              "latency": 1033966.0230724787,
+              "energy": 108537813.10911468,
+              "fairness": 0.977540910243988,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2951681847302613,
+              "offloading_ratio_local": 0.45725576384445454,
+              "offloading_ratio_cooperative": 0.5044586939279357,
+              "offloading_ratio_mbs": 0.0382855422276109,
+              "mbs_load_ratio": 0.01944889101748342,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14118.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1718.5317699275708,
+              "latency": 1177027.8139020267,
+              "energy": 118451422.34551233,
+              "fairness": 0.8805667161941528,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2324169601279549,
+              "offloading_ratio_local": 0.41991771231065456,
+              "offloading_ratio_cooperative": 0.5439580870099384,
+              "offloading_ratio_mbs": 0.03612420067940853,
+              "mbs_load_ratio": 0.01653806091930517,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 12320.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2430.390008971254,
+              "latency": 1049827.1827300745,
+              "energy": 110212770.31709361,
+              "fairness": 0.8810096383094788,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.31149337628019264,
+              "offloading_ratio_local": 0.47678814871831854,
+              "offloading_ratio_cooperative": 0.4844716652763831,
+              "offloading_ratio_mbs": 0.031740186005297925,
+              "mbs_load_ratio": 0.016369721258003758,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13872.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1766.854442654764,
+              "latency": 1030120.0301711239,
+              "energy": 110854626.59158091,
+              "fairness": 0.9734295606613159,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3274122400642209,
+              "offloading_ratio_local": 0.4728649971985385,
+              "offloading_ratio_cooperative": 0.4886415207508394,
+              "offloading_ratio_mbs": 0.03849348205062169,
+              "mbs_load_ratio": 0.02006572520547618,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14205.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1784.4752608584267,
+            "latency": 1102869.3636387559,
+            "energy": 115655480.91958141,
+            "fairness": 0.9324468150734901,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2860976208924188,
+            "offloading_ratio_local": 0.4507488545623411,
+            "offloading_ratio_cooperative": 0.5124295116169169,
+            "offloading_ratio_mbs": 0.035821633820742174,
+            "mbs_load_ratio": 0.017033673813800772,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 13159.25,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1784.4752608584267,
+            "latency": 1102869.3636387559,
+            "energy": 115655480.91958141,
+            "fairness": 0.9324468150734901,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2860976208924188,
+            "offloading_ratio_local": 0.4507488545623411,
+            "offloading_ratio_cooperative": 0.5124295116169169,
+            "offloading_ratio_mbs": 0.035821633820742174,
+            "mbs_load_ratio": 0.017033673813800772,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 13159.25,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        }
+      ]
+    }
+  },
+  "per_combo": {
+    "vanilla_mappo__heuristic": {
+      "log_dir": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic",
+      "plot_dir": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_plots/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic",
+      "log_json_path": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic/log_data_20260527_155316_vanilla_mappo__heuristic.json",
+      "config_path": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/vanilla_mappo__heuristic/20260527_155316_vanilla_mappo__heuristic/config_20260527_155316_vanilla_mappo__heuristic.json",
+      "trajectory_config_source_path": null,
+      "trajectory_model": "vanilla_mappo",
+      "trajectory_model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+      "offload_policy": "heuristic",
+      "lower_model_dir": null,
+      "lower_model_name": null,
+      "spatial_trace_path": null,
+      "aggregate": {
+        "reward": {
+          "mean": -1462.6228588656813,
+          "std": 328.67474820353266
+        },
+        "latency": {
+          "mean": 841994.2260840212,
+          "std": 95239.20851965477
+        },
+        "energy": {
+          "mean": 120111148.6159723,
+          "std": 15688220.43249486
+        },
+        "fairness": {
+          "mean": 0.9639640469104052,
+          "std": 0.06588362240241544
+        },
+        "offline_rate": {
+          "mean": 0.005625,
+          "std": 0.012732217992164601
+        },
+        "deadline_satisfaction_rate": {
+          "mean": 0.282184476017696,
+          "std": 0.027773992366066078
+        },
+        "offloading_ratio_local": {
+          "mean": 0.3992254912566109,
+          "std": 0.043101088649007004
+        },
+        "offloading_ratio_cooperative": {
+          "mean": 0.5779556683393623,
+          "std": 0.042544667971919296
+        },
+        "offloading_ratio_mbs": {
+          "mean": 0.022568840404026798,
+          "std": 0.010195893768813644
+        },
+        "mbs_load_ratio": {
+          "mean": 0.014097446158582825,
+          "std": 0.00619946886374422
+        },
+        "service_learned_decision_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "service_heuristic_decision_count": {
+          "mean": 20807.34375,
+          "std": 4331.6349512148345
+        },
+        "service_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "service_predict_exception_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "per_seed": [
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 42,
+          "seed": 42,
+          "unit_id": "workload42",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1003.227226473345,
+              "latency": 696446.0786465019,
+              "energy": 94837705.76276441,
+              "fairness": 0.9674882292747498,
+              "offline_rate": 0.03,
+              "deadline_satisfaction_rate": 0.28924735502256865,
+              "offloading_ratio_local": 0.45126869714764906,
+              "offloading_ratio_cooperative": 0.5248903418703266,
+              "offloading_ratio_mbs": 0.023840960982024973,
+              "mbs_load_ratio": 0.016694699918080334,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 28168.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1591.5897035687397,
+              "latency": 689159.5872662816,
+              "energy": 121092323.74226771,
+              "fairness": 0.9819298982620239,
+              "offline_rate": 0.04,
+              "deadline_satisfaction_rate": 0.2896404348944271,
+              "offloading_ratio_local": 0.3741190636503096,
+              "offloading_ratio_cooperative": 0.6034658111422257,
+              "offloading_ratio_mbs": 0.022415125207464606,
+              "mbs_load_ratio": 0.01561347960048682,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 28135.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1115.3226566735548,
+              "latency": 872399.1061277303,
+              "energy": 109872881.94120705,
+              "fairness": 0.9852134585380554,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2888871743363942,
+              "offloading_ratio_local": 0.4174099681920362,
+              "offloading_ratio_cooperative": 0.5627902794689191,
+              "offloading_ratio_mbs": 0.019799752339044525,
+              "mbs_load_ratio": 0.012142248184083066,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 24076.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1425.4096558759518,
+              "latency": 779596.1063809386,
+              "energy": 94148005.50241081,
+              "fairness": 0.9800724983215332,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3184961652614233,
+              "offloading_ratio_local": 0.43422622494238766,
+              "offloading_ratio_cooperative": 0.5413279586654208,
+              "offloading_ratio_mbs": 0.0244458163921904,
+              "mbs_load_ratio": 0.016457004601534174,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 26189.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1526.7144793335258,
+              "latency": 846805.3324913478,
+              "energy": 127178712.28778303,
+              "fairness": 0.9845592975616455,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2956948475451704,
+              "offloading_ratio_local": 0.3401673342093389,
+              "offloading_ratio_cooperative": 0.639640465891162,
+              "offloading_ratio_mbs": 0.020192199899499184,
+              "mbs_load_ratio": 0.012510458753014599,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 24699.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -827.9538045985335,
+              "latency": 906835.6259048673,
+              "energy": 92659843.36151668,
+              "fairness": 0.9835951924324036,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.288683678847067,
+              "offloading_ratio_local": 0.43911233796769356,
+              "offloading_ratio_cooperative": 0.5373082627508027,
+              "offloading_ratio_mbs": 0.02357939928150332,
+              "mbs_load_ratio": 0.013710666940955641,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 23507.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1799.0469887151694,
+              "latency": 800475.2167465381,
+              "energy": 113378602.7588507,
+              "fairness": 0.952279269695282,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2917763853753042,
+              "offloading_ratio_local": 0.3460393822624212,
+              "offloading_ratio_cooperative": 0.6253314287833497,
+              "offloading_ratio_mbs": 0.023629188954230704,
+              "mbs_load_ratio": 0.015737292835632074,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 25677.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -940.9212047355933,
+              "latency": 877933.6937228737,
+              "energy": 88755942.3769662,
+              "fairness": 0.9885417819023132,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2959684440608249,
+              "offloading_ratio_local": 0.4550548194643733,
+              "offloading_ratio_cooperative": 0.5217082922776,
+              "offloading_ratio_mbs": 0.023236888258026358,
+              "mbs_load_ratio": 0.014077083193873227,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 24030.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1278.7732149968015,
+            "latency": 808706.343410885,
+            "energy": 105240502.21672082,
+            "fairness": 0.9779599532485008,
+            "offline_rate": 0.00875,
+            "deadline_satisfaction_rate": 0.29479931066789744,
+            "offloading_ratio_local": 0.4071747284795262,
+            "offloading_ratio_cooperative": 0.5695578551062258,
+            "offloading_ratio_mbs": 0.02264241641424801,
+            "mbs_load_ratio": 0.014617866753457493,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 25560.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1278.7732149968015,
+            "latency": 808706.343410885,
+            "energy": 105240502.21672082,
+            "fairness": 0.9779599532485008,
+            "offline_rate": 0.00875,
+            "deadline_satisfaction_rate": 0.29479931066789744,
+            "offloading_ratio_local": 0.4071747284795262,
+            "offloading_ratio_cooperative": 0.5695578551062258,
+            "offloading_ratio_mbs": 0.02264241641424801,
+            "mbs_load_ratio": 0.014617866753457493,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 25560.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 84,
+          "seed": 84,
+          "unit_id": "workload84",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1090.2060701606251,
+              "latency": 714158.2181847139,
+              "energy": 117362931.73629694,
+              "fairness": 0.9894293546676636,
+              "offline_rate": 0.02,
+              "deadline_satisfaction_rate": 0.26583962558270974,
+              "offloading_ratio_local": 0.43270932293574155,
+              "offloading_ratio_cooperative": 0.5553599393395442,
+              "offloading_ratio_mbs": 0.011930737724715292,
+              "mbs_load_ratio": 0.008385875078546509,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 26025.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1343.6148933270324,
+              "latency": 812705.7965485408,
+              "energy": 112034517.12074244,
+              "fairness": 0.9897858500480652,
+              "offline_rate": 0.02,
+              "deadline_satisfaction_rate": 0.2888361892999071,
+              "offloading_ratio_local": 0.44336829422970603,
+              "offloading_ratio_cooperative": 0.546431967059577,
+              "offloading_ratio_mbs": 0.010199738710717993,
+              "mbs_load_ratio": 0.006544482954335181,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 24016.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1432.112843920909,
+              "latency": 988951.0254639155,
+              "energy": 149061290.70585236,
+              "fairness": 0.9664865136146545,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2537986800181374,
+              "offloading_ratio_local": 0.3369561072294505,
+              "offloading_ratio_cooperative": 0.6541887294290863,
+              "offloading_ratio_mbs": 0.008855163341463251,
+              "mbs_load_ratio": 0.00465385433418844,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 20501.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1258.8472011474842,
+              "latency": 791594.9946064069,
+              "energy": 143387763.4153566,
+              "fairness": 0.9902385473251343,
+              "offline_rate": 0.05,
+              "deadline_satisfaction_rate": 0.2823743162806957,
+              "offloading_ratio_local": 0.36430726651786577,
+              "offloading_ratio_cooperative": 0.6256121899417098,
+              "offloading_ratio_mbs": 0.0100805435404263,
+              "mbs_load_ratio": 0.006788474504693049,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 24451.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1636.182373510705,
+              "latency": 851451.7159518333,
+              "energy": 100015782.43799132,
+              "fairness": 0.9672362208366394,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2967116107392377,
+              "offloading_ratio_local": 0.46916316974740846,
+              "offloading_ratio_cooperative": 0.5181944169602556,
+              "offloading_ratio_mbs": 0.012642413292335626,
+              "mbs_load_ratio": 0.007914926438339622,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 23198.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1424.0112330199152,
+              "latency": 893099.0449761125,
+              "energy": 115029277.51364918,
+              "fairness": 0.981987476348877,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.25158597960176726,
+              "offloading_ratio_local": 0.43623625645926417,
+              "offloading_ratio_cooperative": 0.5540857498613209,
+              "offloading_ratio_mbs": 0.009677993679415171,
+              "mbs_load_ratio": 0.006034266033296886,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 22389.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1746.834823005909,
+              "latency": 683996.933764606,
+              "energy": 118569653.47370298,
+              "fairness": 0.9862551689147949,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2935190744313667,
+              "offloading_ratio_local": 0.3950048062046611,
+              "offloading_ratio_cooperative": 0.5920579885523028,
+              "offloading_ratio_mbs": 0.012937205243037295,
+              "mbs_load_ratio": 0.009061080380775516,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 26501.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -895.4072313586938,
+              "latency": 762230.194793403,
+              "energy": 124462686.03685835,
+              "fairness": 0.9900150299072266,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.28486482406687724,
+              "offloading_ratio_local": 0.3893719600505915,
+              "offloading_ratio_cooperative": 0.5980743748122401,
+              "offloading_ratio_mbs": 0.012553665137169158,
+              "mbs_load_ratio": 0.008539823229027825,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 25284.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1353.402083681409,
+            "latency": 812273.4905361915,
+            "energy": 122490487.80505627,
+            "fairness": 0.9826792702078819,
+            "offline_rate": 0.01125,
+            "deadline_satisfaction_rate": 0.27719128750258737,
+            "offloading_ratio_local": 0.40838964792183613,
+            "offloading_ratio_cooperative": 0.5805006694945045,
+            "offloading_ratio_mbs": 0.011109682583660012,
+            "mbs_load_ratio": 0.007240347869150378,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 24045.625,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1353.402083681409,
+            "latency": 812273.4905361915,
+            "energy": 122490487.80505627,
+            "fairness": 0.9826792702078819,
+            "offline_rate": 0.01125,
+            "deadline_satisfaction_rate": 0.27719128750258737,
+            "offloading_ratio_local": 0.40838964792183613,
+            "offloading_ratio_cooperative": 0.5805006694945045,
+            "offloading_ratio_mbs": 0.011109682583660012,
+            "mbs_load_ratio": 0.007240347869150378,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 24045.625,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 126,
+          "seed": 126,
+          "unit_id": "workload126",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1598.4848489323742,
+              "latency": 812938.4404961516,
+              "energy": 129504568.61358258,
+              "fairness": 0.9777208566665649,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29896045612359534,
+              "offloading_ratio_local": 0.3963503456779157,
+              "offloading_ratio_cooperative": 0.5838123358570461,
+              "offloading_ratio_mbs": 0.019837318465037924,
+              "mbs_load_ratio": 0.012687835286783978,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17674.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1346.5107521205612,
+              "latency": 836455.5000035494,
+              "energy": 136377578.54066694,
+              "fairness": 0.9597219824790955,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29452900006904686,
+              "offloading_ratio_local": 0.3933345363717851,
+              "offloading_ratio_cooperative": 0.5856155007739031,
+              "offloading_ratio_mbs": 0.02104996285431124,
+              "mbs_load_ratio": 0.013184083456093908,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17409.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1484.5193906291368,
+              "latency": 844315.5775782549,
+              "energy": 139108733.46624798,
+              "fairness": 0.9767923355102539,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29185579437575443,
+              "offloading_ratio_local": 0.37502249882314986,
+              "offloading_ratio_cooperative": 0.6068503669771386,
+              "offloading_ratio_mbs": 0.018127134199710543,
+              "mbs_load_ratio": 0.011365418876543522,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17189.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1408.6493937630883,
+              "latency": 922005.5845058376,
+              "energy": 116256139.18773621,
+              "fairness": 0.9574230313301086,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2849624288392712,
+              "offloading_ratio_local": 0.4220641778731015,
+              "offloading_ratio_cooperative": 0.5587896660321957,
+              "offloading_ratio_mbs": 0.019146156094702684,
+              "mbs_load_ratio": 0.010903626768940917,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 16091.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1505.8958105897982,
+              "latency": 1017708.4088809463,
+              "energy": 132620331.90471834,
+              "fairness": 0.9751859307289124,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.26864123371160004,
+              "offloading_ratio_local": 0.38110562702370215,
+              "offloading_ratio_cooperative": 0.5987359595167323,
+              "offloading_ratio_mbs": 0.01815841345956403,
+              "mbs_load_ratio": 0.009633358835294788,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14817.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1901.1617928042701,
+              "latency": 858793.3741709627,
+              "energy": 124024568.70888096,
+              "fairness": 0.9402333498001099,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.26298340904021733,
+              "offloading_ratio_local": 0.39205335050704027,
+              "offloading_ratio_cooperative": 0.5891615441639952,
+              "offloading_ratio_mbs": 0.018785105328963853,
+              "mbs_load_ratio": 0.011856025624979727,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17065.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1966.8391430414613,
+              "latency": 968869.2149492417,
+              "energy": 125616424.20728558,
+              "fairness": 0.92775559425354,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2762794789044458,
+              "offloading_ratio_local": 0.405822862389498,
+              "offloading_ratio_cooperative": 0.580546726806072,
+              "offloading_ratio_mbs": 0.013630410804429442,
+              "mbs_load_ratio": 0.007923964695203557,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 15335.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1923.3475383267635,
+              "latency": 743131.6449573579,
+              "energy": 120656043.64052062,
+              "fairness": 0.9857469797134399,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.30042714916301244,
+              "offloading_ratio_local": 0.42712383102672047,
+              "offloading_ratio_cooperative": 0.5543558042937903,
+              "offloading_ratio_mbs": 0.01852036467948901,
+              "mbs_load_ratio": 0.012620689644014546,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18718.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1641.9260837759316,
+            "latency": 875527.2181927878,
+            "energy": 128020548.5337049,
+            "fairness": 0.9625725075602531,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2848298687783679,
+            "offloading_ratio_local": 0.3991096537116141,
+            "offloading_ratio_cooperative": 0.5822334880526092,
+            "offloading_ratio_mbs": 0.01840685823577609,
+            "mbs_load_ratio": 0.011271875398481866,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 16787.25,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1641.9260837759316,
+            "latency": 875527.2181927878,
+            "energy": 128020548.5337049,
+            "fairness": 0.9625725075602531,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2848298687783679,
+            "offloading_ratio_local": 0.3991096537116141,
+            "offloading_ratio_cooperative": 0.5822334880526092,
+            "offloading_ratio_mbs": 0.01840685823577609,
+            "mbs_load_ratio": 0.011271875398481866,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 16787.25,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 168,
+          "seed": 168,
+          "unit_id": "workload168",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/vanilla_mappo_upper_vanilla_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1745.0830489818036,
+              "latency": 925767.4617343486,
+              "energy": 139887122.97649023,
+              "fairness": 0.9678919315338135,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2875048431187147,
+              "offloading_ratio_local": 0.3411170150285031,
+              "offloading_ratio_cooperative": 0.6261408063155385,
+              "offloading_ratio_mbs": 0.03174217865595798,
+              "mbs_load_ratio": 0.017659741746025397,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 15927.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2249.141835442528,
+              "latency": 780007.6637112044,
+              "energy": 114416263.55249149,
+              "fairness": 0.9797019362449646,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2882115121891361,
+              "offloading_ratio_local": 0.4393536524319757,
+              "offloading_ratio_cooperative": 0.5236332551598066,
+              "offloading_ratio_mbs": 0.03701309240821752,
+              "mbs_load_ratio": 0.025572234384048445,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18258.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1626.0283003002544,
+              "latency": 793972.1385726565,
+              "energy": 126943681.38527024,
+              "fairness": 0.9785358309745789,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.30463175367751916,
+              "offloading_ratio_local": 0.3991344996693147,
+              "offloading_ratio_cooperative": 0.5594472285295757,
+              "offloading_ratio_mbs": 0.04141827180110912,
+              "mbs_load_ratio": 0.026994938191721506,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17744.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1353.164418852298,
+              "latency": 793878.7923066694,
+              "energy": 121399561.47933595,
+              "fairness": 0.9890071749687195,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2935588995593147,
+              "offloading_ratio_local": 0.39859334706909083,
+              "offloading_ratio_cooperative": 0.5675693952786375,
+              "offloading_ratio_mbs": 0.033837257652272704,
+              "mbs_load_ratio": 0.021849176499456686,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18145.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1281.9663772457338,
+              "latency": 829242.3921746236,
+              "energy": 116953954.32954544,
+              "fairness": 0.9837999939918518,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.30212981723051846,
+              "offloading_ratio_local": 0.4036783718969115,
+              "offloading_ratio_cooperative": 0.5569526423568153,
+              "offloading_ratio_mbs": 0.03936898574627334,
+              "mbs_load_ratio": 0.024536754349235683,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17273.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1578.9086871411694,
+              "latency": 1009831.5482701849,
+              "energy": 136512313.75189874,
+              "fairness": 0.6062678098678589,
+              "offline_rate": 0.02,
+              "deadline_satisfaction_rate": 0.15329242665624163,
+              "offloading_ratio_local": 0.29431350108670334,
+              "offloading_ratio_cooperative": 0.6630167490514028,
+              "offloading_ratio_mbs": 0.04266974986189498,
+              "mbs_load_ratio": 0.02421787587737162,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 15327.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1075.995579390209,
+              "latency": 1057627.0505133476,
+              "energy": 97923121.57758924,
+              "fairness": 0.972641110420227,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2509082886018042,
+              "offloading_ratio_local": 0.46319731905945,
+              "offloading_ratio_cooperative": 0.4931422992162664,
+              "offloading_ratio_mbs": 0.04366038172428281,
+              "mbs_load_ratio": 0.021915444508738138,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13944.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1700.8321767146726,
+              "latency": 781431.7702867268,
+              "energy": 143508428.21463597,
+              "fairness": 0.9833098649978638,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2951019559422004,
+              "offloading_ratio_local": 0.3184357730657875,
+              "offloading_ratio_cooperative": 0.646342909724836,
+              "offloading_ratio_mbs": 0.03522131720937622,
+              "mbs_load_ratio": 0.023331391349335026,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18073.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1576.3900530085837,
+            "latency": 871469.8521962203,
+            "energy": 124693055.90840717,
+            "fairness": 0.9326444566249847,
+            "offline_rate": 0.0025,
+            "deadline_satisfaction_rate": 0.27191743712193117,
+            "offloading_ratio_local": 0.38222793491346707,
+            "offloading_ratio_cooperative": 0.5795306607041099,
+            "offloading_ratio_mbs": 0.038116404382423086,
+            "mbs_load_ratio": 0.023259694613241563,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 16836.375,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1576.3900530085837,
+            "latency": 871469.8521962203,
+            "energy": 124693055.90840717,
+            "fairness": 0.9326444566249847,
+            "offline_rate": 0.0025,
+            "deadline_satisfaction_rate": 0.27191743712193117,
+            "offloading_ratio_local": 0.38222793491346707,
+            "offloading_ratio_cooperative": 0.5795306607041099,
+            "offloading_ratio_mbs": 0.038116404382423086,
+            "mbs_load_ratio": 0.023259694613241563,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 16836.375,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        }
+      ]
+    },
+    "attention_mappo__heuristic": {
+      "log_dir": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic",
+      "plot_dir": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_plots/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic",
+      "log_json_path": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic/log_data_20260527_155900_attention_mappo__heuristic.json",
+      "config_path": "/home/PengYanghan/Lunwen/wodexuexi/results/joint_experiments/upper_vanilla_vs_attention_heuristic/test_logs/attention_mappo__heuristic/20260527_155900_attention_mappo__heuristic/config_20260527_155900_attention_mappo__heuristic.json",
+      "trajectory_config_source_path": null,
+      "trajectory_model": "attention_mappo",
+      "trajectory_model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+      "offload_policy": "heuristic",
+      "lower_model_dir": null,
+      "lower_model_name": null,
+      "spatial_trace_path": null,
+      "aggregate": {
+        "reward": {
+          "mean": -2222.141079003869,
+          "std": 890.6097743213562
+        },
+        "latency": {
+          "mean": 1135452.7343597556,
+          "std": 132493.19366071565
+        },
+        "energy": {
+          "mean": 114545933.88012736,
+          "std": 13259111.325473506
+        },
+        "fairness": {
+          "mean": 0.8891789894551039,
+          "std": 0.10261693559472944
+        },
+        "offline_rate": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "deadline_satisfaction_rate": {
+          "mean": 0.2798578762086691,
+          "std": 0.031708507041986335
+        },
+        "offloading_ratio_local": {
+          "mean": 0.4597903368645168,
+          "std": 0.039979031463028544
+        },
+        "offloading_ratio_cooperative": {
+          "mean": 0.51875637963573,
+          "std": 0.03991992596975512
+        },
+        "offloading_ratio_mbs": {
+          "mean": 0.02098453349975316,
+          "std": 0.009865761688081462
+        },
+        "mbs_load_ratio": {
+          "mean": 0.009919902889516097,
+          "std": 0.004978036623194681
+        },
+        "service_learned_decision_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "service_heuristic_decision_count": {
+          "mean": 15087.59375,
+          "std": 2896.6683756879966
+        },
+        "service_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0
+        },
+        "service_predict_exception_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0
+        }
+      },
+      "per_seed": [
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 42,
+          "seed": 42,
+          "unit_id": "workload42",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1213.3859170668686,
+              "latency": 1235095.2346486296,
+              "energy": 96169610.3285911,
+              "fairness": 0.9381584525108337,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.26132471862525386,
+              "offloading_ratio_local": 0.5152521263120544,
+              "offloading_ratio_cooperative": 0.4652400184906818,
+              "offloading_ratio_mbs": 0.019507855197263967,
+              "mbs_load_ratio": 0.008285832538245965,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 16225.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1374.8162042528425,
+              "latency": 1183958.3066196174,
+              "energy": 90722799.2997356,
+              "fairness": 0.9173509478569031,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2533789259223486,
+              "offloading_ratio_local": 0.4971695203848545,
+              "offloading_ratio_cooperative": 0.4823119731226684,
+              "offloading_ratio_mbs": 0.0205185064924768,
+              "mbs_load_ratio": 0.008899037054365079,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17242.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1494.3471376921048,
+              "latency": 1299973.5118216034,
+              "energy": 101890892.35294856,
+              "fairness": 0.9066982269287109,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.26240246717388716,
+              "offloading_ratio_local": 0.5072294888413984,
+              "offloading_ratio_cooperative": 0.47499505167578016,
+              "offloading_ratio_mbs": 0.017775459482821474,
+              "mbs_load_ratio": 0.006610010070475277,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14612.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1183.2440985343414,
+              "latency": 1193106.656305939,
+              "energy": 102582596.52990793,
+              "fairness": 0.9493268132209778,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2544182693025684,
+              "offloading_ratio_local": 0.4709192871263725,
+              "offloading_ratio_cooperative": 0.5071922695235986,
+              "offloading_ratio_mbs": 0.020888443350028277,
+              "mbs_load_ratio": 0.008882426791592105,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17082.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2103.4844436223366,
+              "latency": 1034304.253871781,
+              "energy": 99298817.60552834,
+              "fairness": 0.9472228288650513,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3000044017817881,
+              "offloading_ratio_local": 0.4640878165250428,
+              "offloading_ratio_cooperative": 0.5152143147187864,
+              "offloading_ratio_mbs": 0.020697868756170516,
+              "mbs_load_ratio": 0.011054440824732543,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 20381.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1937.0499018941732,
+              "latency": 1115973.752181353,
+              "energy": 116091195.10192636,
+              "fairness": 0.9790008664131165,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29416701135204626,
+              "offloading_ratio_local": 0.42438264108455637,
+              "offloading_ratio_cooperative": 0.5518978119168264,
+              "offloading_ratio_mbs": 0.023719546998617745,
+              "mbs_load_ratio": 0.011245197210567867,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18745.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1332.5757166060632,
+              "latency": 1119120.5760441415,
+              "energy": 109105914.38270989,
+              "fairness": 0.9253717660903931,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.24902235303445236,
+              "offloading_ratio_local": 0.42836189233809063,
+              "offloading_ratio_cooperative": 0.5414863565477448,
+              "offloading_ratio_mbs": 0.02415175111416503,
+              "mbs_load_ratio": 0.011990155572865493,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 18815.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1638.000199966971,
+              "latency": 1002959.7768375294,
+              "energy": 92094020.71715125,
+              "fairness": 0.9423797726631165,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3176973050757637,
+              "offloading_ratio_local": 0.4958786485088357,
+              "offloading_ratio_cooperative": 0.48194717639586865,
+              "offloading_ratio_mbs": 0.022174175095295876,
+              "mbs_load_ratio": 0.011678472819634978,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 21131.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1534.6129524544626,
+            "latency": 1148061.5085413242,
+            "energy": 100994480.78981239,
+            "fairness": 0.9381887093186378,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2740519315335136,
+            "offloading_ratio_local": 0.4754101776401507,
+            "offloading_ratio_cooperative": 0.5025356215489944,
+            "offloading_ratio_mbs": 0.021179200810854962,
+            "mbs_load_ratio": 0.009830696610309914,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 18029.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1534.6129524544626,
+            "latency": 1148061.5085413242,
+            "energy": 100994480.78981239,
+            "fairness": 0.9381887093186378,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2740519315335136,
+            "offloading_ratio_local": 0.4754101776401507,
+            "offloading_ratio_cooperative": 0.5025356215489944,
+            "offloading_ratio_mbs": 0.021179200810854962,
+            "mbs_load_ratio": 0.009830696610309914,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 18029.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 84,
+          "seed": 84,
+          "unit_id": "workload84",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -4070.6924837497136,
+              "latency": 1356882.2884992962,
+              "energy": 132633466.10155663,
+              "fairness": 0.5717400908470154,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2366404851803367,
+              "offloading_ratio_local": 0.4136033847155963,
+              "offloading_ratio_cooperative": 0.5787582347536854,
+              "offloading_ratio_mbs": 0.007638380530717983,
+              "mbs_load_ratio": 0.0025559484650584294,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 12507.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3359.4597292648255,
+              "latency": 1381550.1200484242,
+              "energy": 123642529.82510208,
+              "fairness": 0.7288597822189331,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2310262091462742,
+              "offloading_ratio_local": 0.4705051354242011,
+              "offloading_ratio_cooperative": 0.520264097469842,
+              "offloading_ratio_mbs": 0.009230767105956989,
+              "mbs_load_ratio": 0.0031730011180455165,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 12315.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3006.808362758375,
+              "latency": 1174007.8296654876,
+              "energy": 128523692.38847809,
+              "fairness": 0.8670545816421509,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.28308910703931706,
+              "offloading_ratio_local": 0.449568853190043,
+              "offloading_ratio_cooperative": 0.5415028306585375,
+              "offloading_ratio_mbs": 0.008928316151420644,
+              "mbs_load_ratio": 0.003734994338031044,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 16345.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2614.9708248962347,
+              "latency": 1293970.0705384675,
+              "energy": 111075388.53298485,
+              "fairness": 0.8793104887008667,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2554063949023252,
+              "offloading_ratio_local": 0.5348323701818106,
+              "offloading_ratio_cooperative": 0.45437084531889665,
+              "offloading_ratio_mbs": 0.010796784499292347,
+              "mbs_load_ratio": 0.004010973015543277,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13791.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1322.7787002425466,
+              "latency": 1123706.5030690501,
+              "energy": 95608372.93085852,
+              "fairness": 0.9797576665878296,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2540041433460473,
+              "offloading_ratio_local": 0.4781592069961655,
+              "offloading_ratio_cooperative": 0.5134754501696911,
+              "offloading_ratio_mbs": 0.008365342834143722,
+              "mbs_load_ratio": 0.0038688200299218773,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17635.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2280.9422568856235,
+              "latency": 1243597.9834619602,
+              "energy": 106541607.07814394,
+              "fairness": 0.9074254035949707,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2640067952171124,
+              "offloading_ratio_local": 0.5169619288628703,
+              "offloading_ratio_cooperative": 0.47324815471152004,
+              "offloading_ratio_mbs": 0.00978991642560918,
+              "mbs_load_ratio": 0.003842390993984342,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14977.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1780.1316831536838,
+              "latency": 1024607.708558638,
+              "energy": 104264982.22555842,
+              "fairness": 0.9801329970359802,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2614162202972185,
+              "offloading_ratio_local": 0.47832023352162895,
+              "offloading_ratio_cooperative": 0.5101572056277268,
+              "offloading_ratio_mbs": 0.011522560850644245,
+              "mbs_load_ratio": 0.0065343985495280804,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 19781.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3146.7293356687123,
+              "latency": 1132097.3078228894,
+              "energy": 100765801.83826792,
+              "fairness": 0.7994462847709656,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29271114902008527,
+              "offloading_ratio_local": 0.5109393467713261,
+              "offloading_ratio_cooperative": 0.4800257794628981,
+              "offloading_ratio_mbs": 0.009034873765775784,
+              "mbs_load_ratio": 0.00423148952854512,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17280.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -2697.8141720774643,
+            "latency": 1216302.4764580268,
+            "energy": 112881980.1151188,
+            "fairness": 0.839215911924839,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2597875630185896,
+            "offloading_ratio_local": 0.4816113074579552,
+            "offloading_ratio_cooperative": 0.5089753247715998,
+            "offloading_ratio_mbs": 0.009413367770445113,
+            "mbs_load_ratio": 0.003994002004832211,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 15578.875,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -2697.8141720774643,
+            "latency": 1216302.4764580268,
+            "energy": 112881980.1151188,
+            "fairness": 0.839215911924839,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2597875630185896,
+            "offloading_ratio_local": 0.4816113074579552,
+            "offloading_ratio_cooperative": 0.5089753247715998,
+            "offloading_ratio_mbs": 0.009413367770445113,
+            "mbs_load_ratio": 0.003994002004832211,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 15578.875,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 126,
+          "seed": 126,
+          "unit_id": "workload126",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1937.0198159196243,
+              "latency": 878945.1613191067,
+              "energy": 121169114.02510263,
+              "fairness": 0.8490508198738098,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.31894696991781063,
+              "offloading_ratio_local": 0.4006863632532042,
+              "offloading_ratio_cooperative": 0.5804315710165908,
+              "offloading_ratio_mbs": 0.01888206573020483,
+              "mbs_load_ratio": 0.011454171716402894,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 16444.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3989.877952349437,
+              "latency": 1017474.1566583372,
+              "energy": 138665275.0250058,
+              "fairness": 0.8406234979629517,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3330699835512659,
+              "offloading_ratio_local": 0.4213374680748236,
+              "offloading_ratio_cooperative": 0.5597468037645977,
+              "offloading_ratio_mbs": 0.018915728160578738,
+              "mbs_load_ratio": 0.010049563241539624,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14548.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -4064.7855873973044,
+              "latency": 1342437.4763311578,
+              "energy": 129165262.32024164,
+              "fairness": 0.5537632703781128,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.24288563556515436,
+              "offloading_ratio_local": 0.4375003370038965,
+              "offloading_ratio_cooperative": 0.5465456944371426,
+              "offloading_ratio_mbs": 0.015953968558960814,
+              "mbs_load_ratio": 0.005442955499534025,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 9406.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3342.489790707026,
+              "latency": 1132377.5496022196,
+              "energy": 121164241.73228692,
+              "fairness": 0.8487311005592346,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3163228527379406,
+              "offloading_ratio_local": 0.4955307279708869,
+              "offloading_ratio_cooperative": 0.48746432532030176,
+              "offloading_ratio_mbs": 0.017004946708811305,
+              "mbs_load_ratio": 0.00849129751526301,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 12648.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1833.8883598997884,
+              "latency": 1055226.8498471882,
+              "energy": 119386137.89407723,
+              "fairness": 0.9704420566558838,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3203139928461792,
+              "offloading_ratio_local": 0.4841572333798362,
+              "offloading_ratio_cooperative": 0.4964682386063986,
+              "offloading_ratio_mbs": 0.01937452801376487,
+              "mbs_load_ratio": 0.009399283881693017,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13783.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2964.36848074751,
+              "latency": 1278746.9964863663,
+              "energy": 132641790.14783892,
+              "fairness": 0.924351155757904,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.25011775219397153,
+              "offloading_ratio_local": 0.41311380857181407,
+              "offloading_ratio_cooperative": 0.5719834297649595,
+              "offloading_ratio_mbs": 0.01490276166322571,
+              "mbs_load_ratio": 0.005607162944330032,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 10515.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2881.890760134811,
+              "latency": 832673.956796563,
+              "energy": 135285922.83564666,
+              "fairness": 0.8804770112037659,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.34680117842140584,
+              "offloading_ratio_local": 0.40354805523908516,
+              "offloading_ratio_cooperative": 0.5777247999498069,
+              "offloading_ratio_mbs": 0.01872714481110835,
+              "mbs_load_ratio": 0.011874884333934623,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 17354.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1958.9746978454746,
+              "latency": 1058738.5633663884,
+              "energy": 131736605.58777456,
+              "fairness": 0.9074772596359253,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2674967498875074,
+              "offloading_ratio_local": 0.39525406888741577,
+              "offloading_ratio_cooperative": 0.5883156219834761,
+              "offloading_ratio_mbs": 0.01643030912910842,
+              "mbs_load_ratio": 0.008250593900274765,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13967.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -2871.6619306251223,
+            "latency": 1074577.588800916,
+            "energy": 128651793.69599679,
+            "fairness": 0.8468645215034485,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.29949438939015444,
+            "offloading_ratio_local": 0.4313910077976203,
+            "offloading_ratio_cooperative": 0.5510850606054092,
+            "offloading_ratio_mbs": 0.01752393159697038,
+            "mbs_load_ratio": 0.0088212391291215,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 13583.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -2871.6619306251223,
+            "latency": 1074577.588800916,
+            "energy": 128651793.69599679,
+            "fairness": 0.8468645215034485,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.29949438939015444,
+            "offloading_ratio_local": 0.4313910077976203,
+            "offloading_ratio_cooperative": 0.5510850606054092,
+            "offloading_ratio_mbs": 0.01752393159697038,
+            "mbs_load_ratio": 0.0088212391291215,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 13583.125,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        },
+        {
+          "policy": "heuristic",
+          "training_seed": null,
+          "workload_seed": 168,
+          "seed": 168,
+          "unit_id": "workload168",
+          "lower_model_dir": null,
+          "trajectory_model_dir": "saved_models/attention_mappo_upper_attention_seed42_200ep/final",
+          "trajectory_config_path": null,
+          "episodes": [
+            {
+              "reward": -1374.3915730366698,
+              "latency": 1274827.0696782817,
+              "energy": 109331061.35591811,
+              "fairness": 0.950909435749054,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.25875358183418506,
+              "offloading_ratio_local": 0.5124198506320579,
+              "offloading_ratio_cooperative": 0.4444192259017409,
+              "offloading_ratio_mbs": 0.04216092346620049,
+              "mbs_load_ratio": 0.015803590316258467,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 10606.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1465.9251893753726,
+              "latency": 976949.9056502144,
+              "energy": 117867149.69998896,
+              "fairness": 0.9783753752708435,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29823104736991735,
+              "offloading_ratio_local": 0.41092630746107517,
+              "offloading_ratio_cooperative": 0.5600916837402934,
+              "offloading_ratio_mbs": 0.028982008798632074,
+              "mbs_load_ratio": 0.016779791451980466,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 15119.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1463.9022728799332,
+              "latency": 1076265.3978601175,
+              "energy": 127548852.60776183,
+              "fairness": 0.9737028479576111,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.29105087473797736,
+              "offloading_ratio_local": 0.42105744395394085,
+              "offloading_ratio_cooperative": 0.5454172578237677,
+              "offloading_ratio_mbs": 0.033525298222290854,
+              "mbs_load_ratio": 0.016147258385131587,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13537.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -3017.405291379955,
+              "latency": 1203971.4860457291,
+              "energy": 122440151.32968087,
+              "fairness": 0.844040036201477,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2742547019946409,
+              "offloading_ratio_local": 0.4347606123796888,
+              "offloading_ratio_cooperative": 0.5279779585044364,
+              "offloading_ratio_mbs": 0.037261429115874975,
+              "mbs_load_ratio": 0.015116351956767131,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 11497.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1038.4015386418944,
+              "latency": 1033966.0230724787,
+              "energy": 108537813.10911468,
+              "fairness": 0.977540910243988,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2951681847302613,
+              "offloading_ratio_local": 0.45725576384445454,
+              "offloading_ratio_cooperative": 0.5044586939279357,
+              "offloading_ratio_mbs": 0.0382855422276109,
+              "mbs_load_ratio": 0.01944889101748342,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14118.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1718.5317699275708,
+              "latency": 1177027.8139020267,
+              "energy": 118451422.34551233,
+              "fairness": 0.8805667161941528,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.2324169601279549,
+              "offloading_ratio_local": 0.41991771231065456,
+              "offloading_ratio_cooperative": 0.5439580870099384,
+              "offloading_ratio_mbs": 0.03612420067940853,
+              "mbs_load_ratio": 0.01653806091930517,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 12320.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -2430.390008971254,
+              "latency": 1049827.1827300745,
+              "energy": 110212770.31709361,
+              "fairness": 0.8810096383094788,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.31149337628019264,
+              "offloading_ratio_local": 0.47678814871831854,
+              "offloading_ratio_cooperative": 0.4844716652763831,
+              "offloading_ratio_mbs": 0.031740186005297925,
+              "mbs_load_ratio": 0.016369721258003758,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 13872.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            },
+            {
+              "reward": -1766.854442654764,
+              "latency": 1030120.0301711239,
+              "energy": 110854626.59158091,
+              "fairness": 0.9734295606613159,
+              "offline_rate": 0.0,
+              "deadline_satisfaction_rate": 0.3274122400642209,
+              "offloading_ratio_local": 0.4728649971985385,
+              "offloading_ratio_cooperative": 0.4886415207508394,
+              "offloading_ratio_mbs": 0.03849348205062169,
+              "mbs_load_ratio": 0.02006572520547618,
+              "service_learned_decision_count": 0.0,
+              "service_heuristic_decision_count": 14205.0,
+              "service_fallback_count": 0.0,
+              "service_predict_exception_fallback_count": 0.0
+            }
+          ],
+          "per_seed_mean": {
+            "reward": -1784.4752608584267,
+            "latency": 1102869.3636387559,
+            "energy": 115655480.91958141,
+            "fairness": 0.9324468150734901,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2860976208924188,
+            "offloading_ratio_local": 0.4507488545623411,
+            "offloading_ratio_cooperative": 0.5124295116169169,
+            "offloading_ratio_mbs": 0.035821633820742174,
+            "mbs_load_ratio": 0.017033673813800772,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 13159.25,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          },
+          "unit_mean": {
+            "reward": -1784.4752608584267,
+            "latency": 1102869.3636387559,
+            "energy": 115655480.91958141,
+            "fairness": 0.9324468150734901,
+            "offline_rate": 0.0,
+            "deadline_satisfaction_rate": 0.2860976208924188,
+            "offloading_ratio_local": 0.4507488545623411,
+            "offloading_ratio_cooperative": 0.5124295116169169,
+            "offloading_ratio_mbs": 0.035821633820742174,
+            "mbs_load_ratio": 0.017033673813800772,
+            "service_learned_decision_count": 0.0,
+            "service_heuristic_decision_count": 13159.25,
+            "service_fallback_count": 0.0,
+            "service_predict_exception_fallback_count": 0.0
+          }
+        }
+      ]
+    }
+  },
+  "delta_vs_reference": {
+    "attention_mappo__heuristic": {
+      "reward": {
+        "mean_delta": -759.5182201381874,
+        "std_delta": 529.3807312681806
+      },
+      "latency": {
+        "mean_delta": 293458.50827573455,
+        "std_delta": 82305.14744403005
+      },
+      "energy": {
+        "mean_delta": -5565214.735844944,
+        "std_delta": 4139501.4764659754
+      },
+      "fairness": {
+        "mean_delta": -0.07478505745530128,
+        "std_delta": 0.05740349475143286
+      },
+      "offline_rate": {
+        "mean_delta": -0.005625,
+        "std_delta": 0.004550068680800324
+      },
+      "deadline_satisfaction_rate": {
+        "mean_delta": -0.002326599809026872,
+        "std_delta": 0.01679149246429295
+      },
+      "offloading_ratio_local": {
+        "mean_delta": 0.060564845607905954,
+        "std_delta": 0.016449073716254745
+      },
+      "offloading_ratio_cooperative": {
+        "mean_delta": -0.05919928870363228,
+        "std_delta": 0.016297395021303198
+      },
+      "offloading_ratio_mbs": {
+        "mean_delta": -0.0015843069042736427,
+        "std_delta": 0.0005059401545881502
+      },
+      "mbs_load_ratio": {
+        "mean_delta": -0.004177543269066726,
+        "std_delta": 0.0014506241338036441
+      },
+      "service_learned_decision_count": {
+        "mean_delta": 0.0,
+        "std_delta": 0.0
+      },
+      "service_heuristic_decision_count": {
+        "mean_delta": -5719.75,
+        "std_delta": 2309.075658881168
+      },
+      "service_fallback_count": {
+        "mean_delta": 0.0,
+        "std_delta": 0.0
+      },
+      "service_predict_exception_fallback_count": {
+        "mean_delta": 0.0,
+        "std_delta": 0.0
+      }
+    }
+  },
+  "delta_vs_heuristic": {},
+  "statistics": {
+    "metadata": {
+      "reference": "vanilla_mappo__heuristic",
+      "confidence": 0.95,
+      "ci_method": "t interval when scipy is available, otherwise bootstrap",
+      "unit_note": "Joint H-MARL summaries use paired (training_seed, workload_seed) episode means when training_seed is present; older summaries fall back to workload-seed means.",
+      "ratio_metric_note": "Ratio metrics are treated as paired unit means; use request-level counts for exact binomial intervals when available."
+    },
+    "metrics": {
+      "vanilla_mappo__heuristic": {
+        "reward": {
+          "mean": -1462.6228588656816,
+          "std": 173.99472234230927,
+          "ci_low": -1739.4872894943032,
+          "ci_high": -1185.75842823706,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "latency": {
+          "mean": 841994.2260840212,
+          "std": 36444.841193403816,
+          "ci_low": 784002.3509827113,
+          "ci_high": 899986.101185331,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "energy": {
+          "mean": 120111148.6159723,
+          "std": 10171035.030965436,
+          "ci_low": 103926762.18836592,
+          "ci_high": 136295535.04357868,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "fairness": {
+          "mean": 0.9639640469104052,
+          "std": 0.022575784185042063,
+          "ci_low": 0.9280409364261142,
+          "ci_high": 0.9998871573946961,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "offline_rate": {
+          "mean": 0.005625,
+          "std": 0.005253966755382705,
+          "ci_low": -0.0027352335443770175,
+          "ci_high": 0.013985233544377017,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "deadline_satisfaction_rate": {
+          "mean": 0.282184476017696,
+          "std": 0.009941096105639775,
+          "ci_low": 0.2663659737317614,
+          "ci_high": 0.29800297830363054,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "offloading_ratio_local": {
+          "mean": 0.3992254912566109,
+          "std": 0.012056844249721867,
+          "ci_low": 0.3800403615386533,
+          "ci_high": 0.4184106209745685,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "offloading_ratio_cooperative": {
+          "mean": 0.5779556683393624,
+          "std": 0.00570907582790696,
+          "ci_low": 0.5688712547018073,
+          "ci_high": 0.5870400819769175,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "offloading_ratio_mbs": {
+          "mean": 0.022568840404026798,
+          "std": 0.011407111124389557,
+          "ci_low": 0.004417581078136518,
+          "ci_high": 0.04072009972991708,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "mbs_load_ratio": {
+          "mean": 0.014097446158582824,
+          "std": 0.006812275229606749,
+          "ci_low": 0.0032575960910620726,
+          "ci_high": 0.024937296226103575,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "service_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "service_predict_exception_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "service_heuristic_decision_count": {
+          "mean": 20807.34375,
+          "std": 4654.930777742341,
+          "ci_low": 13400.310122509944,
+          "ci_high": 28214.377377490055,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "service_learned_decision_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "n": 4,
+          "is_ratio_metric": false
+        }
+      },
+      "attention_mappo__heuristic": {
+        "reward": {
+          "mean": -2222.141079003869,
+          "std": 661.4097371862757,
+          "ci_low": -3274.5915661976182,
+          "ci_high": -1169.6905918101197,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "latency": {
+          "mean": 1135452.7343597556,
+          "std": 61814.56510691411,
+          "ci_low": 1037091.9671911295,
+          "ci_high": 1233813.5015283818,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "energy": {
+          "mean": 114545933.88012734,
+          "std": 11352195.070687354,
+          "ci_low": 96482058.25033975,
+          "ci_high": 132609809.50991493,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "fairness": {
+          "mean": 0.8891789894551039,
+          "std": 0.053419349456827865,
+          "ci_low": 0.8041768838003185,
+          "ci_high": 0.9741810951098893,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "offline_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "deadline_satisfaction_rate": {
+          "mean": 0.27985787620866914,
+          "std": 0.01694160095508368,
+          "ci_low": 0.25290000852611594,
+          "ci_high": 0.30681574389122235,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "offloading_ratio_local": {
+          "mean": 0.4597903368645168,
+          "std": 0.023154585414601924,
+          "ci_low": 0.4229462244629724,
+          "ci_high": 0.4966344492660612,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "offloading_ratio_cooperative": {
+          "mean": 0.5187563796357301,
+          "std": 0.021938967609638482,
+          "ci_low": 0.4838465864302075,
+          "ci_high": 0.5536661728412526,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "offloading_ratio_mbs": {
+          "mean": 0.020984533499753155,
+          "std": 0.011046041269187207,
+          "ci_low": 0.0034078168871819955,
+          "ci_high": 0.038561250112324315,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "mbs_load_ratio": {
+          "mean": 0.0099199028895161,
+          "std": 0.0053832164448697865,
+          "ci_low": 0.001354004246755431,
+          "ci_high": 0.018485801532276767,
+          "n": 4,
+          "is_ratio_metric": true
+        },
+        "service_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "service_predict_exception_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "service_heuristic_decision_count": {
+          "mean": 15087.59375,
+          "std": 2226.7988383341344,
+          "ci_low": 11544.259882166123,
+          "ci_high": 18630.927617833877,
+          "n": 4,
+          "is_ratio_metric": false
+        },
+        "service_learned_decision_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "n": 4,
+          "is_ratio_metric": false
+        }
+      }
+    },
+    "paired_vs_reference": {
+      "attention_mappo__heuristic": {
+        "reward": {
+          "mean": -759.5182201381874,
+          "std": 611.2762154029701,
+          "ci_low": -1732.1950867468522,
+          "ci_high": 213.15864647047738,
+          "n": 4,
+          "paired_t_p": 0.08887401921560804,
+          "wilcoxon_p": 0.125,
+          "effect": "regresses"
+        },
+        "latency": {
+          "mean": 293458.50827573455,
+          "std": 95037.79806500518,
+          "ci_low": 142232.16361857075,
+          "ci_high": 444684.8529328983,
+          "n": 4,
+          "paired_t_p": 0.008548347278386275,
+          "wilcoxon_p": 0.125,
+          "effect": "regresses"
+        },
+        "energy": {
+          "mean": -5565214.735844944,
+          "std": 4779884.583496968,
+          "ci_low": -13171077.75206251,
+          "ci_high": 2040648.2803726234,
+          "n": 4,
+          "paired_t_p": 0.1022784660491979,
+          "wilcoxon_p": 0.25,
+          "effect": "improves"
+        },
+        "fairness": {
+          "mean": -0.07478505745530128,
+          "std": 0.06628384629433007,
+          "ci_low": -0.18025744832501162,
+          "ci_high": 0.03068733341440906,
+          "n": 4,
+          "paired_t_p": 0.10927799652367909,
+          "wilcoxon_p": 0.125,
+          "effect": "regresses"
+        },
+        "offline_rate": {
+          "mean": -0.005625,
+          "std": 0.005253966755382705,
+          "ci_low": -0.013985233544377017,
+          "ci_high": 0.0027352335443770175,
+          "n": 4,
+          "paired_t_p": 0.12171044508488892,
+          "wilcoxon_p": 0.10880943004054568,
+          "effect": "improves"
+        },
+        "deadline_satisfaction_rate": {
+          "mean": -0.002326599809026872,
+          "std": 0.019389145388710213,
+          "ci_low": -0.03317905686148698,
+          "ci_high": 0.028525857243433237,
+          "n": 4,
+          "paired_t_p": 0.8258018018738188,
+          "wilcoxon_p": 0.625,
+          "effect": "regresses"
+        },
+        "offloading_ratio_local": {
+          "mean": 0.060564845607905954,
+          "std": 0.01899375427599935,
+          "ci_low": 0.030341544048340302,
+          "ci_high": 0.0907881471674716,
+          "n": 4,
+          "paired_t_p": 0.007805225403968298,
+          "wilcoxon_p": 0.125,
+          "effect": "improves"
+        },
+        "offloading_ratio_cooperative": {
+          "mean": -0.05919928870363228,
+          "std": 0.018818610805278135,
+          "ci_low": -0.08914389791755223,
+          "ci_high": -0.029254679489712325,
+          "n": 4,
+          "paired_t_p": 0.008110396744191155,
+          "wilcoxon_p": 0.125,
+          "effect": "regresses"
+        },
+        "offloading_ratio_mbs": {
+          "mean": -0.0015843069042736427,
+          "std": 0.0005842093688906187,
+          "ci_low": -0.002513914378042843,
+          "ci_high": -0.0006546994305044424,
+          "n": 4,
+          "paired_t_p": 0.01229755262823347,
+          "wilcoxon_p": 0.125,
+          "effect": "improves"
+        },
+        "mbs_load_ratio": {
+          "mean": -0.004177543269066726,
+          "std": 0.0016750364682890033,
+          "ci_low": -0.006842900078928096,
+          "ci_high": -0.001512186459205357,
+          "n": 4,
+          "paired_t_p": 0.015494114523936316,
+          "wilcoxon_p": 0.125,
+          "effect": "improves"
+        },
+        "service_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "n": 4,
+          "paired_t_p": NaN,
+          "wilcoxon_p": null,
+          "effect": "tie"
+        },
+        "service_predict_exception_fallback_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "n": 4,
+          "paired_t_p": NaN,
+          "wilcoxon_p": null,
+          "effect": "tie"
+        },
+        "service_heuristic_decision_count": {
+          "mean": -5719.75,
+          "std": 2666.2909064685095,
+          "ci_low": -9962.413822051869,
+          "ci_high": -1477.086177948132,
+          "n": 4,
+          "paired_t_p": 0.02327807579785583,
+          "wilcoxon_p": 0.125,
+          "effect": "regresses"
+        },
+        "service_learned_decision_count": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci_low": 0.0,
+          "ci_high": 0.0,
+          "n": 4,
+          "paired_t_p": NaN,
+          "wilcoxon_p": null,
+          "effect": "tie"
+        }
+      }
+    }
+  }
+}
+========== 3. Visualize attention weights ==========
+
+No GPU available, using CPU.
+
+{
+  "output_dir": "results/attention_visualization_upper/seed42",
+  "num_samples": 50
+}
+========== 4. Train true end-to-end joint MAPPO ==========
+
+No GPU available, using CPU.
+
+Configs saved to train_logs/joint_end_to_end_mappo/config_joint_e2e_seed42_200ep.json
+{
+  "timestamp": "joint_e2e_seed42_200ep",
+  "model_name": "joint_mappo",
+  "seed": 42,
+  "num_episodes": 200,
+  "mean_recent_reward": -4030.7944254906097,
+  "model_dir": "saved_models/joint_mappo_joint_e2e_seed42_200ep/final",
+  "log_json": "train_logs/joint_end_to_end_mappo/log_data_joint_e2e_seed42_200ep.json",
+  "final_losses": {
+    "actor": 2.2119186520576477,
+    "critic": 34.43881070613861,
+    "entropy": 6.840784043073654
+  },
+  "summary_path": "results/reports/joint_e2e_mappo_summary_joint_e2e_seed42_200ep.json"
+}
+========== 5. Evaluate true end-to-end joint MAPPO ==========
+Configs saved to results/joint_e2e_evaluations/joint_e2e_eval_seed42/test_logs/20260527_164150_joint_e2e_eval_seed42/config_20260527_164150_joint_e2e_eval_seed42.json
+
+No GPU available, using CPU.
+
+{
+  "metadata": {
+    "experiment_name": "joint_e2e_eval_seed42",
+    "model_dir": "/home/PengYanghan/Lunwen/wodexuexi/saved_models/joint_mappo_joint_e2e_seed42_200ep/final",
+    "model_name": "joint_mappo",
+    "seeds": [
+      42,
+      84,
+      126,
+      168
+    ],
+    "episodes_per_seed": 8,
+    "steps_per_episode": 1000,
+    "log_json": "results/joint_e2e_evaluations/joint_e2e_eval_seed42/test_logs/20260527_164150_joint_e2e_eval_seed42/log_data_20260527_164150_joint_e2e_eval_seed42.json"
+  },
+  "policy": "joint_end_to_end_mappo",
+  "aggregate": {
+    "reward": {
+      "mean": -9865.139424772631,
+      "std": 325.55620280472937
+    },
+    "latency": {
+      "mean": 1580603.5662126243,
+      "std": 267197.7270732376
+    },
+    "energy": {
+      "mean": 81576508.42221256,
+      "std": 31246453.536689878
+    },
+    "fairness": {
+      "mean": 0.45808081794530153,
+      "std": 0.1475117658898045
+    },
+    "offline_rate": {
+      "mean": 0.0021874999999999998,
+      "std": 0.010528050329951884
+    },
+    "deadline_satisfaction_rate": {
+      "mean": 0.13489609495092691,
+      "std": 0.07605036481500987
+    },
+    "offloading_ratio_local": {
+      "mean": 0.29172135573364694,
+      "std": 0.11170941436817428
+    },
+    "offloading_ratio_cooperative": {
+      "mean": 0.5244800822151758,
+      "std": 0.13835996317035537
+    },
+    "offloading_ratio_mbs": {
+      "mean": 0.10848606205117758,
+      "std": 0.09384468807703453
+    },
+    "mbs_load_ratio": {
+      "mean": 0.03774281827675276,
+      "std": 0.03799202666828387
+    }
+  },
+  "per_seed": [
+    {
+      "policy": "joint_end_to_end_mappo",
+      "workload_seed": 42,
+      "seed": 42,
+      "unit_id": "workload42",
+      "episodes": [
+        {
+          "reward": -9655.586697316683,
+          "latency": 1250236.5845296634,
+          "energy": 84240196.16801775,
+          "fairness": 0.5379857420921326,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.22186748193087394,
+          "offloading_ratio_local": 0.1735569480723326,
+          "offloading_ratio_cooperative": 0.6315935644665681,
+          "offloading_ratio_mbs": 0.19484948746110112,
+          "mbs_load_ratio": 0.07948085562423651,
+          "service_learned_decision_count": 16001.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9766.899112972806,
+          "latency": 1810619.201813976,
+          "energy": 62520084.471720405,
+          "fairness": 0.490779310464859,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.08572485695334663,
+          "offloading_ratio_local": 0.42331300631735336,
+          "offloading_ratio_cooperative": 0.5080977968891023,
+          "offloading_ratio_mbs": 0.015589196793544615,
+          "mbs_load_ratio": 0.0033949288425026746,
+          "service_learned_decision_count": 3057.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9600.199162926545,
+          "latency": 1279165.4612907723,
+          "energy": 80955108.75765057,
+          "fairness": 0.5120910406112671,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.2626464598137535,
+          "offloading_ratio_local": 0.3939607382083003,
+          "offloading_ratio_cooperative": 0.5022368394290607,
+          "offloading_ratio_mbs": 0.10080242236263948,
+          "mbs_load_ratio": 0.04118785589991668,
+          "service_learned_decision_count": 9433.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -10068.175935867632,
+          "latency": 1206450.6774870255,
+          "energy": 110755229.91738513,
+          "fairness": 0.5322310328483582,
+          "offline_rate": 0.01,
+          "deadline_satisfaction_rate": 0.14438353717990282,
+          "offloading_ratio_local": 0.20727697533077272,
+          "offloading_ratio_cooperative": 0.4720684180131902,
+          "offloading_ratio_mbs": 0.32065460665603845,
+          "mbs_load_ratio": 0.141500899827219,
+          "service_learned_decision_count": 17171.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9547.202401381013,
+          "latency": 1578113.6195950306,
+          "energy": 66806770.3358372,
+          "fairness": 0.5723744630813599,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.13504274608258285,
+          "offloading_ratio_local": 0.3461437901967309,
+          "offloading_ratio_cooperative": 0.4936529021631961,
+          "offloading_ratio_mbs": 0.16020330764007232,
+          "mbs_load_ratio": 0.03800614674876882,
+          "service_learned_decision_count": 6548.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -10099.586851891121,
+          "latency": 1323234.8567037953,
+          "energy": 122490292.52401918,
+          "fairness": 0.5225380659103394,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.22653516172966265,
+          "offloading_ratio_local": 0.14311726687399326,
+          "offloading_ratio_cooperative": 0.6846192947845365,
+          "offloading_ratio_mbs": 0.17226343834147073,
+          "mbs_load_ratio": 0.06233950791650736,
+          "service_learned_decision_count": 12682.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9485.709485890255,
+          "latency": 1914213.5735094943,
+          "energy": 29089079.203943025,
+          "fairness": 0.16781137883663177,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.03359693868792642,
+          "offloading_ratio_local": 0.36858599733599734,
+          "offloading_ratio_cooperative": 0.22266269841269837,
+          "offloading_ratio_mbs": 0.004751304251304251,
+          "mbs_load_ratio": 0.001724195861055458,
+          "service_learned_decision_count": 1102.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -10567.524176357909,
+          "latency": 1521898.9000993497,
+          "energy": 76114704.0114538,
+          "fairness": 0.5327631235122681,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.14230125821002784,
+          "offloading_ratio_local": 0.26549350926850945,
+          "offloading_ratio_cooperative": 0.5741714035964038,
+          "offloading_ratio_mbs": 0.1593350871350868,
+          "mbs_load_ratio": 0.04660352476818216,
+          "service_learned_decision_count": 5498.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        }
+      ],
+      "per_seed_mean": {
+        "reward": -9848.860478075494,
+        "latency": 1485491.6093786384,
+        "energy": 79121433.17375338,
+        "fairness": 0.483571769669652,
+        "offline_rate": 0.00125,
+        "deadline_satisfaction_rate": 0.1565123050735096,
+        "offloading_ratio_local": 0.29018102895049874,
+        "offloading_ratio_cooperative": 0.5111378647193445,
+        "offloading_ratio_mbs": 0.1410561063301572,
+        "mbs_load_ratio": 0.051779739436048584
+      },
+      "unit_mean": {
+        "reward": -9848.860478075494,
+        "latency": 1485491.6093786384,
+        "energy": 79121433.17375338,
+        "fairness": 0.483571769669652,
+        "offline_rate": 0.00125,
+        "deadline_satisfaction_rate": 0.1565123050735096,
+        "offloading_ratio_local": 0.29018102895049874,
+        "offloading_ratio_cooperative": 0.5111378647193445,
+        "offloading_ratio_mbs": 0.1410561063301572,
+        "mbs_load_ratio": 0.051779739436048584
+      }
+    },
+    {
+      "policy": "joint_end_to_end_mappo",
+      "workload_seed": 84,
+      "seed": 84,
+      "unit_id": "workload84",
+      "episodes": [
+        {
+          "reward": -11029.30931367157,
+          "latency": 1804042.6190354784,
+          "energy": 95436410.71193124,
+          "fairness": 0.5367559194564819,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.08822541618483715,
+          "offloading_ratio_local": 0.22847922077922053,
+          "offloading_ratio_cooperative": 0.7008111111111113,
+          "offloading_ratio_mbs": 0.04770966810966817,
+          "mbs_load_ratio": 0.007116592400142382,
+          "service_learned_decision_count": 3779.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9752.634177540238,
+          "latency": 1828548.7593153391,
+          "energy": 70843370.38768499,
+          "fairness": 0.5225346088409424,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.07473796833190743,
+          "offloading_ratio_local": 0.4511752368468042,
+          "offloading_ratio_cooperative": 0.49628652194487494,
+          "offloading_ratio_mbs": 0.018538241208321284,
+          "mbs_load_ratio": 0.004369648240098543,
+          "service_learned_decision_count": 3411.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -10210.868505569359,
+          "latency": 1279235.3099706944,
+          "energy": 136231824.54299834,
+          "fairness": 0.53676837682724,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.19843046259784525,
+          "offloading_ratio_local": 0.18254298095164762,
+          "offloading_ratio_cooperative": 0.5951152569607744,
+          "offloading_ratio_mbs": 0.22234176208757872,
+          "mbs_load_ratio": 0.08835175004664735,
+          "service_learned_decision_count": 13817.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9875.992209221607,
+          "latency": 1914522.1163076414,
+          "energy": 62576699.93710699,
+          "fairness": 0.16215331852436066,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.03835200815920877,
+          "offloading_ratio_local": 0.40781701076701043,
+          "offloading_ratio_cooperative": 0.4852110075110078,
+          "offloading_ratio_mbs": 0.004971981721981723,
+          "mbs_load_ratio": 0.0015013391362652282,
+          "service_learned_decision_count": 2262.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9701.87515852601,
+          "latency": 1281524.3912886544,
+          "energy": 83501925.31744179,
+          "fairness": 0.50333571434021,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.26060897070285954,
+          "offloading_ratio_local": 0.2019317421742348,
+          "offloading_ratio_cooperative": 0.6856504645071144,
+          "offloading_ratio_mbs": 0.11241779331865305,
+          "mbs_load_ratio": 0.044385311802976085,
+          "service_learned_decision_count": 10049.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9810.366304858711,
+          "latency": 1781969.2023085088,
+          "energy": 72351153.43584488,
+          "fairness": 0.5530737042427063,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.09764416893123612,
+          "offloading_ratio_local": 0.4654896631146626,
+          "offloading_ratio_cooperative": 0.4906369685869693,
+          "offloading_ratio_mbs": 0.019873368298368284,
+          "mbs_load_ratio": 0.003918545017265886,
+          "service_learned_decision_count": 3466.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9693.331104769582,
+          "latency": 1271241.3323410403,
+          "energy": 96755199.4517662,
+          "fairness": 0.5182220339775085,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.25078179683155577,
+          "offloading_ratio_local": 0.29578118554375327,
+          "offloading_ratio_cooperative": 0.5921211871529107,
+          "offloading_ratio_mbs": 0.11209762730333686,
+          "mbs_load_ratio": 0.04556586662739088,
+          "service_learned_decision_count": 9350.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -10167.745570219262,
+          "latency": 1444761.812945787,
+          "energy": 132816558.14147939,
+          "fairness": 0.5616449117660522,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.1925407220252239,
+          "offloading_ratio_local": 0.1315382048352408,
+          "offloading_ratio_cooperative": 0.7053703824151425,
+          "offloading_ratio_mbs": 0.16309141274961733,
+          "mbs_load_ratio": 0.04886554619064305,
+          "service_learned_decision_count": 12064.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        }
+      ],
+      "per_seed_mean": {
+        "reward": -10030.265293047043,
+        "latency": 1575730.6929391432,
+        "energy": 93814142.74078172,
+        "fairness": 0.48681107349693775,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.15016518922058425,
+        "offloading_ratio_local": 0.2955944056265718,
+        "offloading_ratio_cooperative": 0.5939003625237381,
+        "offloading_ratio_mbs": 0.08763023184969068,
+        "mbs_load_ratio": 0.030509324932678675
+      },
+      "unit_mean": {
+        "reward": -10030.265293047043,
+        "latency": 1575730.6929391432,
+        "energy": 93814142.74078172,
+        "fairness": 0.48681107349693775,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.15016518922058425,
+        "offloading_ratio_local": 0.2955944056265718,
+        "offloading_ratio_cooperative": 0.5939003625237381,
+        "offloading_ratio_mbs": 0.08763023184969068,
+        "mbs_load_ratio": 0.030509324932678675
+      }
+    },
+    {
+      "policy": "joint_end_to_end_mappo",
+      "workload_seed": 126,
+      "seed": 126,
+      "unit_id": "workload126",
+      "episodes": [
+        {
+          "reward": -9573.771613124021,
+          "latency": 1914818.5990427171,
+          "energy": 36255901.7426868,
+          "fairness": 0.1780838519334793,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.0340363440507878,
+          "offloading_ratio_local": 0.34356540412202163,
+          "offloading_ratio_cooperative": 0.27204585479879606,
+          "offloading_ratio_mbs": 0.005388741079182256,
+          "mbs_load_ratio": 0.0021650713316281336,
+          "service_learned_decision_count": 1208.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9579.96114663746,
+          "latency": 1901677.339507708,
+          "energy": 40584816.84608433,
+          "fairness": 0.24611230194568634,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.04281968595905645,
+          "offloading_ratio_local": 0.4537976190476188,
+          "offloading_ratio_cooperative": 0.3260166666666666,
+          "offloading_ratio_mbs": 0.0011857142857142858,
+          "mbs_load_ratio": 0.00020859267498867052,
+          "service_learned_decision_count": 1509.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9607.424510723753,
+          "latency": 1929112.4330752902,
+          "energy": 27216153.660022028,
+          "fairness": 0.1488405019044876,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.03190494996938692,
+          "offloading_ratio_local": 0.3234412698412698,
+          "offloading_ratio_cooperative": 0.2469686507936508,
+          "offloading_ratio_mbs": 0.002590079365079365,
+          "mbs_load_ratio": 0.0006393369593369594,
+          "service_learned_decision_count": 903.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9646.765947452293,
+          "latency": 1730470.0533003793,
+          "energy": 61349830.56898376,
+          "fairness": 0.5608631372451782,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.10478575833097616,
+          "offloading_ratio_local": 0.37628690476190435,
+          "offloading_ratio_cooperative": 0.5099869047619053,
+          "offloading_ratio_mbs": 0.024726190476190464,
+          "mbs_load_ratio": 0.0073085865190855755,
+          "service_learned_decision_count": 2542.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9917.47502600519,
+          "latency": 1848144.378444665,
+          "energy": 85058295.81631765,
+          "fairness": 0.4437224566936493,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.0688978899582118,
+          "offloading_ratio_local": 0.39771460630685546,
+          "offloading_ratio_cooperative": 0.5416432122070594,
+          "offloading_ratio_mbs": 0.01664218148608543,
+          "mbs_load_ratio": 0.0032264523519715776,
+          "service_learned_decision_count": 3454.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9653.327883429658,
+          "latency": 1918415.6712714355,
+          "energy": 33352312.657473017,
+          "fairness": 0.1652505248785019,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.03549984004737478,
+          "offloading_ratio_local": 0.4008972222222221,
+          "offloading_ratio_cooperative": 0.26598814102564095,
+          "offloading_ratio_mbs": 0.0031146367521367522,
+          "mbs_load_ratio": 0.0010713770930917503,
+          "service_learned_decision_count": 1167.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9630.994543112372,
+          "latency": 1333084.5512664397,
+          "energy": 76003836.24672318,
+          "fairness": 0.5335044860839844,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.16909756543984214,
+          "offloading_ratio_local": 0.32526703019203,
+          "offloading_ratio_cooperative": 0.4800448190698191,
+          "offloading_ratio_mbs": 0.19268815073815107,
+          "mbs_load_ratio": 0.07198536631340478,
+          "service_learned_decision_count": 7883.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9806.57104654569,
+          "latency": 1263514.5742069976,
+          "energy": 96776526.32409881,
+          "fairness": 0.5454205274581909,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.20864073445836773,
+          "offloading_ratio_local": 0.1374253798496193,
+          "offloading_ratio_cooperative": 0.655314697678296,
+          "offloading_ratio_mbs": 0.20725992247208547,
+          "mbs_load_ratio": 0.08357297458744854,
+          "service_learned_decision_count": 13593.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        }
+      ],
+      "per_seed_mean": {
+        "reward": -9677.036464628804,
+        "latency": 1729904.700014454,
+        "energy": 57074709.232798696,
+        "fairness": 0.35272472351789474,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.08696034602675047,
+        "offloading_ratio_local": 0.3447994295429427,
+        "offloading_ratio_cooperative": 0.41225111837522926,
+        "offloading_ratio_mbs": 0.05669945208182813,
+        "mbs_load_ratio": 0.021272219728869498
+      },
+      "unit_mean": {
+        "reward": -9677.036464628804,
+        "latency": 1729904.700014454,
+        "energy": 57074709.232798696,
+        "fairness": 0.35272472351789474,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.08696034602675047,
+        "offloading_ratio_local": 0.3447994295429427,
+        "offloading_ratio_cooperative": 0.41225111837522926,
+        "offloading_ratio_mbs": 0.05669945208182813,
+        "mbs_load_ratio": 0.021272219728869498
+      }
+    },
+    {
+      "policy": "joint_end_to_end_mappo",
+      "workload_seed": 168,
+      "seed": 168,
+      "unit_id": "workload168",
+      "episodes": [
+        {
+          "reward": -9655.425325861468,
+          "latency": 1896864.0505233526,
+          "energy": 38169966.26961061,
+          "fairness": 0.25003570318222046,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.04298864458081908,
+          "offloading_ratio_local": 0.352839935064935,
+          "offloading_ratio_cooperative": 0.3962286796536797,
+          "offloading_ratio_mbs": 0.004931385281385282,
+          "mbs_load_ratio": 0.0015022761600340555,
+          "service_learned_decision_count": 1449.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9618.361663740916,
+          "latency": 1282345.1037208403,
+          "energy": 86542251.19270952,
+          "fairness": 0.5138328075408936,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.2591185409542302,
+          "offloading_ratio_local": 0.34341652307792253,
+          "offloading_ratio_cooperative": 0.5398145476003632,
+          "offloading_ratio_mbs": 0.11676892932171454,
+          "mbs_load_ratio": 0.046079160646797575,
+          "service_learned_decision_count": 10295.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9905.3106826941,
+          "latency": 1596964.5614568568,
+          "energy": 98868335.15933639,
+          "fairness": 0.5538427829742432,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.13443314851972815,
+          "offloading_ratio_local": 0.154488530913531,
+          "offloading_ratio_cooperative": 0.6720543956043952,
+          "offloading_ratio_mbs": 0.16445707348207358,
+          "mbs_load_ratio": 0.03691668829917141,
+          "service_learned_decision_count": 6832.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -10340.634308454395,
+          "latency": 1572257.4467442355,
+          "energy": 143341883.65218708,
+          "fairness": 0.5520199537277222,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.14528772580602098,
+          "offloading_ratio_local": 0.1276779810402879,
+          "offloading_ratio_cooperative": 0.7091258788682936,
+          "offloading_ratio_mbs": 0.16319614009141903,
+          "mbs_load_ratio": 0.03829211728209791,
+          "service_learned_decision_count": 9094.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -10113.680049575001,
+          "latency": 1537752.778917666,
+          "energy": 113354849.42172386,
+          "fairness": 0.5544991493225098,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.1504999016076148,
+          "offloading_ratio_local": 0.17231181596181602,
+          "offloading_ratio_cooperative": 0.665263675213675,
+          "offloading_ratio_mbs": 0.16042450882450887,
+          "mbs_load_ratio": 0.04178764161388393,
+          "service_learned_decision_count": 6797.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9850.073117403836,
+          "latency": 1286603.9834603507,
+          "energy": 101724981.2277192,
+          "fairness": 0.6519610285758972,
+          "offline_rate": 0.06,
+          "deadline_satisfaction_rate": 0.13446265023826026,
+          "offloading_ratio_local": 0.15549600427605728,
+          "offloading_ratio_cooperative": 0.5113098364542961,
+          "offloading_ratio_mbs": 0.3331941592696483,
+          "mbs_load_ratio": 0.13122496926547375,
+          "service_learned_decision_count": 17148.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9959.200623241226,
+          "latency": 1251046.5468490345,
+          "energy": 119570739.7445817,
+          "fairness": 0.5144029855728149,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.22507153119205797,
+          "offloading_ratio_local": 0.16985647599734335,
+          "offloading_ratio_cooperative": 0.6473682587493355,
+          "offloading_ratio_mbs": 0.18177526525332272,
+          "mbs_load_ratio": 0.07528689069515321,
+          "service_learned_decision_count": 10442.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        },
+        {
+          "reward": -9792.477935742505,
+          "latency": 1826463.6284737538,
+          "energy": 68792981.66426305,
+          "fairness": 0.4831312298774719,
+          "offline_rate": 0.0,
+          "deadline_satisfaction_rate": 0.0757101729641753,
+          "offloading_ratio_local": 0.4143972041847035,
+          "offloading_ratio_cooperative": 0.5038825937950935,
+          "offloading_ratio_mbs": 0.06372020202020215,
+          "mbs_load_ratio": 0.008190168112702196,
+          "service_learned_decision_count": 3873.0,
+          "service_heuristic_decision_count": 0.0,
+          "service_fallback_count": 0.0,
+          "service_predict_exception_fallback_count": 0.0
+        }
+      ],
+      "per_seed_mean": {
+        "reward": -9904.39546333918,
+        "latency": 1531287.262518261,
+        "energy": 96295748.54151642,
+        "fairness": 0.5092157050967216,
+        "offline_rate": 0.0075,
+        "deadline_satisfaction_rate": 0.14594653948286335,
+        "offloading_ratio_local": 0.23631055881457458,
+        "offloading_ratio_cooperative": 0.5806309832423915,
+        "offloading_ratio_mbs": 0.1485584579430343,
+        "mbs_load_ratio": 0.04740998900941426
+      },
+      "unit_mean": {
+        "reward": -9904.39546333918,
+        "latency": 1531287.262518261,
+        "energy": 96295748.54151642,
+        "fairness": 0.5092157050967216,
+        "offline_rate": 0.0075,
+        "deadline_satisfaction_rate": 0.14594653948286335,
+        "offloading_ratio_local": 0.23631055881457458,
+        "offloading_ratio_cooperative": 0.5806309832423915,
+        "offloading_ratio_mbs": 0.1485584579430343,
+        "mbs_load_ratio": 0.04740998900941426
+      }
+    }
+  ],
+  "summary_path": "results/joint_e2e_evaluations/joint_e2e_eval_seed42/joint_e2e_evaluation_summary.json"
+}
+========== 6. Summarize key outputs ==========
+
+== results/joint_experiments/upper_vanilla_vs_attention_heuristic/joint_experiment_summary.json
+exists: True
+
+== results/attention_visualization_upper/seed42/attention_samples.json
+exists: True
+num_attention_samples: 50
+
+== results/reports/joint_e2e_mappo_summary_joint_e2e_seed42_200ep.json
+exists: True
+model_dir: saved_models/joint_mappo_joint_e2e_seed42_200ep/final
+mean_recent_reward: -4030.7944254906097
+
+== results/joint_e2e_evaluations/joint_e2e_eval_seed42/joint_e2e_evaluation_summary.json
+exists: True
+aggregate:
+  reward: mean=-9865.139424772631 std=325.55620280472937
+  latency: mean=1580603.5662126243 std=267197.7270732376
+  energy: mean=81576508.42221256 std=31246453.536689878
+  fairness: mean=0.45808081794530153 std=0.1475117658898045
+  offline_rate: mean=0.0021874999999999998 std=0.010528050329951884
+  deadline_satisfaction_rate: mean=0.13489609495092691 std=0.07605036481500987
+  offloading_ratio_local: mean=0.29172135573364694 std=0.11170941436817428
+  offloading_ratio_cooperative: mean=0.5244800822151758 std=0.13835996317035537
+  offloading_ratio_mbs: mean=0.10848606205117758 std=0.09384468807703453
+  mbs_load_ratio: mean=0.03774281827675276 std=0.03799202666828387
+========== ALL REMAINING EXPERIMENTS FINISHED ==========
+Upper comparison summary: results/joint_experiments/upper_vanilla_vs_attention_heuristic/joint_experiment_summary.json
+Attention visualization: results/attention_visualization_upper/seed42
+Joint E2E train summary: results/reports/joint_e2e_mappo_summary_joint_e2e_seed42_200ep.json
+Joint E2E evaluation summary: results/joint_e2e_evaluations/joint_e2e_eval_seed42/joint_e2e_evaluation_summary.json

@@ -24,8 +24,10 @@
 
 from marl_models.base_model import MARLModel
 from marl_models.attention_mappo.attention_mappo import AttentionMAPPO
+from marl_models.joint_mappo.joint_mappo import JointMAPPO
 from marl_models.offload_mappo.offload_mappo import OffloadMAPPO
 from marl_models.uncoordinated_greedy_baseline.uncoordinated_greedy_model import UncoordinatedGreedyModel
+from marl_models.vanilla_mappo.vanilla_mappo import VanillaMAPPO
 import config
 import torch
 import os
@@ -57,6 +59,16 @@ def get_model(model_name: str) -> MARLModel:
     if model_name == "attention_mappo":
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return AttentionMAPPO(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
+    if model_name == "vanilla_mappo":
+        return VanillaMAPPO(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
+    if model_name == "joint_mappo":
+        return JointMAPPO(
+            model_name=model_name,
+            num_agents=config.NUM_UAVS,
+            obs_dim=config.OBS_DIM_SINGLE + config.OFFLOAD_OBS_DIM_SINGLE,
+            action_dim=config.ACTION_DIM,
+            device=device,
+        )
     elif model_name in {"offload_mappo", "constrained_attention_offload_mappo", "no_attention_offload_mappo"}:
         return OffloadMAPPO(
             model_name=model_name,

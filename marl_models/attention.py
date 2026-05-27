@@ -107,6 +107,18 @@ class CrossAttentionExtractor(nn.Module):
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return output.squeeze(1)
 
+    def get_attention_weights(self, self_embedding: torch.Tensor, target_embeddings: torch.Tensor, mask: torch.Tensor | None = None) -> torch.Tensor:
+        batch_size = self_embedding.shape[0]
+        Q = self.query_layer(self_embedding).unsqueeze(1).view(batch_size, 1, config.ATTN_NUM_HEADS, self.head_dim).transpose(1, 2)
+        K = self.key_layer(target_embeddings).view(batch_size, -1, config.ATTN_NUM_HEADS, self.head_dim).transpose(1, 2)
+        scores = torch.matmul(Q, K.transpose(-2, -1)) * self.scale
+        if mask is not None:
+            mask_expanded = mask.unsqueeze(1).unsqueeze(1)
+            scores = scores.masked_fill(mask_expanded <= 0, float("-inf"))
+        weights = F.softmax(scores, dim=-1)
+        weights = torch.nan_to_num(weights, nan=0.0)
+        return weights.squeeze(2)
+
 
 # 类 AttentionActorBase，继承自 ：核心类，封装本模块中的主要状态和行为。
 class AttentionActorBase(nn.Module):
@@ -177,6 +189,28 @@ class AttentionActorBase(nn.Module):
         fusion = F.relu(self.ln2(self.fc2(fusion)))
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return fusion
+
+    def extract_attention_weights(self, obs_flat: torch.Tensor) -> dict[str, torch.Tensor]:
+        batch_size = obs_flat.shape[0]
+        own_state = obs_flat[:, : self.own_dim]
+        neighbor_part = obs_flat[:, self.own_dim : self.own_dim + self.neighbor_block_size]
+        neighbor_states = neighbor_part.reshape(batch_size, self.num_neighbors, self.neighbor_obs_dim)
+        ue_part = obs_flat[:, self.own_dim + self.neighbor_block_size :]
+        ue_states = ue_part.reshape(batch_size, self.num_ues, self.ue_obs_dim)
+        neighbor_mask = (torch.abs(neighbor_states).sum(dim=-1) > 1e-5).float()
+        ue_mask = (torch.abs(ue_states).sum(dim=-1) > 1e-5).float()
+        self_emb = self.self_encoder(own_state)
+        neighbor_embs = self.neighbor_encoder(neighbor_states)
+        ue_embs = self.ue_encoder(ue_states)
+        return {
+            "neighbor_weights": self.neighbor_attn.get_attention_weights(self_emb, neighbor_embs, mask=neighbor_mask),
+            "ue_weights": self.ue_attn.get_attention_weights(self_emb, ue_embs, mask=ue_mask),
+            "neighbor_mask": neighbor_mask,
+            "ue_mask": ue_mask,
+            "neighbor_states": neighbor_states,
+            "ue_states": ue_states,
+            "own_state": own_state,
+        }
 
 
 # 类 AttentionCriticBase，继承自 ：核心类，封装本模块中的主要状态和行为。

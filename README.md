@@ -1,20 +1,20 @@
-# 面向多无人机移动边缘计算的质量感知约束式双层多智能体强化学习方法
+# 基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化方法
 
-**Quality-aware Constrained Hierarchical Multi-Agent Reinforcement Learning for Multi-UAV Mobile Edge Computing**
+**Attention-MAPPO Based Collaborative Trajectory and Task Offloading Optimization for Multi-UAV Mobile Edge Computing**
 
 ## 摘要
 
-多无人机辅助移动边缘计算能够通过空中节点的机动部署提升边缘覆盖、任务接入和协同计算能力，但系统性能同时受到无人机轨迹、无线链路状态、请求级卸载决策、截止期约束和宏基站回传负载的共同影响。若将无人机连续轨迹控制与多请求离散卸载决策直接合并为单一联合动作空间，训练复杂度和在线决策开销都会迅速上升。为此，本文提出一种面向多无人机移动边缘计算的质量感知约束式双层多智能体强化学习框架。该框架将协同调度拆分为上层轨迹控制和下层请求级卸载两个决策层：上层采用 attention-MAPPO 建模无人机之间的协同关系并输出轨迹动作；下层采用 constrained attention offload MAPPO，在每个有效服务请求上选择本地无人机执行、协作无人机执行或宏基站执行。本文进一步设计质量感知动作 mask 屏蔽明显不可行的协作与宏基站动作，并在下层奖励中引入 Lagrange 约束项刻画截止期满足率与宏基站负载之间的权衡。同时，本文在系统模型中显式建模无人机飞行能耗 $E_{fly} = P_{move} \cdot t_{moving} + P_{hover} \cdot t_{hovering}$ 和用户设备电池动态 $B_{t+1} = \min(B_{max}, B_t - E_{static} - E_{tx} - E_{rx} + E_{harv})$，并通过无线能量传输机制维持终端设备在线。实验基于 5 架 UAV、100 个用户设备、3 个 training seeds 和 10 组 workload seeds 展开。结果表明，完整双层 MARL 相比 uncoordinated greedy + heuristic 基线可将平均 reward 从 -5933.9 提升到 -1451.7（$\Delta = +4482.2$, $p = 1.0\times10^{-32}$），UAV 侧能耗从 114.70M 降至 58.06M（$\Delta = -56.64M$, $p = 1.7\times10^{-19}$），公平性由 0.7745 提升至 0.9363（$\Delta = +0.162$, $p = 1.7\times10^{-11}$），offline rate 由 0.58% 降至 0.00%。同时，当前权重配置下完整方法的 DSR 从 0.2734 降至 0.2083（$\Delta=-0.0651$, $p=2.4\times10^{-11}$），说明该配置更偏向能耗、公平性和在线率收益，而非单独最大化截止期满足率。仅替换上层轨迹策略（attention-MAPPO + heuristic）时，DSR 从 0.2734 提升至 0.2879，表明 DSR 下降主要来自下层学习式卸载策略对能耗与负载分布的重新权衡。消融实验表明，Lagrange 约束、质量 mask 和 attention 模块会显著改变卸载分布与能耗/负载权衡。进一步通过调整 reward 权重与 Lagrange 约束阈值的 DSR-aware 配置，完整方法的 DSR 可从 0.2083 提升至 0.2435（$\Delta$ 相对基线从 -0.065 缩小至 -0.030），同时保持 28% 的能耗节省，验证了该框架在不同服务质量偏好下的可调节性。
+多无人机辅助移动边缘计算能够通过空中节点的机动部署提升边缘覆盖、任务接入和协同计算能力，但系统性能同时受到无人机轨迹、无线链路状态、请求级卸载决策、截止期约束和宏基站回传负载的共同影响。若将无人机连续轨迹控制与多请求离散卸载决策直接合并为单一联合动作空间，训练复杂度和在线决策开销都会迅速上升。为此，本文提出一种基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化框架。该框架将协同调度拆分为上层轨迹控制和下层请求级卸载两个决策层：上层采用 attention-MAPPO 建模无人机之间的协同关系并输出轨迹动作；下层采用 constrained attention offload MAPPO，在每个有效服务请求上选择本地无人机执行、协作无人机执行或宏基站执行。本文进一步设计质量感知动作 mask 屏蔽明显不可行的协作与宏基站动作，并在下层奖励中引入 Lagrange 约束项刻画截止期满足率与宏基站负载之间的权衡。同时，本文在系统模型中显式建模无人机飞行能耗 $E_{fly} = P_{move} \cdot t_{moving} + P_{hover} \cdot t_{hovering}$ 和用户设备电池动态 $B_{t+1} = \min(B_{max}, B_t - E_{static} - E_{tx} - E_{rx} + E_{harv})$，并通过无线能量传输机制维持终端设备在线。实验基于 5 架 UAV、100 个用户设备、3 个 training seeds 和 10 组 workload seeds 展开。结果表明，完整双层 MARL 相比 uncoordinated greedy + heuristic 基线可将平均 reward 从 -5933.9 提升到 -1451.7（$\Delta = +4482.2$, $p = 1.0\times10^{-32}$），UAV 侧能耗从 114.70M 降至 58.06M（$\Delta = -56.64M$, $p = 1.7\times10^{-19}$），公平性由 0.7745 提升至 0.9363（$\Delta = +0.162$, $p = 1.7\times10^{-11}$），offline rate 由 0.58% 降至 0.00%。同时，当前权重配置下完整方法的 DSR 从 0.2734 降至 0.2083（$\Delta=-0.0651$, $p=2.4\times10^{-11}$），说明该配置更偏向能耗、公平性和在线率收益，而非单独最大化截止期满足率。仅替换上层轨迹策略（attention-MAPPO + heuristic）时，DSR 从 0.2734 提升至 0.2879，表明 DSR 下降主要来自下层学习式卸载策略对能耗与负载分布的重新权衡。消融实验表明，Lagrange 约束、质量 mask 和 attention 模块会显著改变卸载分布与能耗/负载权衡。进一步地，DSR-priority 配置通过调整 reward 权重与 Lagrange 约束阈值，将完整方法的 DSR 从 0.2083 提升至 0.2435（$\Delta$ 相对基线从 -0.065 缩小至 -0.030），同时保持约 28% 的能耗节省，验证了该框架在不同服务质量偏好下的可调节性。
 
-**关键词：** 多无人机；移动边缘计算；任务卸载；多智能体强化学习；MAPPO；双层优化；质量感知约束；Lagrange 约束
+**关键词：** 多无人机；移动边缘计算；轨迹优化；任务卸载；Attention-MAPPO；多智能体强化学习；双层优化；Lagrange 约束
 
 ---
 
 ## Abstract
 
-Multi-UAV assisted mobile edge computing (MEC) enhances edge coverage, task admission, and cooperative computing through aerial node deployment, yet system performance is jointly affected by UAV trajectory, wireless link dynamics, per-request offloading decisions, deadline constraints, and macro base station (MBS) backhaul load. Directly combining continuous UAV trajectory control with discrete per-request offloading decisions into a single joint action space leads to prohibitive training complexity and online decision latency. This paper proposes a quality-aware constrained hierarchical multi-agent reinforcement learning (MARL) framework for multi-UAV MEC. The framework decomposes coordinated scheduling into an upper-layer trajectory control module and a lower-layer per-request offloading module. The upper layer employs attention-MAPPO to model inter-UAV coordination and output trajectory actions; the lower layer employs constrained attention offload MAPPO to select, for each service request, among local UAV execution, cooperative UAV execution, and MBS execution. We design a quality-aware action mask that prunes clearly infeasible cooperative and MBS actions, and introduce Lagrange constraint terms in the lower-layer reward to characterize the trade-off between deadline satisfaction rate (DSR) and MBS load ratio. Additionally, we explicitly model UAV flight energy and UE battery dynamics, maintaining terminal device availability via wireless power transfer (WPT). Experiments are conducted across 3 training seeds and 10 workload seeds on a system with 5 UAVs and 100 UEs. Results show that the full hierarchical MARL improves mean reward from -5933.9 to -1451.7 relative to the uncoordinated greedy + heuristic baseline ($\Delta = +4482.2$, $p = 1.0\times10^{-32}$), reduces UAV-side energy from 114.70M to 58.06M ($\Delta = -56.64M$, $p = 1.7\times10^{-19}$), raises fairness from 0.7745 to 0.9363 ($\Delta = +0.162$, $p = 1.7\times10^{-11}$), and lowers the offline rate from 0.58% to 0.00%. Under the current reward weights, however, DSR decreases from 0.2734 to 0.2083 ($\Delta=-0.0651$, $p=2.4\times10^{-11}$), indicating a working point that favors energy, fairness, and UE availability rather than maximizing DSR alone. In contrast, replacing only the upper-layer trajectory policy with attention-MAPPO improves DSR from 0.2734 to 0.2879, suggesting that the DSR degradation mainly comes from the lower-layer learned offloading trade-off. Ablation studies further show that the Lagrange constraint, quality mask, and attention module each independently shape the offloading distribution and energy-load trade-off. Furthermore, a DSR-aware configuration with adjusted reward weights and Lagrange constraint thresholds raises the full method's DSR from 0.2083 to 0.2435 (narrowing the gap vs. baseline from -0.065 to -0.030), while retaining 28% energy savings, demonstrating the framework's tunability across different quality-of-service preferences.
+Multi-UAV assisted mobile edge computing (MEC) enhances edge coverage, task admission, and cooperative computing through aerial node deployment, yet system performance is jointly affected by UAV trajectory, wireless link dynamics, per-request offloading decisions, deadline constraints, and macro base station (MBS) backhaul load. Directly combining continuous UAV trajectory control with discrete per-request offloading decisions into a single joint action space leads to prohibitive training complexity and online decision latency. This paper proposes an Attention-MAPPO based collaborative trajectory and task offloading optimization framework for multi-UAV MEC. The framework decomposes coordinated scheduling into an upper-layer trajectory control module and a lower-layer per-request offloading module. The upper layer employs attention-MAPPO to model inter-UAV coordination and output trajectory actions; the lower layer employs constrained attention offload MAPPO to select, for each service request, among local UAV execution, cooperative UAV execution, and MBS execution. We design a quality-aware action mask that prunes clearly infeasible cooperative and MBS actions, and introduce Lagrange constraint terms in the lower-layer reward to characterize the trade-off between deadline satisfaction rate (DSR) and MBS load ratio. Additionally, we explicitly model UAV flight energy and UE battery dynamics, maintaining terminal device availability via wireless power transfer (WPT). Experiments are conducted across 3 training seeds and 10 workload seeds on a system with 5 UAVs and 100 UEs. Results show that the full hierarchical MARL improves mean reward from -5933.9 to -1451.7 relative to the uncoordinated greedy + heuristic baseline ($\Delta = +4482.2$, $p = 1.0\times10^{-32}$), reduces UAV-side energy from 114.70M to 58.06M ($\Delta = -56.64M$, $p = 1.7\times10^{-19}$), raises fairness from 0.7745 to 0.9363 ($\Delta = +0.162$, $p = 1.7\times10^{-11}$), and lowers the offline rate from 0.58% to 0.00%. Under the current reward weights, however, DSR decreases from 0.2734 to 0.2083 ($\Delta=-0.0651$, $p=2.4\times10^{-11}$), indicating a working point that favors energy, fairness, and UE availability rather than maximizing DSR alone. In contrast, replacing only the upper-layer trajectory policy with attention-MAPPO improves DSR from 0.2734 to 0.2879, suggesting that the DSR degradation mainly comes from the lower-layer learned offloading trade-off. Ablation studies further show that the Lagrange constraint, quality mask, and attention module each independently shape the offloading distribution and energy-load trade-off. Furthermore, a DSR-priority configuration with adjusted reward weights and Lagrange constraint thresholds raises the full method's DSR from 0.2083 to 0.2435 (narrowing the gap vs. baseline from -0.065 to -0.030), while retaining 28% energy savings, demonstrating the framework's tunability across different quality-of-service preferences.
 
-**Keywords:** Multi-UAV; mobile edge computing; task offloading; multi-agent reinforcement learning; MAPPO; hierarchical optimization; quality-aware constraints; Lagrange constraints
+**Keywords:** Multi-UAV; mobile edge computing; trajectory optimization; task offloading; Attention-MAPPO; multi-agent reinforcement learning; hierarchical optimization; Lagrange constraints
 
 ---
 
@@ -30,9 +30,10 @@ Multi-UAV assisted mobile edge computing (MEC) enhances edge coverage, task admi
 
 ### 1.2 主要贡献
 
-1. 提出一种质量感知约束式双层 MARL 框架，将多 UAV MEC 中的轨迹控制和请求级卸载拆分为上层 attention-MAPPO 和下层 constrained attention offload MAPPO 两个协同决策层，以降低直接联合建模的动作耦合复杂度。
+1. 提出一种基于 Attention-MAPPO 的多 UAV MEC 轨迹与任务卸载协同优化框架，将轨迹控制和请求级卸载拆分为上层 attention-MAPPO 和下层 constrained attention offload MAPPO 两个协同决策层，以降低直接联合建模的动作耦合复杂度。
 2. 设计请求级质量感知动作 mask，对明显不可行的 cooperative UAV 与 MBS 动作进行运行时屏蔽，减少无效探索。消融实验表明，mask 会改变 MBS load ratio 和协作卸载比例。
 3. 在下层奖励中引入 Lagrange 约束机制，将 DSR 和 MBS load ratio 纳入可解释的约束权衡。消融实验表明，去除 Lagrange 约束后 MBS load ratio 从 11.0% 上升至 17.1%。
+4. 补充实现上层 vanilla MAPPO、attention 权重可视化和端到端 joint MAPPO baseline，用于分析 attention 机制的作用边界和直接联合动作学习的训练难度。
 
 此外，本文在系统模型中显式考虑 UAV 飞行能耗、UE 电池动态和 WPT 机制，并基于 training seed 与 workload seed 的成对统计单元（N=30）报告均值、95% 置信区间、paired t-test 和 Wilcoxon 检验。这些内容作为系统建模与实验规范支撑上述方法验证，不单独作为算法创新点。
 
@@ -156,7 +157,7 @@ $$\max_{\pi^{upper}, \pi^{lower}} \mathbb{E}\left[\sum_{t=0}^{T-1} \gamma^t R_t\
 
 其中系统奖励 $R_t$ 为：
 
-$$R_t = \alpha_J \cdot J_t - \alpha_L \cdot \bar{L}_t - \alpha_E \cdot \bar{E}_t - \alpha_O \cdot O_t + \alpha_D \cdot DSR_t - \alpha_M \cdot M_t$$
+$$R_t = W_J \cdot J_t - W_L \cdot \bar{L}_t - W_E \cdot \bar{E}_t - W_O \cdot O_t + W_{DSR} \cdot DSR_t - W_M \cdot M_t$$
 
 式中各项含义：
 - $J_t \in [0,1]$：Jain 公平性指数
@@ -166,11 +167,11 @@ $$R_t = \alpha_J \cdot J_t - \alpha_L \cdot \bar{L}_t - \alpha_E \cdot \bar{E}_t
 - $DSR_t \in [0,1]$：deadline satisfaction rate
 - $M_t \in [0,1]$：MBS load ratio，即卸载至 MBS 的服务请求比例
 
-权重设置为：$\alpha_J = 1.0$, $\alpha_L = 1.0$, $\alpha_E = 0.5$, $\alpha_O = 5.0$, $\alpha_D = 1.0$, $\alpha_M = 0.5$。实现中若 UAV 发生碰撞或越界，会分别施加 10 的惩罚；最终 reward 乘以 0.1 缩放因子以稳定训练数值。
+权重设置为：$W_J = 1.0$, $W_L = 1.0$, $W_E = 0.5$, $W_O = 5.0$, $W_{DSR} = 1.0$, $W_M = 0.5$。实现中若 UAV 发生碰撞或越界，会分别施加 10 的惩罚；最终 reward 乘以 0.1 缩放因子以稳定训练数值。
 
 ---
 
-## 3 质量感知约束式双层 MARL 方法
+## 3 基于 Attention-MAPPO 的双层协同优化方法
 
 ### 3.1 整体框架
 
@@ -195,7 +196,27 @@ $$R_t = \alpha_J \cdot J_t - \alpha_L \cdot \bar{L}_t - \alpha_E \cdot \bar{E}_t
 
 ### 3.2 上层 attention-MAPPO 轨迹控制
 
-上层将每架 UAV 作为一个 agent。每个 agent 的观测包括自身位置、邻居 UAV 状态、覆盖 UE 和请求负载信息。attention 模块用于刻画 UAV 间关系，使策略能够根据邻居状态、负载分布和覆盖情况调整运动方向。上层策略输出 2D 方向向量，转换为飞行距离：
+上层将每架 UAV 作为一个 agent。第 $i$ 架 UAV 的观测由自身状态、邻居 UAV 状态和覆盖 UE 状态三部分组成：
+
+$$o_i^U = [s_i^{self}, S_i^{nbr}, S_i^{ue}]$$
+
+其中 $s_i^{self}=[p_i,c_i]$ 包含 UAV 归一化二维位置 $p_i$ 和缓存向量 $c_i$；$S_i^{nbr}=\{\Delta p_{ij}|j\in\mathcal{N}_i\}$ 包含邻居 UAV 相对位置；$S_i^{ue}=\{\Delta p_{ik}, r_k, b_k|k\in\mathcal{C}_i\}$ 包含覆盖 UE 的相对位置、请求特征和电池状态。请求特征 $r_k$ 包括请求类型、请求大小、请求编号、deadline 和 priority。Attention-MAPPO 并不改变 PPO 的 clipped surrogate objective，而是在 actor/critic 的状态编码阶段引入 attention 结构，从邻居 UAV 集合和覆盖 UE 集合中提取与当前 UAV 轨迹决策最相关的信息。
+
+具体地，首先将自身状态、邻居状态和 UE 状态分别编码为隐表示：
+
+$$e_i=f_{self}(s_i^{self}),\quad h_{ij}^{nbr}=f_{nbr}(s_{ij}^{nbr}),\quad h_{ik}^{ue}=f_{ue}(s_{ik}^{ue})$$
+
+随后对邻居 UAV 集合和覆盖 UE 集合分别计算 scaled dot-product attention。以邻居 UAV 集合为例：
+
+$$Q_i=W_Qe_i,\quad K_{ij}=W_Kh_{ij}^{nbr},\quad V_{ij}=W_Vh_{ij}^{nbr}$$
+
+$$\alpha_{ij}^{nbr}=\text{softmax}_j\left(\frac{Q_iK_{ij}^{T}}{\sqrt{d}}\right),\quad c_i^{nbr}=\sum_{j\in\mathcal{N}_i}\alpha_{ij}^{nbr}V_{ij}$$
+
+对 UE 集合同理得到 $c_i^{ue}$。最终将自身表示、邻居上下文和 UE 上下文拼接后得到策略特征：
+
+$$z_i=\text{MLP}([e_i,c_i^{nbr},c_i^{ue}])$$
+
+上层策略根据 $z_i$ 输出 2D 方向向量，转换为飞行距离：
 
 $$d_{moved} = \text{clip}(||a||, 0, 1) \cdot v_{max} \cdot \tau$$
 
@@ -221,7 +242,13 @@ $$d_{moved} = \text{clip}(||a||, 0, 1) \cdot v_{max} \cdot \tau$$
 
 因此当前 $N=5$ 时，下层 actor 的实际动作数为 $|A|=2+N=7$。实验统计中的 cooperative ratio 会将所有 $2+i$ 协作动作汇总为 cooperative 语义类别。
 
-下层 actor 使用 request attention 编码同一 UAV 内多个请求之间的相对重要性；critic 采用集中式信息估计 value。下层奖励函数为：
+下层观测同样按 UAV 构造。第 $i$ 架 UAV 的下层观测为：
+
+$$o_i^L=[g_i^{self},G_i^{req}]$$
+
+其中 $g_i^{self}$ 包含 UAV 归一化位置、当前服务请求队列比例、邻居数量比例和 UAV-MBS 回传速率；$G_i^{req}$ 由最多 30 个 request slot 组成。每个有效请求 slot 包含请求大小、请求编号、deadline、priority、本地缓存命中、协作可用性、本地队列长度、local/cooperative/MBS 时延相对 deadline 的比例、最佳邻居计算份额以及 UE-UAV 相对位置等特征。
+
+下层 actor 使用 request attention 编码同一 UAV 内多个请求之间的相对重要性：先将 UAV 自身特征和每个请求特征编码到隐空间，再对 request slots 做多头自注意力，最后对每个 request slot 输出 local、MBS 或 cooperative UAV 动作的 logits。critic 采用集中式信息估计 value。下层奖励函数为：
 
 $$R_{lower} = w_{succ} \cdot DSR + w_{coop} \cdot C_{ratio} - w_{dead} \cdot (1 - DSR) - w_{lat} \cdot \frac{L}{M \cdot T_{penalty}} - w_{en} \cdot \frac{E}{N \cdot E_{ref}^{offload}} - w_{mbs} \cdot M_{ratio} - \lambda_{dsr} \cdot \max(0, \tau_{dsr} - DSR) - \lambda_{mbs} \cdot \max(0, M_{ratio} - \tau_{mbs})$$
 
@@ -268,7 +295,7 @@ $$\lambda_{mbs} \leftarrow \text{clip}(\lambda_{mbs} + \eta_{\lambda} \cdot \bar
 
 ### 3.7 复杂度分析
 
-设 UAV 数量为 $N=5$，每架 UAV 的最大请求 slot 数为 $K=30$，下层实际动作数为 $|A|=2+N=7$。若直接构建端到端联合 MAPPO，需要同时处理 $N$ 个连续轨迹动作和最多 $N \times K=150$ 个请求级离散卸载动作，单步离散卸载组合可达 $|A|^{NK}$，并带来严重的样本效率与 credit assignment 问题。本文采用双层分解后，上层只处理 $N$ 个 UAV 的轨迹动作（连续 2D），下层只在每个 UAV 的 $K$ 个请求 slot 上进行局部离散决策。attention 编码带来的主要额外开销为 $O(N^2)$ 或 $O(K^2)$。本文当前未报告完整端到端联合 MAPPO 的同规模训练结果，因此这里强调的是结构复杂度与可训练性上的设计动机，而非已经由端到端 baseline 实验证明的性能结论。
+设 UAV 数量为 $N=5$，每架 UAV 的最大请求 slot 数为 $K=30$，下层实际动作数为 $|A|=2+N=7$。若直接构建端到端联合 MAPPO，需要同时处理 $N$ 个连续轨迹动作和最多 $N \times K=150$ 个请求级离散卸载动作，单步离散卸载组合可达 $|A|^{NK}$，并带来严重的样本效率与 credit assignment 问题。本文采用双层分解后，上层只处理 $N$ 个 UAV 的轨迹动作（连续 2D），下层只在每个 UAV 的 $K$ 个请求 slot 上进行局部离散决策。attention 编码带来的主要额外开销为 $O(N^2)$ 或 $O(K^2)$。本文已补充实现单一策略同时输出 UAV 连续轨迹动作和请求级离散卸载动作的 `joint_mappo` baseline；其在单 training seed 和 4 个 workload seeds 下的初步结果表明，端到端联合 MAPPO 在相同 200-episode 训练预算下明显弱于分层策略。因此，本节强调的动作空间规模和 credit assignment 难度不仅是设计动机，也得到了补充负向 baseline 的经验支持，但仍需更大统计规模进一步确认。
 
 ---
 
@@ -305,7 +332,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 | `lower_no_lagrange` | yes | yes | **no** |
 | `lower_no_attention` | **no** | yes | yes |
 
-本文当前正式结论仅基于上述主实验五组策略和下层消融实验。其他纯本地执行、纯 MBS 执行、随机决策和固定位置策略等额外基线仍需按当前 reward 与 energy 统计口径重新统一，因此不纳入正文主结论。
+本文当前正式结论基于上述主实验五组策略、下层消融实验以及第 5.7 节的 DSR-priority 配置实验。为进一步界定 attention 机制和双层分解的适用边界，本文还补充报告上层 `vanilla_mappo__heuristic` 消融、attention 权重可视化和 `joint_end_to_end_mappo` 端到端联合 MAPPO baseline。由于补充实验当前采用单一 training seed（42）和 4 个 workload seeds（42, 84, 126, 168），统计规模小于主实验，因此主要用于机制分析和负向 baseline 说明。其他纯本地执行、纯 MBS 执行、随机决策和固定位置策略等额外基线仍需按当前 reward 与 energy 统计口径重新统一，因此不纳入正文主结论。
 
 ### 4.3 评估指标
 
@@ -350,7 +377,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 
 完整双层 MARL 相比基础参考，reward 提升 4482.2（$p = 1.0\times10^{-32}$），UAV 侧能耗降低 56.64M（$p = 1.7\times10^{-19}$），公平性提升 0.162（$p = 1.7\times10^{-11}$），offline rate 降至 0.00%。Cooperative ratio 从 50.1% 调整至 42.4%，local ratio 从 47.1% 调整至 46.5%，表明完整双层策略在 local 与 cooperative 之间实现了新的平衡。
 
-需要注意的是，DSR 是完整方法相对基础参考的明确负向结果：从 0.2734 降至 0.2083（$\Delta=-0.0651$, $p=2.4\times10^{-11}$），说明当前能耗优先配置下完整方法主要获得的是能耗、公平性和在线率收益，而非 DSR 收益。第 5.6 节的 DSR-aware 实验已对此进行了验证：通过调整 reward 权重与 Lagrange 约束参数，可将 DSR 恢复至 0.2435，与 baseline 的差距缩小 54%。
+需要注意的是，DSR 是完整方法相对基础参考的明确负向结果：从 0.2734 降至 0.2083（$\Delta=-0.0651$, $p=2.4\times10^{-11}$），说明当前能耗优先配置下完整方法主要获得的是能耗、公平性和在线率收益，而非 DSR 收益。第 5.7 节的 DSR-priority 配置实验已对此进行了验证：通过调整 reward 权重与 Lagrange 约束参数，可将 DSR 部分恢复至 0.2435，但仍低于 baseline 的 0.2734。
 
 ![图 8 主实验多指标对比](docs/figures/fig_main_comparison.png)
 
@@ -365,7 +392,18 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 - Energy：114.70M → 111.81M（$\Delta=-2.89M$, $p=0.086$）
 - DSR：0.2734 → 0.2879（$\Delta=+0.0145$, $p=0.084$）
 
-上层 attention-MAPPO 在 reward 和公平性维度上显著优于 uncoordinated greedy；energy 和 DSR 呈改善趋势，但未达到统计显著。这说明通过 attention 机制建模 UAV 间协同关系，能够明显改善覆盖公平性和整体系统性能。
+上层 attention-MAPPO 在 reward 和公平性维度上显著优于 uncoordinated greedy；energy 和 DSR 呈改善趋势，但未达到统计显著。这说明学习式上层轨迹控制能够明显改善覆盖公平性和整体系统性能。进一步地，本文补充实现了不含 attention 的上层 `vanilla_mappo`，其 actor/critic 均采用 MLP，并保持与 attention-MAPPO 相同的 PPO 超参数和 CTDE 训练接口，用于区分“MAPPO 本身”与“attention 状态编码”的作用。
+
+**补充表 A. 上层 vanilla MAPPO 消融（training seed=42, 4 workload seeds × 8 episodes）**
+
+| 策略 | Reward | Latency | Energy (M) | DSR | Fairness | Offline% | Local% | Coop% | MBS load% |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `vanilla_mappo__heuristic` | **-1462.6 ± 328.7** | **841994 ± 95239** | 120.11 ± 15.69 | **0.2822 ± 0.0278** | **0.9640 ± 0.0659** | 0.56% | 39.9% | **57.8%** | 1.41% |
+| `attention_mappo__heuristic` | -2222.1 ± 890.6 | 1135453 ± 132493 | **114.55 ± 13.26** | 0.2799 ± 0.0317 | 0.8892 ± 0.1026 | **0.00%** | 46.0% | 51.9% | **0.99%** |
+
+在该补充实验中，`vanilla_mappo__heuristic` 在 reward、latency 和 fairness 上优于 `attention_mappo__heuristic`；其中 attention 相对 vanilla 的 latency 增加约 293458（paired t-test $p=0.0085$），reward 降低约 759.5（$p=0.0889$）。另一方面，attention-MAPPO 的 energy 更低（约 -5.57M，$p=0.102$），offline rate 更低，MBS load ratio 也显著更低（0.99% vs 1.41%，$p=0.0155$）。因此，本文不将 attention 机制表述为在所有指标上优于 vanilla MAPPO，而将其解释为一种改变资源负载分布、降低 MBS 负载和能耗倾向的状态编码机制；其整体 reward 收益依赖训练稳定性、奖励权重和下层卸载策略。
+
+此外，本文基于 `results/attention_visualization_upper/seed42/attention_samples.json` 提取了 50 个 rollout 采样点的上层 attention 权重，并保存邻居 UAV attention 和 UE attention 热力图。该可视化结果用于说明模型在决策时对邻居 UAV 和覆盖 UE 信息存在可解释的非均匀关注模式，但不单独作为性能提升的统计证据。
 
 ### 5.3 卸载分布分析
 
@@ -411,13 +449,27 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 
 ### 5.5 额外基线与结论边界
 
-除主实验与消融实验外，本文曾设计纯本地执行、纯 MBS 执行、随机决策和固定位置策略等额外基线用于直观检查系统边界表现。需要指出的是，这些额外基线的 reward 与 energy 统计口径尚未按当前 `linear_v2_full_20260519` 的线性归一化设置重新统一（例如纯 MBS 执行在计算 reward 时各归一化项的分母与本文正式实验使用的分母保持一致，但该项验证尚未完成），因此本文不将其作为正式 baseline，也不基于这些结果提出正文结论。完整补充这些边界基线是后续工作的明确事项。本文当前可复核的正式结论仅来自第 4.2 节的五组主实验策略和第 5.4 节的下层消融实验。
+除主实验与消融实验外，本文曾设计纯本地执行、纯 MBS 执行、随机决策和固定位置策略等额外基线用于直观检查系统边界表现。需要指出的是，这些额外基线的 reward 与 energy 统计口径尚未按当前 `linear_v2_full_20260519` 的线性归一化设置重新统一（例如纯 MBS 执行在计算 reward 时各归一化项的分母与本文正式实验使用的分母保持一致，但该项验证尚未完成），因此本文不将其作为正式 baseline，也不基于这些结果提出正文结论。完整补充这些边界基线是后续工作的明确事项。本文当前可复核的正式结论来自第 4.2 节的五组主实验策略、第 5.4 节的下层消融实验以及第 5.7 节的 DSR-priority 主配置实验；第 5.6 节的端到端 joint MAPPO 用于说明直接联合动作学习的可行性与困难。
 
-### 5.6 DSR-Aware 配置实验
+### 5.6 端到端 joint MAPPO baseline
 
-为进一步验证框架在服务质量偏好上的可调节性，本文在基础配置（能耗优先）之上，额外测试了一组 DSR 优先配置（记为 DSR-strong），其关键参数调整为：系统级权重 $\alpha_D = 3.0$、$\alpha_E = 0.2$；下层 Lagrange 约束目标 $\tau_{dsr} = 0.28$（高于 baseline 的 0.2734）、$\tau_{mbs}=0.08$、Lagrange 学习率 $\eta_{\lambda} = 0.5$、乘子上界 $\lambda_{max} = 50.0$；下层 reward 权重 $w_{dead}=7.0$, $w_{succ}=1.5$, $w_{lat}=2.5$, $w_{en}=0.5$, $w_{mbs}=0.2$。
+为回应“为什么不直接训练单一端到端策略同时输出轨迹和卸载动作”的问题，本文实现了 `joint_mappo` baseline。该模型使用单一 MAPPO actor 同时输出 UAV 连续轨迹动作和请求级离散卸载动作，并使用联合观测与统一 PPO 更新，不复用已训练的上层或下层模型。因此它不同于 `attention_mappo__lower_mappo` 或 `full_hierarchical_marl` 这类分层组合。
 
-**表 4. 三种配置下的 Full Hierarchical MARL 对比（N=30）**\n\n> 注：baseline 和 base v2 行使用能耗优先配置的 reward 权重（$\alpha_D=1.0$, $\alpha_E=0.5$），DSR-strong 行使用 DSR 优先配置的 reward 权重（$\alpha_D=3.0$, $\alpha_E=0.2$），因此 reward 值不可跨配置直接对比（DSR 优先配置下 baseline 的 reward 为 -4972.3）。其余指标（Energy, DSR, Fairness, MBS Load, Coop%）均为环境性能指标，不受 reward 权重变化影响，可直接对比。
+**补充表 B. 端到端 joint MAPPO 评估结果（training seed=42, 4 workload seeds × 8 episodes）**
+
+| 策略 | Reward | Latency | Energy (M) | DSR | Fairness | Offline% | Local% | Coop% | MBS load% |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| `joint_end_to_end_mappo` | -9865.1 ± 325.6 | 1580604 ± 267198 | 81.58 ± 31.25 | 0.1349 ± 0.0761 | 0.4581 ± 0.1475 | 0.22% | 29.2% | 52.4% | 3.8% |
+
+训练阶段 `joint_mappo` 在 200 episodes 后的 recent reward 为 -4030.8，但独立 workload 评估中的平均 reward 为 -9865.1，明显低于分层策略；同时 DSR 仅为 0.1349，fairness 为 0.4581，MBS load ratio 为 0.0377（按总请求口径）并超过当前下层约束目标 0.03。该结果表明，在相同训练预算下，直接端到端联合学习面临更大的联合动作空间、混合连续-离散动作建模和 credit assignment 难度，样本效率和稳定性均弱于双层分解方案。因此，本文将 joint MAPPO 作为负向 baseline：它支持双层分解在训练稳定性、模块解释性和可控约束处理方面的必要性，但不排除更大训练预算或更强网络结构下端到端方法继续改进的可能。
+
+### 5.7 DSR-priority 主配置实验
+
+为进一步验证框架在服务质量偏好上的可调节性，本文将 DSR-priority 作为第二组正式主配置进行评估，而不是仅作为补充实验。相较能耗优先配置，DSR-priority 配置将系统级权重调整为 $W_{DSR}=3.0$、$W_E=0.2$；下层 Lagrange 约束目标调整为 $\tau_{dsr}=0.28$、$\tau_{mbs}=0.08$，Lagrange 学习率为 $\eta_{\lambda}=0.5$，乘子上界为 $\lambda_{max}=50.0$；下层 reward 权重调整为 $w_{dead}=7.0$, $w_{succ}=1.5$, $w_{lat}=2.5$, $w_{en}=0.5$, $w_{mbs}=0.2$。该配置用于验证框架在能耗与 DSR 之间的可调节性，不声称其已经达到 Pareto 最优。
+
+**表 4. 三种配置下的 Full Hierarchical MARL 对比（N=30）**
+
+> 注：baseline 和 base v2 行使用能耗优先配置的 reward 权重（$W_{DSR}=1.0$, $W_E=0.5$），DSR-strong 行使用 DSR-priority 配置的 reward 权重（$W_{DSR}=3.0$, $W_E=0.2$），因此 reward 值不可跨配置直接对比（DSR-priority 配置下 baseline 的 reward 为 -4972.3）。其余指标（Energy, DSR, Fairness, MBS Load, Coop%）均为环境性能指标，不受 reward 权重变化影响，可直接对比。
 
 | 配置 | Reward | Energy (M) | DSR | Fairness | MBS Load | Coop% |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -425,9 +477,9 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 | 能耗优先（base v2） | -1451.7 | **58.06** | 0.2083 | **0.9363** | 11.1% | 42.4% |
 | **DSR 优先（strong）** | **-1147.2** | 83.04 | **0.2435** | 0.9287 | 11.9% | **56.7%** |
 
-DSR 优先配置下，完整方法的 DSR 从 0.2083 提升至 0.2435，与 baseline 的差距从 -0.065 缩小至 -0.030（$p = 1.6\times10^{-6}$），缩小了一倍以上。需要指出，本文也测试了一组中间配置（实验名 `linear_v2_dsr_moderate_20260520`，参数 $\tau_{dsr}=0.26$, $\lambda_{max}=30$, $\alpha_D=5.0$, $\eta_{\lambda}=0.3$），但该配置下 DSR 仅为 0.204，甚至略低于能耗优先配置的 0.208，说明 Lagrange 约束力度不足时无法有效驱动 DSR 恢复。这一 negative result 进一步佐证了：足够的 Lagrange 乘子上界（$\lambda_{max} \geq 50$）和学习率（$\eta_{\lambda} \geq 0.5$）是实现 DSR 显著提升的必要条件。同时能耗为 83.04M，相比 baseline 的 114.70M 仍节省 27.6%。Cooperative ratio 达到 56.7%，为所有学习式策略中最高。该结果验证了本文框架在不同服务质量目标下的可调节性：通过调整 reward 权重和 Lagrange 约束阈值，系统可以在能耗-DSR 的 Pareto 前沿上选择不同的工作点。
+DSR-priority 配置下，完整方法的 DSR 从能耗优先配置下的 0.2083 提升至 0.2435，与 baseline 的差距从 -0.065 缩小至 -0.030（$p = 1.6\times10^{-6}$）。但该值仍低于 heuristic baseline 的 0.2734，因此本文将其解释为 DSR 的部分恢复，而非完全恢复。需要指出，本文也测试了一组中间配置（实验名 `linear_v2_dsr_moderate_20260520`，参数 $\tau_{dsr}=0.26$, $\lambda_{max}=30$, $W_{DSR}=5.0$, $\eta_{\lambda}=0.3$），但该配置下 DSR 仅为 0.204，甚至略低于能耗优先配置的 0.208，说明单纯提高 DSR 权重并不必然带来 DSR 提升，约束目标、乘子上界和学习率需要共同匹配。同时，DSR-priority 配置下能耗为 83.04M，相比 baseline 的 114.70M 仍节省 27.6%；cooperative ratio 达到 56.7%，为所有学习式策略中最高。该结果验证了本文框架在不同服务质量目标下的可调节性：通过调整 reward 权重和 Lagrange 约束阈值，系统可以在能耗-DSR 权衡曲线上选择不同的工作点。
 
-### 5.7 讨论
+### 5.8 讨论
 
 #### Energy-DSR-Fairness 三元权衡
 
@@ -437,9 +489,9 @@ DSR 优先配置下，完整方法的 DSR 从 0.2083 提升至 0.2435，与 base
 | --- | --- | --- |
 | 降低 Energy | 从 114.7M → 42.8M (-63%) | DSR 从 0.27 → 0.19 |
 | 提升 DSR | 0.27 → 0.29 | Energy 维持高位 111.8M |
-| 提升 Fairness | 0.77 → 0.93 | 需要 attention 机制 |
+| 提升 Fairness | 0.77 → 0.93 | 依赖更强的轨迹协同建模 |
 
-本文的双层 MARL 框架通过 Lagrange 约束和奖励权重提供了调控这一权衡的机制。第 5.6 节的 DSR-aware 实验已证实：将 $\alpha_D$ 从 1.0 提升至 3.0、$\alpha_E$ 从 0.5 降至 0.2、$\tau_{dsr}$ 从 0.18 提升至 0.28 后，完整方法的 DSR 可从 0.2083 提升至 0.2435，与 baseline 的差距缩小了超过 50%，同时仍保持 28% 的能耗节省。这说明该框架确实提供了在不同服务质量目标之间进行可调节调度的能力。
+本文的双层 MARL 框架通过 Lagrange 约束和奖励权重提供了调控这一权衡的机制。第 5.7 节的 DSR-priority 主配置实验表明：将 $W_{DSR}$ 从 1.0 提升至 3.0、$W_E$ 从 0.5 降至 0.2、$\tau_{dsr}$ 从 0.18 提升至 0.28 后，完整方法的 DSR 可从 0.2083 部分恢复至 0.2435，与 baseline 的差距缩小约 54%，同时仍保持约 28% 的能耗节省。这说明该框架提供了在不同服务质量目标之间进行可调节调度的能力，但当前 DSR-priority 配置仍未超过 heuristic baseline。
 
 进一步对比表 1 可以看到，`attention_mappo__heuristic` 的 DSR 为 0.2879，高于基础参考的 0.2734，说明上层轨迹控制本身没有损害 DSR；DSR 下降主要出现在引入下层 MAPPO 后。原因在于下层策略会更积极地改变 local/cooperative/MBS 分配，以降低 UAV 侧能耗，但这也可能把部分请求导向时延更高的路径。DSR-strong 实验表明，通过提高 DSR 约束的强度，可以在很大程度上缓解这一权衡，使 DSR 更接近 heuristic 基线水平。
 
@@ -460,22 +512,23 @@ DSR 优先配置下，完整方法的 DSR 从 0.2083 提升至 0.2435，与 base
 
 #### 与现有工作的对比
 
-相比黄子祥等 [3] 基于 MADRL 的单层端到端方法，本文的双层分解将轨迹控制与请求级卸载拆开处理，降低了直接联合动作建模的结构复杂度，并提高了策略行为的可解释性。相比尤昕阳等 [9] 的 SAC 方法，本文通过双层拆分分别处理连续轨迹控制与离散请求卸载，减少了直接构造混合联合动作的难度。相比曾耀平等 [6] 的博弈论方法，本文基于 MARL 的在线执行主要依赖局部和邻居观测，具有较好的动态适应性。本文尚未报告同规模端到端联合 MAPPO baseline，因此双层分解相对端到端联合训练的经验优势仍需在后续实验中进一步验证。
+相比黄子祥等 [3] 基于 MADRL 的单层端到端方法，本文的双层分解将轨迹控制与请求级卸载拆开处理，降低了直接联合动作建模的结构复杂度，并提高了策略行为的可解释性。相比尤昕阳等 [9] 的 SAC 方法，本文通过双层拆分分别处理连续轨迹控制与离散请求卸载，减少了直接构造混合联合动作的难度。相比曾耀平等 [6] 的博弈论方法，本文基于 MARL 的在线执行主要依赖局部和邻居观测，具有较好的动态适应性。补充的 `joint_mappo` 结果进一步表明，在相同训练预算下，直接端到端 MAPPO 难以稳定学习高质量的混合轨迹-卸载策略，这为本文采用双层分解提供了经验支撑。
 
 ---
 
 ## 6 结论
 
-本文提出了一种面向多无人机移动边缘计算的质量感知约束式双层多智能体强化学习框架。通过将轨迹控制和请求级卸载解耦为两个协同决策层，该框架降低了直接端到端联合动作建模的结构复杂度，并提高了决策过程的可解释性。
+本文提出了一种基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化框架。通过将轨迹控制和请求级卸载解耦为两个协同决策层，该框架降低了直接端到端联合动作建模的结构复杂度，并提高了决策过程的可解释性。
 
 实验结果表明：
 1. 完整双层 MARL 相比基础基线在 reward（+4482）、能耗（-56.6M）、公平性（+0.162）上取得统计显著改善，并将 offline rate 从 0.58% 降至 0.00%
-2. 上层 attention-MAPPO 轨迹控制对公平性和整体性能有独立且显著的贡献（$\Delta$reward +3805）
-3. 当前能耗优先配置下 DSR 从 0.2734 降至 0.2083，但通过 DSR-aware 配置可将 DSR 恢复至 0.2435（与 baseline 差距缩小 54%），同时保持 28% 的能耗节省，验证了框架的可调节性
+2. 上层 attention-MAPPO 轨迹控制相对 uncoordinated greedy 对公平性和整体性能有独立且显著的贡献（$\Delta$reward +3805）；但补充的 vanilla MAPPO 消融显示，在当前单 seed 设置下，attention 并非在所有指标上优于 MLP-MAPPO，而主要体现为降低 MBS load 和能耗倾向
+3. 当前能耗优先配置下 DSR 从 0.2734 降至 0.2083，但通过 DSR-priority 配置可将 DSR 部分恢复至 0.2435；该值仍低于 baseline，但与 baseline 的差距缩小约 54%，同时保持约 28% 的能耗节省，验证了框架的可调节性
 4. Lagrange 约束有效控制 MBS load ratio（25.0% → 13.7%）
 5. 质量感知 action mask 和 request attention 机制各自独立地改变了卸载分布和能耗/负载权衡模式
+6. 端到端 `joint_mappo` baseline 在相同训练预算下评估 reward 为 -9865.1、DSR 为 0.1349、fairness 为 0.4581，明显弱于分层策略，说明直接联合轨迹-卸载动作学习存在样本效率和稳定性挑战
 
-未来的工作方向包括：(i) 在更多 DSR 阈值和权重组合上进行细粒度 Pareto 扫描；(ii) 增加同规模端到端联合 MAPPO 或报告其训练失败原因；(iii) 引入三维轨迹控制以更好地模拟真实部署环境；(iv) 研究更高效的 Lagrange 乘子自适应更新策略；(v) 将服务缓存和内容分发纳入协同优化框架。
+未来的工作方向包括：(i) 在更多 DSR 阈值和权重组合上进行细粒度 Pareto 扫描；(ii) 扩大 vanilla/attention/joint MAPPO 补充实验的 training seeds 和 workload seeds，以获得与主实验一致的统计规模；(iii) 引入三维轨迹控制以更好地模拟真实部署环境；(iv) 研究更高效的 Lagrange 乘子自适应更新策略；(v) 将服务缓存和内容分发纳入协同优化框架。
 
 ---
 
@@ -513,4 +566,4 @@ DSR 优先配置下，完整方法的 DSR 从 0.2083 提升至 0.2435，与 base
 
 ---
 
-*本文档最后更新：2026年5月24日。基于 linear_v2_full_20260519（能耗优先）和 linear_v2_dsr_strong_20260520（DSR 优先）实验结果生成。下层奖励函数已统一为线性归一化形式。*
+*本文档最后更新：2026年5月27日。基于 linear_v2_full_20260519（能耗优先）、linear_v2_dsr_strong_20260520（DSR 优先）以及 2026-05-27 上层 vanilla MAPPO、attention 可视化和 joint MAPPO 补充实验结果生成。下层奖励函数已统一为线性归一化形式。*

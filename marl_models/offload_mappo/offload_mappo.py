@@ -77,6 +77,32 @@ class OffloadActor(nn.Module):
             logits = logits.masked_fill(masks <= 0.0, -1.0e9)
         return logits
 
+    def extract_request_attention_weights(self, obs: torch.Tensor) -> dict[str, torch.Tensor]:
+        original_shape = obs.shape[:-1]
+        flat_obs = obs.reshape(-1, obs.shape[-1])
+        request_features = flat_obs[:, self.own_dim :].reshape(-1, self.max_requests, self.request_dim)
+        request_valid = (torch.abs(request_features).sum(dim=-1) > 1.0e-6)
+        request_embedding = self.request_encoder(request_features)
+        key_padding_mask = ~request_valid
+        all_padding = key_padding_mask.all(dim=1)
+        if torch.any(all_padding):
+            key_padding_mask = key_padding_mask.clone()
+            key_padding_mask[all_padding, 0] = False
+        _, weights = self.request_attention(
+            request_embedding,
+            request_embedding,
+            request_embedding,
+            key_padding_mask=key_padding_mask,
+            need_weights=True,
+            average_attn_weights=False,
+        )
+        weights = torch.nan_to_num(weights, nan=0.0)
+        return {
+            "request_weights": weights.view(*original_shape, weights.shape[-3], weights.shape[-2], weights.shape[-1]),
+            "request_mask": request_valid.view(*original_shape, self.max_requests),
+            "request_states": request_features.view(*original_shape, self.max_requests, self.request_dim),
+        }
+
 
 class OffloadCritic(nn.Module):
     def __init__(self, obs_dim: int) -> None:
@@ -220,6 +246,14 @@ class OffloadMAPPO(MARLModel):
             log_probs = action_log_probs.sum(dim=-1) / denom
             values = self.critic(obs_tensor.unsqueeze(0)).squeeze(0)
         return actions.cpu().numpy(), log_probs.cpu().numpy(), values.cpu().numpy()
+
+    def extract_request_attention_weights(self, observations: np.ndarray) -> dict[str, np.ndarray]:
+        if not self.use_attention or not hasattr(self.actor, "extract_request_attention_weights"):
+            return {}
+        with torch.no_grad():
+            obs_tensor = torch.from_numpy(observations).float().to(self.device)
+            weights = self.actor.extract_request_attention_weights(obs_tensor)
+        return {key: value.detach().cpu().numpy() for key, value in weights.items()}
 
     def update(self, batch: ExperienceBatch) -> dict[str, float]:
         assert isinstance(batch, dict), "OffloadMAPPO expects an on-policy dict batch"

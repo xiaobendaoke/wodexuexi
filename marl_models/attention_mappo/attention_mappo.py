@@ -74,6 +74,12 @@ class AttentionMAPPO(MARLModel):
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return actions.cpu().numpy(), log_probs.cpu().numpy(), values.cpu().numpy()
 
+    def extract_attention_weights(self, observations: np.ndarray) -> dict[str, np.ndarray]:
+        with torch.no_grad():
+            obs_tensor = torch.from_numpy(observations).float().to(self.device)
+            weights = self.actor.extract_attention_weights(obs_tensor)
+        return {key: value.detach().cpu().numpy() for key, value in weights.items()}
+
     # 函数 update：更新模型、环境或统计量的状态，主要参数：batch。
     def update(self, batch: ExperienceBatch) -> dict:
         assert isinstance(batch, dict), "MAPPO expects OnPolicyExperienceBatch (dict)"
