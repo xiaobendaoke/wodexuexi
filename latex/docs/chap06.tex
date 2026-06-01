@@ -1,0 +1,23 @@
+\chapter{结论}
+\label{cha:conclusion}
+
+本文提出了一种基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化框架。通过将轨迹控制和请求级卸载解耦为两个协同决策层，该框架降低了直接端到端联合动作建模的结构复杂度，并提高了决策过程的可解释性。
+
+实验结果表明：
+\begin{enumerate}
+    \item 完整双层 MARL 相比基础基线在 reward（+4482）、能耗（-56.6M）、公平性（+0.162）上取得统计显著改善，并将 offline rate 从 0.58\% 降至 0.00\%。
+    \item 上层 attention-MAPPO 轨迹控制相对 uncoordinated greedy 对公平性和整体性能有独立且显著的贡献（$\Delta$reward +3805）；但补充的 vanilla MAPPO 消融显示，在当前单 seed 设置下，attention 并非在所有指标上优于 MLP-MAPPO，而主要体现为降低 MBS load 和能耗倾向。
+    \item 当前能耗优先配置下 DSR 从 0.2734 降至 0.2083，但通过 DSR-priority 配置可将 DSR 部分恢复至 0.2435；该值仍低于 baseline，但与 baseline 的差距缩小约 54\%，同时保持约 28\% 的能耗节省，验证了框架的可调节性。
+    \item Lagrange 约束有效控制 MBS load ratio（25.0\% $\rightarrow$ 13.7\%）。
+    \item 质量感知 action mask 和 request attention 机制各自独立地改变了卸载分布和能耗/负载权衡模式。
+    \item 端到端 \texttt{joint\_mappo} baseline 在相同训练预算下评估 reward 为 -9865.1、DSR 为 0.1349、fairness 为 0.4581，明显弱于分层策略，说明直接联合轨迹-卸载动作学习存在样本效率和稳定性挑战。
+\end{enumerate}
+
+未来的工作方向包括：
+\begin{enumerate}
+    \item 在更多 DSR 阈值和权重组合上进行细粒度 Pareto 扫描；
+    \item 扩大 vanilla/attention/joint MAPPO 补充实验的 training seeds 和 workload seeds，以获得与主实验一致的统计规模；
+    \item 引入三维轨迹控制以更好地模拟真实部署环境；
+    \item 研究更高效的 Lagrange 乘子自适应更新策略；
+    \item 将服务缓存和内容分发纳入协同优化框架。
+\end{enumerate}

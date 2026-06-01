@@ -1,0 +1,180 @@
+\chapter{系统模型与问题描述}
+\label{cha:system-model}
+
+\section{网络模型}
+\label{sec:network-model}
+
+本文考虑一个由 $N=5$ 架 UAV、$M=100$ 个 UE 和一个 MBS 构成的 UAV-enabled MEC 系统。UAV 在固定高度 $H=100$ m 飞行，在 $700 \times 700$ m$^2$ 的水平区域内移动。MBS 作为远端稳定计算节点，可在 UAV 本地或 UAV 间协作不足时提供 fallback execution，但其过度使用会造成回传压力和系统负载集中。
+
+系统主要链路包括 UE-UAV 链路、UAV-UAV 协作链路和 UAV-MBS 回传链路。每个时间步 $\tau = 1$s，系统包含 $T=1000$ 个 time slots。UAV 覆盖半径为 $R_c = 100$ m，最大飞行速度 $v_{max} = 15$ m/s，最小安全间距 $d_{min} = 200$ m。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{docs/figures/fig_system_snapshot.png}
+    \bicaption{系统场景与链路模型}{System scenario and link model}
+    \label{fig:system-model}
+\end{figure}
+
+\section{通信模型}
+\label{sec:communication-model}
+
+UE 与 UAV 之间采用自由空间路径损耗模型（Line-of-Sight, LoS），信道增益定义为：
+\begin{equation}
+    g(d) = \frac{\beta_0}{d^2}
+    \label{eq:channel-gain}
+\end{equation}
+
+其中 $\beta_0$ 为参考距离 1m 时的信道功率增益，$d$ 为 UE-UAV 之间的欧氏距离。根据香农定理，UE 到 UAV 的上行传输速率为：
+\begin{equation}
+    R = B \cdot \log_2\left(1 + \frac{P_{tx} \cdot g(d)}{\sigma^2}\right)
+    \label{eq:shannon}
+\end{equation}
+
+其中 $B$ 为信道带宽，$P_{tx}$ 为发射功率，$\sigma^2$ 为噪声功率。UAV-MBS 回传链路采用独立的带宽 $B_{backhaul}$。
+
+本文实现中请求大小和文件大小以 bytes 记录，而无线链路速率以 bit/s 表示，因此所有传输时延统一写为：
+\begin{equation}
+    T_{tx} = \frac{8 \cdot D}{R}
+    \label{eq:tx-delay}
+\end{equation}
+
+其中 $D$ 为数据量（bytes），$R$ 为链路速率（bit/s）。此 $8\times$ 因子确保了 bytes 到 bit/s 的正确单位转换。
+
+\section{计算模型}
+\label{sec:computation-model}
+
+\subsection{时延模型}
+\label{subsec:latency-model}
+
+对于每个服务请求，其时延取决于卸载目标：
+
+\textbf{本地 UAV 执行}：
+\begin{equation}
+    T_{local} = T_{tx}^{ue-uav} + T_{fetch}^{local} + T_{comp}^{uav}
+    = \frac{8D_{in}}{R_{ue-uav}} + T_{fetch}^{local} + \frac{C}{f_{uav}}
+    \label{eq:local-latency}
+\end{equation}
+
+\textbf{协作 UAV 执行}：
+\begin{equation}
+    T_{coop} = \frac{8D_{in}}{R_{ue-uav}} + \frac{8D_{in}}{R_{uav-uav}} + T_{fetch}^{coop} + \frac{C}{f_{coop}}
+    \label{eq:coop-latency}
+\end{equation}
+
+\textbf{MBS 执行}：
+\begin{equation}
+    T_{mbs} = \frac{8D_{in}}{R_{ue-uav}} + \frac{8D_{in}}{R_{backhaul}} + \frac{C}{f_{mbs}}
+    \label{eq:mbs-latency}
+\end{equation}
+
+其中 $C$ 为所需 CPU 周期数（cycles），$f_{uav}$ 和 $f_{mbs}$ 分别为 UAV 和 MBS 的计算能力（cycles/s）。当本地 UAV 或协作 UAV 未缓存对应服务/文件时，$T_{fetch}^{local}$ 或 $T_{fetch}^{coop}$ 表示从 MBS 回传获取服务/文件产生的额外时延；缓存命中时该项为 0。MBS 固定算力为 $f_{mbs} = 200 \times 10^9$ cycles/s。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{docs/figures/fig_latency_process.png}
+    \bicaption{时延处理流程}{Latency processing flow}
+    \label{fig:latency-process}
+\end{figure}
+
+\subsection{UAV 计算能耗}
+\label{subsec:uav-energy}
+
+本文采用 CMOS 动态功耗模型进行计算能耗估计：
+\begin{equation}
+    E_{comp} = K_{cpu} \cdot C \cdot f^2
+    \label{eq:comp-energy}
+\end{equation}
+
+其中 $K_{cpu} = 10^{-27}$ 为 CPU 电容系数。每架 UAV 的计算能力 $f_{uav}$ 在 $40 \times 10^9$ 至 $90 \times 10^9$ cycles/s 之间随机生成。
+
+\subsection{通信能耗}
+\label{subsec:comm-energy}
+
+通信能耗由发射/接收功率与传输时长决定：
+\begin{equation}
+    E_{comm} = P_{comm} \cdot T_{tx}
+    \label{eq:comm-energy}
+\end{equation}
+
+不同链路的功率取值不同：UE 发射功率 $P_{ue} = 0.5$W，UAV 通信发射/接收功率分别为 0.5W/0.1W，UAV-MBS 回传发射功率 0.5W。
+
+\section{UE 电池与无线能量传输模型}
+\label{sec:battery-wpt}
+
+\subsection{UE 电池模型}
+\label{subsec:battery-model}
+
+每个 UE 配备容量为 $B_{max} = 500$J 的电池。每个时间步的电池动态为：
+\begin{equation}
+    B_{t+1} = \min\left(B_{max}, \; B_t - E_{static} - E_{tx} \cdot \mathbb{1}[\text{transmit}] - E_{rx} \cdot \mathbb{1}[\text{receive}] + E_{harv}\right)
+    \label{eq:battery-dynamics}
+\end{equation}
+
+其中 $E_{static} = P_{static} \cdot \tau = 0.01$W $\times$ 1s $= 0.01$J 为待机能耗，$E_{tx} = P_{ue} \cdot T_{tx}$ 为发射能耗，$E_{rx}$ 为 UE 接收内容或结果时产生的接收能耗。当 UE 电池低于临界阈值 $B_{low} = 0.1 \times B_{max} = 50$J 时，UE 进入 offline 状态，不再生成服务请求，转而生成紧急能量请求。
+
+系统 offline rate 定义为：
+\begin{equation}
+    O = \frac{|\{ue \mid B_{ue} < B_{low}\}|}{M}
+    \label{eq:offline-rate}
+\end{equation}
+
+\subsection{无线能量传输（WPT）}
+\label{subsec:wpt}
+
+UAV 可通过 WPT 为覆盖范围内的 UE 进行无线充电。单个 UE 在单个时间步可采集的能量为：
+\begin{equation}
+    E_{harv} = \eta \cdot P_{wpt} \cdot G \cdot g(d) \cdot \tau
+    \label{eq:wpt-energy}
+\end{equation}
+
+其中 $\eta = 0.8$ 为能量采集效率，$P_{wpt} = 50$W 为 UAV 的 WPT 发射功率，$G = 5\times10^5$ 为等效采集增益，$g(d) = \beta_0/d^2$ 为信道增益。
+
+\section{UAV 飞行能耗模型}
+\label{sec:flight-energy}
+
+UAV 在每个时间步的飞行能耗取决于实际飞行距离：
+\begin{equation}
+    E_{fly} = P_{move} \cdot t_{moving} + P_{hover} \cdot t_{hovering}
+    \label{eq:flight-energy}
+\end{equation}
+\begin{equation}
+    t_{moving} = \frac{d_{moved}}{v_{max}}, \quad t_{hovering} = \tau - t_{moving}
+    \label{eq:time-decomposition}
+\end{equation}
+
+其中 $P_{move} = 300$W 为飞行功率，$P_{hover} = 150$W 为悬停功率，$d_{moved}$ 为 UAV 在上一时间步的飞行距离（受 MARL 上层动作控制）。全速飞行（$d_{moved} = 15$m）时 $E_{fly} = 300 \times 1 = 300$J，悬停时 $E_{fly} = 150 \times 1 = 150$J。
+
+UAV 侧总能耗（单步）为：
+\begin{equation}
+    E_{total} = \sum_{u=1}^{N} \left(E_{fly}^{(u)} + E_{comp}^{(u)} + E_{comm}^{(u)} + E_{wpt}^{(u)}\right)
+    \label{eq:total-energy}
+\end{equation}
+
+其中 $E_{wpt}^{(u)} = P_{wpt} \cdot \tau \cdot \mathbb{1}[\text{has energy request}]$ 为 WPT 发射能耗。
+
+\section{优化目标}
+\label{sec:optimization-objective}
+
+本文目标是在动态任务到达和无线链路变化下，联合优化 UAV 轨迹和请求卸载策略，以最大化系统级综合奖励。优化问题可形式化为：
+\begin{equation}
+    \max_{\pi^{upper}, \pi^{lower}} \mathbb{E}\left[\sum_{t=0}^{T-1} \gamma^t R_t\right]
+    \label{eq:optimization}
+\end{equation}
+
+其中系统奖励 $R_t$ 为：
+\begin{equation}
+    R_t = W_J \cdot J_t - W_L \cdot \bar{L}_t - W_E \cdot \bar{E}_t - W_O \cdot O_t + W_{DSR} \cdot DSR_t - W_M \cdot M_t
+    \label{eq:reward}
+\end{equation}
+
+式中各项含义：
+\begin{itemize}
+    \item $J_t \in [0,1]$：Jain 公平性指数
+    \item $\bar{L}_t$：归一化时延（除以 $M \cdot T_{penalty}$）
+    \item $\bar{E}_t$：归一化能耗（除以 $N \cdot E_{ref}$）
+    \item $O_t \in [0,1]$：UE offline rate
+    \item $DSR_t \in [0,1]$：deadline satisfaction rate
+    \item $M_t \in [0,1]$：MBS load ratio，即卸载至 MBS 的服务请求比例
+\end{itemize}
+
+权重设置为：$W_J = 1.0$, $W_L = 1.0$, $W_E = 0.5$, $W_O = 5.0$, $W_{DSR} = 1.0$, $W_M = 0.5$。实现中若 UAV 发生碰撞或越界，会分别施加 10 的惩罚；最终 reward 乘以 0.1 缩放因子以稳定训练数值。

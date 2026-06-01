@@ -1,0 +1,259 @@
+\chapter{实验结果与分析}
+\label{cha:results}
+
+\section{主实验结果}
+\label{sec:main-results}
+
+表 \ref{tab:main-results} 汇总了主实验中各策略的均值和标准差（mean $\pm$ std）。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{主实验结果（mean $\pm$ std, $N=30$）}{Main experiment results (mean $\pm$ std, $N=30$)}
+    \label{tab:main-results}
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{l|rr|rr|rr|rr}
+        \hline
+        策略 & Reward & & Energy (M) & & DSR & & Fairness & \\
+        \hline
+        unco+heuristic & -5933.9 & $\pm$ 195.6 & 114.70 & $\pm$ 15.4 & 0.2734 & $\pm$ 0.029 & 0.7745 & $\pm$ 0.077 \\
+        att+heuristic & \textbf{-2128.6} & $\pm$ 389.7 & 111.81 & $\pm$ 10.6 & \textbf{0.2879} & $\pm$ 0.032 & \textbf{0.9299} & $\pm$ 0.036 \\
+        unco+lower & -5274.4 & $\pm$ 141.3 & 42.85 & $\pm$ 13.6 & 0.1891 & $\pm$ 0.029 & 0.7737 & $\pm$ 0.080 \\
+        att+lower & \textbf{-1599.4} & $\pm$ 330.1 & 53.32 & $\pm$ 12.4 & 0.2170 & $\pm$ 0.035 & \textbf{0.9281} & $\pm$ 0.035 \\
+        full\_hierarchical & \textbf{-1451.7} & $\pm$ 373.7 & 58.06 & $\pm$ 7.0 & 0.2083 & $\pm$ 0.019 & \textbf{0.9363} & $\pm$ 0.041 \\
+        \hline
+    \end{tabular}}
+\end{table}
+
+表 \ref{tab:main-results}（续）补充了 Offline\% 和卸载比例指标。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{主实验结果（续）}{Main experiment results (continued)}
+    \label{tab:main-results-cont}
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{l|rr|rr|rr}
+        \hline
+        策略 & Offline\% & & Local\% & Coop\% & MBS load\% \\
+        \hline
+        unco+heuristic & 0.58\% & & 47.1\% & 50.1\% & 2.6\% \\
+        att+heuristic & 0.10\% & & 47.2\% & 50.0\% & 2.7\% \\
+        unco+lower & 0.53\% & & 52.6\% & 30.1\% & 17.1\% \\
+        att+lower & 0.11\% & & 41.7\% & 44.6\% & 13.7\% \\
+        full\_hierarchical & \textbf{0.00\%} & & 46.4\% & 42.4\% & 11.1\% \\
+        \hline
+    \end{tabular}}
+\end{table}
+
+表 \ref{tab:paired-comparison} 给出了 Full Hierarchical MARL 相对基础参考的配对比较。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{Full Hierarchical MARL 相对基础参考的配对比较}{Paired comparison of Full Hierarchical MARL vs baseline}
+    \label{tab:paired-comparison}
+    \begin{tabular}{l|c|c|c|c}
+        \hline
+        指标 & Mean Delta & 95\% CI & paired t $p$ & Effect \\
+        \hline
+        Reward & \textbf{+4482.2} & [4338.3, 4626.1] & $1.0\times10^{-32}$ & $\uparrow$ \\
+        Energy & \textbf{-56.64M} & [-61.97M, -51.31M] & $1.7\times10^{-19}$ & $\uparrow$ \\
+        Fairness & \textbf{+0.1617} & [0.1305, 0.1929] & $1.7\times10^{-11}$ & $\uparrow$ \\
+        DSR & -0.0651 & [-0.0779, -0.0524] & $2.4\times10^{-11}$ & $\downarrow$ \\
+        offline\_rate & -0.0058 & [-0.0099, -0.0017] & 0.0067 & $\uparrow$ \\
+        Coop ratio & -0.0776 & [-0.1005, -0.0546] & $1.3\times10^{-7}$ & $\downarrow$ \\
+        MBS load ratio & +0.0387 & [0.0319, 0.0454] & $1.7\times10^{-12}$ & 增加 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+完整双层 MARL 相比基础参考，reward 提升 4482.2（$p = 1.0\times10^{-32}$），UAV 侧能耗降低 56.64M（$p = 1.7\times10^{-19}$），公平性提升 0.162（$p = 1.7\times10^{-11}$），offline rate 降至 0.00\%。DSR 是完整方法相对基础参考的明确负向结果：从 0.2734 降至 0.2083（$\Delta=-0.0651$, $p=2.4\times10^{-11}$），说明当前能耗优先配置下完整方法主要获得的是能耗、公平性和在线率收益，而非 DSR 收益。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{docs/figures/fig_main_comparison.png}
+    \bicaption{主实验多指标对比}{Main experiment multi-metric comparison}
+    \label{fig:main-comparison}
+\end{figure}
+
+\section{上层贡献分析}
+\label{sec:upper-contribution}
+
+仅替换上层轨迹策略（\texttt{att+heuristic} vs \texttt{uncoordinated\_greedy\_\_heuristic}），在保持 heuristic 卸载不变的情况下：
+\begin{itemize}
+    \item Reward：-5933.9 $\rightarrow$ -2128.6（$\Delta=+3805.4$, $p=3.0\times10^{-30}$）
+    \item Fairness：0.7745 $\rightarrow$ 0.9299（$\Delta=+0.1554$, $p=3.4\times10^{-10}$）
+    \item Energy：114.70M $\rightarrow$ 111.81M（$\Delta=-2.89M$, $p=0.086$）
+    \item DSR：0.2734 $\rightarrow$ 0.2879（$\Delta=+0.0145$, $p=0.084$）
+\end{itemize}
+
+上层 attention-MAPPO 在 reward 和公平性维度上显著优于 uncoordinated greedy；energy 和 DSR 呈改善趋势，但未达到统计显著。
+
+\textbf{补充表 A. 上层 vanilla MAPPO 消融（training seed=42, 4 workload seeds $\times$ 8 episodes）}
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{上层 vanilla MAPPO 消融结果}{Upper-layer vanilla MAPPO ablation results}
+    \label{tab:vanilla-ablation}
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{l|rr|rr|rr|rr}
+        \hline
+        策略 & Reward & & Latency & & Energy (M) & & DSR & \\
+        \hline
+        vanilla\_mappo\_\_heuristic & \textbf{-1462.6} & $\pm$ 328.7 & \textbf{841994} & $\pm$ 95239 & 120.11 & $\pm$ 15.69 & \textbf{0.2822} & $\pm$ 0.0278 \\
+        attention\_mappo\_\_heuristic & -2222.1 & $\pm$ 890.6 & 1135453 & $\pm$ 132493 & \textbf{114.55} & $\pm$ 13.26 & 0.2799 & $\pm$ 0.0317 \\
+        \hline
+    \end{tabular}}
+\end{table}
+
+在该补充实验中，vanilla\_mappo 在 reward、latency 和 fairness 上优于 attention\_mappo；attention 相对 vanilla 的 latency 增加约 293458（paired t-test $p=0.0085$），reward 降低约 759.5（$p=0.0889$）。另一方面，attention-MAPPO 的 energy 更低（约 -5.57M，$p=0.102$），offline rate 更低，MBS load ratio 也显著更低（0.99\% vs 1.41\%，$p=0.0155$）。
+
+\section{卸载分布分析}
+\label{sec:offloading-analysis}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{docs/figures/fig_offloading_distribution.png}
+    \bicaption{卸载分布对比}{Offloading distribution comparison}
+    \label{fig:offloading-dist}
+\end{figure}
+
+从表 \ref{tab:main-results-cont} 的卸载比例数据可以看到：
+\begin{itemize}
+    \item Heuristic 基线（前两行）主要依赖 local（47\%）和 cooperative（50\%），MBS 使用极少（2.6-2.7\%）
+    \item 下层 MAPPO 系列（后三行）显著改变了卸载分布：local 调整至 42-53\%，cooperative 调整至 30-45\%，MBS 增至 11-17\%
+    \item Full hierarchical 实现了最均衡的卸载分布（local 46.5\%、cooperative 42.4\%、MBS 11.1\%），同时 offline rate 降至 0.00\%
+\end{itemize}
+
+\section{消融实验结果}
+\label{sec:ablation-results}
+
+表 \ref{tab:ablation-results} 给出了下层消融实验的详细结果。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{下层消融实验结果（相对于 lower\_full）}{Lower-layer ablation results (relative to lower\_full)}
+    \label{tab:ablation-results}
+    \begin{tabular}{l|rr|rr|rr}
+        \hline
+        消融 & Reward & & Energy (M) & & DSR & \\
+        \hline
+        lower\_full & -1599.4 & & 53.32 & & 0.2170 & \\
+        no\_mask & -1556.3 & & 48.26 & & 0.1945 & \\
+        no\_lagrange & -1585.9 & & 51.12 & & 0.1981 & \\
+        no\_attention & -1626.7 & & 54.01 & & \textbf{0.2094} & \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\textbf{质量感知 Mask（lower\_full vs no\_mask）}：
+移除 mask 后 MBS load ratio 从 13.7\% 升至 18.0\%，策略变得对 MBS 更激进。Reward 略有上升（+43.1, $p=0.09$），但差异不显著。
+
+\textbf{Lagrange 约束（lower\_full vs no\_lagrange）}：
+移除 Lagrange 后 MBS 卸载比例从 13.7\% 飙升至 25.0\%（$\Delta=+11.3$pp, $p=6.5\times10^{-5}$）；对应地，MBS 负载比例从 6.3\% 升至 11.6\%。这说明 Lagrange 约束对 MBS 卸载依赖具有显著抑制作用。
+
+\textbf{Attention 机制（lower\_full vs no\_attention）}：
+移除 request attention 后 MBS load ratio 从 13.7\% 升至 17.3\%。DSR 为 0.2094，与 lower\_full 的 0.2170 接近。移除 attention 后 cooperative ratio 从 44.6\% 降至 34.4\%，local ratio 从 41.7\% 升至 48.2\%。attention 机制使策略能更灵活地利用 cooperative 卸载机会。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{docs/figures/fig_ablation_comparison.png}
+    \bicaption{消融实验对比}{Ablation experiment comparison}
+    \label{fig:ablation-compare}
+\end{figure}
+
+\section{端到端 joint MAPPO baseline}
+\label{sec:joint-mappo}
+
+为回应"为什么不直接训练单一端到端策略同时输出轨迹和卸载动作"的问题，本文实现了 \texttt{joint\_mappo} baseline。该模型使用单一 MAPPO actor 同时输出 UAV 连续轨迹动作和请求级离散卸载动作，并使用联合观测与统一 PPO 更新，不复用已训练的上层或下层模型。
+
+\textbf{补充表 B. 端到端 joint MAPPO 评估结果（training seed=42, 4 workload seeds $\times$ 8 episodes）}
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{端到端 joint MAPPO 评估结果}{End-to-end joint MAPPO evaluation results}
+    \label{tab:joint-mappo}
+    \begin{tabular}{l|rr|rr|rr|rr}
+        \hline
+        策略 & Reward & & Latency & & Energy (M) & & DSR & \\
+        \hline
+        joint\_end\_to\_end\_mappo & -9865.1 & $\pm$ 325.6 & 1580604 & $\pm$ 267198 & 81.58 & $\pm$ 31.25 & 0.1349 & $\pm$ 0.0761 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+训练阶段 \texttt{joint\_mappo} 在 200 episodes 后的 recent reward 为 -4030.8，但独立 workload 评估中的平均 reward 为 -9865.1，明显低于分层策略；同时 DSR 仅为 0.1349，fairness 为 0.4581。该结果表明，在相同训练预算下，直接端到端联合学习面临更大的联合动作空间、混合连续-离散动作建模和 credit assignment 难度，样本效率和稳定性均弱于双层分解方案。
+
+\section{DSR-priority 主配置实验}
+\label{sec:dsr-priority}
+
+为进一步验证框架在服务质量偏好上的可调节性，本文将 DSR-priority 作为第二组正式主配置进行评估。相较能耗优先配置，DSR-priority 配置将系统级权重调整为 $W_{DSR}=3.0$、$W_E=0.2$；下层 Lagrange 约束目标调整为 $\tau_{dsr}=0.28$、$\tau_{mbs}=0.08$，Lagrange 学习率为 $\eta_{\lambda}=0.5$，乘子上界为 $\lambda_{max}=50.0$；下层 reward 权重调整为 $w_{dead}=7.0$, $w_{succ}=1.5$, $w_{lat}=2.5$, $w_{en}=0.5$, $w_{mbs}=0.2$。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{三种配置下的 Full Hierarchical MARL 对比（$N=30$）}{Full Hierarchical MARL under three configurations ($N=30$)}
+    \label{tab:dsr-priority}
+    \begin{tabular}{l|rr|rr|rr}
+        \hline
+        配置 & Reward & & Energy (M) & & DSR & \\
+        \hline
+        baseline（heuristic） & -5933.9 & & 114.70 & & 0.2734 & \\
+        能耗优先（base v2） & -1451.7 & & \textbf{58.06} & & 0.2083 & \\
+        DSR 优先（strong） & \textbf{-1147.2} & & 83.04 & & \textbf{0.2435} & \\
+        \hline
+    \end{tabular}
+\end{table}
+
+DSR-priority 配置下，完整方法的 DSR 从能耗优先配置下的 0.2083 提升至 0.2435，与 baseline 的差距从 -0.065 缩小至 -0.030（$p = 1.6\times10^{-6}$）。但该值仍低于 heuristic baseline 的 0.2734，因此本文将其解释为 DSR 的部分恢复，而非完全恢复。DSR-priority 配置下能耗为 83.04M，相比 baseline 的 114.70M 仍节省 27.6\%；cooperative ratio 达到 56.7\%，为所有学习式策略中最高。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{docs/figures/fig_lagrange_dsr_mbs_tradeoff.png}
+    \bicaption{Lagrange 约束动态与 DSR-MBS 权衡}{Lagrange constraint dynamics and DSR-MBS trade-off}
+    \label{fig:lagrange-tradeoff}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.85\textwidth]{docs/figures/fig_hierarchical_training_curves.png}
+    \bicaption{固定 workload42 评估曲线}{Fixed workload42 evaluation curves}
+    \label{fig:training-curves}
+\end{figure}
+
+\section{讨论}
+\label{sec:discussion}
+
+\subsection{Energy-DSR-Fairness 三元权衡}
+\label{subsec:tradeoff}
+
+实验揭示了多 UAV MEC 系统中一个核心的三元权衡：
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{Energy-DSR-Fairness 三元权衡分析}{Energy-DSR-Fairness ternary trade-off analysis}
+    \label{tab:tradeoff}
+    \begin{tabular}{|l|l|l|}
+        \hline
+        优化方向 & 优势 & 代价 \\
+        \hline
+        降低 Energy & 从 114.7M $\rightarrow$ 42.8M (-63\%) & DSR 从 0.27 $\rightarrow$ 0.19 \\
+        提升 DSR & 0.27 $\rightarrow$ 0.29 & Energy 维持高位 111.8M \\
+        提升 Fairness & 0.77 $\rightarrow$ 0.93 & 依赖更强的轨迹协同建模 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+本文的双层 MARL 框架通过 Lagrange 约束和奖励权重提供了调控这一权衡的机制。第 \ref{sec:dsr-priority} 节的 DSR-priority 主配置实验表明：将 $W_{DSR}$ 从 1.0 提升至 3.0、$W_E$ 从 0.5 降至 0.2、$\tau_{dsr}$ 从 0.18 提升至 0.28 后，完整方法的 DSR 可从 0.2083 部分恢复至 0.2435，与 baseline 的差距缩小约 54\%，同时仍保持约 28\% 的能耗节省。
+
+\subsection{上层轨迹 vs 下层卸载的相对贡献}
+\label{subsec:layer-contribution}
+
+通过对比 \texttt{att+heuristic}（仅上层）和 \texttt{unco+lower}（仅下层）可以发现：
+\begin{itemize}
+    \item 上层贡献主要在于 \textbf{公平性}（0.930 vs 0.775）和 \textbf{整体奖励}（-2129 vs -5934）
+    \item 下层贡献主要在于 \textbf{能耗降低}（42.9M vs 114.7M）和 \textbf{卸载灵活性}
+    \item 完整双层（-1451.7, 58.06M, 0.936, 0.208）综合了两层优势
+\end{itemize}
+
+\subsection{与现有工作的对比}
+\label{subsec:comparison}
+
+相比黄子祥等 \cite{huang2026madr} 基于 MADRL 的单层端到端方法，本文的双层分解将轨迹控制与请求级卸载拆开处理，降低了直接联合动作建模的结构复杂度，并提高了策略行为的可解释性。相比尤昕阳等 \cite{you2026soft} 的 SAC 方法，本文通过双层拆分分别处理连续轨迹控制与离散请求卸载，减少了直接构造混合联合动作的难度。相比曾耀平等 \cite{zeng2026uav} 的博弈论方法，本文基于 MARL 的在线执行主要依赖局部和邻居观测，具有较好的动态适应性。

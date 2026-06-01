@@ -1,0 +1,37 @@
+\chapter{绪论}
+\label{cha:introduction}
+
+\section{选题背景与意义}
+\label{sec:background}
+
+随着车联网、智慧城市和低空智能网络的发展，大量终端设备需要在动态环境中持续产生计算密集型或时延敏感型任务。传统地面边缘节点虽然能够在一定程度上缓解终端算力不足的问题，但在临时热点、灾害场景、覆盖盲区或高密度接入场景下，固定基础设施的覆盖范围和部署灵活性仍然有限。无人机（Unmanned Aerial Vehicle, UAV）具有机动部署、视距链路和按需覆盖等优势，因此被广泛用于增强移动边缘计算系统的通信和计算能力 \cite{zeng2016wireless, mozaffari2019tutorial}。
+
+在多无人机 MEC 系统中，服务质量并不只由单一因素决定。无人机轨迹会影响 UE-UAV 链路速率、协作无人机可达性、UAV-MBS 回传质量以及区域覆盖公平性；请求卸载策略则会进一步决定任务时延、UAV 计算负载、UAV 侧能耗、宏基站负载和截止期满足率。因此，轨迹控制和任务卸载之间存在强耦合关系 \cite{hu2019uav, yu2020joint}。若只优化轨迹，系统可能获得较好的覆盖，却仍然将大量请求回退到 MBS；若只优化卸载，策略只能被动适应当前 UAV 分布，无法主动创造更好的协作机会。
+
+\section{国内外研究现状和相关工作}
+\label{sec:related_work}
+
+现有研究已经从凸优化 \cite{zeng2026uav, li2026sensing}、启发式算法 \cite{wang2026ccah}、深度强化学习 \cite{you2026soft, huang2026madr} 和多智能体强化学习 \cite{liu2026multi} 等角度讨论了 UAV-MEC 中的轨迹、卸载、资源分配、服务放置和缓存联合优化问题。
+
+黄子祥等 \cite{huang2026madr} 针对应急场景提出基于 MADRL 的多无人机协同计算卸载策略，联合优化卸载比例、飞行角度和速度，并使用 Jain 公平性指数衡量负载均衡。尤昕阳等 \cite{you2026soft} 提出基于柔性 Actor-Critic 的多无人机协同 MEC 任务卸载方案，联合决策任务卸载比例、无人机选择、传输功率与算力分配。王义君等 \cite{wang2026ccah} 提出基于协同缓存自适应的分层多元宇宙优化算法（CCAH-MVO），在三层网络架构下协同优化缓存、卸载和资源分配。曾耀平等 \cite{zeng2026uav} 采用 Stackelberg 博弈方法联合优化 UAV 部署和 UE 卸载策略。李侍阳等 \cite{li2026sensing} 面向感知与 AI 协同任务，提出基于 MILP 和 SCA 的多维资源联合优化算法。
+
+与上述工作不同，本文关注如何将强耦合的轨迹-卸载问题拆分为可训练、可复现、可解释的双层 MARL 框架，并显式建模终端设备的能量动态以维持系统的持续运行。
+
+\section{本文的主要贡献}
+\label{sec:contributions}
+
+本文的主要贡献如下：
+
+\begin{enumerate}
+    \item 提出一种基于 Attention-MAPPO 的多 UAV MEC 轨迹与任务卸载协同优化框架，将轨迹控制和请求级卸载拆分为上层 attention-MAPPO 和下层 constrained attention offload MAPPO 两个协同决策层，以降低直接联合建模的动作耦合复杂度。
+    \item 设计请求级质量感知动作 mask，对明显不可行的 cooperative UAV 与 MBS 动作进行运行时屏蔽，减少无效探索。消融实验表明，mask 会改变 MBS load ratio 和协作卸载比例。
+    \item 在下层奖励中引入 Lagrange 约束机制，将 DSR 和 MBS load ratio 纳入可解释的约束权衡。消融实验表明，去除 Lagrange 约束后 MBS load ratio 从 11.0\% 上升至 17.1\%。
+    \item 补充实现上层 vanilla MAPPO、attention 权重可视化和端到端 joint MAPPO baseline，用于分析 attention 机制的作用边界和直接联合动作学习的训练难度。
+\end{enumerate}
+
+此外，本文在系统模型中显式考虑 UAV 飞行能耗、UE 电池动态和 WPT 机制，并基于 training seed 与 workload seed 的成对统计单元（$N=30$）报告均值、95\% 置信区间、paired t-test 和 Wilcoxon 检验。
+
+\section{本文的论文结构与章节安排}
+\label{sec:arrangement}
+
+本文其余部分组织如下：第 2 章介绍系统模型与问题形式化；第 3 章详细描述双层 MARL 方法；第 4 章介绍实验设计；第 5 章呈现实验结果与分析；第 6 章总结全文。
