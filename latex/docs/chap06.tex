@@ -1,7 +1,18 @@
-\chapter{结论}
+\chapter{总结与展望}
 \label{cha:conclusion}
 
+\section{工作总结}
+\label{sec:summary}
+
 本文提出了一种基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化框架。通过将轨迹控制和请求级卸载解耦为两个协同决策层，该框架降低了直接端到端联合动作建模的结构复杂度，并提高了决策过程的可解释性。
+
+本文的主要工作和贡献包括：
+
+\begin{enumerate}
+    \item 提出了基于 Attention-MAPPO 的双层 MARL 框架，将轨迹控制与请求级卸载解耦为上层和下层两个协同决策层，降低动作空间复杂度。
+    \item 设计了质量感知动作掩码和拉格朗日约束机制，分别处理不可行动作屏蔽和 DSR-MBS 负载权衡问题。
+    \item 显式建模了 UAV 飞行能耗、UE 电池动态和 WPT 机制，维持系统长期运行的可持续性。
+\end{enumerate}
 
 实验结果表明：
 \begin{enumerate}
@@ -13,11 +24,22 @@
     \item 端到端 \texttt{joint\_mappo} baseline 在相同训练预算下评估 reward 为 -9865.1、DSR 为 0.1349、fairness 为 0.4581，明显弱于分层策略，说明直接联合轨迹-卸载动作学习存在样本效率和稳定性挑战。
 \end{enumerate}
 
-未来的工作方向包括：
+\section{未来展望}
+\label{sec:future-work}
+
+尽管本文提出的双层 MARL 框架在多无人机 MEC 系统中取得了良好的效果，但仍有一些值得进一步研究的方向：
+
 \begin{enumerate}
-    \item 在更多 DSR 阈值和权重组合上进行细粒度 Pareto 扫描；
-    \item 扩大 vanilla/attention/joint MAPPO 补充实验的 training seeds 和 workload seeds，以获得与主实验一致的统计规模；
-    \item 引入三维轨迹控制以更好地模拟真实部署环境；
-    \item 研究更高效的 Lagrange 乘子自适应更新策略；
-    \item 将服务缓存和内容分发纳入协同优化框架。
+    \item 在更多 DSR 阈值和权重组合上进行细粒度 Pareto 扫描，以更好地理解 DSR-能耗-公平性之间的权衡关系。
+    \item 扩大 vanilla/attention/joint MAPPO 补充实验的 training seeds 和 workload seeds，以获得与主实验一致的统计规模，提高实验结论的可靠性。
+    \item 引入三维轨迹控制以更好地模拟真实部署环境，考虑 UAV 飞行高度的变化对通信和能耗的影响。
+    \item 研究更高效的 Lagrange 乘子自适应更新策略，以提高约束优化的收敛速度和稳定性。
+    \item 将服务缓存和内容分发纳入协同优化框架，实现轨迹、卸载、缓存和资源分配的全面协同优化。
+    \item 探索异构 UAV 场景，考虑不同类型 UAV 的计算能力、通信能力和能耗特性差异。
+    \item 研究动态拓扑下的多 UAV 协同问题，考虑 UAV 的加入和退出对系统性能的影响。
 \end{enumerate}
+
+\section{本章小结}
+\label{sec:summary-chap06}
+
+本章总结了本文的研究工作和主要贡献，并展望了未来的研究方向。首先回顾了本文提出的基于 Attention-MAPPO 的双层 MARL 框架及其主要创新点；然后总结了实验结果，验证了该框架在奖励、能耗、公平性和离线率等指标上的显著改善；最后提出了未来的研究方向，包括细粒度 Pareto 扫描、三维轨迹控制、Lagrange 乘子自适应更新、服务缓存和内容分发协同优化等。

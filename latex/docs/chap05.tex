@@ -1,5 +1,82 @@
-\chapter{实验结果与分析}
-\label{cha:results}
+\chapter{实验设计与结果分析}
+\label{cha:experiments}
+
+本章介绍实验设计和实验结果分析。首先介绍仿真环境、对比方法和评估指标，然后呈现实验结果并进行分析。
+
+\section{仿真环境与参数}
+\label{sec:simulation-setup}
+
+实验区域为 $700$m $\times$ 700m，系统包含 $N=5$ 架 UAV、$M=100$ 个 UE 和 $1$ 个 MBS。每个 episode 包含 $T=1000$ 个 time slots，每个 time slot 时长为 $\tau = 1$s。UAV 飞行高度 $H=100$m，最大速度 $v_{max}=15$m/s，覆盖半径 $R_c=100$m，感知范围 $460$m，最小 UAV 间距 $200$m。系统包含 25 类服务和 50 类内容文件，服务 deadline 在 $[0.65, 2.10]$s 范围内生成。MBS 固定算力 $f_{mbs} = 200 \times 10^9$ cycles/s。UAV 计算能力在 $[40, 90] \times 10^9$ cycles/s 之间随机生成。
+
+UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{static}=0.01$W。飞行功率 $P_{move}=300$W，悬停功率 $P_{hover}=150$W。WPT 发射功率 $P_{wpt}=50$W，采集增益 $G=5\times10^5$，采集效率 $\eta=0.8$。
+
+所有 MARL 策略使用 PyTorch 实现，MAPPO 采用 2 层 MLP（hidden dim=128），attention 模块隐层维度为 64（ATTN\_HIDDEN\_DIM=64），Adam 优化器，learning rate$=3\times10^{-4}$，PPO clip $\epsilon=0.2$，discount $\gamma=0.99$，GAE $\lambda=0.95$。
+
+正式实验采用 3 个 training seeds（42, 84, 126）和 10 个 workload seeds（42-420），每个 workload seed 运行 6 个 episodes。统计单元为 (training seed, workload seed) 的 episode mean，每个策略共有 $N=30$ 个统计样本。本文报告 mean、std、95\% CI、paired delta、paired t-test 和 Wilcoxon 检验。
+
+\section{对比方法}
+\label{sec:comparison-methods}
+
+\subsection{主实验策略组合}
+
+主实验比较五组策略组合，如表 \ref{tab:main-strategies} 所示。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{主实验策略组合}{Main experiment strategy combinations}
+    \label{tab:main-strategies}
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        组合方案 & 轨迹控制 & 卸载策略 & 角色 \\
+        \hline
+        uncoordinated\_greedy\_\_heuristic & uncoordinated greedy & heuristic & 基础参考 \\
+        attention\_mappo\_\_heuristic & attention-MAPPO & heuristic & 上层贡献 \\
+        uncoordinated\_greedy\_\_lower\_mappo & uncoordinated greedy & lower MAPPO & 下层贡献 \\
+        attention\_mappo\_\_lower\_mappo & attention-MAPPO & lower MAPPO & 分别训练后组合 \\
+        full\_hierarchical\_marl & attention-MAPPO & lower MAPPO & 完整双层联合训练 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{下层消融实验}
+
+下层消融实验以 \texttt{lower\_full}（即 \texttt{attention\_mappo\_\_lower\_mappo}）为参考，如表 \ref{tab:ablation-strategies} 所示。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{下层消融实验配置}{Lower-layer ablation configurations}
+    \label{tab:ablation-strategies}
+    \begin{tabular}{|l|c|c|c|}
+        \hline
+        消融方法 & Attention & Quality mask & Lagrange \\
+        \hline
+        lower\_full & yes & yes & yes \\
+        lower\_no\_mask & yes & no & yes \\
+        lower\_no\_lagrange & yes & yes & no \\
+        lower\_no\_attention & no & yes & yes \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsection{额外 baseline}
+
+为进一步界定 attention 机制和双层分解的适用边界，本文还补充报告上层 \texttt{vanilla\_mappo\_\_heuristic} 消融、attention 权重可视化和 \texttt{joint\_end\_to\_end\_mappo} 端到端联合 MAPPO baseline。由于补充实验当前采用单一 training seed（42）和 4 个 workload seeds（42, 84, 126, 168），统计规模小于主实验，因此主要用于机制分析和负向 baseline 说明。
+
+\section{评估指标}
+\label{sec:metrics}
+
+本文使用以下评估指标：
+
+\begin{itemize}
+    \item \textbf{Reward ($R_t$)}：第 \ref{sec:optimization-objective} 节定义的系统级综合奖励
+    \item \textbf{Latency ($L$)}：所有 UE 的总时延（含 $T_{penalty}=20$s 未服务惩罚）
+    \item \textbf{Energy ($E$)}：UAV 侧总能耗（含飞行、悬停、计算、通信、WPT）
+    \item \textbf{Fairness ($J$)}：基于各 UE 的 service\_coverage 计算 Jain 指数，衡量用户服务覆盖公平性
+    \item \textbf{DSR}：deadline satisfaction rate，被服务且满足 deadline 的请求比例
+    \item \textbf{offline\_rate ($O$)}：电池低于 $B_{low}$ 的 UE 比例
+    \item \textbf{Offloading ratios}：local/cooperative/MBS 卸载比例
+    \item \textbf{MBS load ratio}：卸载至 MBS 的服务请求数占已处理服务请求数的比例
+\end{itemize}
 
 \section{主实验结果}
 \label{sec:main-results}
@@ -257,3 +334,8 @@ DSR-priority 配置下，完整方法的 DSR 从能耗优先配置下的 0.2083 
 \label{subsec:comparison}
 
 相比黄子祥等 \cite{huang2026madr} 基于 MADRL 的单层端到端方法，本文的双层分解将轨迹控制与请求级卸载拆开处理，降低了直接联合动作建模的结构复杂度，并提高了策略行为的可解释性。相比尤昕阳等 \cite{you2026soft} 的 SAC 方法，本文通过双层拆分分别处理连续轨迹控制与离散请求卸载，减少了直接构造混合联合动作的难度。相比曾耀平等 \cite{zeng2026uav} 的博弈论方法，本文基于 MARL 的在线执行主要依赖局部和邻居观测，具有较好的动态适应性。
+
+\section{本章小结}
+\label{sec:summary-chap05}
+
+本章介绍了实验设计和实验结果分析。首先介绍了仿真环境、对比方法和评估指标，然后通过主实验、上层贡献分析、卸载分布分析、消融实验、端到端 baseline 实验和 DSR-priority 配置实验，全面验证了所提双层 MARL 框架的有效性。实验结果表明，该框架在奖励、能耗、公平性和离线率等指标上均取得了显著改善，并通过 Lagrange 约束和奖励权重提供了调控 DSR-能耗权衡的机制。
