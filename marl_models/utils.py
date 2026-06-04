@@ -81,6 +81,15 @@ def get_model(model_name: str) -> MARLModel:
     elif model_name == "uncoordinated_greedy":
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return UncoordinatedGreedyModel(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
+    elif model_name == "random_baseline":
+        from marl_models.random_baseline.random_baseline import RandomBaseline
+        return RandomBaseline(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
+    elif model_name == "uniform_baseline":
+        from marl_models.uniform_baseline.uniform_baseline import UniformBaseline
+        return UniformBaseline(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
+    elif model_name == "ippo_baseline":
+        from marl_models.ippo_baseline.ippo_baseline import IPPOBaseline
+        return IPPOBaseline(model_name=model_name, num_agents=config.NUM_UAVS, obs_dim=config.OBS_DIM_SINGLE, action_dim=config.ACTION_DIM, device=device)
     else:
         # 主动报错：当输入或状态不满足实验前提时，立即给出明确错误。
         raise ValueError(f"Unknown model type: {model_name}.")
