@@ -183,6 +183,44 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
 
 在该补充实验中，vanilla\_mappo 在 reward、latency 和 fairness 上优于 attention\_mappo；attention 相对 vanilla 的 latency 增加约 293458（paired t-test $p=0.0085$），reward 降低约 759.5（$p=0.0889$）。另一方面，attention-MAPPO 的 energy 更低（约 -5.57M，$p=0.102$），offline rate 更低，MBS load ratio 也显著更低（0.99\% vs 1.41\%，$p=0.0155$）。
 
+\section{轨迹可视化分析}
+\label{sec:trajectory-visualization}
+
+由于本文方法同时包含上层轨迹控制和下层请求级卸载决策，仅依赖表格指标难以直观展示不同策略在空间维度上的行为差异。为此，图 \ref{fig:trajectory-user-distribution} 给出了同一评估场景下不同算法的无人机二维飞行轨迹。该图基于 training seed 42 和 workload seed 42 的第一个评估 episode 绘制。图中浅灰色散点表示评估 episode 初始时刻的 UE 分布，彩色曲线表示 5 架无人机的水平飞行轨迹，空心圆表示无人机起点，实心方块表示终点，箭头表示移动方向，虚线圆表示无人机终点处的覆盖范围，黑色五角星表示宏基站位置。
+
+\begin{figure}[!htbp]
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{docs/figures/图5-6a_随机策略无人机二维轨迹与用户分布.pdf}
+        \\(a) 随机策略
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{docs/figures/图5-6b_IPPO无人机二维轨迹与用户分布.pdf}
+        \\(b) IPPO
+    \end{minipage}
+
+    \vspace{0.8em}
+
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{docs/figures/图5-6c_VanillaMAPPO无人机二维轨迹与用户分布.pdf}
+        \\(c) Vanilla MAPPO
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{docs/figures/图5-6d_本文方法无人机二维轨迹与用户分布.pdf}
+        \\(d) 本文方法
+    \end{minipage}
+    \bicaption{不同算法下无人机二维轨迹与用户分布对比}{Two-dimensional UAV trajectories and UE distribution under different algorithms}
+    \label{fig:trajectory-user-distribution}
+\end{figure}
+
+从图 \ref{fig:trajectory-user-distribution} 可以看出，随机策略的移动方向缺乏稳定目标，轨迹更多体现为无规则探索；IPPO 和 Vanilla MAPPO 在相同用户分布下形成了较明确的局部移动模式，其中 IPPO 更偏向快速靠近部分服务区域，因此在平均时延指标上表现较优。本文方法的轨迹并不以单纯缩短路径或最低时延为唯一目标，而是在用户分布、无人机间协作关系和下层卸载决策共同作用下形成相对稳定的空间部署。结合表 \ref{tab:main-results} 以及后续卸载分布分析可知，本文方法的优势主要体现在能耗、有效服务完成和协作卸载之间的综合权衡，而不是单一轨迹长度或单一时延指标最优。
+
 \section{卸载分布分析}
 \label{sec:offloading-analysis}
 
