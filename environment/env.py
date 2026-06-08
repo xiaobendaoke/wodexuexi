@@ -496,6 +496,11 @@ class Env:
                 rewards[uav.id] -= config.BOUNDARY_PENALTY
         rewards = [r * config.REWARD_SCALING_FACTOR for r in rewards]
 
+        # 有效能效 = 满足截止时间的请求数 / UAV总能耗
+        effective_energy_efficiency: float = 0.0
+        if total_energy > config.EPSILON:
+            effective_energy_efficiency = float(deadline_satisfied_count) / total_energy
+
         metrics: dict[str, float] = {
             "latency": total_latency,
             "energy": total_energy,
@@ -506,6 +511,7 @@ class Env:
             "offloading_ratio_cooperative": offloading_ratio_cooperative,
             "offloading_ratio_mbs": offloading_ratio_mbs,
             "mbs_load_ratio": mbs_load_ratio,
+            "effective_energy_efficiency": effective_energy_efficiency,
             "service_requests_generated": float(total_service_requests_generated),
             "service_requests_processed": float(total_service_requests_processed),
             "service_offloads_local": float(total_local_offloads),

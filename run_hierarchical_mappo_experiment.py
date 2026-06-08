@@ -187,6 +187,7 @@ def train_hierarchical_mappo(
     episode = 1
     episode_step = 0
     recent_rewards: list[float] = []
+    training_curve: list[dict[str, float | int]] = []
     lambda_dsr = 0.0
     lambda_mbs = 0.0
 
@@ -282,17 +283,38 @@ def train_hierarchical_mappo(
             if done:
                 recent_rewards.append(episode_totals["reward"])
                 episode_length = max(float(episode_step), 1.0)
+                episode_curve_entry = {
+                    "episode": int(episode),
+                    "reward": float(episode_totals["reward"]),
+                    "latency": float(episode_totals["latency"]),
+                    "energy": float(episode_totals["energy"]),
+                    "fairness": float(episode_totals["fairness"]),
+                    "offline_rate": float(episode_totals["offline_rate"]),
+                    "deadline_satisfaction_rate": float(episode_totals["deadline"] / episode_length),
+                    "offloading_ratio_local": float(episode_totals["local"] / episode_length),
+                    "offloading_ratio_cooperative": float(episode_totals["coop"] / episode_length),
+                    "offloading_ratio_mbs": float(episode_totals["mbs"] / episode_length),
+                    "mbs_load_ratio": float(episode_totals["mbs_load"] / episode_length),
+                    "lambda_dsr": float(episode_totals["lambda_dsr"] / episode_length),
+                    "lambda_mbs": float(episode_totals["lambda_mbs"] / episode_length),
+                    "dsr_violation": float(episode_totals["dsr_violation"] / episode_length),
+                    "mbs_load_violation": float(episode_totals["mbs_violation"] / episode_length),
+                    "constraint_penalty": float(episode_totals["constraint_penalty"] / episode_length),
+                    "coop_masked_count": float(episode_totals["coop_masked"]),
+                    "mbs_masked_count": float(episode_totals["mbs_masked"]),
+                }
+                training_curve.append(episode_curve_entry)
                 episode_log.append(
                     episode_totals["reward"],
                     episode_totals["latency"],
                     episode_totals["energy"],
                     episode_totals["fairness"],
                     episode_totals["offline_rate"],
-                    deadline_satisfaction_rate=episode_totals["deadline"] / episode_length,
-                    offloading_ratio_local=episode_totals["local"] / episode_length,
-                    offloading_ratio_cooperative=episode_totals["coop"] / episode_length,
-                    offloading_ratio_mbs=episode_totals["mbs"] / episode_length,
-                    mbs_load_ratio=episode_totals["mbs_load"] / episode_length,
+                    deadline_satisfaction_rate=episode_curve_entry["deadline_satisfaction_rate"],
+                    offloading_ratio_local=episode_curve_entry["offloading_ratio_local"],
+                    offloading_ratio_cooperative=episode_curve_entry["offloading_ratio_cooperative"],
+                    offloading_ratio_mbs=episode_curve_entry["offloading_ratio_mbs"],
+                    mbs_load_ratio=episode_curve_entry["mbs_load_ratio"],
                     service_learned_decision_count=float(env.last_runtime_audit.get("episode_service_learned_decision_count", 0.0)),
                     service_heuristic_decision_count=float(env.last_runtime_audit.get("episode_service_heuristic_decision_count", 0.0)),
                     service_fallback_count=float(env.last_runtime_audit.get("episode_service_fallback_count", 0.0)),
@@ -365,6 +387,11 @@ def train_hierarchical_mappo(
         offload_model.save(str(offload_save_dir))
         offload_model_dir_out = str(offload_save_dir)
 
+    training_curve_path = Path("train_logs") / "hierarchical_mappo" / f"training_curve_{timestamp}.json"
+    training_curve_path.parent.mkdir(parents=True, exist_ok=True)
+    with training_curve_path.open("w", encoding="utf-8") as f:
+        json.dump(training_curve, f, indent=2)
+
     summary = {
         "timestamp": timestamp,
         "mode": mode,
@@ -385,6 +412,7 @@ def train_hierarchical_mappo(
         "offload_dsr_target": float(config.OFFLOAD_DSR_TARGET),
         "offload_mbs_load_ceiling": float(config.OFFLOAD_MBS_LOAD_CEILING),
         "log_json": logger.json_file_path,
+        "training_curve_json": str(training_curve_path),
     }
     summary_path = Path("results") / "reports" / f"hierarchical_mappo_summary_{timestamp}.json"
     summary_path.parent.mkdir(parents=True, exist_ok=True)

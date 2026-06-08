@@ -400,12 +400,17 @@ def main() -> None:
             offload_model = get_model("constrained_attention_offload_mappo")
             if offload_dir:
                 offload_model.load(offload_dir)
-            # 从 log_json 提取训练曲线
-            log_json_path = training_summary.get("log_json")
-            if log_json_path and Path(log_json_path).exists():
-                with open(log_json_path, "r") as f:
-                    log_data = json.load(f)
-                training_curve = [{"episode": entry.get("episode", i), "reward": entry.get("reward", 0.0)} for i, entry in enumerate(log_data)]
+            # 优先读取每个 episode 的完整训练曲线；log_json 只按 LOG_FREQ 记录，不能用于收敛图。
+            curve_json_path = training_summary.get("training_curve_json")
+            if curve_json_path and Path(curve_json_path).exists():
+                with open(curve_json_path, "r") as f:
+                    training_curve = json.load(f)
+            else:
+                log_json_path = training_summary.get("log_json")
+                if log_json_path and Path(log_json_path).exists():
+                    with open(log_json_path, "r") as f:
+                        log_data = json.load(f)
+                    training_curve = [{"episode": entry.get("episode", i), "reward": entry.get("reward", 0.0)} for i, entry in enumerate(log_data)]
         else:
             print(f"[{args.baseline}] No training requested, creating fresh model...")
             traj_model_name = "attention_mappo" if args.baseline == "proposed" else "vanilla_mappo"

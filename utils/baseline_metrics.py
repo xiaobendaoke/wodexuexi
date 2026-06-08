@@ -35,6 +35,30 @@ SUMMARY_METRIC_NAMES: list[str] = [
     "mbs_load_ratio",
 ]
 
+# 新增指标字段（v2 版本，不删除旧字段）
+SUMMARY_METRIC_NAMES_V2: list[str] = [
+    "offline_rate_final",
+    "offline_rate_step_mean",
+    "fairness_final",
+    "fairness_step_mean",
+    "dsr_step_mean",
+    "dsr_request_weighted",
+    "energy_efficiency_episode",
+    "energy_efficiency_global",
+    "service_requests_generated",
+    "service_requests_processed",
+    "deadline_satisfied_service_requests",
+    "service_offloads_local",
+    "service_offloads_cooperative",
+    "service_offloads_mbs",
+    "offloading_ratio_local_processed",
+    "offloading_ratio_cooperative_processed",
+    "offloading_ratio_mbs_processed",
+    "mbs_load_ratio_generated",
+    "processed_request_ratio",
+    "deadline_satisfied_per_processed",
+]
+
 
 def set_global_seed(seed: int | None) -> None:
     """设置全局随机种子，保证实验可复现。"""
@@ -50,12 +74,51 @@ def _collect_episode_metrics(env: Env, ep_reward: float, ep_latency: float, ep_e
                              ep_fairness: float, ep_offline_rate: float, ep_deadline: float,
                              ep_local: float, ep_coop: float, ep_mbs: float, ep_mbs_load: float,
                              ep_service_generated: float, ep_service_processed: float,
-                             ep_deadline_satisfied: float) -> dict[str, float]:
-    """从 episode 累计量生成标准化指标 dict。"""
+                             ep_deadline_satisfied: float,
+                             ep_fairness_values: list[float] | None = None,
+                             ep_offline_rate_values: list[float] | None = None,
+                             ep_dsr_values: list[float] | None = None,
+                             ep_local_offloads: float = 0.0,
+                             ep_coop_offloads: float = 0.0,
+                             ep_mbs_offloads: float = 0.0) -> dict[str, float]:
+    """从 episode 累计量生成标准化指标 dict。
+
+    新增参数（v2）：
+        ep_fairness_values: 每步的 fairness 值列表，用于计算 step_mean
+        ep_offline_rate_values: 每步的 offline_rate 值列表，用于计算 step_mean
+        ep_dsr_values: 每步的 deadline_satisfaction_rate 值列表，用于计算 step_mean
+        ep_local_offloads: episode 内本地卸载总数
+        ep_coop_offloads: episode 内协作卸载总数
+        ep_mbs_offloads: episode 内 MBS 卸载总数
+    """
     episode_length = max(float(config.STEPS_PER_EPISODE), 1.0)
     runtime_audit = dict(env.last_runtime_audit)
     energy_efficiency = ep_deadline_satisfied / max(float(ep_energy), float(config.EPSILON))
+
+    # 计算 step_mean 指标（v2 新增）
+    fairness_step_mean = float(np.mean(ep_fairness_values)) if ep_fairness_values else float(ep_fairness)
+    offline_rate_step_mean = float(np.mean(ep_offline_rate_values)) if ep_offline_rate_values else float(ep_offline_rate)
+    dsr_step_mean = float(np.mean(ep_dsr_values)) if ep_dsr_values else float(ep_deadline / episode_length)
+
+    # 计算 request-weighted DSR（v2 新增）
+    dsr_request_weighted = float(ep_deadline_satisfied) / max(float(ep_service_generated), float(config.EPSILON))
+
+    # 计算卸载比例（以 processed 为分母）（v2 新增）
+    offloading_ratio_local_processed = float(ep_local_offloads) / max(float(ep_service_processed), float(config.EPSILON))
+    offloading_ratio_cooperative_processed = float(ep_coop_offloads) / max(float(ep_service_processed), float(config.EPSILON))
+    offloading_ratio_mbs_processed = float(ep_mbs_offloads) / max(float(ep_service_processed), float(config.EPSILON))
+
+    # 计算 MBS load ratio（以 generated 为分母）（v2 新增）
+    mbs_load_ratio_generated = float(ep_mbs_offloads) / max(float(ep_service_generated), float(config.EPSILON))
+
+    # 计算 processed request ratio（v2 新增）
+    processed_request_ratio = float(ep_service_processed) / max(float(ep_service_generated), float(config.EPSILON))
+
+    # 计算 deadline_satisfied_per_processed（v2 新增）
+    deadline_satisfied_per_processed = float(ep_deadline_satisfied) / max(float(ep_service_processed), float(config.EPSILON))
+
     return {
+        # 旧字段（保留兼容性）
         "reward": float(ep_reward),
         "latency": float(ep_latency),
         "energy": float(ep_energy),
@@ -74,6 +137,24 @@ def _collect_episode_metrics(env: Env, ep_reward: float, ep_latency: float, ep_e
         "service_requests_generated": float(ep_service_generated),
         "service_requests_processed": float(ep_service_processed),
         "deadline_satisfied_service_requests": float(ep_deadline_satisfied),
+        # 新增字段（v2）
+        "offline_rate_final": float(ep_offline_rate),
+        "offline_rate_step_mean": float(offline_rate_step_mean),
+        "fairness_final": float(ep_fairness),
+        "fairness_step_mean": float(fairness_step_mean),
+        "dsr_step_mean": float(dsr_step_mean),
+        "dsr_request_weighted": float(dsr_request_weighted),
+        "energy_efficiency_episode": float(energy_efficiency),
+        "energy_efficiency_global": float(energy_efficiency),  # 对于单 episode，两者相同
+        "service_offloads_local": float(ep_local_offloads),
+        "service_offloads_cooperative": float(ep_coop_offloads),
+        "service_offloads_mbs": float(ep_mbs_offloads),
+        "offloading_ratio_local_processed": float(offloading_ratio_local_processed),
+        "offloading_ratio_cooperative_processed": float(offloading_ratio_cooperative_processed),
+        "offloading_ratio_mbs_processed": float(offloading_ratio_mbs_processed),
+        "mbs_load_ratio_generated": float(mbs_load_ratio_generated),
+        "processed_request_ratio": float(processed_request_ratio),
+        "deadline_satisfied_per_processed": float(deadline_satisfied_per_processed),
     }
 
 
@@ -107,6 +188,14 @@ def run_single_episode(
     ep_service_generated = 0.0
     ep_service_processed = 0.0
     ep_deadline_satisfied = 0.0
+    ep_local_offloads = 0.0
+    ep_coop_offloads = 0.0
+    ep_mbs_offloads = 0.0
+
+    # v2 新增：记录每步的 fairness、offline_rate、DSR 值
+    ep_fairness_values: list[float] = []
+    ep_offline_rate_values: list[float] = []
+    ep_dsr_values: list[float] = []
 
     trajectory_frames: list[dict] = []
 
@@ -163,10 +252,26 @@ def run_single_episode(
         ep_service_processed += float(metrics.get("service_requests_processed", 0.0))
         ep_deadline_satisfied += float(metrics.get("deadline_satisfaction_rate", 0.0)) * service_generated
 
+        # v2 新增：记录卸载计数
+        ep_local_offloads += float(metrics.get("service_offloads_local", 0.0))
+        ep_coop_offloads += float(metrics.get("service_offloads_cooperative", 0.0))
+        ep_mbs_offloads += float(metrics.get("service_offloads_mbs", 0.0))
+
+        # v2 新增：记录每步的 fairness、offline_rate、DSR 值
+        ep_fairness_values.append(float(metrics["fairness"]))
+        ep_offline_rate_values.append(float(metrics["offline_rate"]))
+        ep_dsr_values.append(float(metrics["deadline_satisfaction_rate"]))
+
     episode_metrics = _collect_episode_metrics(
         env, ep_reward, ep_latency, ep_energy, ep_fairness, ep_offline_rate,
         ep_deadline, ep_local, ep_coop, ep_mbs, ep_mbs_load,
         ep_service_generated, ep_service_processed, ep_deadline_satisfied,
+        ep_fairness_values=ep_fairness_values,
+        ep_offline_rate_values=ep_offline_rate_values,
+        ep_dsr_values=ep_dsr_values,
+        ep_local_offloads=ep_local_offloads,
+        ep_coop_offloads=ep_coop_offloads,
+        ep_mbs_offloads=ep_mbs_offloads,
     )
     episode_metrics["policy_type"] = policy_type
     return episode_metrics, trajectory_frames if record_trajectory else None
@@ -196,6 +301,14 @@ def run_single_episode_joint(
     ep_service_generated = 0.0
     ep_service_processed = 0.0
     ep_deadline_satisfied = 0.0
+    ep_local_offloads = 0.0
+    ep_coop_offloads = 0.0
+    ep_mbs_offloads = 0.0
+
+    # v2 新增：记录每步的 fairness、offline_rate、DSR 值
+    ep_fairness_values: list[float] = []
+    ep_offline_rate_values: list[float] = []
+    ep_dsr_values: list[float] = []
 
     trajectory_frames: list[dict] = []
 
@@ -240,23 +353,44 @@ def run_single_episode_joint(
         ep_service_processed += float(metrics.get("service_requests_processed", 0.0))
         ep_deadline_satisfied += float(metrics.get("deadline_satisfaction_rate", 0.0)) * service_generated
 
+        # v2 新增：记录卸载计数
+        ep_local_offloads += float(metrics.get("service_offloads_local", 0.0))
+        ep_coop_offloads += float(metrics.get("service_offloads_cooperative", 0.0))
+        ep_mbs_offloads += float(metrics.get("service_offloads_mbs", 0.0))
+
+        # v2 新增：记录每步的 fairness、offline_rate、DSR 值
+        ep_fairness_values.append(float(metrics["fairness"]))
+        ep_offline_rate_values.append(float(metrics["offline_rate"]))
+        ep_dsr_values.append(float(metrics["deadline_satisfaction_rate"]))
+
     episode_metrics = _collect_episode_metrics(
         env, ep_reward, ep_latency, ep_energy, ep_fairness, ep_offline_rate,
         ep_deadline, ep_local, ep_coop, ep_mbs, ep_mbs_load,
         ep_service_generated, ep_service_processed, ep_deadline_satisfied,
+        ep_fairness_values=ep_fairness_values,
+        ep_offline_rate_values=ep_offline_rate_values,
+        ep_dsr_values=ep_dsr_values,
+        ep_local_offloads=ep_local_offloads,
+        ep_coop_offloads=ep_coop_offloads,
+        ep_mbs_offloads=ep_mbs_offloads,
     )
     episode_metrics["policy_type"] = policy_type
     return episode_metrics, trajectory_frames if record_trajectory else None
 
 
 def aggregate_metric_dicts(entries: list[dict[str, float]]) -> dict[str, dict[str, float]]:
-    """将多 episode 指标聚合为 mean/std。"""
+    """将多 episode 指标聚合为 mean/std。
+
+    v2 版本：同时处理旧字段和新增字段。
+    """
+    # 合并所有指标名称
+    all_metrics = SUMMARY_METRIC_NAMES + SUMMARY_METRIC_NAMES_V2
     return {
         metric: {
             "mean": float(np.mean([entry[metric] for entry in entries])) if entries else 0.0,
             "std": float(np.std([entry[metric] for entry in entries])) if entries else 0.0,
         }
-        for metric in SUMMARY_METRIC_NAMES
+        for metric in all_metrics
     }
 
 
