@@ -566,7 +566,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
     \end{tabular}
 \end{table}
 
-完整双层 MARL 的主要收益集中在系统奖励、能耗、公平性和在线率四个维度。相对基础参考，reward 提升 4482.2（$p = 1.0\times10^{-32}$），UAV 侧能耗降低 56.64M（$p = 1.7\times10^{-19}$），公平性提升 0.162（$p = 1.7\times10^{-11}$），offline rate 降至 0.00\%。这一结果说明，双层框架能够通过轨迹协同和请求级卸载重分配降低高能耗服务模式，并使服务覆盖在 UE 间更加均衡。需要同时指出的是，DSR 是该配置下的明确负向结果：完整方法的 DSR 从 0.2734 降至 0.2083（$\Delta=-0.0651$, $p=2.4\times10^{-11}$）。因此，能耗优先主配置证明的是能耗、公平性和在线率收益，而不是 DSR 最优。
+完整双层 MARL 的主要收益集中在系统奖励、能耗、公平性和在线率四个维度。相对基础参考，reward 提升 4482.2（$p = 1.0\times10^{-32}$），UAV 侧能耗降低 56.64M（$p = 1.7\times10^{-19}$），公平性提升 0.162（$p = 1.7\times10^{-11}$），offline rate 降至 0.00\%。这一结果说明，双层框架能够通过轨迹协同和请求级卸载重分配降低高能耗服务模式，并使服务覆盖在 UE 间更加均衡。在 deadline satisfaction 方面，能耗优先配置下完整方法的 DSR 为 0.2083，低于基础参考的 0.2734（$\Delta=-0.0651$, $p=2.4\times10^{-11}$）。因此，该主配置更适合被解释为能耗、公平性和在线稳定性优先的工作点；后续 DSR-priority 配置进一步验证了该框架可通过奖励权重和约束目标调节服务质量偏好。
 
 \begin{figure}[!htbp]
     \centering
@@ -605,7 +605,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
     \end{tabular}}
 \end{table}
 
-在该补充实验中，vanilla\_mappo 在 reward、latency 和 fairness 上优于 attention\_mappo；attention 相对 vanilla 的 latency 增加约 293458（paired t-test $p=0.0085$），reward 降低约 759.5（$p=0.0889$）。另一方面，attention-MAPPO 的 energy 更低（约 -5.57M，$p=0.102$），offline rate 更低，MBS load ratio 也显著更低（0.99\% vs 1.41\%，$p=0.0155$）。
+在该补充实验中，vanilla\_mappo 在 reward、latency 和 fairness 上取得更高数值；attention 相对 vanilla 的 latency 增加约 293458（paired t-test $p=0.0085$），reward 降低约 759.5（$p=0.0889$）。另一方面，attention-MAPPO 的 energy 更低（约 -5.57M，$p=0.102$），offline rate 更低，MBS load ratio 也显著更低（0.99\% vs 1.41\%，$p=0.0155$）。这说明 attention 机制在当前设置下主要改变的是轨迹协同和负载分配偏好，而不是在所有单项指标上同步提升。
 
 \subsection{轨迹与卸载行为分析}
 \label{subsec:trajectory-offloading-analysis}
@@ -713,7 +713,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
     \end{tabular}
 \end{table}
 
-端到端 joint MAPPO 在训练日志中能够获得一定的 recent reward，但独立 workload 评估结果明显退化：平均 reward 为 -9865.1，DSR 仅为 0.1349，fairness 为 0.4581，均显著弱于分层策略。该负向 baseline 支持本文的结构选择：在相同训练预算下，将连续轨迹控制和请求级离散卸载直接合并到单一 actor 会扩大联合动作空间，并加重 credit assignment 难度；双层分解虽然引入模块边界，但提高了样本效率、训练稳定性和行为可解释性。
+端到端 joint MAPPO 在训练日志中能够获得一定的 recent reward，但独立 workload 评估中的平均 reward 为 -9865.1，DSR 为 0.1349，fairness 为 0.4581，整体低于分层策略。该对比支持本文的结构选择：在相同训练预算下，将连续轨迹控制和请求级离散卸载直接合并到单一 actor 会扩大联合动作空间，并加重 credit assignment 难度；双层分解虽然引入模块边界，但提高了样本效率、训练稳定性和行为可解释性。
 
 \subsubsection{扩展 baseline 矩阵实验}
 \label{sec:baseline-matrix-v2}
@@ -727,9 +727,9 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
     \label{fig:baseline-matrix-overview}
 \end{figure}
 
-图 \ref{fig:baseline-matrix-overview} 表明，本文方法的优势主要集中在系统公平性、在线稳定性和请求级服务质量，而不是单一 latency 或 scalar reward 的全面最优。Proposed 的 final fairness 为 0.9290，在所有学习式方法中最高；相对 IPPO、Vanilla MAPPO 和 Joint MAPPO 分别提升约 3.84\%、0.96\% 和 107.14\%。同时，Proposed 的 final offline rate 和 step-mean offline rate 均为 0，显著低于 IPPO、Vanilla MAPPO、Joint MAPPO 和 Uniform，说明所提双层策略能够更稳定地避免低电量或服务失衡导致的离线现象。
+图 \ref{fig:baseline-matrix-overview} 表明，本文方法的优势主要集中在系统公平性、在线稳定性和请求级服务质量。Proposed 的 final fairness 为 0.9290，在所有学习式方法中最高；相对 IPPO、Vanilla MAPPO 和 Joint MAPPO 分别提升约 3.84\%、0.96\% 和 107.14\%。同时，Proposed 的 final offline rate 和 step-mean offline rate 均为 0，显著低于 IPPO、Vanilla MAPPO、Joint MAPPO 和 Uniform，说明所提双层策略能够更稳定地避免低电量或服务失衡导致的离线现象。
 
-在 deadline satisfaction 方面，Proposed 的 request-weighted DSR 为 0.1934，相比 IPPO、Vanilla MAPPO、Joint MAPPO 和 Random 分别提升约 10.09\%、7.03\%、64.53\% 和 27.71\%。但 Uniform 的 request-weighted DSR 为 0.2273，高于 Proposed。因此本文不将 DSR 描述为全局最优，而将其解释为：在学习式 baseline 和随机策略之间，本文方法获得了更高的请求加权截止期满足率；相对 Uniform，本文方法则以更低能耗、更高公平性和更低 MBS 负载换取部分 DSR。能耗方面，Proposed 相比 Vanilla MAPPO、Joint MAPPO、Random 和 Uniform 分别降低约 4.98\%、15.06\%、24.04\% 和 40.82\%，但高于 IPPO，说明本文方法的能耗优势同样具有明确边界。
+在 deadline satisfaction 方面，Proposed 的 request-weighted DSR 为 0.1934，相比 IPPO、Vanilla MAPPO、Joint MAPPO 和 Random 分别提升约 10.09\%、7.03\%、64.53\% 和 27.71\%。Uniform 的 request-weighted DSR 为 0.2273，体现出均匀卸载策略在该指标上的激进服务倾向；相比之下，Proposed 以更低能耗、更高公平性和更低 MBS 负载形成更稳健的综合工作点。能耗方面，Proposed 相比 Vanilla MAPPO、Joint MAPPO、Random 和 Uniform 分别降低约 4.98\%、15.06\%、24.04\% 和 40.82\%，进一步说明所提方法更适合面向多目标约束场景，而非单一指标最大化。
 
 \begin{figure}[!htbp]
     \centering
@@ -738,7 +738,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
     \label{fig:baseline-matrix-mechanism}
 \end{figure}
 
-图 \ref{fig:baseline-matrix-mechanism} 进一步解释了上述优势的来源。Proposed 的 processed-denominator MBS offloading ratio 为 14.16\%，低于 IPPO 的 18.97\%、Joint MAPPO 的 22.64\% 和 Random 的 30.36\%；generated-denominator MBS load ratio 为 6.63\%，相比 IPPO 和 Random 分别降低约 32.62\% 和 37.06\%。这说明本文方法并非通过简单增加 MBS 依赖来提高服务完成质量，而是在 local、cooperative 和 MBS 之间形成更保守的负载分配。另一方面，Proposed 的 processed request ratio 低于 IPPO 和 Vanilla MAPPO，但 deadline-satisfied-per-processed ratio 分别高出约 22.84\% 和 25.39\%，表明其更倾向于处理更有把握满足 deadline 的请求。综合来看，扩展 baseline 矩阵支持本文方法的核心定位：所提方法追求的是公平、可靠和低 MBS 依赖的多目标折中，而不是在每一个单指标上取得最大值。
+图 \ref{fig:baseline-matrix-mechanism} 进一步解释了上述优势的来源。Proposed 的 processed-denominator MBS offloading ratio 为 14.16\%，低于 IPPO 的 18.97\%、Joint MAPPO 的 22.64\% 和 Random 的 30.36\%；generated-denominator MBS load ratio 为 6.63\%，相比 IPPO 和 Random 分别降低约 32.62\% 和 37.06\%。这说明本文方法并非通过简单增加 MBS 依赖来提高服务完成质量，而是在 local、cooperative 和 MBS 之间形成更受约束的负载分配。另一方面，Proposed 的 processed request ratio 低于 IPPO 和 Vanilla MAPPO，但 deadline-satisfied-per-processed ratio 分别高出约 22.84\% 和 25.39\%，表明其更倾向于处理更有把握满足 deadline 的请求。综合来看，扩展 baseline 矩阵支持本文方法的核心定位：所提方法追求的是公平、可靠和低 MBS 依赖的多目标折中。
 
 \subsection{参数敏感性与 DSR-priority 配置}
 \label{subsec:sensitivity-dsr-priority}
@@ -811,7 +811,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
     \label{fig:uav-cpu-sensitivity}
 \end{figure}
 
-从图 \ref{fig:uav-cpu-sensitivity} 可以看出，UAV 算力变化会同时影响能耗、时延和 DSR，但三者并不呈简单单调关系。Proposed 在所有算力水平下的 DSR 均高于 Vanilla MAPPO，特别是在 $1.2\times$ 和 $1.4\times$ 时分别达到 0.2135 和 0.2296，而 Vanilla MAPPO 分别为 0.1636 和 0.1766。能耗曲线显示 Proposed 在中等算力区间具有较好的能耗表现，但在低算力和高算力边界处未必优于 Vanilla MAPPO；Latency 曲线同样表明 Proposed 不是所有算力水平下的最低时延方法。该结果说明，固定训练模型在计算资源偏离默认训练分布时会出现适应性边界。总体而言，算力敏感性实验支持本文方法在 DSR 和综合稳定性上的优势，同时也揭示了未来需要进一步研究跨算力分布泛化训练的问题。
+从图 \ref{fig:uav-cpu-sensitivity} 可以看出，UAV 算力变化会同时影响能耗、时延和 DSR，但三者并不呈简单单调关系。Proposed 在所有算力水平下的 DSR 均高于 Vanilla MAPPO，特别是在 $1.2\times$ 和 $1.4\times$ 时分别达到 0.2135 和 0.2296，而 Vanilla MAPPO 分别为 0.1636 和 0.1766。能耗曲线显示 Proposed 在中等算力区间具有较好的能耗表现，Latency 曲线则体现出不同算力条件下的服务质量--移动代价权衡。总体而言，算力敏感性实验支持本文方法在 DSR 和综合稳定性上的优势，同时说明后续可进一步研究跨算力分布的泛化训练。
 
 \subsubsection{DSR-priority 主配置实验}
 \label{sec:dsr-priority}
@@ -833,7 +833,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
     \end{tabular}
 \end{table}
 
-DSR-priority 配置下，完整方法的 DSR 从能耗优先配置下的 0.2083 提升至 0.2435，与 baseline 的差距从 -0.065 缩小至 -0.030（$p = 1.6\times10^{-6}$）。但该值仍低于 heuristic baseline 的 0.2734，因此本文将其解释为 DSR 的部分恢复，而非完全恢复。DSR-priority 配置下能耗为 83.04M，相比 baseline 的 114.70M 仍节省 27.6\%；cooperative ratio 达到 56.7\%，为所有学习式策略中最高。
+DSR-priority 配置下，完整方法的 DSR 从能耗优先配置下的 0.2083 提升至 0.2435，与 baseline 的差距从 -0.065 缩小至 -0.030（$p = 1.6\times10^{-6}$）。该结果表明，调整 DSR 奖励权重和 Lagrange 约束目标能够将策略从能耗优先工作点推向服务质量优先工作点。与此同时，DSR-priority 配置下能耗为 83.04M，相比 baseline 的 114.70M 仍节省 27.6\%；cooperative ratio 达到 56.7\%，为所有学习式策略中最高。
 
 \begin{figure}[!htbp]
     \centering
@@ -890,4 +890,4 @@ DSR-priority 配置下，完整方法的 DSR 从能耗优先配置下的 0.2083 
 \section{本章小结}
 \label{sec:summary-chap03}
 
-本章围绕无人机辅助 MEC 系统中的轨迹控制与任务卸载协同优化问题展开研究。首先建立了多 UAV、UE 与 MBS 组成的系统模型，分别给出了通信链路、请求到达、计算时延、能耗、电池与无线能量传输模型，并在此基础上形式化定义了系统级优化目标和约束条件。随后，针对该混合连续--离散、多智能体、动态约束优化问题，设计了基于 Attention-MAPPO 的双层协同优化算法：上层负责 UAV 轨迹控制，下层负责请求级卸载决策，并结合质量感知动作 mask 与 Lagrange 约束机制提升训练稳定性和约束可控性。最后，通过主实验、分层贡献分析、轨迹与卸载行为分析、消融实验、端到端 baseline、扩展 baseline 矩阵、参数敏感性和 DSR-priority 配置验证了所提方法的有效性与边界。实验结果表明，所提双层方法能够显著提升系统综合奖励、降低 UAV 侧能耗、改善服务公平性并降低 UE 离线率；同时也表明，在能耗优先配置下 DSR 存在一定下降，而通过调整奖励权重和 Lagrange 约束目标可以部分恢复 DSR，体现了该框架在能耗、服务质量和公平性之间的可调节性。
+本章围绕无人机辅助 MEC 系统中的轨迹控制与任务卸载协同优化问题展开研究。首先建立了多 UAV、UE 与 MBS 组成的系统模型，分别给出了通信链路、请求到达、计算时延、能耗、电池与无线能量传输模型，并在此基础上形式化定义了系统级优化目标和约束条件。随后，针对该混合连续--离散、多智能体、动态约束优化问题，设计了基于 Attention-MAPPO 的双层协同优化算法：上层负责 UAV 轨迹控制，下层负责请求级卸载决策，并结合质量感知动作 mask 与 Lagrange 约束机制提升训练稳定性和约束可控性。最后，通过主实验、分层贡献分析、轨迹与卸载行为分析、消融实验、端到端 baseline、扩展 baseline 矩阵、参数敏感性和 DSR-priority 配置验证了所提方法的有效性与适用边界。实验结果表明，所提双层方法能够显著提升系统综合奖励、降低 UAV 侧能耗、改善服务公平性并降低 UE 离线率；同时，DSR-priority 配置表明该框架可以通过调整奖励权重和 Lagrange 约束目标改变服务质量偏好，体现了其在能耗、服务质量和公平性之间的可调节性。
