@@ -13,13 +13,18 @@ matplotlib.use("Agg")
 import matplotlib.font_manager as fm
 import matplotlib.pyplot as plt
 import numpy as np
+
+from thesis_figure_style import save_pub as save_pub_shared, setup_thesis_style
 from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Rectangle
 
 ROOT = Path(__file__).resolve().parents[3]
 FIG_DIR = ROOT / "docs" / "figures"
+LATEX_FIG_DIR = ROOT / "latex" / "docs" / "figures"
+OUTPUT_DIRS = (FIG_DIR, LATEX_FIG_DIR)
+QA_REPORT = FIG_DIR / "figure_text_qa_report.json"
 MAIN_STATS = ROOT / "results" / "joint_experiments" / "paper_revised_full_20260518_main_merged" / "statistics.json"
 ABLATION_STATS = ROOT / "results" / "joint_experiments" / "paper_revised_full_20260518_ablation_merged" / "statistics.json"
-MAIN_WORKLOAD42 = ROOT / "results" / "joint_experiments" / "paper_revised_full_20260518_main_workload42"
+MAIN_WORKLOAD42 = ROOT / "results" / "joint_experiments" / "linear_v2_full_20260519_main_workload42"
 TRACE_CANDIDATES = [
     ROOT / "results" / "joint_experiments" / "readme_spatial_trace_seed42" / "spatial_traces" / "uncoordinated_greedy__heuristic_spatial_trace.json",
     ROOT / "results" / "joint_experiments" / "readme_spatial_trace_seed42" / "spatial_traces" / "full_hierarchical_marl_spatial_trace.json",
@@ -69,38 +74,13 @@ def available_font_names() -> set[str]:
 
 
 def setup_style() -> None:
-    preferred = ["WenQuanYi Micro Hei", "WenQuanYi Zen Hei", "Noto Sans CJK SC", "SimHei", "Arial Unicode MS", "DejaVu Sans"]
-    installed = available_font_names()
-    family = next((name for name in preferred if name in installed), "DejaVu Sans")
-    plt.rcParams.update(
-        {
-            "figure.dpi": 120,
-            "savefig.dpi": 300,
-            "font.family": "sans-serif",
-            "font.sans-serif": [family] + preferred,
-            "axes.unicode_minus": False,
-            "axes.spines.top": False,
-            "axes.spines.right": False,
-            "axes.grid": True,
-            "grid.alpha": 0.22,
-            "grid.linewidth": 0.6,
-            "axes.titleweight": "bold",
-            "axes.labelsize": 10,
-            "axes.titlesize": 12,
-            "xtick.labelsize": 9,
-            "ytick.labelsize": 9,
-            "legend.frameon": False,
-            "pdf.fonttype": 42,
-            "ps.fonttype": 42,
-        }
-    )
+    setup_thesis_style(font_size=8, legend_frameon=False)
 
 
 def save(fig: plt.Figure, name: str) -> None:
-    FIG_DIR.mkdir(parents=True, exist_ok=True)
-    fig.savefig(FIG_DIR / f"{name}.png", bbox_inches="tight", pad_inches=0.08)
-    fig.savefig(FIG_DIR / f"{name}.pdf", bbox_inches="tight", pad_inches=0.08)
-    plt.close(fig)
+    qa = save_pub_shared(fig, name, OUTPUT_DIRS, pad_inches=0.08, qa_report=QA_REPORT)
+    if qa["status"] != "ok":
+        print(f"QA review: {name} -> {qa}")
 
 
 def load_json(path: Path) -> Any:
@@ -274,7 +254,7 @@ def plot_trace_panel(ax: plt.Axes, rec: dict[str, Any], title: str) -> None:
     ax.set_xlim(0, 700)
     ax.set_ylim(0, 700)
     ax.set_aspect("equal")
-    ax.set_title(title)
+    ax.set_title(title, fontsize=8, loc="left", pad=4)
     ax.set_xlabel("x 坐标 (m)")
     ax.set_ylabel("y 坐标 (m)")
 
@@ -319,7 +299,7 @@ def fig_service_coverage_fairness() -> bool:
         ax.set_xlim(0, 700)
         ax.set_ylim(0, 700)
         ax.set_aspect("equal")
-        ax.set_title(title)
+        ax.set_title(title, fontsize=8, loc="left", pad=4)
         ax.set_xlabel("x 坐标 (m)")
         ax.set_ylabel("y 坐标 (m)")
     fig.colorbar(sc, ax=axes.ravel().tolist(), shrink=0.86, label="采样步覆盖比例")
@@ -377,7 +357,7 @@ def fig_main_comparison(stats: dict[str, Any]) -> None:
         ax.bar(x, means, yerr=stds, capsize=3, color=SERIES_COLORS, linewidth=0.6, edgecolor="white")
         ax.set_xticks(x)
         ax.set_xticklabels([SHORT_LABELS[v] for v in methods], rotation=0, ha="center")
-        ax.set_title(title)
+        ax.set_title(title, fontsize=8, loc="left", pad=4)
         apply_axis_labels(ax, [v + s for v, s in zip(means, stds)] + [v - s for v, s in zip(means, stds)] + [0])
     fig.suptitle("主实验多指标对比（mean ± std, N=30）", fontsize=13, weight="bold")
     fig.tight_layout(rect=(0, 0, 1, 0.96))
@@ -422,7 +402,7 @@ def fig_ablation_comparison(stats: dict[str, Any]) -> None:
         ax.bar(x, means, yerr=stds, capsize=3, color=[COLORS["blue"], COLORS["orange"], COLORS["red"], COLORS["purple"]], edgecolor="white", linewidth=0.6)
         ax.set_xticks(x)
         ax.set_xticklabels([ABLATION_LABELS[v] for v in methods], rotation=15, ha="right")
-        ax.set_title(title)
+        ax.set_title(title, fontsize=8, loc="left", pad=4)
         apply_axis_labels(ax, [v + s for v, s in zip(means, stds)] + [v - s for v, s in zip(means, stds)] + [0])
     axes.flat[5].axis("off")
     axes.flat[5].text(0.5, 0.55, "消融目标：分析 mask、Lagrange、attention\n对卸载分布和能耗-负载权衡的影响", ha="center", va="center", fontsize=11)
@@ -457,8 +437,8 @@ def fig_lagrange_dsr_mbs_tradeoff() -> None:
         for ax, (k, title), col in zip(axes.flat, keys, [COLORS["purple"], COLORS["orange"], COLORS["green"], COLORS["red"]]):
             y = [float(d.get(k, 0.0)) for d in data]
             ax.plot(x, y, marker="o", linewidth=1.8, markersize=4, color=col)
-            ax.set_title(title)
-            ax.set_xlabel("评估 episode")
+            ax.set_title(title, fontsize=8, loc="left", pad=4)
+            ax.set_xlabel("评估episode", fontsize=8)
         fig.suptitle("Lagrange 约束动态与 DSR-MBS 权衡（workload42 评估日志）", fontsize=13, weight="bold")
         fig.tight_layout(rect=(0, 0, 1, 0.95))
         save(fig, "fig_lagrange_dsr_mbs_tradeoff")
@@ -479,7 +459,7 @@ def fig_lagrange_dsr_mbs_tradeoff() -> None:
 def fig_hierarchical_training_curves() -> None:
     combos = ["uncoordinated_greedy__heuristic", "attention_mappo__heuristic", "full_hierarchical_marl"]
     keys = [("reward", "综合奖励"), ("energy", "能耗 (×10^6)"), ("fairness", "公平性"), ("deadline_satisfaction_rate", "DSR")]
-    fig, axes = plt.subplots(2, 2, figsize=(11.5, 7.6))
+    fig, axes = plt.subplots(2, 2, figsize=(7.2, 4.8))
     for ax, (key, title) in zip(axes.flat, keys):
         for combo, col in zip(combos, [COLORS["gray"], COLORS["purple"], COLORS["blue"]]):
             data = load_log_series(combo)
@@ -489,12 +469,12 @@ def fig_hierarchical_training_curves() -> None:
             y = [float(d.get(key, 0.0)) for d in data]
             if key == "energy":
                 y = [v / 1e6 for v in y]
-            ax.plot(x, moving_average(y, 3), linewidth=1.9, label=METHOD_LABELS[combo], color=col)
-        ax.set_title(title)
-        ax.set_xlabel("评估 episode")
-    axes[0, 0].legend(fontsize=8)
-    fig.suptitle("固定 workload42 评估曲线", fontsize=13, weight="bold")
-    fig.tight_layout(rect=(0, 0, 1, 0.95))
+            ax.plot(x, moving_average(y, 3), linewidth=1.45, label=METHOD_LABELS[combo], color=col)
+        ax.set_title(title, fontsize=8, loc="left", pad=4)
+        ax.set_xlabel("评估episode", fontsize=8)
+    axes[0, 0].legend(fontsize=7, loc="best")
+    fig.suptitle("固定 workload42 评估曲线", fontsize=9, weight="normal")
+    fig.tight_layout(rect=(0, 0, 1, 0.94), w_pad=1.0, h_pad=1.15)
     save(fig, "fig_hierarchical_training_curves")
 
 

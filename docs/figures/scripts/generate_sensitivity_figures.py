@@ -17,45 +17,27 @@ import matplotlib.pyplot as plt
 import numpy as np
 import json
 
+from thesis_figure_style import PALETTE, save_pub as save_pub_shared, setup_thesis_style
+
 ROOT = Path(__file__).resolve().parents[3]
 OUTPUT_DIRS = (ROOT / "docs" / "figures", ROOT / "latex" / "docs" / "figures")
-
-PALETTE = {
-    "proposed": "#3D6FB6",
-    "vanilla_mappo": "#6F7DBE",
-    "ippo": "#53A6A6",
-    "heuristic": "#717784",
-    "grid": "#D5D9E2",
-    "text": "#22252A",
+QA_REPORT = ROOT / "docs" / "figures" / "figure_text_qa_report.json"
+ALGO_COLORS = {
+    "proposed": PALETTE["full"],
+    "vanilla_mappo": PALETTE["upper"],
+    "ippo": PALETTE["lower"],
+    "heuristic": PALETTE["baseline"],
 }
 
 
 def setup_style() -> None:
-    plt.rcParams.update({
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans", "sans-serif"],
-        "svg.fonttype": "none",
-        "pdf.fonttype": 42,
-        "font.size": 7,
-        "axes.spines.right": False,
-        "axes.spines.top": False,
-        "axes.linewidth": 0.8,
-        "axes.edgecolor": PALETTE["text"],
-        "axes.labelcolor": PALETTE["text"],
-        "xtick.color": PALETTE["text"],
-        "ytick.color": PALETTE["text"],
-        "legend.frameon": False,
-        "figure.dpi": 140,
-        "savefig.dpi": 600,
-    })
+    setup_thesis_style(font_size=7, legend_frameon=False)
 
 
 def save_pub(fig: plt.Figure, name: str) -> None:
-    for out_dir in OUTPUT_DIRS:
-        out_dir.mkdir(parents=True, exist_ok=True)
-        for ext in ("pdf", "svg", "png", "tiff"):
-            fig.savefig(out_dir / f"{name}.{ext}", bbox_inches="tight", pad_inches=0.045)
-    plt.close(fig)
+    qa = save_pub_shared(fig, name, OUTPUT_DIRS, qa_report=QA_REPORT)
+    if qa["status"] != "ok":
+        print(f"QA review: {name} -> {qa}")
     print(f"Saved: {name}")
 
 
@@ -87,14 +69,14 @@ def fig_convergence_curve() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.2))
 
     algo_labels = {
-        "proposed": "Proposed",
-        "vanilla_mappo": "Vanilla MAPPO",
+        "proposed": "本文方法",
+        "vanilla_mappo": "普通MAPPO",
         "ippo": "IPPO",
     }
     algo_colors = {
-        "proposed": PALETTE["proposed"],
-        "vanilla_mappo": PALETTE["vanilla_mappo"],
-        "ippo": PALETTE["ippo"],
+        "proposed": ALGO_COLORS["proposed"],
+        "vanilla_mappo": ALGO_COLORS["vanilla_mappo"],
+        "ippo": ALGO_COLORS["ippo"],
     }
     algo_markers = {
         "proposed": "o",
@@ -155,21 +137,21 @@ def fig_convergence_curve() -> None:
         # Map labels back to color keys
         color_list = []
         for a in algos:
-            if "Proposed" in a:
-                color_list.append(PALETTE["proposed"])
-            elif "Vanilla" in a:
-                color_list.append(PALETTE["vanilla_mappo"])
+            if "本文方法" in a:
+                color_list.append(ALGO_COLORS["proposed"])
+            elif "普通" in a:
+                color_list.append(ALGO_COLORS["vanilla_mappo"])
             else:
-                color_list.append(PALETTE["heuristic"])
+                color_list.append(ALGO_COLORS["heuristic"])
 
         bars = ax.bar(x, eee_means, yerr=eee_stds, capsize=2,
                       color=color_list, edgecolor="white", linewidth=0.6)
         ax.set_xticks(x)
         ax.set_xticklabels(algos, rotation=15, ha="right")
-        ax.set_ylabel("Effective Energy Efficiency")
+        ax.set_ylabel("有效能效")
 
-    ax.set_xlabel("Training Episode" if has_curve_data else "")
-    ax.set_title("Effective energy efficiency after training", fontsize=8, loc="left", pad=4)
+    ax.set_xlabel("训练回合" if has_curve_data else "")
+    ax.set_title("训练完成后的有效能效", fontsize=8, loc="left", pad=4)
     if has_curve_data:
         ax.legend(loc="upper left", fontsize=6)
     soften(ax)
@@ -188,13 +170,13 @@ def fig_convergence_curve() -> None:
             dsr_stds.append(dsr.get("std", 0))
 
     x = np.arange(len(algos))
-    color_list = [PALETTE["proposed"], PALETTE["vanilla_mappo"]]
+    color_list = [ALGO_COLORS["proposed"], ALGO_COLORS["vanilla_mappo"]]
     ax2.bar(x, dsr_means, yerr=dsr_stds, capsize=2,
             color=color_list, edgecolor="white", linewidth=0.6)
     ax2.set_xticks(x)
     ax2.set_xticklabels(algos, rotation=15, ha="right")
     ax2.set_ylabel("DSR")
-    ax2.set_title("Deadline satisfaction rate", fontsize=8, loc="left", pad=4)
+    ax2.set_title("截止期满足率", fontsize=8, loc="left", pad=4)
     soften(ax2)
 
     fig.tight_layout(w_pad=1.2)
@@ -213,8 +195,8 @@ def fig_ue_count_sensitivity(data_path: Path) -> None:
 
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.2))
 
-    algo_names = {"proposed": "Proposed", "vanilla_mappo": "Vanilla MAPPO", "heuristic": "Heuristic"}
-    algo_colors = {"proposed": PALETTE["proposed"], "vanilla_mappo": PALETTE["vanilla_mappo"], "heuristic": PALETTE["heuristic"]}
+    algo_names = {"proposed": "本文方法", "vanilla_mappo": "普通MAPPO", "heuristic": "启发式"}
+    algo_colors = {"proposed": ALGO_COLORS["proposed"], "vanilla_mappo": ALGO_COLORS["vanilla_mappo"], "heuristic": ALGO_COLORS["heuristic"]}
     algo_markers = {"proposed": "o", "vanilla_mappo": "s", "heuristic": "^"}
 
     ue_counts = sorted([int(v) for v in data.get("variables", {}).keys()])
@@ -233,9 +215,9 @@ def fig_ue_count_sensitivity(data_path: Path) -> None:
                 marker=algo_markers[algo_name], linewidth=1.5, markersize=5)
         ax.fill_between(ue_counts, ci_lows, ci_highs, color=algo_colors[algo_name], alpha=0.15)
 
-    ax.set_xlabel("Number of UEs")
-    ax.set_ylabel("Effective Energy Efficiency")
-    ax.set_title("Effective energy efficiency", fontsize=8, loc="left", pad=4)
+    ax.set_xlabel("UE数量")
+    ax.set_ylabel("有效能效")
+    ax.set_title("有效能效", fontsize=8, loc="left", pad=4)
     ax.legend(loc="upper left", fontsize=6)
     ax.set_xticks(ue_counts)
     soften(ax)
@@ -254,9 +236,9 @@ def fig_ue_count_sensitivity(data_path: Path) -> None:
                  marker=algo_markers[algo_name], linewidth=1.5, markersize=5)
         ax2.fill_between(ue_counts, ci_lows, ci_highs, color=algo_colors[algo_name], alpha=0.15)
 
-    ax2.set_xlabel("Number of UEs")
+    ax2.set_xlabel("UE数量")
     ax2.set_ylabel("DSR")
-    ax2.set_title("Deadline satisfaction rate", fontsize=8, loc="left", pad=4)
+    ax2.set_title("截止期满足率", fontsize=8, loc="left", pad=4)
     ax2.legend(loc="upper right", fontsize=6)
     ax2.set_xticks(ue_counts)
     soften(ax2)
@@ -277,8 +259,8 @@ def fig_uav_cpu_sensitivity(data_path: Path) -> None:
 
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.2))
 
-    algo_names = {"proposed": "Proposed", "vanilla_mappo": "Vanilla MAPPO", "heuristic": "Heuristic"}
-    algo_colors = {"proposed": PALETTE["proposed"], "vanilla_mappo": PALETTE["vanilla_mappo"], "heuristic": PALETTE["heuristic"]}
+    algo_names = {"proposed": "本文方法", "vanilla_mappo": "普通MAPPO", "heuristic": "启发式"}
+    algo_colors = {"proposed": ALGO_COLORS["proposed"], "vanilla_mappo": ALGO_COLORS["vanilla_mappo"], "heuristic": ALGO_COLORS["heuristic"]}
     algo_markers = {"proposed": "o", "vanilla_mappo": "s", "heuristic": "^"}
 
     scales = sorted([float(v) for v in data.get("variables", {}).keys()])
@@ -297,9 +279,9 @@ def fig_uav_cpu_sensitivity(data_path: Path) -> None:
                 marker=algo_markers[algo_name], linewidth=1.5, markersize=5)
         ax.fill_between(scales, ci_lows, ci_highs, color=algo_colors[algo_name], alpha=0.15)
 
-    ax.set_xlabel("UAV CPU Scale Factor")
-    ax.set_ylabel("Effective Energy Efficiency")
-    ax.set_title("Effective energy efficiency", fontsize=8, loc="left", pad=4)
+    ax.set_xlabel("UAV算力缩放因子")
+    ax.set_ylabel("有效能效")
+    ax.set_title("有效能效", fontsize=8, loc="left", pad=4)
     ax.legend(loc="upper left", fontsize=6)
     ax.set_xticks(scales)
     soften(ax)
@@ -318,9 +300,9 @@ def fig_uav_cpu_sensitivity(data_path: Path) -> None:
                  marker=algo_markers[algo_name], linewidth=1.5, markersize=5)
         ax2.fill_between(scales, ci_lows, ci_highs, color=algo_colors[algo_name], alpha=0.15)
 
-    ax2.set_xlabel("UAV CPU Scale Factor")
+    ax2.set_xlabel("UAV算力缩放因子")
     ax2.set_ylabel("DSR")
-    ax2.set_title("Deadline satisfaction rate", fontsize=8, loc="left", pad=4)
+    ax2.set_title("截止期满足率", fontsize=8, loc="left", pad=4)
     ax2.legend(loc="upper right", fontsize=6)
     ax2.set_xticks(scales)
     soften(ax2)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import sys
 from pathlib import Path
 
@@ -10,6 +9,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
 
+from thesis_figure_style import PALETTE, save_pub as save_pub_shared, setup_thesis_style
+
 ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT))
 
@@ -17,39 +18,21 @@ import config
 RESULT_ROOT = ROOT / "results" / "baseline_comparison"
 DOC_FIG_DIR = ROOT / "docs" / "figures"
 LATEX_FIG_DIR = ROOT / "latex" / "docs" / "figures"
+OUTPUT_DIRS = (DOC_FIG_DIR, LATEX_FIG_DIR)
+QA_REPORT = ROOT / "docs" / "figures" / "figure_text_qa_report.json"
 
 METHODS = [
     ("random", "随机策略", "图5-6a_随机策略无人机二维轨迹"),
     ("ippo", "IPPO", "图5-6b_IPPO无人机二维轨迹"),
-    ("vanilla_mappo", "Vanilla MAPPO", "图5-6c_VanillaMAPPO无人机二维轨迹"),
+    ("vanilla_mappo", "普通 MAPPO", "图5-6c_VanillaMAPPO无人机二维轨迹"),
     ("proposed", "本文方法", "图5-6d_本文方法无人机二维轨迹"),
 ]
 
-UAV_COLORS = ["#1f77b4", "#d62728", "#2ca02c", "#ff7f0e", "#9467bd"]
+UAV_COLORS = ["#4C78A8", "#C75E5A", "#54A24B", "#E2A64A", "#7C70B2"]
 
 
 def configure_matplotlib() -> None:
-    mpl.rcParams.update(
-        {
-            "font.family": "sans-serif",
-            "font.sans-serif": [
-                "WenQuanYi Micro Hei",
-                "Noto Sans CJK SC",
-                "SimHei",
-                "Arial",
-                "DejaVu Sans",
-                "sans-serif",
-            ],
-            "pdf.fonttype": 42,
-            "ps.fonttype": 42,
-            "axes.spines.right": False,
-            "axes.spines.top": False,
-            "axes.linewidth": 0.8,
-            "xtick.direction": "out",
-            "ytick.direction": "out",
-            "legend.frameon": True,
-        }
-    )
+    setup_thesis_style(font_size=8, legend_frameon=False)
 
 
 def load_first_episode_positions(method: str) -> np.ndarray:
@@ -89,7 +72,7 @@ def add_direction_arrows(ax: plt.Axes, xy: np.ndarray, color: str) -> None:
 def draw_method(method: str, title: str, output_stem: str) -> None:
     trajectories = load_first_episode_positions(method)
     total_path_length = float(np.linalg.norm(np.diff(trajectories, axis=0), axis=2).sum())
-    fig, ax = plt.subplots(figsize=(5.2, 4.6), dpi=300)
+    fig, ax = plt.subplots(figsize=(4.95, 4.35), dpi=300)
 
     for uav_idx in range(trajectories.shape[1]):
         xy = trajectories[:, uav_idx, :]
@@ -125,7 +108,7 @@ def draw_method(method: str, title: str, output_stem: str) -> None:
         c="#111111",
         edgecolors="white",
         linewidths=0.6,
-        label="宏基站",
+        label="MBS",
         zorder=6,
     )
 
@@ -133,16 +116,16 @@ def draw_method(method: str, title: str, output_stem: str) -> None:
         Line2D([0], [0], color="#333333", lw=1.35, label="飞行轨迹"),
         Line2D([0], [0], marker="o", color="#333333", markerfacecolor="white", markeredgewidth=1.1, lw=0, markersize=5, label="起点"),
         Line2D([0], [0], marker="s", color="#333333", markerfacecolor="#333333", lw=0, markersize=5, label="终点"),
-        Line2D([0], [0], marker="*", color="none", markerfacecolor="#111111", markeredgecolor="white", markeredgewidth=0.5, markersize=9, label="宏基站"),
+        Line2D([0], [0], marker="*", color="none", markerfacecolor="#111111", markeredgecolor="white", markeredgewidth=0.5, markersize=9, label="MBS"),
     ]
     ax.legend(
         handles=legend_handles,
         loc="upper right",
         fontsize=7,
-        framealpha=0.92,
-        borderpad=0.5,
-        handlelength=1.8,
-        labelspacing=0.35,
+        borderpad=0.25,
+        handlelength=1.6,
+        labelspacing=0.28,
+        columnspacing=0.8,
     )
     ax.text(
         0.03,
@@ -151,36 +134,29 @@ def draw_method(method: str, title: str, output_stem: str) -> None:
         transform=ax.transAxes,
         ha="left",
         va="bottom",
-        fontsize=7.5,
+        fontsize=7,
         bbox={
-            "boxstyle": "round,pad=0.28",
+            "boxstyle": "round,pad=0.20",
             "facecolor": "white",
-            "edgecolor": "#b5b5b5",
+            "edgecolor": "#D5D9E2",
             "linewidth": 0.6,
             "alpha": 0.92,
         },
         zorder=7,
     )
 
-    ax.set_title(title, fontsize=11, pad=8)
-    ax.set_xlabel("x 方向位置 / m", fontsize=9)
-    ax.set_ylabel("y 方向位置 / m", fontsize=9)
+    ax.set_title(title, fontsize=9, loc="left", pad=4)
+    ax.set_xlabel("x方向位置 / m", fontsize=8)
+    ax.set_ylabel("y方向位置 / m", fontsize=8)
     ax.set_xlim(0, config.AREA_WIDTH)
     ax.set_ylim(0, config.AREA_HEIGHT)
     ax.set_aspect("equal", adjustable="box")
-    ax.grid(True, color="#d8d8d8", linewidth=0.5, alpha=0.7)
-    ax.tick_params(labelsize=8)
+    ax.grid(True, color=PALETTE["grid"], linewidth=0.5, alpha=0.78)
+    ax.tick_params(labelsize=7.5, length=2.5, width=0.7)
 
-    DOC_FIG_DIR.mkdir(parents=True, exist_ok=True)
-    LATEX_FIG_DIR.mkdir(parents=True, exist_ok=True)
-    png_path = DOC_FIG_DIR / f"{output_stem}.png"
-    pdf_path = DOC_FIG_DIR / f"{output_stem}.pdf"
-    fig.savefig(png_path, dpi=300, bbox_inches="tight")
-    fig.savefig(pdf_path, bbox_inches="tight")
-    plt.close(fig)
-
-    shutil.copy2(png_path, LATEX_FIG_DIR / png_path.name)
-    shutil.copy2(pdf_path, LATEX_FIG_DIR / pdf_path.name)
+    qa = save_pub_shared(fig, output_stem, OUTPUT_DIRS, qa_report=QA_REPORT)
+    if qa["status"] != "ok":
+        print(f"QA review: {output_stem} -> {qa}")
 
 
 def main() -> None:

@@ -16,10 +16,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+from thesis_figure_style import PALETTE, save_pub as save_pub_shared, setup_thesis_style
+
 
 ROOT = Path(__file__).resolve().parents[3]
 DATA_ROOT = ROOT / "results" / "learning_rate_sensitivity_fixed" / "proposed"
 OUTPUT_DIRS = (ROOT / "docs" / "figures", ROOT / "latex" / "docs" / "figures")
+QA_REPORT = ROOT / "docs" / "figures" / "figure_text_qa_report.json"
 FIG_NAME = "图5-11_不同学习率下训练收敛曲线"
 
 LR_ORDER = ["1e-4", "3e-4", "5e-4", "1e-3"]
@@ -30,10 +33,10 @@ LR_LABELS = {
     "1e-3": r"学习率 $\alpha=1\times10^{-3}$",
 }
 COLORS = {
-    "1e-4": "#1F77B4",
-    "3e-4": "#2CA02C",
-    "5e-4": "#D62728",
-    "1e-3": "#000000",
+    "1e-4": "#4C78A8",
+    "3e-4": "#54A24B",
+    "5e-4": "#C75E5A",
+    "1e-3": "#717784",
 }
 LINESTYLES = {
     "1e-4": "-",
@@ -44,34 +47,7 @@ LINESTYLES = {
 
 
 def setup_style() -> None:
-    plt.rcParams.update(
-        {
-            "font.family": "sans-serif",
-            "font.sans-serif": [
-                "WenQuanYi Micro Hei",
-                "WenQuanYi Zen Hei",
-                "Noto Sans CJK SC",
-                "Source Han Sans SC",
-                "AR PL UMing CN",
-                "DejaVu Sans",
-                "sans-serif",
-            ],
-            "axes.unicode_minus": False,
-            "svg.fonttype": "none",
-            "pdf.fonttype": 42,
-            "font.size": 9,
-            "axes.spines.right": True,
-            "axes.spines.top": True,
-            "axes.linewidth": 1.0,
-            "axes.edgecolor": "#000000",
-            "axes.labelcolor": "#000000",
-            "xtick.color": "#000000",
-            "ytick.color": "#000000",
-            "legend.frameon": True,
-            "figure.dpi": 140,
-            "savefig.dpi": 600,
-        }
-    )
+    setup_thesis_style(font_size=8, legend_frameon=False)
 
 
 def cumulative_average(values: np.ndarray) -> np.ndarray:
@@ -97,16 +73,14 @@ def load_curve(lr: str) -> tuple[np.ndarray, np.ndarray, dict[str, float]]:
 
 
 def save_figure(fig: plt.Figure) -> None:
-    for out_dir in OUTPUT_DIRS:
-        out_dir.mkdir(parents=True, exist_ok=True)
-        fig.savefig(out_dir / f"{FIG_NAME}.pdf", bbox_inches="tight", pad_inches=0.045)
-        fig.savefig(out_dir / f"{FIG_NAME}.png", bbox_inches="tight", pad_inches=0.045)
-    plt.close(fig)
+    qa = save_pub_shared(fig, FIG_NAME, OUTPUT_DIRS, qa_report=QA_REPORT)
+    if qa["status"] != "ok":
+        print(f"QA review: {FIG_NAME} -> {qa}")
 
 
 def main() -> None:
     setup_style()
-    fig, ax = plt.subplots(figsize=(5.9, 4.2))
+    fig, ax = plt.subplots(figsize=(6.2, 4.1))
 
     all_stats: dict[str, dict[str, float]] = {}
     for lr in LR_ORDER:
@@ -129,22 +103,18 @@ def main() -> None:
     ax.set_yticks(np.arange(-8, -1, 1))
     ax.set_xlabel("训练回合", labelpad=7)
     ax.set_ylabel(r"平均累计奖励（$\times10^3$）", labelpad=7)
-    ax.grid(True, which="major", linestyle=":", color="#8A8A8A", linewidth=0.55, alpha=0.85)
+    ax.grid(True, which="major", color=PALETTE["grid"], linewidth=0.55, alpha=0.78)
     ax.set_axisbelow(True)
     ax.tick_params(
         axis="both",
         which="major",
-        direction="in",
-        length=5,
-        width=1.0,
-        top=True,
-        right=True,
+        direction="out",
+        length=2.5,
+        width=0.7,
+        top=False,
+        right=False,
     )
-    legend = ax.legend(loc="lower right", fontsize=8.5, handlelength=2.8, borderpad=0.55)
-    legend.get_frame().set_edgecolor("#000000")
-    legend.get_frame().set_linewidth(0.8)
-    legend.get_frame().set_facecolor("#FFFFFF")
-    legend.get_frame().set_alpha(0.88)
+    ax.legend(loc="lower right", fontsize=7, handlelength=2.5, borderpad=0.4)
 
     fig.tight_layout()
     save_figure(fig)
