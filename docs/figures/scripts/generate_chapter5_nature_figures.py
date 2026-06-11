@@ -88,23 +88,30 @@ def bar_panel(
     colors: list[str] | None = None,
     ticklabels: list[str] | None = None,
     zero_line: bool = False,
+    direction: str = "up",
 ) -> None:
     x = np.arange(len(values))
-    ax.bar(
+    bars = ax.bar(
         x,
         values,
         yerr=errors,
-        capsize=2 if errors else 0,
+        capsize=2.5 if errors else 0,
         color=colors or METHOD_COLORS,
-        edgecolor="white",
-        linewidth=0.6,
+        edgecolor="#333333",
+        linewidth=0.4,
+        error_kw={"elinewidth": 0.8, "capthick": 0.8} if errors else None,
     )
+    best_idx = int(np.argmax(values) if direction == "up" else np.argmin(values))
+    bars[best_idx].set_edgecolor("#111111")
+    bars[best_idx].set_linewidth(1.4)
     if zero_line:
         ax.axhline(0, color=PALETTE["text"], linewidth=0.7)
     ax.set_xticks(x)
     labels = ticklabels or (SHORT if len(values) == len(SHORT) else ABLATION_SHORT)
-    ax.set_xticklabels(labels, rotation=25, ha="right")
-    ax.set_title(title, fontsize=8, loc="left", pad=4)
+    ax.set_xticklabels(labels, rotation=35, ha="right")
+    ax.set_title(title, fontsize=9, pad=3)
+    subtitle = "越高越好" if direction == "up" else "越低越好"
+    ax.text(0.02, 0.92, subtitle, transform=ax.transAxes, fontsize=6.5, color="#555555")
     ax.set_ylabel(ylabel)
     panel_label(ax, label)
     soften(ax)
@@ -112,12 +119,12 @@ def bar_panel(
 
 def fig_main_comparison() -> None:
     fig, axes = plt.subplots(2, 3, figsize=(7.2, 4.65))
-    bar_panel(axes[0, 0], MAIN["reward"], MAIN["reward_std"], "系统奖励", "回合均值", "a", zero_line=True)
-    bar_panel(axes[0, 1], MAIN["energy"], MAIN["energy_std"], "UAV侧能耗", r"$10^6$ J", "b")
-    bar_panel(axes[0, 2], MAIN["fairness"], MAIN["fairness_std"], "服务公平性", "Jain指数", "c")
-    bar_panel(axes[1, 0], MAIN["dsr"], MAIN["dsr_std"], "截止期满足率", "DSR", "d")
-    bar_panel(axes[1, 1], [v * 100 for v in MAIN["offline"]], None, "离线用户比例", "%", "e")
-    bar_panel(axes[1, 2], [v * 100 for v in MAIN["mbs_load"]], None, "MBS负载", "%", "f")
+    bar_panel(axes[0, 0], MAIN["reward"], MAIN["reward_std"], "系统奖励", "回合均值", "a", zero_line=True, direction="up")
+    bar_panel(axes[0, 1], MAIN["energy"], MAIN["energy_std"], "UAV侧能耗", r"$10^6$ J", "b", direction="down")
+    bar_panel(axes[0, 2], MAIN["fairness"], MAIN["fairness_std"], "服务公平性", "Jain指数", "c", direction="up")
+    bar_panel(axes[1, 0], MAIN["dsr"], MAIN["dsr_std"], "截止期满足率", "DSR", "d", direction="up")
+    bar_panel(axes[1, 1], [v * 100 for v in MAIN["offline"]], None, "离线用户比例", "%", "e", direction="down")
+    bar_panel(axes[1, 2], [v * 100 for v in MAIN["mbs_load"]], None, "MBS负载", "%", "f", direction="down")
     axes[0, 0].annotate("+4482", xy=(4, MAIN["reward"][4]), xytext=(3.05, -3500), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
     axes[0, 1].annotate("-49.4%", xy=(4, MAIN["energy"][4]), xytext=(3.0, 93), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
     axes[1, 0].annotate("能耗边界", xy=(4, MAIN["dsr"][4]), xytext=(3.15, 0.25), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7, color=PALETTE["accent"])
@@ -132,16 +139,16 @@ def fig_offloading_distribution() -> None:
     coop = np.array(MAIN["coop"]) * 100
     mbs = np.array(MAIN["mbs_load"]) * 100
     fig, ax = plt.subplots(figsize=(6.4, 3.2))
-    ax.bar(x, local, color="#6388C5", edgecolor="white", linewidth=0.6, label="本地执行")
-    ax.bar(x, coop, bottom=local, color="#62A979", edgecolor="white", linewidth=0.6, label="协作执行")
-    ax.bar(x, mbs, bottom=local + coop, color="#D8766C", edgecolor="white", linewidth=0.6, label="MBS")
+    ax.bar(x, local, color="#6388C5", edgecolor="#333333", linewidth=0.4, label="本地执行")
+    ax.bar(x, coop, bottom=local, color="#62A979", edgecolor="#333333", linewidth=0.4, label="协作执行")
+    ax.bar(x, mbs, bottom=local + coop, color="#D8766C", edgecolor="#333333", linewidth=0.4, label="MBS")
     for i, value in enumerate(mbs):
         ax.text(i, local[i] + coop[i] + value + 1.5, f"{value:.1f}", ha="center", fontsize=7, color=PALETTE["text"])
     ax.set_xticks(x)
-    ax.set_xticklabels(SHORT, rotation=20, ha="right")
+    ax.set_xticklabels(SHORT, rotation=35, ha="right")
     ax.set_ylim(0, 112)
     ax.set_ylabel("卸载决策占比 (%)")
-    ax.set_title("下层策略重分配服务请求", fontsize=8, loc="left", pad=4)
+    ax.set_title("下层策略重分配服务请求", fontsize=9, pad=3)
     ax.legend(ncol=3, loc="upper center", bbox_to_anchor=(0.5, 1.14))
     soften(ax)
     save_pub(fig, "图5-8_卸载分布对比")
@@ -150,11 +157,11 @@ def fig_offloading_distribution() -> None:
 def fig_ablation_comparison() -> None:
     colors = [PALETTE["full"], "#D8A448", "#C75E5A", "#7C70B2"]
     fig, axes = plt.subplots(2, 3, figsize=(7.0, 4.45))
-    bar_panel(axes[0, 0], ABLATION["reward"], None, "系统奖励", "回合均值", "a", colors=colors, zero_line=True)
-    bar_panel(axes[0, 1], ABLATION["energy"], None, "能耗", r"$10^6$ J", "b", colors=colors)
-    bar_panel(axes[0, 2], ABLATION["dsr"], None, "截止期满足率", "DSR", "c", colors=colors)
-    bar_panel(axes[1, 0], [v * 100 for v in ABLATION["mbs_load"]], None, "MBS负载", "%", "d", colors=colors)
-    bar_panel(axes[1, 1], [v * 100 for v in ABLATION["coop"]], None, "协作卸载", "%", "e", colors=colors)
+    bar_panel(axes[0, 0], ABLATION["reward"], None, "系统奖励", "回合均值", "a", colors=colors, zero_line=True, direction="up")
+    bar_panel(axes[0, 1], ABLATION["energy"], None, "能耗", r"$10^6$ J", "b", colors=colors, direction="down")
+    bar_panel(axes[0, 2], ABLATION["dsr"], None, "截止期满足率", "DSR", "c", colors=colors, direction="up")
+    bar_panel(axes[1, 0], [v * 100 for v in ABLATION["mbs_load"]], None, "MBS负载", "%", "d", colors=colors, direction="down")
+    bar_panel(axes[1, 1], [v * 100 for v in ABLATION["coop"]], None, "协作卸载", "%", "e", colors=colors, direction="up")
     axes[1, 2].axis("off")
     axes[1, 2].text(
         0.02,
@@ -179,9 +186,9 @@ def fig_ablation_comparison() -> None:
 def fig_dsr_priority_tradeoff() -> None:
     fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.6))
     configs_colors = [PALETTE["baseline"], PALETTE["full"], PALETTE["green"]]
-    bar_panel(axes[0], DSR_DATA["reward"], None, "系统奖励", "回合均值", "a", colors=configs_colors, ticklabels=DSR_CONFIGS, zero_line=True)
-    bar_panel(axes[1], DSR_DATA["energy"], None, "能耗", r"$10^6$ J", "b", colors=configs_colors, ticklabels=DSR_CONFIGS)
-    bar_panel(axes[2], DSR_DATA["dsr"], None, "截止期满足率", "DSR", "c", colors=configs_colors, ticklabels=DSR_CONFIGS)
+    bar_panel(axes[0], DSR_DATA["reward"], None, "系统奖励", "回合均值", "a", colors=configs_colors, ticklabels=DSR_CONFIGS, zero_line=True, direction="up")
+    bar_panel(axes[1], DSR_DATA["energy"], None, "能耗", r"$10^6$ J", "b", colors=configs_colors, ticklabels=DSR_CONFIGS, direction="down")
+    bar_panel(axes[2], DSR_DATA["dsr"], None, "截止期满足率", "DSR", "c", colors=configs_colors, ticklabels=DSR_CONFIGS, direction="up")
     axes[1].annotate("-27.6%", xy=(2, DSR_DATA["energy"][2]), xytext=(1.25, 103), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
     axes[2].annotate("部分恢复", xy=(2, DSR_DATA["dsr"][2]), xytext=(0.85, 0.26), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
     fig.tight_layout(w_pad=1.25)

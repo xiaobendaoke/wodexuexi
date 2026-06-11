@@ -212,7 +212,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \rho_t^{\mathrm{MBS,off}} = \frac{|\{m \mid \mathcal{T}_m \in \mathcal{S}, \; a_m = 1\}|}{|\{m \mid \mathcal{T}_m \in \mathcal{S}, \; a_m \neq \varnothing\}|}.
     \label{eq:mbs-offloading-ratio}
 \end{equation}
-其中 $W_J$、$W_L$、$W_E$、$W_O$、$W_{DSR}$ 和 $W_M$ 分别表示公平性、时延、能耗、离线率、截止时间满足率和 MBS 负载对应的奖励权重。主配置中取 $W_M=0.5$，对应实现中的轻量 MBS 负载惩罚项。当 UAV 发生碰撞或越界时，环境额外施加约束惩罚；为稳定 MARL 训练过程中的数值范围，可对最终奖励进行缩放处理。
+其中 $W_J$、$W_L$、$W_E$、$W_O$、$W_{DSR}$ 和 $W_M$ 分别表示公平性、时延、能耗、离线率、截止时间满足率和 MBS 负载对应的奖励权重，各权重的具体取值见第 \ref{sec:simulation-setup} 节仿真参数设置。当 UAV 发生碰撞或越界时，环境额外施加约束惩罚；为稳定 MARL 训练过程中的数值范围，可对最终奖励进行缩放处理。
 
 上述优化问题需要满足以下约束。首先，UAV 必须始终位于服务区域内：
 \begin{equation}
@@ -339,7 +339,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 \subsection{下层 constrained attention offload MAPPO}
 \label{sec:lower-layer}
 
-下层同样采用多智能体建模。每架 UAV 是一个 lower-layer agent，处理其当前关联的 bounded request slots（最多 30 个）。每个有效 request slot 的离散动作空间如表 \ref{tab:action-space} 所示。
+下层同样采用多智能体建模。每架 UAV 是一个 lower-layer agent，处理其当前关联的 bounded request slots，最大 slot 数记为 $K$。每个有效 request slot 的离散动作空间如表 \ref{tab:action-space} 所示。
 
 \begin{table}[!htbp]
     \centering
@@ -356,7 +356,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \end{tabular}
 \end{table}
 
-因此当前 $N=5$ 时，下层 actor 的实际动作数为 $|A|=2+N=7$。
+因此，下层 actor 的实际动作数为 $|A|=2+N$。
 
 下层观测同样按 UAV 构造。第 $i$ 架 UAV 的下层观测为：
 \begin{equation}
@@ -364,7 +364,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{eq:lower-obs}
 \end{equation}
 
-其中 $g_i^{self}$ 包含 UAV 归一化位置、当前服务请求队列比例、邻居数量比例和 UAV-MBS 回传速率；$G_i^{req}$ 由最多 30 个 request slot 组成。每个有效请求 slot 包含请求大小、请求编号、deadline、priority、本地缓存命中、协作可用性、本地队列长度、local/cooperative/MBS 时延相对 deadline 的截断比例、最佳邻居计算份额以及 UE-UAV 相对位置等特征。
+其中 $g_i^{self}$ 包含 UAV 归一化位置、当前服务请求队列比例、邻居数量比例和 UAV-MBS 回传速率；$G_i^{req}$ 由最多 $K$ 个 request slot 组成。每个有效请求 slot 包含请求大小、请求编号、deadline、priority、本地缓存命中、协作可用性、本地队列长度、local/cooperative/MBS 时延相对 deadline 的截断比例、最佳邻居计算份额以及 UE-UAV 相对位置等特征。
 
 下层 actor 使用 request attention 编码同一 UAV 内多个服务请求之间的相对重要性：先将 UAV 自身特征和每个请求特征编码到隐空间，再对 request slots 做多头自注意力，最后对每个 request slot 输出 local、MBS 或 cooperative UAV 动作的 logits。critic 采用集中式信息估计 value。需要说明的是，下层学习策略主要针对服务请求生成卸载动作；内容请求和能量请求仍由环境中的缓存、下载和 WPT 逻辑处理。下层共享训练奖励函数为：
 \begin{equation}
@@ -380,7 +380,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{eq:lower-reward}
 \end{equation}
 
-其中权重为：$w_{succ}=0.4$, $w_{coop}=0.08$, $w_{dead}=3.0$, $w_{lat}=4.0$, $w_{en}=1.2$, $w_{mbs}=0.35$。
+其中 $w_{succ}$、$w_{coop}$、$w_{dead}$、$w_{lat}$、$w_{en}$ 和 $w_{mbs}$ 分别为服务成功、协作卸载、deadline 未满足、时延、能耗和 MBS 负载对应的下层奖励权重，具体取值见表 \ref{tab:algorithm-params}。
 
 \subsection{质量感知动作 Mask}
 \label{sec:action-mask}
@@ -391,9 +391,10 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 
 \textbf{质量感知 mask}（quality mask）：
 \begin{itemize}
-    \item \textbf{Cooperative mask}：当系统不存在可用邻居、协作路径时延过高（$> 1.5 \times$ deadline）、协作相对非协作路径无明显优势（$> 1.35 \times$ 本地时延）或协作计算份额过低（$< 25\%$）时，屏蔽 cooperative 动作。
+    \item \textbf{Cooperative mask}：当系统不存在可用邻居、协作路径时延过高（超过 $\theta_{deadline}\times$ deadline）、协作相对非协作路径无明显优势（超过 $\theta_{latency}\times$ 本地时延）或协作计算份额过低（低于 $\theta_{share}$）时，屏蔽 cooperative 动作。
     \item \textbf{MBS mask}：当 MBS 路径估计时延超过用于归一化的 deadline clip 阈值时，屏蔽 MBS 动作。
 \end{itemize}
+其中 $\theta_{deadline}$、$\theta_{latency}$、$\theta_{share}$ 以及 MBS mask 的 deadline clip 阈值均为动作 mask 的实现参数，具体取值见表 \ref{tab:algorithm-params}。
 
 \begin{figure}[!htbp]
     \centering
@@ -411,7 +412,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{eq:lagrange-penalty}
 \end{equation}
 
-约束目标为 $\tau_{dsr} = 0.18$，$\tau_{mbs} = 0.03$。$\lambda$ 在每个 rollout 后更新：
+其中 $\tau_{dsr}$ 和 $\tau_{mbs}$ 分别为 DSR 与 MBS 负载的软约束目标。$\lambda$ 在每个 rollout 后更新：
 \begin{equation}
     \lambda_{dsr} \leftarrow \text{clip}(\lambda_{dsr} + \eta_{\lambda} \cdot \bar{v}_{dsr}, 0, \lambda_{max})
     \label{eq:lambda-dsr-update}
@@ -421,7 +422,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{eq:lambda-mbs-update}
 \end{equation}
 
-其中 $\eta_{\lambda} = 0.1$ 为 Lagrange 学习率，$\lambda_{max} = 10.0$ 为上界，$\bar{v}$ 为 rollout 平均约束违反量。该机制通过提高违反约束时的惩罚权重引导策略减少 DSR 不足和 MBS 负载超限，但属于训练目标中的软约束，并不构成严格可行性保证。
+其中 $\eta_{\lambda}$ 为 Lagrange 学习率，$\lambda_{max}$ 为乘子上界，$\bar{v}$ 为 rollout 平均约束违反量。$\tau_{dsr}$、$\tau_{mbs}$、$\eta_{\lambda}$ 和 $\lambda_{max}$ 的具体取值见表 \ref{tab:algorithm-params}。该机制通过提高违反约束时的惩罚权重引导策略减少 DSR 不足和 MBS 负载超限，但属于训练目标中的软约束，并不构成严格可行性保证。
 
 \subsection{奖励函数设计}
 \label{sec:reward-design}
@@ -430,16 +431,17 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 
 归一化分母的设计如下：
 \begin{itemize}
-    \item \textbf{Latency 归一化}：以 $M \cdot T_{penalty}$ 为分母（$M=100$ 个 UE，$T_{penalty}=20$s 为未服务惩罚时延），因此归一化时延 $\bar{L} \in [0, 1]$ 表示当前总时延占最差情况的比例。
-    \item \textbf{Energy 归一化}：系统级奖励使用 $N \cdot E_{ref}$ 为分母（$N=5$ 架 UAV，$E_{ref}=5000$J 为每架 UAV 单步参考能耗）；下层奖励使用 $N \cdot E_{ref}^{offload}=125000$J（$N=5$, $E_{ref}^{offload}=25000$J 为下层每架 UAV 单步最大参考能耗）。
+    \item \textbf{Latency 归一化}：以 $M \cdot T_{penalty}$ 为分母，其中 $T_{penalty}$ 为未服务请求惩罚时延，因此归一化时延 $\bar{L} \in [0, 1]$ 表示当前总时延占最差情况的比例。
+    \item \textbf{Energy 归一化}：系统级奖励使用 $N \cdot E_{ref}$ 为分母，其中 $E_{ref}$ 为每架 UAV 单步参考能耗；下层奖励使用 $N \cdot E_{ref}^{offload}$，其中 $E_{ref}^{offload}$ 为下层每架 UAV 单步最大参考能耗。
 \end{itemize}
+上述归一化参考量的实验取值见表 \ref{tab:simulation-params}。
 
 与早期版本使用的对数归一化相比，线性归一化的优势在于：(i) 各指标贡献在数值上可加可比，便于权重调参；(ii) 不同策略间的 reward 值可以在统一口径下直接对比；(iii) 避免了 log 函数在接近零值时的数值不稳定性。
 
 \subsection{复杂度分析}
 \label{sec:complexity}
 
-设 UAV 数量为 $N=5$，每架 UAV 的最大请求 slot 数为 $K=30$，下层实际动作数为 $|A|=2+N=7$。若直接构建端到端联合 MAPPO，需要同时处理 $N$ 个连续轨迹动作和最多 $N \times K=150$ 个请求级离散卸载动作；若显式枚举所有请求级卸载动作组合，其组合规模上界为 $|A|^{NK}$，并会带来严重的样本效率与 credit assignment 问题。该上界用于说明联合建模的组合规模压力，并不表示本文实现会枚举所有动作组合。本文采用双层分解后，上层只处理 $N$ 个 UAV 的轨迹动作（连续 2D），下层只在每个 UAV 的 $K$ 个请求 slot 上进行局部离散决策。attention 编码的主要计算量级为 $O(N^2)$ 或 $O(K^2)$。
+设 UAV 数量为 $N$，每架 UAV 的最大请求 slot 数为 $K$，下层动作数为 $|A|=N+2$。若直接构建端到端联合 MAPPO，需要同时处理 $N$ 个连续轨迹动作和最多 $N \times K$ 个请求级离散卸载动作；若显式枚举所有请求级卸载动作组合，其组合规模上界为 $|A|^{NK}$，并会带来严重的样本效率与 credit assignment 问题。该上界用于说明联合建模的组合规模压力，并不表示本文实现会枚举所有动作组合。本文采用双层分解后，上层只处理 $N$ 个 UAV 的轨迹动作（连续 2D），下层只在每个 UAV 的 $K$ 个请求 slot 上进行局部离散决策。attention 编码的主要计算量级为 $O(N^2)$ 或 $O(K^2)$。
 
 \section{仿真设置与性能评估}
 
@@ -453,13 +455,72 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 \subsubsection{仿真环境与参数}
 \label{sec:simulation-setup}
 
-实验区域为 $700$m $\times$ 700m，系统包含 $N=5$ 架 UAV、$M=100$ 个 UE 和 $1$ 个 MBS。每个 episode 包含 $T=1000$ 个 time slots，每个 time slot 时长为 $\tau = 1$s。UAV 飞行高度 $H=100$m，最大速度 $v_{max}=15$m/s，覆盖半径 $R_c=100$m，感知范围 $460$m，最小 UAV 间距 $200$m；MBS 位于区域中心附近并具有固定高度。UE 初始位置采用热点分布以形成非均匀业务负载，并在 episode 中按照移动模型更新位置。系统包含 25 类服务和 50 类内容文件，服务 deadline 在 $[0.65, 2.10]$s 范围内生成。每架 UAV 配置有限缓存容量，UAV 计算能力在 $[40, 90] \times 10^9$ cycles/s 之间随机生成，MBS 固定算力 $f_{mbs} = 200 \times 10^9$ cycles/s。UE-UAV、UAV-UAV 和 UAV-MBS 链路分别使用接入带宽、协作带宽和回传带宽建模。
+本文在 Python/PyTorch 仿真平台上验证所提算法。系统环境包含多 UAV、UE 与 MBS 三类节点，并同时模拟通信链路、计算卸载、缓存获取、UE 电池演化和无线能量传输过程。主要仿真环境参数如表 \ref{tab:simulation-params} 所示。
 
-UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{static}=0.01$W。飞行功率 $P_{move}=300$W，悬停功率 $P_{hover}=150$W。WPT 发射功率 $P_{wpt}=50$W，采集增益 $G=5\times10^5$，采集效率 $\eta=0.8$。
+\begin{table}[!htbp]
+    \centering
+    \bicaption{仿真环境参数}{Simulation environment parameters}
+    \label{tab:simulation-params}
+    \resizebox{0.92\textwidth}{!}{
+    \begin{tabular}{ll}
+        \hline
+        参数 & 数值 \\
+        \hline
+        仿真区域 & $700\,\mathrm{m} \times 700\,\mathrm{m}$ \\
+        UAV 数量 $N$ / UE 数量 $M$ / MBS 数量 & $5$ / $100$ / $1$ \\
+        MBS 位置 & $(350,350,30)\,\mathrm{m}$ \\
+        UAV 飞行高度 $H$ & $100\,\mathrm{m}$ \\
+        时隙长度 $\tau$ / episode 长度 $T$ & $1\,\mathrm{s}$ / $1000$ time slots \\
+        最大飞行速度 $v_{max}$ & $15\,\mathrm{m/s}$ \\
+        UAV 覆盖半径 $R_c$ / 感知范围 & $100\,\mathrm{m}$ / $460\,\mathrm{m}$ \\
+        最小 UAV 间距 $d_{min}$ & $200\,\mathrm{m}$ \\
+        UE-UAV / UAV-UAV / UAV-MBS 带宽 & $40\,\mathrm{MHz}$ / $20\,\mathrm{MHz}$ / $0.75\,\mathrm{MHz}$ \\
+        通信发射功率 $P^{comm}$ / 噪声功率 $\sigma^2$ & $0.5\,\mathrm{W}$ / $10^{-13}$ \\
+        UAV 计算能力 & $[40,90]\times10^9\,\mathrm{cycles/s}$ \\
+        MBS 计算能力 $f_{mbs}$ & $200\times10^9\,\mathrm{cycles/s}$ \\
+        服务类型数 / 内容文件数 & $25$ / $50$ \\
+        服务请求 deadline & $[0.65,2.10]\,\mathrm{s}$ \\
+        UE 电池容量 $B_{max}$ / 低电量阈值 $B_{low}$ & $500\,\mathrm{J}$ / $50\,\mathrm{J}$ \\
+        UE 待机功耗 $P_{static}$ & $0.01\,\mathrm{W}$ \\
+        WPT 发射功率 / 采集效率 / 等效采集增益 & $50\,\mathrm{W}$ / $0.8$ / $5\times10^5$ \\
+        UAV 移动功率 $P_{move}$ / 悬停功率 $P_{hover}$ & $300\,\mathrm{W}$ / $150\,\mathrm{W}$ \\
+        未服务惩罚时延 $T_{penalty}$ & $20\,\mathrm{s}$ \\
+        系统/下层参考能耗 $E_{ref}$ / $E_{ref}^{offload}$ & $5000\,\mathrm{J}$ / $25000\,\mathrm{J}$ \\
+        \hline
+    \end{tabular}}
+\end{table}
 
-所有 MARL 策略使用 PyTorch 实现，MAPPO 采用 2 层 MLP（hidden dim=128），attention 模块隐层维度为 64（ATTN\_HIDDEN\_DIM=64），Adam 优化器，learning rate$=3\times10^{-4}$，PPO clip $\epsilon=0.2$，discount $\gamma=0.99$，GAE $\lambda=0.95$。
+本文算法训练参数如表 \ref{tab:algorithm-params} 所示。正式主实验采用 3 个 training seeds 和 10 个 workload seeds；每个 workload seed 运行 6 个 episodes，并以 (training seed, workload seed) 的 episode mean 作为统计单元，因此每个学习式策略共有 $N=30$ 个统计样本。本文报告 mean、std、95\% CI、paired delta、paired t-test 和 Wilcoxon 检验。
 
-正式实验采用 3 个 training seeds（42, 84, 126）和 10 个 workload seeds（42-420），每个 workload seed 运行 6 个 episodes。统计单元为 (training seed, workload seed) 的 episode mean，每个策略共有 $N=30$ 个统计样本。本文报告 mean、std、95\% CI、paired delta、paired t-test 和 Wilcoxon 检验。
+\begin{table}[!htbp]
+    \centering
+    \bicaption{算法训练参数}{Algorithm training parameters}
+    \label{tab:algorithm-params}
+    \resizebox{0.92\textwidth}{!}{
+    \begin{tabular}{ll}
+        \hline
+        参数 & 数值 \\
+        \hline
+        训练随机种子 & $42,84,126$ \\
+        workload 随机种子 & $42,84,126,168,210,252,294,336,378,420$ \\
+        训练 episodes / 每个 workload 评估 episodes & $200$ / $6$ \\
+        MLP 隐层维度 & $128$ \\
+        attention 隐层维度 / 注意力头数 & $64$ / $8$ \\
+        每 UAV 最大 request slot 数 $K$ & $30$ \\
+        优化器 / 学习率 & Adam / $3\times10^{-4}$ \\
+        PPO clip 系数 $\epsilon$ & $0.2$ \\
+        折扣因子 $\gamma$ / GAE 系数 $\lambda$ & $0.99$ / $0.95$ \\
+        rollout 长度 / PPO epochs / batch size & $1000$ / $8$ / $256$ \\
+        entropy coefficient & $0.005$ \\
+        系统 reward 权重 & $W_J=1.0$, $W_L=1.0$, $W_E=0.5$, $W_O=5.0$, $W_{DSR}=1.0$, $W_M=0.5$ \\
+        下层 reward 权重 & $w_{succ}=0.4$, $w_{coop}=0.08$, $w_{dead}=3.0$, $w_{lat}=4.0$, $w_{en}=1.2$, $w_{mbs}=0.35$ \\
+        Lagrange 约束目标 & $\tau_{dsr}=0.18$, $\tau_{mbs}=0.03$ \\
+        Lagrange 学习率 / 乘子上界 & $0.1$ / $10.0$ \\
+        MBS mask deadline clip 阈值 & $10$ \\
+        cooperative mask 阈值 & $\theta_{deadline}=1.50$, $\theta_{latency}=1.35$, $\theta_{share}=0.25$ \\
+        \hline
+    \end{tabular}}
+\end{table}
 
 \subsubsection{对比方法}
 \label{sec:comparison-methods}
@@ -798,7 +859,7 @@ UE 电池容量 $B_{max}=500$J，临界阈值 $B_{low}=50$J，待机功耗 $P_{s
     \label{fig:lr-convergence}
 \end{figure}
 
-从图 \ref{fig:lr-convergence} 可以看出，四组学习率对应的平均累计奖励均在训练前期快速上升，并在后期逐渐趋于稳定，说明所提双层策略能够从环境交互中学习有效的轨迹与卸载行为。学习率为 $1\times10^{-4}$ 时，累计平均曲线上升较为平稳但后期提升速度有限，末 20 回合单回合平均奖励为 -1411.9；学习率为 $3\times10^{-4}$ 时，收敛水平与 $1\times10^{-4}$ 接近，末 20 回合单回合平均奖励为 -1425.6；学习率为 $5\times10^{-4}$ 时，后期奖励水平最高，末 20 回合单回合平均奖励达到 -1203.4；而学习率为 $1\times10^{-3}$ 时训练稳定性较差，末 20 回合单回合平均奖励下降至 -2093.9。上述结果表明，过小学习率会降低策略更新效率，过大学习率则容易引入较强波动；在本文实验设置下，$5\times10^{-4}$ 在收敛速度和最终奖励之间取得较好折中。因此，后续主要实验采用该量级的学习率作为训练配置依据。
+从图 \ref{fig:lr-convergence} 可以看出，四组学习率对应的平均累计奖励均在训练前期快速上升，并在后期逐渐趋于稳定，说明所提双层策略能够从环境交互中学习有效的轨迹与卸载行为。学习率为 $1\times10^{-4}$ 时，累计平均奖励曲线上升较为平稳，但策略更新速度相对较慢，末 20 回合单回合平均奖励为 -1411.9；学习率为 $3\times10^{-4}$ 时，收敛水平与 $1\times10^{-4}$ 接近，末 20 回合单回合平均奖励为 -1425.6；学习率为 $5\times10^{-4}$ 时，训练后期奖励水平较高，末 20 回合单回合平均奖励达到 -1203.4；而学习率为 $1\times10^{-3}$ 时，奖励曲线波动较为明显，末 20 回合单回合平均奖励下降至 -2093.9。上述结果表明，过小的学习率会降低策略更新效率，过大的学习率则容易引入训练波动。需要说明的是，本节学习率敏感性实验固定 random seed 和 workload seed 为 42，主要用于分析学习率变化对训练稳定性和收敛趋势的影响，并不作为全局最优学习率的充分证明。综合考虑收敛稳定性、指标均衡性以及正式主实验设置的一致性，本文后续实验仍采用表 \ref{tab:algorithm-params} 中的默认学习率 $3\times10^{-4}$。
 
 此外，图 \ref{fig:eee-final-comparison} 给出了 Proposed 与 Vanilla MAPPO 在训练完成（200 episodes）后的 EEE 和 DSR 对比。实验采用 3 个 training seeds（42, 84, 126），在固定 workload seed 42 下评估 6 个 episodes，误差棒表示标准差。
 

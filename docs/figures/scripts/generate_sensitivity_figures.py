@@ -144,14 +144,18 @@ def fig_convergence_curve() -> None:
             else:
                 color_list.append(ALGO_COLORS["heuristic"])
 
-        bars = ax.bar(x, eee_means, yerr=eee_stds, capsize=2,
-                      color=color_list, edgecolor="white", linewidth=0.6)
+        bars = ax.bar(x, eee_means, yerr=eee_stds, capsize=2.5,
+                      color=color_list, edgecolor="#333333", linewidth=0.4,
+                      error_kw={"elinewidth": 0.8, "capthick": 0.8})
+        best_idx = int(np.argmax(eee_means))
+        bars[best_idx].set_edgecolor("#111111")
+        bars[best_idx].set_linewidth(1.4)
         ax.set_xticks(x)
-        ax.set_xticklabels(algos, rotation=15, ha="right")
+        ax.set_xticklabels(algos, rotation=35, ha="right")
         ax.set_ylabel("有效能效")
 
     ax.set_xlabel("训练回合" if has_curve_data else "")
-    ax.set_title("训练完成后的有效能效", fontsize=8, loc="left", pad=4)
+    ax.set_title("训练完成后的有效能效", fontsize=9, pad=3)
     if has_curve_data:
         ax.legend(loc="upper left", fontsize=6)
     soften(ax)
@@ -171,12 +175,16 @@ def fig_convergence_curve() -> None:
 
     x = np.arange(len(algos))
     color_list = [ALGO_COLORS["proposed"], ALGO_COLORS["vanilla_mappo"]]
-    ax2.bar(x, dsr_means, yerr=dsr_stds, capsize=2,
-            color=color_list, edgecolor="white", linewidth=0.6)
+    bars2 = ax2.bar(x, dsr_means, yerr=dsr_stds, capsize=2.5,
+            color=color_list, edgecolor="#333333", linewidth=0.4,
+            error_kw={"elinewidth": 0.8, "capthick": 0.8})
+    best_idx2 = int(np.argmax(dsr_means))
+    bars2[best_idx2].set_edgecolor("#111111")
+    bars2[best_idx2].set_linewidth(1.4)
     ax2.set_xticks(x)
-    ax2.set_xticklabels(algos, rotation=15, ha="right")
+    ax2.set_xticklabels(algos, rotation=35, ha="right")
     ax2.set_ylabel("DSR")
-    ax2.set_title("截止期满足率", fontsize=8, loc="left", pad=4)
+    ax2.set_title("截止期满足率", fontsize=9, pad=3)
     soften(ax2)
 
     fig.tight_layout(w_pad=1.2)
@@ -217,7 +225,7 @@ def fig_ue_count_sensitivity(data_path: Path) -> None:
 
     ax.set_xlabel("UE数量")
     ax.set_ylabel("有效能效")
-    ax.set_title("有效能效", fontsize=8, loc="left", pad=4)
+    ax.set_title("有效能效", fontsize=9, pad=3)
     ax.legend(loc="upper left", fontsize=6)
     ax.set_xticks(ue_counts)
     soften(ax)
@@ -238,7 +246,7 @@ def fig_ue_count_sensitivity(data_path: Path) -> None:
 
     ax2.set_xlabel("UE数量")
     ax2.set_ylabel("DSR")
-    ax2.set_title("截止期满足率", fontsize=8, loc="left", pad=4)
+    ax2.set_title("截止期满足率", fontsize=9, pad=3)
     ax2.legend(loc="upper right", fontsize=6)
     ax2.set_xticks(ue_counts)
     soften(ax2)
@@ -281,7 +289,7 @@ def fig_uav_cpu_sensitivity(data_path: Path) -> None:
 
     ax.set_xlabel("UAV算力缩放因子")
     ax.set_ylabel("有效能效")
-    ax.set_title("有效能效", fontsize=8, loc="left", pad=4)
+    ax.set_title("有效能效", fontsize=9, pad=3)
     ax.legend(loc="upper left", fontsize=6)
     ax.set_xticks(scales)
     soften(ax)
@@ -302,7 +310,7 @@ def fig_uav_cpu_sensitivity(data_path: Path) -> None:
 
     ax2.set_xlabel("UAV算力缩放因子")
     ax2.set_ylabel("DSR")
-    ax2.set_title("截止期满足率", fontsize=8, loc="left", pad=4)
+    ax2.set_title("截止期满足率", fontsize=9, pad=3)
     ax2.legend(loc="upper right", fontsize=6)
     ax2.set_xticks(scales)
     soften(ax2)
