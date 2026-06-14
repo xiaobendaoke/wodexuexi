@@ -50,6 +50,24 @@
 % 跨页表格
 \usepackage{longtable}
 
+% 自动调整列宽的表格
+\usepackage{tabularx}
+
+% 统一表格正文样式，并提供可自动换行的列类型。
+% 避免用 \resizebox 缩放整张表导致全文表格字号不一致。
+\makeatletter
+\newcommand{\thesistablefont}{%
+  \fontsize{10.5bp}{13.65bp}\selectfont
+  \setlength{\tabcolsep}{4pt}%
+  \renewcommand{\arraystretch}{1.28}%
+}
+\newcolumntype{Y}{>{\raggedright\arraybackslash\hspace{0pt}}X}
+\newcolumntype{C}[1]{>{\centering\arraybackslash\hspace{0pt}}p{#1}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash\hspace{0pt}}p{#1}}
+\AtBeginEnvironment{table}{\thesistablefont}
+\AtBeginEnvironment{longtable}{\thesistablefont}
+\makeatother
+
 % 算法
 \usepackage[ruled,linesnumbered]{algorithm2e}
 %\renewcommand{\thealgocf}{\arabic{chapter}-\arabic{algocf}}% 将算法标题由x.x改为x-x，慎用
