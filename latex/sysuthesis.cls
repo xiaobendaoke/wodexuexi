@@ -736,6 +736,14 @@
     \fi
   \fi
 \fi
+% 若 fontset 非 auto 导致 font 选项未设置，回退到 TeX Gyre Termes
+\ifdefined\sysu@font
+  \ifx\sysu@font\@empty
+    \sysusetup{font=termes}
+  \fi
+\else
+  \sysusetup{font=termes}
+\fi
 
 % Times New Roman + Arial
 \newcommand\sysu@set@font@times{%

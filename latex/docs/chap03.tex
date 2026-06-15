@@ -319,14 +319,14 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \centering
     \bicaption{下层离散动作空间}{Lower-layer discrete action space}
     \label{tab:action-space}
-    \begin{tabularx}{\textwidth}{|C{0.14\textwidth}|Y|Y|}
-        \hline
+    \begin{tabularx}{\textwidth}{c Y Y}
+        \toprule
         动作编号 & 动作含义 & 说明 \\
-        \hline
+        \midrule
         0 & Local UAV execution & 在当前 UAV 本地执行 \\
         1 & MBS execution & 通过回传链路卸载到宏基站 \\
         $2+j$ & Cooperative UAV $j$ execution & 选择编号为 $j$ 的邻居 UAV 执行，$j=0,\ldots,N-1$ \\
-        \hline
+        \bottomrule
     \end{tabularx}
 \end{table}
 
@@ -474,7 +474,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 \section{仿真设置与性能评估}
 \label{sec:simulation-evaluation}
 
-为验证所提双层 Attention-MAPPO 协同优化算法的有效性，本节在统一仿真环境和配对工作负载评估协议下围绕三个问题展开实验分析：第一，所提方法相对基础参考和学习式基线方法是否能够提升系统综合性能；第二，上层轨迹控制、下层卸载决策以及约束机制分别承担何种作用；第三，该方法在不同负载规模、算力条件和服务质量偏好下是否具有稳定的适用边界。
+为验证所提双层 Attention-MAPPO 协同优化算法的有效性，本节在统一仿真环境和配对工作负载评估协议下围绕三个问题展开实验分析：第一，所提方法相对基础参考和学习式基线方法是否能够提升系统综合性能；第二，上层轨迹控制、下层卸载决策以及约束机制分别承担何种作用；第三，该方法在不同负载规模、算力条件和服务质量偏好下是否具有稳定的适用边界。因此，本节先给出主配置下的综合性能，再逐步分析模块贡献、行为机制、外部基线对比和参数敏感性，最后讨论服务质量偏好调整带来的 Energy-DSR-Fairness 权衡。
 
 \subsection{仿真环境、对比方法与评价指标}
 \label{subsec:simulation-basics}
@@ -488,10 +488,10 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \centering
     \bicaption{仿真环境参数}{Simulation environment parameters}
     \label{tab:simulation-params}
-    \begin{tabularx}{\textwidth}{Y|Y}
-        \hline
+    \begin{tabularx}{\textwidth}{Y Y}
+        \toprule
         参数 & 数值 \\
-        \hline
+        \midrule
         仿真区域 & $700\,\mathrm{m} \times 700\,\mathrm{m}$ \\
         UAV 数量 $N$ / UE 数量 $M$ / MBS 数量 & $5$ / $100$ / $1$ \\
         MBS 位置 & $(350,350,30)\,\mathrm{m}$ \\
@@ -512,7 +512,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
         UAV 移动功率 $P_{move}$ / 悬停功率 $P_{hover}$ & $300\,\mathrm{W}$ / $150\,\mathrm{W}$ \\
         未服务惩罚时延 $T_{penalty}$ & $20\,\mathrm{s}$ \\
         系统/下层参考能耗 $E_{ref}$ / $E_{ref}^{offload}$ & $5000\,\mathrm{J}$ / $25000\,\mathrm{J}$ \\
-        \hline
+        \bottomrule
     \end{tabularx}
 \end{table}
 
@@ -522,10 +522,10 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \centering
     \bicaption{算法训练参数}{Algorithm training parameters}
     \label{tab:algorithm-params}
-    \begin{tabularx}{\textwidth}{Y|Y}
-        \hline
+    \begin{tabularx}{\textwidth}{Y Y}
+        \toprule
         参数 & 数值 \\
-        \hline
+        \midrule
         训练随机种子 & $42, 84, 126$ \\
         工作负载随机种子 & \makecell[l]{$42, 84, 126, 168, 210$\\$252, 294, 336, 378, 420$} \\
         训练回合数 / 每个工作负载评估回合数 & $200$ / $6$ \\
@@ -546,57 +546,57 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
         MBS 掩码截止时间截断阈值 & $10$ \\
         协作卸载掩码阈值 & $\theta_{deadline}=1.50$, $\theta_{latency}=1.35$ \\
                                & $\theta_{share}=0.25$ \\
-        \hline
+        \bottomrule
     \end{tabularx}
 \end{table}
 
 \subsubsection{对比方法}
 \label{sec:comparison-methods}
 
-\paragraph{主实验策略组合}
+\paragraph{主配置策略组合}
 
-主实验比较五组策略组合，如表 \ref{tab:main-strategies} 所示。
+主配置策略组合用于验证双层结构的整体有效性，并拆分上层轨迹控制与下层卸载决策的贡献，如表 \ref{tab:main-strategies} 所示。
 
 \begin{table}[!htbp]
     \centering
     \bicaption{主实验策略组合}{Main experiment strategy combinations}
     \label{tab:main-strategies}
-    \begin{tabularx}{\textwidth}{|Y|Y|Y|Y|}
-        \hline
+    \begin{tabularx}{\textwidth}{l Y Y Y}
+        \toprule
         组合方案 & 轨迹控制 & 卸载策略 & 角色 \\
-        \hline
-        \texttt{unco+heuristic} & 非协同贪心策略 & 启发式卸载 & 基础参考 \\
-        \texttt{att+heuristic} & Attention-MAPPO & 启发式卸载 & 上层贡献 \\
-        \texttt{unco+lower} & 非协同贪心策略 & 下层 MAPPO & 下层贡献 \\
-        \texttt{att+lower} & Attention-MAPPO & 下层 MAPPO & 分别训练后组合 \\
-        \texttt{full hierarchical} & Attention-MAPPO & 下层 MAPPO & 完整双层联合训练 \\
-        \hline
+        \midrule
+        unco+heuristic & 非协同贪心策略 & 启发式卸载 & 基础参考 \\
+        att+heuristic & Attention-MAPPO & 启发式卸载 & 上层贡献 \\
+        unco+lower & 非协同贪心策略 & 下层 MAPPO & 下层贡献 \\
+        att+lower & Attention-MAPPO & 下层 MAPPO & 分别训练后组合 \\
+        full hierarchical & Attention-MAPPO & 下层 MAPPO & 完整双层联合训练 \\
+        \bottomrule
     \end{tabularx}
 \end{table}
 
 \paragraph{下层消融实验}
 
-下层消融实验以 \texttt{lower\_full}（即 \texttt{att+lower}）为参考，如表 \ref{tab:ablation-strategies} 所示。
+下层消融实验用于分析请求注意力、质量感知动作掩码和 Lagrange 约束三类组件的作用。实验以lower\_full（即 att+lower）为参考，如表 \ref{tab:ablation-strategies} 所示。
 
 \begin{table}[!htbp]
     \centering
     \bicaption{下层消融实验配置}{Lower-layer ablation configurations}
     \label{tab:ablation-strategies}
-    \begin{tabular}{|l|c|c|c|}
-        \hline
+    \begin{tabular}{l c c c}
+        \toprule
         消融方法 & 注意力机制 & 质量感知掩码 & Lagrange 约束 \\
-        \hline
-        \texttt{lower\_full} & 是 & 是 & 是 \\
-        \texttt{lower\_no\_mask} & 是 & 否 & 是 \\
-        \texttt{lower\_no\_lagrange} & 是 & 是 & 否 \\
-        \texttt{lower\_no\_attention} & 否 & 是 & 是 \\
-        \hline
+        \midrule
+        lower\_full & 是 & 是 & 是 \\
+        lower\_no\_mask & 是 & 否 & 是 \\
+        lower\_no\_lagrange & 是 & 是 & 否 \\
+        lower\_no\_attention & 否 & 是 & 是 \\
+        \bottomrule
     \end{tabular}
 \end{table}
 
 \paragraph{扩展基线方法}
 
-除主实验策略组合外，本文进一步报告上层 \texttt{vanilla\_mappo\_\_heuristic}、端到端 \texttt{joint\_end\_to\_end\_mappo} 以及由随机策略（Random）、均匀策略（Uniform）、IPPO、普通 MAPPO（Vanilla MAPPO）、联合 MAPPO（Joint MAPPO）和本文方法（Proposed）组成的扩展基线矩阵。扩展基线矩阵中，非学习式方法以工作负载随机种子为统计单元，学习式方法沿用表 \ref{tab:algorithm-params} 中的训练与评估协议。
+扩展基线方法用于检验结论是否依赖单一参考策略，并进一步回答普通 MAPPO 和端到端联合 MAPPO 是否足以替代本文双层结构。除主配置策略组合外，本文进一步报告上层vanilla\_mappo\_\_heuristic、端到端joint\_end\_to\_end\_mappo 以及由随机策略（Random）、均匀策略（Uniform）、IPPO、普通 MAPPO（Vanilla MAPPO）、联合 MAPPO（Joint MAPPO）和本文方法（Proposed）组成的扩展基线矩阵。扩展基线矩阵中，非学习式方法以工作负载随机种子为统计单元，学习式方法沿用表 \ref{tab:algorithm-params} 中的训练与评估协议。
 
 \subsubsection{评估指标}
 \label{sec:metrics}
@@ -621,28 +621,28 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 \end{equation}
 其中 $N_{\text{deadline-satisfied}}$ 为满足截止时间约束的服务请求数，$E_{\text{total}}$ 为 UAV 侧总能耗。EEE 表示单位能耗下有效完成的服务请求数，数值越高表示能耗与服务质量之间的折中越有利。
 
-\subsection{主实验结果与分层贡献分析}
+\subsection{主配置下的综合性能与分层贡献分析}
 \label{subsec:main-layer-results}
 
-\subsubsection{主实验结果}
+\subsubsection{综合性能对比}
 \label{sec:main-results}
 
-表 \ref{tab:main-results} 汇总了主实验中各策略的均值和标准差（mean $\pm$ std）。该组实验检验双层分解的主张：上层轨迹学习主要改善空间部署与服务公平性，下层卸载学习主要改变能耗和卸载行为，完整联合训练应在二者之间形成更优折中。
+本小节首先比较主配置下不同策略组合的综合性能，用于回答完整双层方法是否能够在系统奖励、能耗、公平性和在线稳定性上形成优势。表 \ref{tab:main-results} 汇总了各策略的均值和标准差（mean $\pm$ std）。
 
 \begin{table}[!htbp]
     \centering
     \bicaption{主实验结果（mean $\pm$ std, $N=30$）}{Main experiment results (mean $\pm$ std, $N=30$)}
     \label{tab:main-results}
-    \begin{tabularx}{\textwidth}{Y|C{0.14\textwidth}|C{0.14\textwidth}|C{0.12\textwidth}|C{0.12\textwidth}}
-        \hline
+    \begin{tabularx}{\textwidth}{Y c c c c}
+        \toprule
         策略 & Reward & Energy (M) & DSR & Fairness \\
-        \hline
+        \midrule
         unco+heuristic & \makecell[c]{-5933.9\\$\pm$ 195.6} & \makecell[c]{114.70\\$\pm$ 15.4} & \makecell[c]{0.2734\\$\pm$ 0.029} & \makecell[c]{0.7745\\$\pm$ 0.077} \\
         att+heuristic & \makecell[c]{\textbf{-2128.6}\\$\pm$ 389.7} & \makecell[c]{111.81\\$\pm$ 10.6} & \makecell[c]{\textbf{0.2879}\\$\pm$ 0.032} & \makecell[c]{\textbf{0.9299}\\$\pm$ 0.036} \\
         unco+lower & \makecell[c]{-5274.4\\$\pm$ 141.3} & \makecell[c]{42.85\\$\pm$ 13.6} & \makecell[c]{0.1891\\$\pm$ 0.029} & \makecell[c]{0.7737\\$\pm$ 0.080} \\
         att+lower & \makecell[c]{\textbf{-1599.4}\\$\pm$ 330.1} & \makecell[c]{53.32\\$\pm$ 12.4} & \makecell[c]{0.2170\\$\pm$ 0.035} & \makecell[c]{\textbf{0.9281}\\$\pm$ 0.035} \\
         full hierarchical & \makecell[c]{\textbf{-1451.7}\\$\pm$ 373.7} & \makecell[c]{58.06\\$\pm$ 7.0} & \makecell[c]{0.2083\\$\pm$ 0.019} & \makecell[c]{\textbf{0.9363}\\$\pm$ 0.041} \\
-        \hline
+        \bottomrule
     \end{tabularx}
 \end{table}
 
@@ -652,16 +652,16 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \centering
     \bicaption{主实验结果（续）}{Main experiment results (continued)}
     \label{tab:main-results-cont}
-    \begin{tabularx}{\textwidth}{Y|C{0.15\textwidth}|C{0.15\textwidth}|C{0.15\textwidth}|C{0.18\textwidth}}
-        \hline
+    \begin{tabularx}{\textwidth}{Y c c c c}
+        \toprule
         策略 & Offline\% & Local\% & Coop\% & MBS offload\% \\
-        \hline
+        \midrule
         unco+heuristic & 0.58\% & 47.1\% & 50.1\% & 2.6\% \\
         att+heuristic & 0.10\% & 47.2\% & 50.0\% & 2.7\% \\
         unco+lower & 0.53\% & 52.6\% & 30.1\% & 17.1\% \\
         att+lower & 0.11\% & 41.7\% & 44.6\% & 13.7\% \\
         full hierarchical & \textbf{0.00\%} & 46.4\% & 42.4\% & 11.1\% \\
-        \hline
+        \bottomrule
     \end{tabularx}
 \end{table}
 
@@ -671,10 +671,10 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \centering
     \bicaption{Full Hierarchical MARL 相对基础参考的配对比较}{Paired comparison of Full Hierarchical MARL vs baseline}
     \label{tab:paired-comparison}
-    \begin{tabularx}{\textwidth}{Y|C{0.18\textwidth}|C{0.22\textwidth}|C{0.18\textwidth}|C{0.12\textwidth}}
-        \hline
+    \begin{tabularx}{\textwidth}{Y c c c c}
+        \toprule
         指标 & Mean Delta & 95\% CI & paired t $p$ & Effect \\
-        \hline
+        \midrule
         Reward & \textbf{+4482.2} & [4338.3, 4626.1] & $1.0\times10^{-32}$ & $\uparrow$ \\
         Energy & \textbf{-56.64M} & [-61.97M, -51.31M] & $1.7\times10^{-19}$ & $\uparrow$ \\
         Fairness & \textbf{+0.1617} & [0.1305, 0.1929] & $1.7\times10^{-11}$ & $\uparrow$ \\
@@ -682,15 +682,15 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
         offline\_rate & -0.0058 & [-0.0099, -0.0017] & 0.0067 & $\uparrow$ \\
         Coop ratio & -0.0776 & [-0.1005, -0.0546] & $1.3\times10^{-7}$ & $\downarrow$ \\
         MBS load ratio & +0.0387 & [0.0319, 0.0454] & $1.7\times10^{-12}$ & 增加 \\
-        \hline
+        \bottomrule
     \end{tabularx}
 \end{table}
 
 完整双层 MARL 相对基础参考在系统奖励、能耗、公平性和在线率上表现更优。具体而言，reward 提升 4482.2（$p = 1.0\times10^{-32}$），UAV 侧能耗降低 56.64M（$p = 1.7\times10^{-19}$），公平性提升 0.162（$p = 1.7\times10^{-11}$），offline rate 降至 0.00\%。这些结果表明，双层框架能够通过轨迹协同和请求级卸载重分配降低高能耗服务模式，并使服务覆盖在 UE 间更加均衡。
 
-需要注意的是，能耗优先配置下完整方法的 DSR 为 0.2083，低于基础参考的 0.2734（$\Delta=-0.0651$, $p=2.4\times10^{-11}$）。因此，该主配置应被解释为能耗、公平性和在线稳定性优先的工作点，而不是 DSR 最优工作点。第 \ref{sec:dsr-priority} 节将进一步讨论通过奖励权重和 Lagrange 约束目标调整服务质量偏好的可行性。
+从 DSR 指标来看，完整双层方法在当前主配置下并未取得最高的截止期满足率。该现象表明，当前配置更倾向于在降低系统能耗、提升覆盖公平性和降低 UE 离线率之间取得综合平衡，而非单独追求 DSR 最大化。第 \ref{sec:dsr-priority} 节将进一步讨论通过奖励权重和 Lagrange 约束目标调整服务质量偏好的可行性。
 
-从分层贡献看，仅替换上层轨迹策略（\texttt{att+heuristic} 相对 \texttt{unco+heuristic}）时，公平性从 0.7745 提升至 0.9299（$\Delta=+0.1554$, $p=3.4\times10^{-10}$），奖励从 -5933.9 提升至 -2128.6，而能耗和 DSR 仅呈改善趋势且未达到统计显著。仅替换下层卸载策略（\texttt{unco+lower} 相对基础参考）时，energy 从 114.70M 降至 42.85M，但 fairness 基本保持在 0.774 左右。由此可见，上层模块主要改善空间覆盖均衡性，下层模块主要改变执行位置和能耗，完整双层方法则在奖励、能耗、公平性与离线率之间形成综合折中。
+从分层贡献看，仅替换上层轨迹策略（att+heuristic相对unco+heuristic）时，公平性从 0.7745 提升至 0.9299（$\Delta=+0.1554$, $p=3.4\times10^{-10}$），奖励从 -5933.9 提升至 -2128.6，而能耗和 DSR 仅呈改善趋势且未达到统计显著。仅替换下层卸载策略（unco+lower 相对基础参考）时，energy 从 114.70M 降至 42.85M，但 fairness 基本保持在 0.774 左右。由此可见，上层模块主要改善空间覆盖均衡性，下层模块主要改变执行位置和能耗，完整双层方法则在奖励、能耗、公平性与离线率之间形成综合折中。
 
 \begin{figure}[!htbp]
     \centering
@@ -775,15 +775,15 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \centering
     \bicaption{下层消融实验结果（相对于 lower\_full）}{Lower-layer ablation results (relative to lower\_full)}
     \label{tab:ablation-results}
-    \begin{tabularx}{0.82\textwidth}{Y|C{0.18\textwidth}|C{0.18\textwidth}|C{0.16\textwidth}}
-        \hline
+    \begin{tabularx}{0.82\textwidth}{Y c c c}
+        \toprule
         消融 & Reward & Energy (M) & DSR \\
-        \hline
+        \midrule
         lower\_full & $-1599.4$ & $53.32$ & $0.2170$ \\
         no\_mask & $-1556.3$ & $48.26$ & $0.1945$ \\
         no\_lagrange & $-1585.9$ & $51.12$ & $0.1981$ \\
         no\_attention & $-1626.7$ & $54.01$ & $\mathbf{0.2094}$ \\
-        \hline
+        \bottomrule
     \end{tabularx}
 \end{table}
 
@@ -833,13 +833,13 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \centering
     \bicaption{上层 vanilla MAPPO 消融结果}{Upper-layer vanilla MAPPO ablation results}
     \label{tab:vanilla-ablation}
-    \begin{tabularx}{\textwidth}{Y|C{0.14\textwidth}|C{0.14\textwidth}|C{0.14\textwidth}|C{0.12\textwidth}}
-        \hline
+    \begin{tabularx}{\textwidth}{Y c c c c}
+        \toprule
         策略 & Reward & Latency & Energy (M) & DSR \\
-        \hline
+        \midrule
         vanilla MAPPO+heuristic & \makecell[c]{\textbf{-1462.6}\\$\pm$ 328.7} & \makecell[c]{\textbf{841994}\\$\pm$ 95239} & \makecell[c]{120.11\\$\pm$ 15.69} & \makecell[c]{\textbf{0.2822}\\$\pm$ 0.0278} \\
         att+heuristic & \makecell[c]{-2222.1\\$\pm$ 890.6} & \makecell[c]{1135453\\$\pm$ 132493} & \makecell[c]{\textbf{114.55}\\$\pm$ 13.26} & \makecell[c]{0.2799\\$\pm$ 0.0317} \\
-        \hline
+        \bottomrule
     \end{tabularx}
 \end{table}
 
@@ -851,12 +851,12 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \centering
     \bicaption{端到端 joint MAPPO 评估结果}{End-to-end joint MAPPO evaluation results}
     \label{tab:joint-mappo}
-    \begin{tabularx}{\textwidth}{Y|C{0.14\textwidth}|C{0.14\textwidth}|C{0.14\textwidth}|C{0.12\textwidth}}
-        \hline
+    \begin{tabularx}{\textwidth}{Y c c c c}
+        \toprule
         策略 & Reward & Latency & Energy (M) & DSR \\
-        \hline
+        \midrule
         joint end-to-end MAPPO & \makecell[c]{-9865.1\\$\pm$ 325.6} & \makecell[c]{1580604\\$\pm$ 267198} & \makecell[c]{81.58\\$\pm$ 31.25} & \makecell[c]{0.1349\\$\pm$ 0.0761} \\
-        \hline
+        \bottomrule
     \end{tabularx}
 \end{table}
 
@@ -921,14 +921,14 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \centering
     \bicaption{三种配置下的 Full Hierarchical MARL 对比（$N=30$）}{Full Hierarchical MARL under three configurations ($N=30$)}
     \label{tab:dsr-priority}
-    \begin{tabularx}{0.82\textwidth}{Y|C{0.18\textwidth}|C{0.18\textwidth}|C{0.16\textwidth}}
-        \hline
+    \begin{tabularx}{0.82\textwidth}{Y c c c}
+        \toprule
         配置 & Reward & Energy (M) & DSR \\
-        \hline
+        \midrule
         启发式基线 & $-5933.9$ & $114.70$ & $0.2734$ \\
         能耗优先（base v2） & $-1451.7$ & $\mathbf{58.06}$ & $0.2083$ \\
         DSR 优先（strong） & $\mathbf{-1147.2}$ & $83.04$ & $\mathbf{0.2435}$ \\
-        \hline
+        \bottomrule
     \end{tabularx}
 \end{table}
 
