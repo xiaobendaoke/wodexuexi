@@ -47,6 +47,10 @@ SUMMARY_METRIC_NAMES_V2: list[str] = [
     "energy_efficiency_global",
     "service_requests_generated",
     "service_requests_processed",
+    "service_requests_uncovered",
+    "forced_service_admissions",
+    "forced_admission_ratio",
+    "natural_coverage_service_ratio",
     "deadline_satisfied_service_requests",
     "service_offloads_local",
     "service_offloads_cooperative",
@@ -75,6 +79,9 @@ def _collect_episode_metrics(env: Env, ep_reward: float, ep_latency: float, ep_e
                              ep_local: float, ep_coop: float, ep_mbs: float, ep_mbs_load: float,
                              ep_service_generated: float, ep_service_processed: float,
                              ep_deadline_satisfied: float,
+                             ep_service_uncovered: float = 0.0,
+                             ep_forced_service_admissions: float = 0.0,
+                             ep_natural_service_coverage: float = 0.0,
                              ep_fairness_values: list[float] | None = None,
                              ep_offline_rate_values: list[float] | None = None,
                              ep_dsr_values: list[float] | None = None,
@@ -113,6 +120,8 @@ def _collect_episode_metrics(env: Env, ep_reward: float, ep_latency: float, ep_e
 
     # 计算 processed request ratio（v2 新增）
     processed_request_ratio = float(ep_service_processed) / max(float(ep_service_generated), float(config.EPSILON))
+    forced_admission_ratio = float(ep_forced_service_admissions) / max(float(ep_service_generated), float(config.EPSILON))
+    natural_coverage_service_ratio = float(ep_natural_service_coverage) / max(float(ep_service_generated), float(config.EPSILON))
 
     # 计算 deadline_satisfied_per_processed（v2 新增）
     deadline_satisfied_per_processed = float(ep_deadline_satisfied) / max(float(ep_service_processed), float(config.EPSILON))
@@ -136,6 +145,10 @@ def _collect_episode_metrics(env: Env, ep_reward: float, ep_latency: float, ep_e
         "service_predict_exception_fallback_count": float(runtime_audit.get("episode_service_predict_exception_fallback_count", 0.0)),
         "service_requests_generated": float(ep_service_generated),
         "service_requests_processed": float(ep_service_processed),
+        "service_requests_uncovered": float(ep_service_uncovered),
+        "forced_service_admissions": float(ep_forced_service_admissions),
+        "forced_admission_ratio": float(forced_admission_ratio),
+        "natural_coverage_service_ratio": float(natural_coverage_service_ratio),
         "deadline_satisfied_service_requests": float(ep_deadline_satisfied),
         # 新增字段（v2）
         "offline_rate_final": float(ep_offline_rate),
@@ -188,6 +201,9 @@ def run_single_episode(
     ep_service_generated = 0.0
     ep_service_processed = 0.0
     ep_deadline_satisfied = 0.0
+    ep_service_uncovered = 0.0
+    ep_forced_service_admissions = 0.0
+    ep_natural_service_coverage = 0.0
     ep_local_offloads = 0.0
     ep_coop_offloads = 0.0
     ep_mbs_offloads = 0.0
@@ -251,6 +267,9 @@ def run_single_episode(
         ep_service_generated += service_generated
         ep_service_processed += float(metrics.get("service_requests_processed", 0.0))
         ep_deadline_satisfied += float(metrics.get("deadline_satisfaction_rate", 0.0)) * service_generated
+        ep_service_uncovered += float(metrics.get("service_requests_uncovered", 0.0))
+        ep_forced_service_admissions += float(metrics.get("forced_service_admissions", 0.0))
+        ep_natural_service_coverage += float(metrics.get("natural_coverage_service_ratio", 0.0)) * service_generated
 
         # v2 新增：记录卸载计数
         ep_local_offloads += float(metrics.get("service_offloads_local", 0.0))
@@ -266,6 +285,9 @@ def run_single_episode(
         env, ep_reward, ep_latency, ep_energy, ep_fairness, ep_offline_rate,
         ep_deadline, ep_local, ep_coop, ep_mbs, ep_mbs_load,
         ep_service_generated, ep_service_processed, ep_deadline_satisfied,
+        ep_service_uncovered=ep_service_uncovered,
+        ep_forced_service_admissions=ep_forced_service_admissions,
+        ep_natural_service_coverage=ep_natural_service_coverage,
         ep_fairness_values=ep_fairness_values,
         ep_offline_rate_values=ep_offline_rate_values,
         ep_dsr_values=ep_dsr_values,
@@ -301,6 +323,9 @@ def run_single_episode_joint(
     ep_service_generated = 0.0
     ep_service_processed = 0.0
     ep_deadline_satisfied = 0.0
+    ep_service_uncovered = 0.0
+    ep_forced_service_admissions = 0.0
+    ep_natural_service_coverage = 0.0
     ep_local_offloads = 0.0
     ep_coop_offloads = 0.0
     ep_mbs_offloads = 0.0
@@ -352,6 +377,9 @@ def run_single_episode_joint(
         ep_service_generated += service_generated
         ep_service_processed += float(metrics.get("service_requests_processed", 0.0))
         ep_deadline_satisfied += float(metrics.get("deadline_satisfaction_rate", 0.0)) * service_generated
+        ep_service_uncovered += float(metrics.get("service_requests_uncovered", 0.0))
+        ep_forced_service_admissions += float(metrics.get("forced_service_admissions", 0.0))
+        ep_natural_service_coverage += float(metrics.get("natural_coverage_service_ratio", 0.0)) * service_generated
 
         # v2 新增：记录卸载计数
         ep_local_offloads += float(metrics.get("service_offloads_local", 0.0))
@@ -367,6 +395,9 @@ def run_single_episode_joint(
         env, ep_reward, ep_latency, ep_energy, ep_fairness, ep_offline_rate,
         ep_deadline, ep_local, ep_coop, ep_mbs, ep_mbs_load,
         ep_service_generated, ep_service_processed, ep_deadline_satisfied,
+        ep_service_uncovered=ep_service_uncovered,
+        ep_forced_service_admissions=ep_forced_service_admissions,
+        ep_natural_service_coverage=ep_natural_service_coverage,
         ep_fairness_values=ep_fairness_values,
         ep_offline_rate_values=ep_offline_rate_values,
         ep_dsr_values=ep_dsr_values,

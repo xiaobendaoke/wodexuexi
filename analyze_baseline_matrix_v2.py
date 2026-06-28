@@ -204,6 +204,36 @@ def build_units(data: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
     return units
 
 
+def build_workload_balanced_units(native_units: dict[str, list[dict[str, Any]]]) -> dict[str, list[dict[str, Any]]]:
+    """Collapse each method to one unit per workload seed.
+
+    Learning methods may have several training seeds for the same workload. For
+    thesis-facing comparisons against non-learning baselines, average those
+    training-seed units first so every method contributes N=workload_count.
+    """
+    balanced: dict[str, list[dict[str, Any]]] = {}
+    for method, method_units in native_units.items():
+        grouped: dict[int, list[dict[str, Any]]] = defaultdict(list)
+        for unit in method_units:
+            grouped[int(unit["workload_seed"])].append(unit)
+
+        balanced[method] = []
+        for workload_seed in sorted(grouped):
+            workload_units = grouped[workload_seed]
+            collapsed: dict[str, Any] = {
+                "method": method,
+                "training_seed": None,
+                "workload_seed": workload_seed,
+                "unit_id": f"workload{workload_seed}",
+                "num_episodes": int(sum(int(unit.get("num_episodes", 0)) for unit in workload_units)),
+            }
+            for metric in TABLE_METRICS:
+                values = [float(unit[metric]) for unit in workload_units if metric in unit]
+                collapsed[metric] = float(np.mean(values)) if values else 0.0
+            balanced[method].append(collapsed)
+    return balanced
+
+
 def compute_statistics(values: list[float]) -> dict[str, float | int]:
     finite = np.asarray([v for v in values if np.isfinite(v)], dtype=np.float64)
     n = int(finite.size)
@@ -262,10 +292,19 @@ def proposed_workload_mean(units: list[dict[str, Any]], metric: str) -> dict[int
     return {workload: float(np.mean(vals)) for workload, vals in grouped.items() if vals}
 
 
-def compute_all_statistics(units: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
+def compute_all_statistics(units: dict[str, list[dict[str, Any]]], *, unit_mode: str = "native") -> dict[str, Any]:
+    if unit_mode == "workload_balanced":
+        unit_note = (
+            "Workload-balanced: one unit=one workload seed for every method. "
+            "Learning methods are averaged over training seeds within each workload before statistics."
+        )
+    else:
+        unit_note = "Learning: one unit=(training_seed, workload_seed). Non-learning: one unit=workload_seed."
+
     result: dict[str, Any] = {
         "timestamp": datetime.now().isoformat(),
-        "unit_note": "Learning: one unit=(training_seed, workload_seed). Non-learning: one unit=workload_seed.",
+        "unit_mode": unit_mode,
+        "unit_note": unit_note,
         "metric_note": "Global ratios are recomputed from per-episode request/offload counts within each unit.",
         "methods": {},
         "comparisons": {},
@@ -394,6 +433,12 @@ def validate_units(units: dict[str, list[dict[str, Any]]]) -> list[str]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Analyze Baseline Matrix v2 results")
     parser.add_argument("--input_dir", type=str, default=DEFAULT_INPUT_DIR)
+    parser.add_argument(
+        "--unit_mode",
+        choices=["native", "workload_balanced"],
+        default="native",
+        help="Statistical unit definition. workload_balanced gives every method one unit per workload seed.",
+    )
     args = parser.parse_args()
 
     input_dir = Path(args.input_dir)
@@ -402,15 +447,18 @@ def main() -> None:
 
     data = load_experiment_data(input_dir)
     units = build_units(data)
+    if args.unit_mode == "workload_balanced":
+        units = build_workload_balanced_units(units)
     warnings = validate_units(units)
-    stats_result = compute_all_statistics(units)
+    stats_result = compute_all_statistics(units, unit_mode=args.unit_mode)
     stats_result["validation_warnings"] = warnings
 
-    stats_path = input_dir / "statistics.json"
+    suffix = "" if args.unit_mode == "native" else "_workload_balanced"
+    stats_path = input_dir / f"statistics{suffix}.json"
     stats_path.write_text(json.dumps(stats_result, indent=2, ensure_ascii=False), encoding="utf-8")
-    table_path = input_dir / "summary_table.tsv"
+    table_path = input_dir / f"summary_table{suffix}.tsv"
     table_path.write_text(generate_summary_table(stats_result), encoding="utf-8")
-    report_path = input_dir / "report.md"
+    report_path = input_dir / f"report{suffix}.md"
     report_path.write_text(generate_report(stats_result), encoding="utf-8")
 
     print(f"Loaded methods: {', '.join(units)}")

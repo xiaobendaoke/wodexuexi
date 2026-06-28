@@ -92,6 +92,7 @@ def save_manifest(output_dir: Path, args: argparse.Namespace) -> None:
         "train_episodes": args.train_episodes,
         "eval_episodes": args.eval_episodes,
         "output_dir": str(output_dir),
+        "force_service_admission": bool(args.force_service_admission),
         "git_info": get_git_info(),
         "config_snapshot": get_config_snapshot(),
         "unit_definition": {
@@ -296,8 +297,14 @@ def main() -> None:
     parser.add_argument("--output_dir", type=str, default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("--resume", action="store_true", help="Skip completed metrics files.")
     parser.add_argument("--overwrite", action="store_true", help="Re-run metrics even when output files exist.")
+    parser.add_argument(
+        "--force_service_admission",
+        action="store_true",
+        help="Admit service requests outside all UAV coverage disks through the nearest UAV.",
+    )
     args = parser.parse_args()
     validate_args(args)
+    config.FORCE_SERVICE_ADMISSION = bool(args.force_service_admission)
 
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -311,6 +318,7 @@ def main() -> None:
     print(f"Train episodes: {args.train_episodes}")
     print(f"Eval episodes: {args.eval_episodes}")
     print(f"Output dir: {output_dir}")
+    print(f"Force service admission: {args.force_service_admission}")
     print(f"Resume: {args.resume}; overwrite: {args.overwrite}")
     print(f"{'=' * 60}\n")
 

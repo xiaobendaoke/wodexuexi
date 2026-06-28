@@ -39,6 +39,7 @@ class Env:
         self._time_step: int = 0
         self._last_step_stats: dict[str, float] = {}
         self._last_runtime_audit: dict[str, object] = {}
+        self._last_admission_stats: dict[str, int] = {}
         self._episode_runtime_audit_totals: dict[str, int] = self._make_empty_runtime_audit_totals()
 
     # 函数 uavs：关键函数，承载本模块的一段可复用实验逻辑。
@@ -95,6 +96,7 @@ class Env:
         self._time_step = 0
         self._last_step_stats = {}
         self._last_runtime_audit = {}
+        self._last_admission_stats = {}
         self._episode_runtime_audit_totals = self._make_empty_runtime_audit_totals()
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return self._get_obs()
@@ -407,23 +409,46 @@ class Env:
 
     # 函数 _associate_ues_to_uavs：关键函数，承载本模块的一段可复用实验逻辑。
     def _associate_ues_to_uavs(self) -> None:
-        """Assign each UE to at most one UAV, resolving overlaps by choosing the closest UAV."""
+        """Assign each UE to at most one UAV, with optional service fallback admission."""
+        stats = {
+            "service_requests_generated": 0,
+            "naturally_covered_service_requests": 0,
+            "service_requests_uncovered": 0,
+            "forced_service_admissions": 0,
+        }
         # 循环处理：遍历 ue 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for ue in self._ues:
+            is_service_request = bool(ue.current_request.is_service)
+            if is_service_request:
+                stats["service_requests_generated"] += 1
             covering_uavs: list[tuple[UAV, float]] = []
+            nearest_uav: UAV | None = None
+            nearest_distance: float = float("inf")
             # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
             for uav in self._uavs:
                 distance: float = float(np.linalg.norm(uav.pos[:2] - ue.pos[:2]))
+                if distance < nearest_distance:
+                    nearest_uav = uav
+                    nearest_distance = distance
                 # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                 if distance <= config.UAV_COVERAGE_RADIUS:
                     covering_uavs.append((uav, distance))
 
             # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if not covering_uavs:
+                if is_service_request:
+                    stats["service_requests_uncovered"] += 1
+                    if getattr(config, "FORCE_SERVICE_ADMISSION", False) and nearest_uav is not None:
+                        nearest_uav.current_covered_ues.append(ue)
+                        ue.assigned = True
+                        stats["forced_service_admissions"] += 1
                 continue
+            if is_service_request:
+                stats["naturally_covered_service_requests"] += 1
             best_uav, _ = min(covering_uavs, key=lambda x: x[1])
             best_uav.current_covered_ues.append(ue)
             ue.assigned = True
+        self._last_admission_stats = stats
 
     # 函数 _get_rewards_and_metrics：关键函数，承载本模块的一段可复用实验逻辑。
     def _get_rewards_and_metrics(self) -> tuple[list[float], dict[str, float]]:
@@ -443,6 +468,9 @@ class Env:
         total_service_requests_generated: int = sum(1 for ue in self._ues if ue.current_request.is_service)
         total_service_requests_processed: int = sum(uav.service_request_count for uav in self._uavs)
         deadline_satisfied_count: int = sum(1 for ue in self._ues if ue.is_service_deadline_satisfied())
+        natural_service_requests: int = int(self._last_admission_stats.get("naturally_covered_service_requests", 0))
+        uncovered_service_requests: int = int(self._last_admission_stats.get("service_requests_uncovered", 0))
+        forced_service_admissions: int = int(self._last_admission_stats.get("forced_service_admissions", 0))
         total_local_offloads: int = sum(uav.service_offload_local_count for uav in self._uavs)
         total_cooperative_offloads: int = sum(uav.service_offload_cooperative_count for uav in self._uavs)
         total_mbs_offloads: int = sum(uav.service_offload_mbs_count for uav in self._uavs)
@@ -463,6 +491,8 @@ class Env:
         if total_service_requests_generated > 0:
             deadline_satisfaction_rate = deadline_satisfied_count / total_service_requests_generated
             mbs_load_ratio = total_mbs_offloads / total_service_requests_generated
+        forced_admission_ratio: float = forced_service_admissions / max(float(total_service_requests_generated), float(config.EPSILON))
+        natural_coverage_service_ratio: float = natural_service_requests / max(float(total_service_requests_generated), float(config.EPSILON))
 
         offloading_ratio_local: float = 0.0
         offloading_ratio_cooperative: float = 0.0
@@ -514,6 +544,10 @@ class Env:
             "effective_energy_efficiency": effective_energy_efficiency,
             "service_requests_generated": float(total_service_requests_generated),
             "service_requests_processed": float(total_service_requests_processed),
+            "service_requests_uncovered": float(uncovered_service_requests),
+            "forced_service_admissions": float(forced_service_admissions),
+            "forced_admission_ratio": float(forced_admission_ratio),
+            "natural_coverage_service_ratio": float(natural_coverage_service_ratio),
             "service_offloads_local": float(total_local_offloads),
             "service_offloads_cooperative": float(total_cooperative_offloads),
             "service_offloads_mbs": float(total_mbs_offloads),
