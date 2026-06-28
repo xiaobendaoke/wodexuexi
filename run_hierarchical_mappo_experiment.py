@@ -410,6 +410,7 @@ def train_hierarchical_mappo(
         "final_lambda_mbs": float(lambda_mbs),
         "final_losses": {key: float(value) for key, value in recent_losses.items()},
         "offload_dsr_target": float(config.OFFLOAD_DSR_TARGET),
+        "force_service_admission": bool(config.FORCE_SERVICE_ADMISSION),
         "offload_mbs_load_ceiling": float(config.OFFLOAD_MBS_LOAD_CEILING),
         "log_json": logger.json_file_path,
         "training_curve_json": str(training_curve_path),
@@ -441,12 +442,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--constraint_mode", type=str, default=None, choices=["none", "lagrange"])
     parser.add_argument("--mask_mode", type=str, default=None, choices=["quality", "none"])
     parser.add_argument("--dsr_target", type=float, default=None)
+    parser.add_argument("--force_service_admission", action="store_true", help="Enable nearest-UAV fallback admission for uncovered service requests")
     parser.add_argument("--mbs_load_ceiling", type=float, default=None)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+    config.FORCE_SERVICE_ADMISSION = bool(args.force_service_admission)
     if args.constraint_mode is not None:
         config.OFFLOAD_CONSTRAINT_MODE = args.constraint_mode
     if args.mask_mode is not None:

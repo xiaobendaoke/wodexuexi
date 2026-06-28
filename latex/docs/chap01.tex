@@ -62,13 +62,13 @@
 本文的主要贡献如下：
 
 \begin{enumerate}
-    \item 提出一种基于 Attention-MAPPO 的多 UAV MEC 轨迹与任务卸载协同优化框架，将轨迹控制和请求级卸载拆分为上层 attention-MAPPO 和下层 constrained attention offload MAPPO 两个协同决策层，以降低直接联合建模的动作耦合复杂度。
+    \item 提出一种基于 Attention-MAPPO 的多 UAV MEC 轨迹与任务卸载协同优化框架，将轨迹控制和请求级卸载拆分为上层 attention-MAPPO 和下层 constrained attention offload MAPPO 两个协同决策层，并在正式评估中引入最近 UAV 服务兜底接入机制，以降低直接联合建模的动作耦合复杂度并保证所有 service request 被系统接入尝试处理。
     \item 设计请求级质量感知动作 mask，对明显不可行的 cooperative UAV 与 MBS 动作进行运行时屏蔽，减少无效探索。消融实验表明，mask 会改变 MBS load ratio 和协作卸载比例。
-    \item 在下层奖励中引入 Lagrange 约束机制，将 DSR 和 MBS load ratio 纳入可解释的约束权衡。消融实验表明，去除 Lagrange 约束后 MBS load ratio 从 11.0\% 上升至 17.1\%。
-    \item 补充实现上层 vanilla MAPPO、attention 权重可视化和端到端 joint MAPPO baseline，用于分析 attention 机制的作用边界和直接联合动作学习的训练难度。
+    \item 在下层奖励中引入 Lagrange 约束机制，将 DSR 和 MBS load ratio 纳入可解释的软约束权衡；扩展基线实验表明，本文方法在全服务接入口径下保持最低 MBS load ratio，同时避免将处理率误解释为 deadline 满足率。
+    \item 补充实现上层 vanilla MAPPO、attention 权重可视化和端到端 joint MAPPO baseline，用于分析 attention 机制的作用边界、DSR--能耗--公平性权衡以及直接联合动作学习的训练代价。
 \end{enumerate}
 
-此外，本文在系统模型中显式考虑 UAV 飞行能耗、UE 电池动态和 WPT 机制，并基于 training seed 与 workload seed 的成对统计单元（$N=30$）报告均值、95\% 置信区间、paired t-test 和 Wilcoxon 检验。
+此外，本文在系统模型中显式考虑 UAV 飞行能耗、UE 电池动态和 WPT 机制，并基于 training seed 与 workload seed 的成对统计单元报告均值、95\% 置信区间、paired t-test 和 Wilcoxon 检验。正式结论优先采用 force-admission 扩展基线矩阵中的 request-weighted DSR、处理率、强制接入比例和 MBS 负载比例。
 
 \section{论文组织结构}
 \label{sec:arrangement}

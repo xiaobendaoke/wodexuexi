@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Generate thesis figures from baseline_matrix_v2 and sensitivity results."""
+"""Generate thesis figures from baseline-matrix and sensitivity results."""
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -13,9 +14,9 @@ import numpy as np
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BASELINE_STATS = ROOT / "results" / "baseline_matrix_v2" / "statistics.json"
-UE_SUMMARY = ROOT / "results" / "sensitivity" / "ue_count" / "summary.json"
-CPU_SUMMARY = ROOT / "results" / "sensitivity" / "uav_cpu_scale" / "summary.json"
+DEFAULT_BASELINE_STATS = ROOT / "results" / "baseline_matrix_force_admission_20260626_resume" / "statistics_workload_balanced.json"
+DEFAULT_UE_SUMMARY = ROOT / "results" / "sensitivity_force_admission" / "ue_count" / "summary.json"
+DEFAULT_CPU_SUMMARY = ROOT / "results" / "sensitivity_force_admission" / "uav_cpu_scale" / "summary.json"
 OUT_DIR = ROOT / "latex" / "docs" / "figures"
 DOC_OUT_DIR = ROOT / "docs" / "figures"
 OUTPUT_DIRS = (DOC_OUT_DIR, OUT_DIR)
@@ -193,13 +194,35 @@ def plot_sensitivity_grid(summary: dict, variables: list[str], methods: list[str
     plt.close(fig)
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--baseline_stats",
+        type=Path,
+        default=DEFAULT_BASELINE_STATS,
+        help="Statistics JSON for Fig. 5-14/5-15. Defaults to force-admission workload-balanced results.",
+    )
+    parser.add_argument("--ue_summary", type=Path, default=DEFAULT_UE_SUMMARY)
+    parser.add_argument("--cpu_summary", type=Path, default=DEFAULT_CPU_SUMMARY)
+    parser.add_argument(
+        "--skip_sensitivity",
+        action="store_true",
+        help="Only regenerate baseline-matrix figures. Use until force-admission sensitivity results exist.",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
     setup_style()
-    stats = load_json(BASELINE_STATS)
+    stats = load_json(args.baseline_stats)
     plot_baseline_overview(stats)
     plot_reliability_offloading(stats)
 
-    ue_summary = load_json(UE_SUMMARY)
+    if args.skip_sensitivity:
+        return
+
+    ue_summary = load_json(args.ue_summary)
     ue_vars = sorted(ue_summary["variables"].keys(), key=lambda v: float(v))
     plot_sensitivity_grid(
         ue_summary,
@@ -209,7 +232,7 @@ def main() -> None:
         "UE数量",
     )
 
-    cpu_summary = load_json(CPU_SUMMARY)
+    cpu_summary = load_json(args.cpu_summary)
     cpu_vars = sorted(cpu_summary["variables"].keys(), key=lambda v: float(v))
     plot_sensitivity_grid(
         cpu_summary,

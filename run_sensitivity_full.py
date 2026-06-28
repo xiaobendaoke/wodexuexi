@@ -537,6 +537,8 @@ def main():
                         help="工作负载种子")
     parser.add_argument("--eval_episodes", type=int, default=6,
                         help="每个配置的评估episode数")
+    parser.add_argument("--force_service_admission", action="store_true",
+                        help="为未自然覆盖的服务请求启用最近UAV兜底接入")
     parser.add_argument("--ue_counts", type=int, nargs="+", default=[60, 80, 100, 120, 140],
                         help="UE数量列表")
     parser.add_argument("--scales", type=float, nargs="+", default=[0.6, 0.8, 1.0, 1.2, 1.4],
@@ -544,11 +546,14 @@ def main():
 
     args = parser.parse_args()
 
+    config.FORCE_SERVICE_ADMISSION = bool(args.force_service_admission)
+
     print(f"\n{'='*60}")
     print(f"Running sensitivity experiment: {args.experiment}")
     print(f"Training seeds: {args.seeds}")
     print(f"Workload seeds: {args.workload_seeds}")
     print(f"Eval episodes: {args.eval_episodes}")
+    print(f"Force service admission: {args.force_service_admission}")
     print(f"{'='*60}")
 
     if args.experiment in ["convergence", "all"]:

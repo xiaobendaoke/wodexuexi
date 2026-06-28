@@ -4,24 +4,23 @@
 \section{工作总结}
 \label{sec:summary}
 
-本文提出了一种基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化框架。通过将轨迹控制和请求级卸载解耦为两个协同决策层，该框架降低了直接端到端联合动作建模的结构复杂度，并提高了决策过程的可解释性。
+本文提出了一种基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化框架。通过将轨迹控制和请求级卸载解耦为两个协同决策层，并在正式评估中采用最近 UAV 兜底接入规则，该框架降低了直接端到端联合动作建模的结构复杂度，使所有 service request 均被系统接入并尝试处理，同时保留真实链路距离对时延和能耗的影响。
 
 本文的主要工作和贡献包括：
 
 \begin{enumerate}
     \item 提出了基于 Attention-MAPPO 的双层 MARL 框架，将轨迹控制与请求级卸载解耦为上层和下层两个协同决策层，降低动作空间复杂度。
     \item 设计了质量感知动作掩码和拉格朗日约束机制，分别处理不可行动作屏蔽和 DSR-MBS 负载权衡问题。
-    \item 显式建模了 UAV 飞行能耗、UE 电池动态和 WPT 机制，维持系统长期运行的可持续性。
+    \item 显式建模了 UAV 飞行能耗、UE 电池动态、WPT 机制和服务兜底接入过程，用处理率、强制接入比例、request-weighted DSR 和 MBS 负载共同刻画服务表现。
 \end{enumerate}
 
 实验结果表明：
-\begin{enumerate}
-    \item 完整双层 MARL 相比基础基线在 reward（+4482）、能耗（-56.6M）、公平性（+0.162）上取得统计显著改善，并将 offline rate 从 0.58\% 降至 0.00\%。
-    \item 上层 attention-MAPPO 轨迹控制相对 uncoordinated greedy 对公平性和整体性能有独立且显著的贡献（$\Delta$reward +3805）；补充的 vanilla MAPPO 消融进一步表明，attention 机制主要体现为降低 MBS load 和能耗倾向，并改变轨迹协同与负载分配偏好。
-    \item 能耗优先配置将 DSR、能耗和公平性之间的权衡显式化；通过 DSR-priority 配置可将 DSR 从 0.2083 提升至 0.2435，并在保持约 28\% 能耗节省的同时将其与 baseline 的差距缩小约 54\%，验证了框架的可调节性。
-    \item Lagrange 约束有效控制 MBS load ratio（25.0\% $\rightarrow$ 13.7\%）。
-    \item 质量感知 action mask 和 request attention 机制各自独立地改变了卸载分布和能耗/负载权衡模式。
-    \item 端到端 \texttt{joint\_mappo} baseline 在相同训练预算下评估 reward 为 -9865.1、DSR 为 0.1349、fairness 为 0.4581，整体低于分层策略，说明直接联合轨迹-卸载动作学习存在样本效率和稳定性挑战。
+egin{enumerate}
+    \item 在 force-admission 扩展基线矩阵中，所有方法的服务请求处理率均达到 100\%，说明兜底接入机制能够将未自然覆盖的 service request 纳入处理链路；该处理率不等同于 deadline 满足率。
+    \item 本文方法在全服务接入口径下取得最高公平性（0.9452）、最低 UAV 侧能耗（49.98M）和最低 MBS 负载比例（3.59\%），同时保持 0.3762 的 request-weighted DSR，体现了低能耗、高公平性和低 MBS 依赖的综合折中优势。
+    \item 与 IPPO 和 Vanilla MAPPO 相比，本文方法分别提高 DSR 约 35.3\% 和 30.7\%，并显著降低 MBS 依赖；与 Joint MAPPO 和 Uniform 相比，本文方法虽然不是最高 DSR，但能耗和 MBS 负载明显更低，公平性更高。
+    \item 原始自然覆盖口径下的主配置与消融结果仍可作为结构贡献的辅助证据，表明上层 attention-MAPPO 主要改善空间服务均衡性，下层请求级卸载主要改变能耗与负载分配模式；但正式跨算法性能结论以 force-admission 矩阵为准。
+    \item 端到端 	exttt{joint\_mappo} baseline 在 force-admission 矩阵中取得较高 DSR（0.4163），但 reward、能耗、公平性和 MBS 负载均明显劣于分层策略，说明直接联合轨迹--卸载动作学习存在更高综合代价。
 \end{enumerate}
 
 \section{未来展望}
@@ -42,4 +41,4 @@
 \section{本章小结}
 \label{sec:summary-chap06}
 
-本章总结了本文的研究工作和主要贡献，并展望了未来的研究方向。首先回顾了本文提出的基于 Attention-MAPPO 的双层 MARL 框架及其主要创新点；然后总结了实验结果，验证了该框架在奖励、能耗、公平性和离线率等指标上的显著改善；最后提出了未来的研究方向，包括细粒度 Pareto 扫描、三维轨迹控制、Lagrange 乘子自适应更新、服务缓存和内容分发协同优化等。
+本章总结了本文的研究工作和主要贡献，并展望了未来的研究方向。首先回顾了本文提出的基于 Attention-MAPPO 的双层 MARL 框架及其 force-admission 正式评估口径；然后总结了实验结果，验证了该框架在全服务接入条件下的公平性、能耗和 MBS 负载折中优势；最后提出了未来的研究方向，包括细粒度 Pareto 扫描、三维轨迹控制、Lagrange 乘子自适应更新、服务缓存和内容分发协同优化等。
