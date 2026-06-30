@@ -1,0 +1,1 @@
+Command: /home/PengYanghan/miniconda3/envs/drone/bin/python run_hierarchical_mappo_experiment.py --mode lower_only_fixed_upper --num_episodes 200 --seed 84 --timestamp force_admission_main_lower_only_seed84_20260628_204054 --force_service_admission

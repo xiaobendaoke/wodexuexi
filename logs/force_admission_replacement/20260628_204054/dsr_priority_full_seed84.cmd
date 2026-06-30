@@ -1,0 +1,1 @@
+Command: /home/PengYanghan/miniconda3/envs/drone/bin/python run_hierarchical_mappo_experiment.py --mode full_hierarchical --num_episodes 200 --seed 84 --timestamp force_admission_dsr_priority_full_seed84_20260628_204054 --dsr_target 0.28 --mbs_load_ceiling 0.08 --force_service_admission

@@ -1,0 +1,1 @@
+Command: /home/PengYanghan/miniconda3/envs/drone/bin/python run_hierarchical_mappo_experiment.py --mode lower_only_fixed_upper --lower_ablation no_attention --num_episodes 200 --seed 126 --timestamp force_admission_ablation_no_attention_seed126_20260628_204054 --force_service_admission
