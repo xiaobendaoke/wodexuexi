@@ -19,8 +19,8 @@
     \item 在 force-admission 扩展基线矩阵中，所有方法的服务请求处理率均达到 100\%，说明兜底接入机制能够将未自然覆盖的 service request 纳入处理链路；该处理率不等同于 deadline 满足率。
     \item 本文方法在全服务接入口径下取得最高公平性（0.9452）、最低 UAV 侧能耗（49.98M）和最低 MBS 负载比例（3.59\%），同时保持 0.3762 的 request-weighted DSR，体现了低能耗、高公平性和低 MBS 依赖的综合折中优势。
     \item 与 IPPO 和 Vanilla MAPPO 相比，本文方法分别提高 DSR 约 35.3\% 和 30.7\%，并显著降低 MBS 依赖；与 Joint MAPPO 和 Uniform 相比，本文方法虽然不是最高 DSR，但能耗和 MBS 负载明显更低，公平性更高。
-    \item 原始自然覆盖口径下的主配置与消融结果仍可作为结构贡献的辅助证据，表明上层 attention-MAPPO 主要改善空间服务均衡性，下层请求级卸载主要改变能耗与负载分配模式；但正式跨算法性能结论以 force-admission 矩阵为准。
-    \item 端到端 	exttt{joint\_mappo} baseline 在 force-admission 矩阵中取得较高 DSR（0.4163），但 reward、能耗、公平性和 MBS 负载均明显劣于分层策略，说明直接联合轨迹--卸载动作学习存在更高综合代价。
+    \item force-admission 主配置与消融结果进一步表明，上层轨迹控制主要改善自然覆盖水平和空间公平性，下层请求级卸载主要调节本地、协作与 MBS 执行分布；Lagrange 软约束对抑制 MBS 依赖最关键。
+    \item 端到端 \texttt{joint\_mappo} baseline 在 force-admission 矩阵中取得较高 DSR（0.4163），但 reward、能耗、公平性和 MBS 负载均明显劣于分层策略，说明直接联合轨迹--卸载动作学习存在更高综合代价。
 \end{enumerate}
 
 \section{未来展望}

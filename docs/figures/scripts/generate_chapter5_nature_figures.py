@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Generate publication-style Chapter 5 result figures from locked manuscript values."""
+"""Generate Chapter 5 figures from the force-admission evaluation snapshot."""
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -16,49 +16,45 @@ from thesis_figure_style import PALETTE, save_pub as save_pub_shared, setup_thes
 
 
 ROOT = Path(__file__).resolve().parents[3]
+STATS_PATH = ROOT / "results" / "final_force_admission" / "evaluation_20260630" / "variant_statistics.json"
 OUTPUT_DIRS = (ROOT / "docs" / "figures", ROOT / "latex" / "docs" / "figures")
 QA_REPORT = ROOT / "docs" / "figures" / "figure_text_qa_report.json"
 
-METHODS = ["unco+heuristic", "att+heuristic", "unco+lower", "att+lower", "full hierarchical"]
-SHORT = ["基线", "仅上层", "仅下层", "上下层", "完整"]
-METHOD_COLORS = [PALETTE["baseline"], PALETTE["upper"], PALETTE["lower"], PALETTE["combined"], PALETTE["full"]]
+MAIN_VARIANTS = ["main_upper_only", "main_lower_only_fixed_upper", "main_full_hierarchical"]
+MAIN_LABELS = ["上层+启发式", "固定上层+下层", "完整双层"]
+MAIN_COLORS = [PALETTE["upper"], PALETTE["lower"], PALETTE["full"]]
 
-MAIN = {
-    "reward": [-5933.9, -2128.6, -5274.4, -1599.4, -1451.7],
-    "reward_std": [195.6, 389.7, 141.3, 330.1, 373.7],
-    "energy": [114.70, 111.81, 42.85, 53.32, 58.06],
-    "energy_std": [15.4, 10.6, 13.6, 12.4, 7.0],
-    "dsr": [0.2734, 0.2879, 0.1891, 0.2170, 0.2083],
-    "dsr_std": [0.029, 0.032, 0.029, 0.035, 0.019],
-    "fairness": [0.7745, 0.9299, 0.7737, 0.9281, 0.9363],
-    "fairness_std": [0.077, 0.036, 0.080, 0.035, 0.041],
-    "offline": [0.0058, 0.0010, 0.0053, 0.0011, 0.0000],
-    "local": [0.471, 0.472, 0.526, 0.417, 0.464],
-    "coop": [0.501, 0.500, 0.301, 0.446, 0.424],
-    "mbs_load": [0.026, 0.027, 0.171, 0.137, 0.111],
-}
+ABLATION_VARIANTS = ["ablation_full", "ablation_no_mask", "ablation_no_lagrange", "ablation_no_attention"]
+ABLATION_LABELS = ["完整下层", "无Mask", "无Lagrange", "无Attention"]
+ABLATION_COLORS = [PALETTE["full"], "#D8A448", "#C75E5A", "#7C70B2"]
 
-ABLATION_METHODS = ["lower_full", "no_mask", "no_lagrange", "no_attention"]
-ABLATION_SHORT = ["完整", "无Mask", "无Lagrange", "无Attention"]
-ABLATION = {
-    "reward": [-1599.4, -1556.3, -1585.9, -1626.7],
-    "energy": [53.32, 48.26, 51.12, 54.01],
-    "dsr": [0.2170, 0.1945, 0.1981, 0.2094],
-    "local": [0.417, 0.410, 0.360, 0.482],
-    "coop": [0.446, 0.410, 0.390, 0.344],
-    "mbs_load": [0.137, 0.180, 0.250, 0.173],
-}
-
-DSR_CONFIGS = ["基线", "能耗优先", "DSR优先"]
-DSR_DATA = {
-    "reward": [-5933.9, -1451.7, -1147.2],
-    "energy": [114.70, 58.06, 83.04],
-    "dsr": [0.2734, 0.2083, 0.2435],
-}
+DSR_VARIANTS = ["main_full_hierarchical", "dsr_priority_full"]
+DSR_LABELS = ["完整双层", "DSR优先"]
+DSR_COLORS = [PALETTE["full"], "#D8A448"]
 
 
 def setup_style() -> None:
     setup_thesis_style(font_size=7, legend_frameon=False)
+
+
+def load_stats() -> dict:
+    if not STATS_PATH.exists():
+        raise FileNotFoundError(f"Missing force-admission statistics: {STATS_PATH}")
+    return json.loads(STATS_PATH.read_text(encoding="utf-8"))
+
+
+def metric(stats: dict, variant: str, key: str, scale: float = 1.0) -> tuple[float, float]:
+    item = stats["methods"][variant]["metrics"][key]
+    return item["mean"] * scale, item.get("std", 0.0) * scale
+
+
+def values(stats: dict, variants: list[str], key: str, scale: float = 1.0) -> tuple[list[float], list[float]]:
+    means, stds = [], []
+    for variant in variants:
+        mean, std = metric(stats, variant, key, scale)
+        means.append(mean)
+        stds.append(std)
+    return means, stds
 
 
 def save_pub(fig: plt.Figure, name: str) -> None:
@@ -79,128 +75,148 @@ def soften(ax: plt.Axes) -> None:
 
 def bar_panel(
     ax: plt.Axes,
-    values: list[float],
-    errors: list[float] | None,
+    means: list[float],
+    stds: list[float] | None,
     title: str,
     ylabel: str,
     label: str,
     *,
-    colors: list[str] | None = None,
-    ticklabels: list[str] | None = None,
+    colors: list[str],
+    ticklabels: list[str],
     zero_line: bool = False,
     direction: str = "up",
 ) -> None:
-    x = np.arange(len(values))
+    x = np.arange(len(means))
     bars = ax.bar(
         x,
-        values,
-        yerr=errors,
-        capsize=2.5 if errors else 0,
-        color=colors or METHOD_COLORS,
+        means,
+        yerr=stds,
+        capsize=2.5 if stds else 0,
+        color=colors,
         edgecolor="#333333",
-        linewidth=0.4,
-        error_kw={"elinewidth": 0.8, "capthick": 0.8} if errors else None,
+        linewidth=0.45,
+        error_kw={"elinewidth": 0.8, "capthick": 0.8} if stds else None,
     )
-    best_idx = int(np.argmax(values) if direction == "up" else np.argmin(values))
+    best_idx = int(np.argmax(means) if direction == "up" else np.argmin(means))
     bars[best_idx].set_edgecolor("#111111")
     bars[best_idx].set_linewidth(1.4)
     if zero_line:
         ax.axhline(0, color=PALETTE["text"], linewidth=0.7)
     ax.set_xticks(x)
-    labels = ticklabels or (SHORT if len(values) == len(SHORT) else ABLATION_SHORT)
-    ax.set_xticklabels(labels, rotation=35, ha="right")
+    ax.set_xticklabels(ticklabels, rotation=28, ha="right")
     ax.set_title(title, fontsize=9, pad=3)
-    subtitle = "越高越好" if direction == "up" else "越低越好"
-    ax.text(0.02, 0.92, subtitle, transform=ax.transAxes, fontsize=6.5, color="#555555")
+    ax.text(0.02, 0.92, "越高越好" if direction == "up" else "越低越好", transform=ax.transAxes, fontsize=6.5, color="#555555")
     ax.set_ylabel(ylabel)
     panel_label(ax, label)
     soften(ax)
 
 
-def fig_main_comparison() -> None:
+def fig_main_comparison(stats: dict) -> None:
     fig, axes = plt.subplots(2, 3, figsize=(7.2, 4.65))
-    bar_panel(axes[0, 0], MAIN["reward"], MAIN["reward_std"], "系统奖励", "回合均值", "a", zero_line=True, direction="up")
-    bar_panel(axes[0, 1], MAIN["energy"], MAIN["energy_std"], "UAV侧能耗", r"$10^6$ J", "b", direction="down")
-    bar_panel(axes[0, 2], MAIN["fairness"], MAIN["fairness_std"], "服务公平性", "Jain指数", "c", direction="up")
-    bar_panel(axes[1, 0], MAIN["dsr"], MAIN["dsr_std"], "截止期满足率", "DSR", "d", direction="up")
-    bar_panel(axes[1, 1], [v * 100 for v in MAIN["offline"]], None, "离线用户比例", "%", "e", direction="down")
-    bar_panel(axes[1, 2], [v * 100 for v in MAIN["mbs_load"]], None, "MBS负载", "%", "f", direction="down")
-    axes[0, 0].annotate("+4482", xy=(4, MAIN["reward"][4]), xytext=(3.05, -3500), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
-    axes[0, 1].annotate("-49.4%", xy=(4, MAIN["energy"][4]), xytext=(3.0, 93), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
-    axes[1, 0].annotate("能耗边界", xy=(4, MAIN["dsr"][4]), xytext=(3.15, 0.25), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7, color=PALETTE["accent"])
+    panels = [
+        ("reward", 1.0, "系统奖励", "回合均值", "a", "up", True),
+        ("energy", 1e-6, "UAV侧能耗", r"$10^6$ J", "b", "down", False),
+        ("fairness_final", 1.0, "服务公平性", "Jain指数", "c", "up", False),
+        ("dsr_request_weighted", 1.0, "截止期满足率", "DSR", "d", "up", False),
+        ("mbs_load_ratio_generated", 100.0, "MBS负载", "%", "e", "down", False),
+        ("forced_admission_ratio", 100.0, "兜底接入比例", "%", "f", "down", False),
+    ]
+    for ax, (key, scale, title, ylabel, label, direction, zero_line) in zip(axes.flat, panels):
+        means, stds = values(stats, MAIN_VARIANTS, key, scale)
+        bar_panel(ax, means, stds, title, ylabel, label, colors=MAIN_COLORS, ticklabels=MAIN_LABELS, direction=direction, zero_line=zero_line)
+    axes[0, 1].annotate("最低能耗", xy=(2, metric(stats, "main_full_hierarchical", "energy", 1e-6)[0]), xytext=(1.25, 66), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
+    axes[1, 0].annotate("DSR权衡", xy=(2, metric(stats, "main_full_hierarchical", "dsr_request_weighted")[0]), xytext=(1.15, 0.44), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7, color=PALETTE["accent"])
     fig.align_ylabels(axes[:, 0])
     fig.tight_layout(w_pad=1.0, h_pad=1.35)
     save_pub(fig, "图5-7_主实验多指标对比")
 
 
-def fig_offloading_distribution() -> None:
-    x = np.arange(len(METHODS))
-    local = np.array(MAIN["local"]) * 100
-    coop = np.array(MAIN["coop"]) * 100
-    mbs = np.array(MAIN["mbs_load"]) * 100
-    fig, ax = plt.subplots(figsize=(6.4, 3.2))
-    ax.bar(x, local, color="#6388C5", edgecolor="#333333", linewidth=0.4, label="本地执行")
-    ax.bar(x, coop, bottom=local, color="#62A979", edgecolor="#333333", linewidth=0.4, label="协作执行")
-    ax.bar(x, mbs, bottom=local + coop, color="#D8766C", edgecolor="#333333", linewidth=0.4, label="MBS")
+def fig_offloading_distribution(stats: dict) -> None:
+    x = np.arange(len(MAIN_VARIANTS))
+    local, _ = values(stats, MAIN_VARIANTS, "offloading_ratio_local_processed", 100.0)
+    coop, _ = values(stats, MAIN_VARIANTS, "offloading_ratio_cooperative_processed", 100.0)
+    mbs, _ = values(stats, MAIN_VARIANTS, "offloading_ratio_mbs_processed", 100.0)
+    forced, _ = values(stats, MAIN_VARIANTS, "forced_admission_ratio", 100.0)
+    natural, _ = values(stats, MAIN_VARIANTS, "natural_coverage_service_ratio", 100.0)
+    local = np.array(local)
+    coop = np.array(coop)
+    mbs = np.array(mbs)
+    natural = np.array(natural)
+    forced = np.array(forced)
+
+    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.05), gridspec_kw={"width_ratios": [1.35, 1.0]})
+    axes[0].bar(x, local, color="#6388C5", edgecolor="#333333", linewidth=0.4, label="本地执行")
+    axes[0].bar(x, coop, bottom=local, color="#62A979", edgecolor="#333333", linewidth=0.4, label="协作执行")
+    axes[0].bar(x, mbs, bottom=local + coop, color="#D8766C", edgecolor="#333333", linewidth=0.4, label="MBS")
     for i, value in enumerate(mbs):
-        ax.text(i, local[i] + coop[i] + value + 1.5, f"{value:.1f}", ha="center", fontsize=7, color=PALETTE["text"])
-    ax.set_xticks(x)
-    ax.set_xticklabels(SHORT, rotation=35, ha="right")
-    ax.set_ylim(0, 112)
-    ax.set_ylabel("卸载决策占比 (%)")
-    ax.set_title("下层策略重分配服务请求", fontsize=9, pad=3)
-    ax.legend(ncol=3, loc="upper center", bbox_to_anchor=(0.5, 1.14))
-    soften(ax)
+        axes[0].text(i, min(local[i] + coop[i] + value + 1.5, 106), f"{value:.1f}", ha="center", fontsize=7, color=PALETTE["text"])
+    axes[0].set_xticks(x)
+    axes[0].set_xticklabels(MAIN_LABELS, rotation=28, ha="right")
+    axes[0].set_ylim(0, 112)
+    axes[0].set_ylabel("卸载决策占比 (%)")
+    axes[0].set_title("执行位置分布", fontsize=9, pad=3)
+    axes[0].legend(ncol=3, loc="upper center", bbox_to_anchor=(0.5, 1.17))
+    panel_label(axes[0], "a")
+    soften(axes[0])
+
+    axes[1].bar(x, natural, color="#78A7C8", edgecolor="#333333", linewidth=0.4, label="自然覆盖")
+    axes[1].bar(x, forced, bottom=natural, color="#E0B36A", edgecolor="#333333", linewidth=0.4, label="兜底接入")
+    for i, value in enumerate(forced):
+        axes[1].text(i, natural[i] + value / 2, f"{value:.1f}%", ha="center", va="center", fontsize=7)
+    axes[1].set_xticks(x)
+    axes[1].set_xticklabels(MAIN_LABELS, rotation=28, ha="right")
+    axes[1].set_ylim(0, 106)
+    axes[1].set_ylabel("服务请求占比 (%)")
+    axes[1].set_title("接入来源分布", fontsize=9, pad=3)
+    axes[1].legend(ncol=2, loc="upper center", bbox_to_anchor=(0.5, 1.17))
+    panel_label(axes[1], "b")
+    soften(axes[1])
+    fig.tight_layout(w_pad=1.15)
     save_pub(fig, "图5-8_卸载分布对比")
 
 
-def fig_ablation_comparison() -> None:
-    colors = [PALETTE["full"], "#D8A448", "#C75E5A", "#7C70B2"]
-    fig, axes = plt.subplots(2, 3, figsize=(7.0, 4.45))
-    bar_panel(axes[0, 0], ABLATION["reward"], None, "系统奖励", "回合均值", "a", colors=colors, zero_line=True, direction="up")
-    bar_panel(axes[0, 1], ABLATION["energy"], None, "能耗", r"$10^6$ J", "b", colors=colors, direction="down")
-    bar_panel(axes[0, 2], ABLATION["dsr"], None, "截止期满足率", "DSR", "c", colors=colors, direction="up")
-    bar_panel(axes[1, 0], [v * 100 for v in ABLATION["mbs_load"]], None, "MBS负载", "%", "d", colors=colors, direction="down")
-    bar_panel(axes[1, 1], [v * 100 for v in ABLATION["coop"]], None, "协作卸载", "%", "e", colors=colors, direction="up")
-    axes[1, 2].axis("off")
-    axes[1, 2].text(
-        0.02,
-        0.88,
-        "消融逻辑",
-        fontsize=8,
-        fontweight="bold",
-        transform=axes[1, 2].transAxes,
-    )
-    axes[1, 2].text(
-        0.02,
-        0.55,
-        "Mask限制低质量MBS使用。\nLagrange最明显抑制\nMBS依赖。Attention保持\n协作卸载灵活性。",
-        fontsize=7,
-        linespacing=1.35,
-        transform=axes[1, 2].transAxes,
-    )
+def fig_ablation_comparison(stats: dict) -> None:
+    fig, axes = plt.subplots(2, 3, figsize=(7.2, 4.55))
+    panels = [
+        ("reward", 1.0, "系统奖励", "回合均值", "a", "up", True),
+        ("energy", 1e-6, "能耗", r"$10^6$ J", "b", "down", False),
+        ("dsr_request_weighted", 1.0, "截止期满足率", "DSR", "c", "up", False),
+        ("fairness_final", 1.0, "服务公平性", "Jain指数", "d", "up", False),
+        ("mbs_load_ratio_generated", 100.0, "MBS负载", "%", "e", "down", False),
+        ("offloading_ratio_cooperative_processed", 100.0, "协作执行", "%", "f", "up", False),
+    ]
+    for ax, (key, scale, title, ylabel, label, direction, zero_line) in zip(axes.flat, panels):
+        means, stds = values(stats, ABLATION_VARIANTS, key, scale)
+        bar_panel(ax, means, stds, title, ylabel, label, colors=ABLATION_COLORS, ticklabels=ABLATION_LABELS, direction=direction, zero_line=zero_line)
+    axes[1, 1].annotate("MBS显著升高", xy=(2, metric(stats, "ablation_no_lagrange", "mbs_load_ratio_generated", 100.0)[0]), xytext=(1.1, 28), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
     fig.tight_layout(w_pad=1.0, h_pad=1.35)
     save_pub(fig, "图5-9_下层消融实验对比")
 
 
-def fig_dsr_priority_tradeoff() -> None:
-    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.6))
-    configs_colors = [PALETTE["baseline"], PALETTE["full"], PALETTE["green"]]
-    bar_panel(axes[0], DSR_DATA["reward"], None, "系统奖励", "回合均值", "a", colors=configs_colors, ticklabels=DSR_CONFIGS, zero_line=True, direction="up")
-    bar_panel(axes[1], DSR_DATA["energy"], None, "能耗", r"$10^6$ J", "b", colors=configs_colors, ticklabels=DSR_CONFIGS, direction="down")
-    bar_panel(axes[2], DSR_DATA["dsr"], None, "截止期满足率", "DSR", "c", colors=configs_colors, ticklabels=DSR_CONFIGS, direction="up")
-    axes[1].annotate("-27.6%", xy=(2, DSR_DATA["energy"][2]), xytext=(1.25, 103), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
-    axes[2].annotate("部分恢复", xy=(2, DSR_DATA["dsr"][2]), xytext=(0.85, 0.26), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
-    fig.tight_layout(w_pad=1.25)
+def fig_dsr_priority_tradeoff(stats: dict) -> None:
+    fig, axes = plt.subplots(1, 4, figsize=(7.2, 2.65))
+    panels = [
+        ("reward", 1.0, "系统奖励", "回合均值", "a", "up", True),
+        ("energy", 1e-6, "能耗", r"$10^6$ J", "b", "down", False),
+        ("dsr_request_weighted", 1.0, "截止期满足率", "DSR", "c", "up", False),
+        ("mbs_load_ratio_generated", 100.0, "MBS负载", "%", "d", "down", False),
+    ]
+    for ax, (key, scale, title, ylabel, label, direction, zero_line) in zip(axes.flat, panels):
+        means, stds = values(stats, DSR_VARIANTS, key, scale)
+        bar_panel(ax, means, stds, title, ylabel, label, colors=DSR_COLORS, ticklabels=DSR_LABELS, direction=direction, zero_line=zero_line)
+    axes[2].annotate("未稳定提升", xy=(1, metric(stats, "dsr_priority_full", "dsr_request_weighted")[0]), xytext=(0.15, 0.39), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7, color=PALETTE["accent"])
+    axes[3].annotate("依赖MBS", xy=(1, metric(stats, "dsr_priority_full", "mbs_load_ratio_generated", 100.0)[0]), xytext=(0.05, 18), arrowprops={"arrowstyle": "->", "lw": 0.7}, fontsize=7)
+    fig.tight_layout(w_pad=1.05)
     save_pub(fig, "图5-10_DSR优先配置性能权衡")
 
 
 def main() -> None:
     setup_style()
-    fig_main_comparison()
-    fig_offloading_distribution()
-    fig_ablation_comparison()
-    fig_dsr_priority_tradeoff()
+    stats = load_stats()
+    fig_main_comparison(stats)
+    fig_offloading_distribution(stats)
+    fig_ablation_comparison(stats)
+    fig_dsr_priority_tradeoff(stats)
 
 
 if __name__ == "__main__":
