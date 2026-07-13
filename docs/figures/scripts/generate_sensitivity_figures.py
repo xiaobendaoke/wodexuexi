@@ -1,33 +1,39 @@
 #!/usr/bin/env python3
-"""生成敏感性实验图表。
+"""Generate force-admission sensitivity figures for Chapter 5.
 
-生成三张图：
-- 图5-11 系统有效能效收敛曲线
-- 图5-12 地面节点数量对系统有效能效的影响
-- 图5-13 UAV算力对系统有效能效的影响
+The formal sensitivity figures use the force-admission evaluation snapshot and
+show DSR, effective energy efficiency, and fairness together.
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import numpy as np
-import json
 
 from thesis_figure_style import PALETTE, save_pub as save_pub_shared, setup_thesis_style
 
 ROOT = Path(__file__).resolve().parents[3]
 OUTPUT_DIRS = (ROOT / "docs" / "figures", ROOT / "latex" / "docs" / "figures")
 QA_REPORT = ROOT / "docs" / "figures" / "figure_text_qa_report.json"
+SENSITIVITY_DIR = ROOT / "results" / "sensitivity_force_admission"
+
 ALGO_COLORS = {
     "proposed": PALETTE["full"],
     "vanilla_mappo": PALETTE["upper"],
-    "ippo": PALETTE["lower"],
     "heuristic": PALETTE["baseline"],
 }
+ALGO_LABELS = {"proposed": "本文方法", "vanilla_mappo": "普通MAPPO", "heuristic": "启发式"}
+ALGO_MARKERS = {"proposed": "o", "vanilla_mappo": "s", "heuristic": "^"}
+PLOT_ALGOS = ("heuristic", "vanilla_mappo", "proposed")
+METRICS = (
+    ("deadline_satisfaction_rate", "DSR ↑", "截止期满足率", True),
+    ("energy_efficiency", "EEE ↑", "有效能效", False),
+    ("fairness", "Fairness ↑", "服务公平性", True),
+)
 
 
 def setup_style() -> None:
@@ -47,294 +53,104 @@ def soften(ax: plt.Axes) -> None:
     ax.tick_params(length=2.5, width=0.7)
 
 
-# ─── 图5-11：收敛曲线 ─────────────────────────────────────────────────────────
+def load_summary(data_path: Path) -> dict:
+    if not data_path.exists():
+        raise FileNotFoundError(f"Missing sensitivity summary: {data_path}")
+    with data_path.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
-def fig_convergence_curve() -> None:
-    """从训练日志提取的收敛数据生成系统有效能效收敛曲线。"""
-    conv_path = ROOT / "results" / "sensitivity" / "effective_efficiency_convergence" / "summary.json"
-    if not conv_path.exists():
-        print(f"Warning: {conv_path} not found, skipping convergence figure")
-        return
 
-    with open(conv_path, "r") as f:
-        data = json.load(f)
+def variable_key(value: float | int) -> str:
+    if isinstance(value, float):
+        return f"{value:g}"
+    return str(value)
 
-    # 同时尝试加载从训练日志提取的中间checkpoint数据
-    raw_path = ROOT / "results" / "sensitivity" / "effective_efficiency_convergence" / "raw" / "convergence_results.json"
-    raw_data = None
-    if raw_path.exists():
-        with open(raw_path, "r") as f:
-            raw_data = json.load(f)
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.2))
+def metric_series(
+    data: dict,
+    variable_values: list[float | int],
+    algo_name: str,
+    metric_name: str,
+) -> tuple[list[float], list[float], list[float]]:
+    means, lows, highs = [], [], []
+    for value in variable_values:
+        stats = (
+            data["variables"]
+            .get(variable_key(value), {})
+            .get(algo_name, {})
+            .get("stats", {})
+            .get(metric_name, {})
+        )
+        mean = float(stats.get("mean", 0.0))
+        std = float(stats.get("std", 0.0))
+        means.append(mean)
+        lows.append(mean - std)
+        highs.append(mean + std)
+    return means, lows, highs
 
-    algo_labels = {
-        "proposed": "本文方法",
-        "vanilla_mappo": "普通MAPPO",
-        "ippo": "IPPO",
-    }
-    algo_colors = {
-        "proposed": ALGO_COLORS["proposed"],
-        "vanilla_mappo": ALGO_COLORS["vanilla_mappo"],
-        "ippo": ALGO_COLORS["ippo"],
-    }
-    algo_markers = {
-        "proposed": "o",
-        "vanilla_mappo": "s",
-        "ippo": "^",
-    }
 
-    # 左图：EEE 收敛（如果有中间checkpoint数据）
-    ax = axes[0]
-    has_curve_data = False
-    if raw_data:
-        for algo_name in ["proposed", "vanilla_mappo", "ippo"]:
-            if algo_name not in raw_data:
-                continue
-            seed_results = raw_data[algo_name]
-            # 收集所有seed在每个episode的EEE
-            episode_data = {}
-            for sr in seed_results:
-                for cp in sr.get("convergence_points", []):
-                    ep = cp["episode"]
-                    if ep not in episode_data:
-                        episode_data[ep] = []
-                    episode_data[ep].append(cp["energy_efficiency"])
-
-            if len(episode_data) < 2:
-                continue
-
-            has_curve_data = True
-            episodes = sorted(episode_data.keys())
-            means = [np.mean(episode_data[ep]) for ep in episodes]
-            stds = [np.std(episode_data[ep]) for ep in episodes]
-
-            ax.plot(episodes, means, label=algo_labels.get(algo_name, algo_name),
-                    color=algo_colors.get(algo_name, "#999"),
-                    marker=algo_markers.get(algo_name, "o"),
-                    linewidth=1.5, markersize=3)
-            ax.fill_between(episodes,
-                            [m - s for m, s in zip(means, stds)],
-                            [m + s for m, s in zip(means, stds)],
-                            color=algo_colors.get(algo_name, "#999"), alpha=0.15)
-
-    if not has_curve_data:
-        # 只有最终数据点，用柱状图
-        algos = []
-        eee_means = []
-        eee_stds = []
-        for algo_name in ["proposed", "vanilla_mappo"]:
-            if algo_name in data.get("algorithms", {}):
-                stats = data["algorithms"][algo_name].get("stats", {})
-                ee = stats.get("energy_efficiency", {})
-                algos.append(algo_labels.get(algo_name, algo_name))
-                eee_means.append(ee.get("mean", 0))
-                eee_stds.append(ee.get("std", 0))
-
-        x = np.arange(len(algos))
-        colors = [algo_colors.get(a.lower().replace(" ", "_").replace("(full hierarchical)", "").strip(), "#999")
-                  for a in algos]
-        # Map labels back to color keys
-        color_list = []
-        for a in algos:
-            if "本文方法" in a:
-                color_list.append(ALGO_COLORS["proposed"])
-            elif "普通" in a:
-                color_list.append(ALGO_COLORS["vanilla_mappo"])
-            else:
-                color_list.append(ALGO_COLORS["heuristic"])
-
-        bars = ax.bar(x, eee_means, yerr=eee_stds, capsize=2.5,
-                      color=color_list, edgecolor="#333333", linewidth=0.4,
-                      error_kw={"elinewidth": 0.8, "capthick": 0.8})
-        best_idx = int(np.argmax(eee_means))
-        bars[best_idx].set_edgecolor("#111111")
-        bars[best_idx].set_linewidth(1.4)
-        ax.set_xticks(x)
-        ax.set_xticklabels(algos, rotation=35, ha="right")
-        ax.set_ylabel("有效能效")
-
-    ax.set_xlabel("训练回合" if has_curve_data else "")
-    ax.set_title("训练完成后的有效能效", fontsize=9, pad=3)
-    if has_curve_data:
-        ax.legend(loc="upper left", fontsize=6)
+def plot_metric_panel(
+    ax: plt.Axes,
+    data: dict,
+    variable_values: list[float | int],
+    metric_name: str,
+    ylabel: str,
+    title: str,
+    bounded: bool,
+) -> None:
+    for algo_name in PLOT_ALGOS:
+        means, lows, highs = metric_series(data, variable_values, algo_name, metric_name)
+        if bounded:
+            lows = [max(0.0, v) for v in lows]
+            highs = [min(1.0, v) for v in highs]
+        ax.plot(
+            variable_values,
+            means,
+            label=ALGO_LABELS[algo_name],
+            color=ALGO_COLORS[algo_name],
+            marker=ALGO_MARKERS[algo_name],
+            linewidth=1.45,
+            markersize=4,
+        )
+        ax.fill_between(variable_values, lows, highs, color=ALGO_COLORS[algo_name], alpha=0.12, linewidth=0)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title, fontsize=8.5, pad=3)
+    if bounded:
+        ax.set_ylim(0, 1.03)
     soften(ax)
 
-    # 右图：DSR 对比
-    ax2 = axes[1]
-    algos = []
-    dsr_means = []
-    dsr_stds = []
-    for algo_name in ["proposed", "vanilla_mappo"]:
-        if algo_name in data.get("algorithms", {}):
-            stats = data["algorithms"][algo_name].get("stats", {})
-            dsr = stats.get("deadline_satisfaction_rate", {})
-            algos.append(algo_labels.get(algo_name, algo_name))
-            dsr_means.append(dsr.get("mean", 0))
-            dsr_stds.append(dsr.get("std", 0))
-
-    x = np.arange(len(algos))
-    color_list = [ALGO_COLORS["proposed"], ALGO_COLORS["vanilla_mappo"]]
-    bars2 = ax2.bar(x, dsr_means, yerr=dsr_stds, capsize=2.5,
-            color=color_list, edgecolor="#333333", linewidth=0.4,
-            error_kw={"elinewidth": 0.8, "capthick": 0.8})
-    best_idx2 = int(np.argmax(dsr_means))
-    bars2[best_idx2].set_edgecolor("#111111")
-    bars2[best_idx2].set_linewidth(1.4)
-    ax2.set_xticks(x)
-    ax2.set_xticklabels(algos, rotation=35, ha="right")
-    ax2.set_ylabel("DSR")
-    ax2.set_title("截止期满足率", fontsize=9, pad=3)
-    soften(ax2)
-
-    fig.tight_layout(w_pad=1.2)
-    save_pub(fig, "图5-11_系统有效能效收敛曲线")
-
-
-# ─── 图5-12：UE数量敏感性 ──────────────────────────────────────────────────────
 
 def fig_ue_count_sensitivity(data_path: Path) -> None:
-    if not data_path.exists():
-        print(f"Warning: {data_path} not found, skipping ue_count figure")
-        return
+    data = load_summary(data_path)
+    ue_counts = sorted(int(v) for v in data.get("variables", {}))
+    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.35), sharex=True)
+    for ax, (metric_name, ylabel, title, bounded) in zip(axes, METRICS):
+        plot_metric_panel(ax, data, ue_counts, metric_name, ylabel, title, bounded)
+        ax.set_xlabel("UE数量")
+        ax.set_xticks(ue_counts)
+    axes[0].legend(loc="lower left", fontsize=5.7, ncol=1)
+    fig.tight_layout(w_pad=0.7)
+    save_pub(fig, "图5-16_地面节点数量敏感性三指标对比")
 
-    with open(data_path, "r") as f:
-        data = json.load(f)
-
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.2))
-
-    algo_names = {"proposed": "本文方法", "vanilla_mappo": "普通MAPPO", "heuristic": "启发式"}
-    algo_colors = {"proposed": ALGO_COLORS["proposed"], "vanilla_mappo": ALGO_COLORS["vanilla_mappo"], "heuristic": ALGO_COLORS["heuristic"]}
-    algo_markers = {"proposed": "o", "vanilla_mappo": "s", "heuristic": "^"}
-
-    ue_counts = sorted([int(v) for v in data.get("variables", {}).keys()])
-
-    # 左图：EEE
-    ax = axes[0]
-    for algo_name in ["heuristic", "vanilla_mappo", "proposed"]:
-        means, ci_lows, ci_highs = [], [], []
-        for uc in ue_counts:
-            stats = data["variables"].get(str(uc), {}).get(algo_name, {}).get("stats", {}).get("energy_efficiency", {})
-            means.append(stats.get("mean", 0))
-            ci_lows.append(stats.get("ci_low", 0))
-            ci_highs.append(stats.get("ci_high", 0))
-
-        ax.plot(ue_counts, means, label=algo_names[algo_name], color=algo_colors[algo_name],
-                marker=algo_markers[algo_name], linewidth=1.5, markersize=5)
-        ax.fill_between(ue_counts, ci_lows, ci_highs, color=algo_colors[algo_name], alpha=0.15)
-
-    ax.set_xlabel("UE数量")
-    ax.set_ylabel("有效能效")
-    ax.set_title("有效能效", fontsize=9, pad=3)
-    ax.legend(loc="upper left", fontsize=6)
-    ax.set_xticks(ue_counts)
-    soften(ax)
-
-    # 右图：DSR
-    ax2 = axes[1]
-    for algo_name in ["heuristic", "vanilla_mappo", "proposed"]:
-        means, ci_lows, ci_highs = [], [], []
-        for uc in ue_counts:
-            stats = data["variables"].get(str(uc), {}).get(algo_name, {}).get("stats", {}).get("deadline_satisfaction_rate", {})
-            means.append(stats.get("mean", 0))
-            ci_lows.append(stats.get("ci_low", 0))
-            ci_highs.append(stats.get("ci_high", 0))
-
-        ax2.plot(ue_counts, means, label=algo_names[algo_name], color=algo_colors[algo_name],
-                 marker=algo_markers[algo_name], linewidth=1.5, markersize=5)
-        ax2.fill_between(ue_counts, ci_lows, ci_highs, color=algo_colors[algo_name], alpha=0.15)
-
-    ax2.set_xlabel("UE数量")
-    ax2.set_ylabel("DSR")
-    ax2.set_title("截止期满足率", fontsize=9, pad=3)
-    ax2.legend(loc="upper right", fontsize=6)
-    ax2.set_xticks(ue_counts)
-    soften(ax2)
-
-    fig.tight_layout(w_pad=1.2)
-    save_pub(fig, "图5-12_地面节点数量对系统有效能效的影响")
-
-
-# ─── 图5-13：UAV CPU敏感性 ──────────────────────────────────────────────────────
 
 def fig_uav_cpu_sensitivity(data_path: Path) -> None:
-    if not data_path.exists():
-        print(f"Warning: {data_path} not found, skipping uav_cpu figure")
-        return
-
-    with open(data_path, "r") as f:
-        data = json.load(f)
-
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 3.2))
-
-    algo_names = {"proposed": "本文方法", "vanilla_mappo": "普通MAPPO", "heuristic": "启发式"}
-    algo_colors = {"proposed": ALGO_COLORS["proposed"], "vanilla_mappo": ALGO_COLORS["vanilla_mappo"], "heuristic": ALGO_COLORS["heuristic"]}
-    algo_markers = {"proposed": "o", "vanilla_mappo": "s", "heuristic": "^"}
-
-    scales = sorted([float(v) for v in data.get("variables", {}).keys()])
-
-    # 左图：EEE
-    ax = axes[0]
-    for algo_name in ["heuristic", "vanilla_mappo", "proposed"]:
-        means, ci_lows, ci_highs = [], [], []
-        for sc in scales:
-            stats = data["variables"].get(str(sc), {}).get(algo_name, {}).get("stats", {}).get("energy_efficiency", {})
-            means.append(stats.get("mean", 0))
-            ci_lows.append(stats.get("ci_low", 0))
-            ci_highs.append(stats.get("ci_high", 0))
-
-        ax.plot(scales, means, label=algo_names[algo_name], color=algo_colors[algo_name],
-                marker=algo_markers[algo_name], linewidth=1.5, markersize=5)
-        ax.fill_between(scales, ci_lows, ci_highs, color=algo_colors[algo_name], alpha=0.15)
-
-    ax.set_xlabel("UAV算力缩放因子")
-    ax.set_ylabel("有效能效")
-    ax.set_title("有效能效", fontsize=9, pad=3)
-    ax.legend(loc="upper left", fontsize=6)
-    ax.set_xticks(scales)
-    soften(ax)
-
-    # 右图：DSR
-    ax2 = axes[1]
-    for algo_name in ["heuristic", "vanilla_mappo", "proposed"]:
-        means, ci_lows, ci_highs = [], [], []
-        for sc in scales:
-            stats = data["variables"].get(str(sc), {}).get(algo_name, {}).get("stats", {}).get("deadline_satisfaction_rate", {})
-            means.append(stats.get("mean", 0))
-            ci_lows.append(stats.get("ci_low", 0))
-            ci_highs.append(stats.get("ci_high", 0))
-
-        ax2.plot(scales, means, label=algo_names[algo_name], color=algo_colors[algo_name],
-                 marker=algo_markers[algo_name], linewidth=1.5, markersize=5)
-        ax2.fill_between(scales, ci_lows, ci_highs, color=algo_colors[algo_name], alpha=0.15)
-
-    ax2.set_xlabel("UAV算力缩放因子")
-    ax2.set_ylabel("DSR")
-    ax2.set_title("截止期满足率", fontsize=9, pad=3)
-    ax2.legend(loc="upper right", fontsize=6)
-    ax2.set_xticks(scales)
-    soften(ax2)
-
-    fig.tight_layout(w_pad=1.2)
-    save_pub(fig, "图5-13_UAV算力对系统有效能效的影响")
+    data = load_summary(data_path)
+    scales = sorted(float(v) for v in data.get("variables", {}))
+    fig, axes = plt.subplots(1, 3, figsize=(7.2, 2.35), sharex=True)
+    for ax, (metric_name, ylabel, title, bounded) in zip(axes, METRICS):
+        plot_metric_panel(ax, data, scales, metric_name, ylabel, title, bounded)
+        ax.set_xlabel("UAV算力缩放")
+        ax.set_xticks(scales)
+    axes[0].legend(loc="lower left", fontsize=5.7, ncol=1)
+    fig.tight_layout(w_pad=0.7)
+    save_pub(fig, "图5-17_UAV算力敏感性三指标对比")
 
 
-# ─── 主入口 ──────────────────────────────────────────────────────────────────
-
-def main():
+def main() -> None:
     setup_style()
-
-    sensitivity_dir = ROOT / "results" / "sensitivity"
-
-    fig_convergence_curve()
-
-    ue_count_data = sensitivity_dir / "ue_count" / "summary.json"
-    fig_ue_count_sensitivity(ue_count_data)
-
-    uav_cpu_data = sensitivity_dir / "uav_cpu_scale" / "summary.json"
-    fig_uav_cpu_sensitivity(uav_cpu_data)
-
-    print("\nAll sensitivity figures generated!")
+    fig_ue_count_sensitivity(SENSITIVITY_DIR / "ue_count" / "summary.json")
+    fig_uav_cpu_sensitivity(SENSITIVITY_DIR / "uav_cpu_scale" / "summary.json")
+    print("\nForce-admission sensitivity figures generated.")
 
 
 if __name__ == "__main__":

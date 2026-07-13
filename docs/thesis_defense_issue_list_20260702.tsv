@@ -1,0 +1,11 @@
+severity	location	category	issue	recommendation	risk
+必须修改	latex/docs/chap03.tex:200	指标口径	正文说主配置表 DSR 为 step-mean，而当前主配置/消融/DSR-priority 数值来自 request-weighted DSR。	统一改为：正式 force-admission 结果优先报告 request-weighted DSR；step-mean 仅作为训练/内部诊断口径。	高
+建议修改	latex/docs/chap01.tex:71	统计表述	“报告均值、95%置信区间、paired t-test 和 Wilcoxon 检验”容易被理解为全文所有结果都报告这些统计检验。	改成“在扩展基线比较中保留配对统计检验/审计；正文主要报告 mean±std”。	中
+建议修改	latex/docs/chap03.tex:842-849	学习率/收敛图定位	图5-11仍是过程性学习率曲线，不是完整 force-admission learning-rate sensitivity。	图注或正文加“过程性参考，不作为正式鲁棒性结论”；或答辩稿中不主动讲学习率。	中
+可保留但需备答	latex/docs/chap03.tex:800-816	attention 边界实验	上层 vanilla MAPPO 辅助实验不是 force-admission 扩展矩阵主结果，且 vanilla 在若干单项上更高。	保留当前“辅助/边界分析”定位；备答 attention 不是所有指标提升，而是偏好和代价改变。	中
+建议修改	latex/docs/chap06.tex:21	显著性措辞	“显著降低 MBS 依赖”若未在结论处展示 p 值，可能被追问统计显著性。	若不展示检验，建议改成“明显降低”或“数值上大幅降低”。	低
+建议修改	latex/main.log:748	模板/字体	编译警告提示 LiShu font is required。	答辩提交前检查学校模板要求；若 PDF 外观正常可不作为实验硬伤。	低
+建议修改	latex/main.log:1357	双语标题包	bicaption 提示 Main language is not set。	检查 sysusetup 或 bicaption 设置；若目录和图题显示正常可暂缓。	低
+建议修改	latex/main.log:1435,1542	排版	标题 overfull 与算法页 float too large。	最终提交前微调标题或算法浮动位置；不影响实验结论。	低
+可保留但需备答	latex/docs/chap03.tex:725	轨迹图解释	轨迹图是固定 seed 行为示例，不证明全局最优或所有运动约束严格满足。	答辩时主动说“轨迹图用于行为可视化，统计结论看矩阵实验”。	中
+可保留但需备答	latex/docs/chap03.tex:888-904	DSR-priority 负面结果	DSR-priority 没有提升 DSR，反而提高 MBS load。	讲成“偏好调节边界”，不要讲成性能提升实验。	中

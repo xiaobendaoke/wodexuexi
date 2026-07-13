@@ -13,7 +13,7 @@
 
 （2）针对多 UAV 协同场景下不可行动作探索效率低和约束权衡难以刻画的问题，本文设计了请求级质量感知动作掩码和拉格朗日约束机制。质量感知动作掩码对明显不可行的协作 UAV 与 MBS 动作进行运行时屏蔽，减少无效探索；拉格朗日约束项将截止期满足率（DSR）与 MBS 负载纳入可解释的约束权衡。仿真实验表明，所提机制能够调节 MBS 依赖和协作卸载比例，并揭示 DSR、能耗与 MBS 负载之间的偏好调节边界。
 
-（3）针对现有工作忽略终端设备能量动态导致系统长期运行不可持续的问题，本文在系统模型中显式建模了无人机飞行能耗、用户设备（UE）电池动态和无线能量传输（WPT）机制。force-admission 扩展基线实验表明，所提框架在所有服务请求均被接入并尝试处理的前提下，取得最高服务公平性、最低 UAV 侧能耗和最低 MBS 负载比例，同时保持较好的请求加权 DSR，验证了该框架在全服务接入条件下的多目标折中优势。
+（3）针对现有工作忽略终端设备能量动态导致系统长期运行不可持续的问题，本文在系统模型中显式建模了无人机飞行能耗、用户设备（UE）电池动态和无线能量传输（WPT）机制。force-admission 扩展基线和敏感性实验表明，所提框架在所有服务请求均被接入并尝试处理的前提下，取得最高服务公平性、最低 UAV 侧能耗和最低 MBS 负载比例，同时保持较好的请求加权 DSR；在 UE 负载和 UAV 算力变化下，该框架仍表现出较稳定的能效--公平性--服务质量折中优势。
 \end{abstract}
 
 \begin{abstract*}
@@ -25,5 +25,5 @@ Based on multi-agent reinforcement learning, this paper designs and develops a n
 
 (2) To address the problems of low exploration efficiency of infeasible actions and difficult characterization of constraint trade-offs in multi-UAV collaborative scenarios, this paper designs a request-level quality-aware action mask and a Lagrange constraint mechanism. The quality-aware action mask performs runtime masking of clearly infeasible cooperative UAV and MBS actions to reduce ineffective exploration; the Lagrange constraint term incorporates deadline satisfaction rate (DSR) and MBS load into an interpretable constraint trade-off. Simulation experiments show that the proposed mechanism can regulate MBS dependence and cooperative offloading ratios, and reveal the preference-adjustment boundary among DSR, energy consumption, and MBS load.
 
-(3) To address the problem of unsustainability in long-term system operation caused by existing works ignoring terminal device energy dynamics, this paper explicitly models UAV flight energy consumption, user equipment (UE) battery dynamics, and wireless power transfer (WPT) mechanisms in the system model. Force-admission experiments show that, when all service requests are admitted and attempted for processing, the proposed framework achieves the highest service fairness, the lowest UAV-side energy consumption, and the lowest MBS load ratio while maintaining a competitive request-weighted DSR, verifying its multi-objective trade-off advantage under full service admission.
+(3) To address the problem of unsustainability in long-term system operation caused by existing works ignoring terminal device energy dynamics, this paper explicitly models UAV flight energy consumption, user equipment (UE) battery dynamics, and wireless power transfer (WPT) mechanisms in the system model. Force-admission baseline and sensitivity experiments show that, when all service requests are admitted and attempted for processing, the proposed framework achieves the highest service fairness, the lowest UAV-side energy consumption, and the lowest MBS load ratio while maintaining a competitive request-weighted DSR. Under varying UE loads and UAV computing capacities, the framework further maintains a stable trade-off among energy efficiency, fairness, and service quality.
 \end{abstract*}

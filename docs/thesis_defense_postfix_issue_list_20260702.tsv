@@ -1,0 +1,12 @@
+severity	status	location	issue	recommendation
+必须修改	已修复	latex/docs/chap03.tex:200	DSR 指标定义仍可能被理解为主配置使用 step-mean DSR，与正式 force-admission request-weighted 口径冲突	已统一为正式结果优先报告 request-weighted DSR，step/episode DSR 仅作训练和内部诊断
+建议修改	已修复	latex/docs/chap01.tex:71	统计表述包含 95% CI、paired t-test、Wilcoxon，强于部分正文图表实际呈现	已改为报告均值和波动范围，配对统计检验作为扩展基线审计补充依据
+建议修改	已修复	latex/docs/chap03.tex:849	学习率图容易被误读为正式 force-admission 敏感性结论	已改为训练过程性参考，正式鲁棒性结论以 UE 数量和 UAV 算力敏感性为准
+建议修改	已修复	latex/docs/chap06.tex:21	“显著降低 MBS 依赖”若未逐项展示 p 值，投稿表达偏强	已改为“大幅降低 MBS 依赖”
+低风险	可保留但需目视检查	latex/main.log	sysuthesis 提示 LiShu 字体需求	校内模板环境通常可接受；提交前目视检查中文标题/封面字体
+低风险	可保留但需目视检查	latex/main.log	bicaption 提示 main language 未设置	当前 PDF 已生成；如学校模板要求严格，可后续统一设置 bicaption 主语言
+低风险	可保留但需目视检查	latex/main.log	存在 12.52 pt overfull hbox 和一个 float 略大	不影响编译和数据结论；提交前检查对应页面版面
+备答项	可保留但需解释	实验结论	本文方法不是 DSR 单项最高	答辩口径为全服务接入下的能耗、公平性、低 MBS 依赖和 DSR 折中
+备答项	可保留但需解释	force-admission 设置	processed request ratio=1.0 容易被误解为服务成功率 100%	明确处理率只表示接入并尝试处理，DSR 才表示 deadline 满足比例
+备答项	可保留但需解释	轨迹图	固定 seed 轨迹不能证明所有约束和服务指标	正文已定位为行为示例；统计结论来自多 seed、多 workload 实验
+投稿前建议	未作为答辩硬伤	全文结构	学位论文结构不适合直接投期刊	投稿前压缩为期刊论文结构，突出核心创新和统计显著性

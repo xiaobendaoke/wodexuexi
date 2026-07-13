@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-完整敏感性实验：使用已训练的兼容模型运行所有三个实验。
+Force-admission sensitivity experiments using the trained models from the
+formal force-admission baseline matrix.
 
-模型兼容性已验证：
-- Proposed: paper_revised_full_20260518 (seed 42, 84, 126)
-- Vanilla MAPPO: 20260603/20260604 系列（8个版本，需映射到seed）
-- Heuristic: 不需要训练
+Model sources:
+- Proposed and Vanilla MAPPO: results/baseline_matrix_force_admission_20260626_resume/*/training_summary.json
+- Heuristic: no trained model required
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ import numpy as np
 import torch
 
 import config
+config.FORCE_SERVICE_ADMISSION = True
 from environment.env import Env
 from marl_models.utils import get_model
 from utils.baseline_metrics import (
@@ -30,34 +31,33 @@ from utils.baseline_metrics import (
 )
 
 # ─── 已验证的兼容模型路径 ──────────────────────────────────────────────────────
-
 PROPOSED_MODELS = {
     42: {
-        "traj": "saved_models/attention_mappo_cpu_full_paper_revised_full_20260518_full_hmarl_seed42_200ep/final",
-        "offload": "saved_models/offload_mappo_cpu_full_paper_revised_full_20260518_full_hmarl_seed42_200ep/final",
+        "traj": "saved_models/attention_mappo_baseline_matrix_v2_proposed_seed42_20260626_101514/final",
+        "offload": "saved_models/offload_mappo_baseline_matrix_v2_proposed_seed42_20260626_101514/final",
     },
     84: {
-        "traj": "saved_models/attention_mappo_cpu_full_paper_revised_full_20260518_full_hmarl_seed84_200ep/final",
-        "offload": "saved_models/offload_mappo_cpu_full_paper_revised_full_20260518_full_hmarl_seed84_200ep/final",
+        "traj": "saved_models/attention_mappo_baseline_matrix_v2_proposed_seed84_20260626_115643/final",
+        "offload": "saved_models/offload_mappo_baseline_matrix_v2_proposed_seed84_20260626_115643/final",
     },
     126: {
-        "traj": "saved_models/attention_mappo_cpu_full_paper_revised_full_20260518_full_hmarl_seed126_200ep/final",
-        "offload": "saved_models/offload_mappo_cpu_full_paper_revised_full_20260518_full_hmarl_seed126_200ep/final",
+        "traj": "saved_models/attention_mappo_baseline_matrix_v2_proposed_seed126_20260626_133546/final",
+        "offload": "saved_models/offload_mappo_baseline_matrix_v2_proposed_seed126_20260626_133546/final",
     },
 }
 
 VANILLA_MAPPO_MODELS = {
     42: {
-        "traj": "saved_models/vanilla_mappo_20260603_174250_vanilla_mappo/final",
-        "offload": "saved_models/offload_mappo_20260603_174250_vanilla_mappo/final",
+        "traj": "saved_models/vanilla_mappo_baseline_matrix_v2_vanilla_mappo_seed42_20260624_234041/final",
+        "offload": "saved_models/offload_mappo_baseline_matrix_v2_vanilla_mappo_seed42_20260624_234041/final",
     },
     84: {
-        "traj": "saved_models/vanilla_mappo_20260603_180500_vanilla_mappo/final",
-        "offload": "saved_models/offload_mappo_20260603_180500_vanilla_mappo/final",
+        "traj": "saved_models/vanilla_mappo_baseline_matrix_v2_vanilla_mappo_seed84_20260625_012047/final",
+        "offload": "saved_models/offload_mappo_baseline_matrix_v2_vanilla_mappo_seed84_20260625_012047/final",
     },
     126: {
-        "traj": "saved_models/vanilla_mappo_20260603_181404_vanilla_mappo/final",
-        "offload": "saved_models/offload_mappo_20260603_181404_vanilla_mappo/final",
+        "traj": "saved_models/vanilla_mappo_baseline_matrix_v2_vanilla_mappo_seed126_20260625_030158/final",
+        "offload": "saved_models/offload_mappo_baseline_matrix_v2_vanilla_mappo_seed126_20260625_030158/final",
     },
 }
 
@@ -119,7 +119,7 @@ def run_convergence_experiment(
     training_seeds: list[int] = [42, 84, 126],
     workload_seed: int = 42,
     eval_episodes: int = 6,
-    output_dir: str = "results/sensitivity/effective_efficiency_convergence",
+    output_dir: str = "results/sensitivity_force_admission/effective_efficiency_convergence",
 ) -> dict:
     """运行收敛曲线实验。
 
@@ -235,7 +235,7 @@ def run_ue_count_experiment(
     training_seeds: list[int] = [42, 84, 126],
     workload_seeds: list[int] = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420],
     eval_episodes: int = 6,
-    output_dir: str = "results/sensitivity/ue_count",
+    output_dir: str = "results/sensitivity_force_admission/ue_count",
 ) -> dict:
     """运行UE数量敏感性实验。"""
     output_path = Path(output_dir)
@@ -313,7 +313,7 @@ def run_uav_cpu_scale_experiment(
     training_seeds: list[int] = [42, 84, 126],
     workload_seeds: list[int] = [42, 84, 126, 168, 210, 252, 294, 336, 378, 420],
     eval_episodes: int = 6,
-    output_dir: str = "results/sensitivity/uav_cpu_scale",
+    output_dir: str = "results/sensitivity_force_admission/uav_cpu_scale",
 ) -> dict:
     """运行UAV CPU敏感性实验。"""
     output_path = Path(output_dir)

@@ -197,7 +197,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     DSR_t = \frac{|\{m \mid \mathcal{T}_m \in \mathcal{S}, \; a_m \neq \varnothing, \; L_m \leq T_m^{dl}\}|}{|\{m \mid \mathcal{T}_m \in \mathcal{S}\}|},
     \label{eq:dsr-definition}
 \end{equation}
-其中 $L_m$ 为请求 $m$ 的实际处理时延，$a_m\neq\varnothing$ 表示该请求已被分配执行。实验报告中同时区分两种统计口径：主配置表中的 DSR 为各时隙 DSR 的 episode 平均，用于与训练奖励保持一致；扩展基线矩阵中的 request-weighted DSR 则由整个统计单元内满足截止时间的服务请求总数除以生成服务请求总数得到，更适合作为请求级服务质量结论。MBS 负载比例用于约束系统对远端计算节点的依赖程度，定义为所有生成服务请求中最终由 MBS 处理的比例：
+其中 $L_m$ 为请求 $m$ 的实际处理时延，$a_m\neq\varnothing$ 表示该请求已被分配执行。正式 force-admission 实验结果优先报告 request-weighted DSR，即在一个统计单元内，将满足截止时间的服务请求总数除以全部生成服务请求总数；按时隙或 episode 平均的 DSR 仅作为训练过程和内部诊断指标，不作为正文主要服务质量结论。MBS 负载比例用于约束系统对远端计算节点的依赖程度，定义为所有生成服务请求中最终由 MBS 处理的比例：
 \begin{equation}
     M_t = \frac{|\{m \mid \mathcal{T}_m \in \mathcal{S}, \; a_m = 1\}|}{|\{m \mid \mathcal{T}_m \in \mathcal{S}\}|}.
     \label{eq:mbs-load-definition}
@@ -681,7 +681,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 \subsubsection{有效能效补充评价}
 \label{sec:eee-comparison}
 
-有效能效 EEE 用于补充观察单位能耗下的有效服务产出。由于本轮正式替换以 force-admission 评价矩阵为准，而旧的 EEE 对比图 来源于原始自然覆盖口径，本文不再将其作为正式结论图使用。正式结果中，完整双层配置和扩展基线矩阵已经同时报告 request-weighted DSR、UAV 侧能耗与公平性：本文方法在 DSR 为 0.3762 的同时，将能耗控制在 49.98M，并取得 0.9452 的公平性。因此，EEE 的作用是解释能耗--服务质量折中，而不是替代 DSR、energy 和 fairness 的分项报告。
+有效能效 EEE 用于补充观察单位能耗下的有效服务产出。由于本轮正式替换以 force-admission 评价矩阵为准，本文不再将早期 EEE 对比图作为正式结论图使用。正式结果中，完整双层配置和扩展基线矩阵已经同时报告 request-weighted DSR、UAV 侧能耗与公平性：本文方法在 DSR 为 0.3762 的同时，将能耗控制在 49.98M，并取得 0.9452 的公平性。因此，EEE 的作用是解释能耗--服务质量折中，而不是替代 DSR、energy 和 fairness 的分项报告。
 
 \subsection{行为机制与模块消融分析}
 \label{subsec:behavior-ablation-analysis}
@@ -797,7 +797,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 \subsubsection{普通 MAPPO 与端到端 MAPPO 边界实验}
 \label{sec:baseline-boundary}
 
-上层 vanilla MAPPO 消融用于回答“注意力机制是否在所有指标上都优于普通 MAPPO”。表 \ref{tab:vanilla-ablation} 给出了原始自然覆盖口径下训练随机种子 42、4 个工作负载随机种子、每个工作负载随机种子运行 8 个回合下的评估结果；该结果作为注意力机制边界的辅助分析。
+上层 vanilla MAPPO 消融用于回答“注意力机制是否在所有指标上都优于普通 MAPPO”。表 \ref{tab:vanilla-ablation} 给出了早期补充评估中训练随机种子 42、4 个工作负载随机种子、每个工作负载随机种子运行 8 个回合下的结果；该结果作为注意力机制边界的辅助分析，不作为 force-admission 扩展矩阵的主结论来源。
 
 \begin{table}[!htbp]
     \centering
@@ -835,41 +835,46 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 \subsection{参数敏感性与鲁棒性分析}
 \label{subsec:sensitivity-analysis}
 
-\subsubsection{训练收敛与学习率敏感性}
+
+\subsubsection{训练完成效果与学习率说明}
 \label{sec:sensitivity}
 
-本节保留学习率、地面节点数量和 UAV 算力敏感性结果作为趋势性辅助分析。需要强调的是，图 \ref{fig:lr-convergence}、图 \ref{fig:ue-count-sensitivity} 和图 \ref{fig:uav-cpu-sensitivity} 来源于早期原始自然覆盖口径；上一轮 force-admission 敏感性试跑中，仅启发式路径完整生成，学习式模型加载不完整，因此这些图暂不纳入正式 force-admission 结论。本文正式性能判断以表 \ref{tab:main-results}、图 \ref{fig:main-comparison}、消融实验和扩展基线矩阵为准。
+本节将 force-admission 敏感性实验纳入正式鲁棒性分析。首先，基于已训练模型的收敛性补充评估显示，本文方法在训练完成后的有效能效、DSR 和公平性均高于普通 MAPPO：本文方法的平均 EEE 为 $2.72\times10^{-4}$，高于普通 MAPPO 的 $1.95\times10^{-4}$；平均 DSR 为 0.3666，高于普通 MAPPO 的 0.2916；公平性为 0.9427，高于普通 MAPPO 的 0.9153。该结果用于说明训练完成后的综合工作点，而不将学习率曲线扩展为正式 force-admission 学习率敏感性结论。图 \ref{fig:lr-convergence} 仅保留为默认学习率选择的过程性参考，后续正式鲁棒性判断以图 \ref{fig:ue-count-sensitivity} 和图 \ref{fig:uav-cpu-sensitivity} 为准。
 
 为分析学习率对训练过程的影响，本文在相同网络结构、奖励函数和环境配置下设置 $1\times10^{-4}$、$3\times10^{-4}$、$5\times10^{-4}$ 和 $1\times10^{-3}$ 四组学习率进行对比。该实验固定随机种子和工作负载随机种子均为 42，每组训练 200 个回合，主要用于观察训练曲线形态，而不作为全局最优学习率的充分证明。综合训练稳定性和正式主配置的一致性，后续实验仍采用表 \ref{tab:algorithm-params} 中的默认学习率 $3\times10^{-4}$。
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.90\textwidth]{docs/figures/图5-11_不同学习率下训练收敛曲线.pdf}
-    \bicaption{不同学习率下本文方法的训练收敛曲线（辅助旧口径）}{Training convergence curves of the proposed method under different learning rates (auxiliary setting)}
+    \bicaption{不同学习率下本文方法的训练收敛曲线（过程性参考）}{Training convergence curves of the proposed method under different learning rates (process reference)}
     \label{fig:lr-convergence}
 \end{figure}
 
 \subsubsection{地面节点数量敏感性}
 \label{subsec:ue-count}
 
-图 \ref{fig:ue-count-sensitivity} 给出了原始自然覆盖口径下不同地面节点数量（$M = 60, 80, 100, 120, 140$）对应的三指标趋势。该图可用于说明请求密度升高会加重系统压力，但其中的数值不直接替换 force-admission 正式矩阵，也不用于支撑“本文方法在所有负载下 DSR 最优”的结论。若需将敏感性实验作为正式结论，应在 force-admission 设置下修正学习式模型加载路径后重新评估。
+图 \ref{fig:ue-count-sensitivity} 给出了 force-admission 口径下不同地面节点数量（$M = 60, 80, 100, 120, 140$）对应的 DSR、有效能效和公平性趋势。所有配置均保持 processed request ratio 为 100\%，因此图中差异反映的是已接入请求的 deadline 满足情况、能效和服务均衡性，而不是服务是否进入处理链路。
+
+从 DSR 看，随着 UE 数量增加，请求密度和资源竞争增强，三种方法的 DSR 均整体下降。启发式策略在 DSR 单项上最高，本文方法低于启发式但始终高于普通 MAPPO，例如在 $M=140$ 时本文方法 DSR 为 0.2897，高于普通 MAPPO 的 0.2158。与此同时，本文方法在所有 UE 数量下均取得最高公平性，且在 $M\geq100$ 的高负载场景下有效能效最高。该结果表明，本文方法在负载升高时并不追求 DSR 单项最优，而是保持更好的能效和服务公平性折中。
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.96\textwidth]{docs/figures/图5-16_地面节点数量敏感性三指标对比.pdf}
-    \bicaption{地面节点数量敏感性三指标对比（辅助旧口径）}{Three-metric sensitivity analysis under different UE counts (auxiliary setting)}
+    \bicaption{force-admission 下地面节点数量敏感性三指标对比}{Three-metric sensitivity analysis under different UE counts with force-admission}
     \label{fig:ue-count-sensitivity}
 \end{figure}
 
 \subsubsection{UAV 算力敏感性}
 \label{subsec:uav-cpu}
 
-图 \ref{fig:uav-cpu-sensitivity} 展示了原始自然覆盖口径下 UAV CPU 缩放因子变化对能耗、时延和 DSR 的影响。该结果可作为算力变化影响服务质量和能耗的辅助观察，但不作为本文 force-admission 口径下的正式鲁棒性结论。正式表述中，本文仅保留“算力变化会改变能耗--时延--DSR 权衡”的定性判断，不再声称 Proposed 在所有算力水平下均取得最高 DSR。
+图 \ref{fig:uav-cpu-sensitivity} 展示了 force-admission 口径下 UAV CPU 缩放因子变化对 DSR、有效能效和公平性的影响。与 UE 数量敏感性相同，该实验中所有 service request 均被接入并尝试处理，因此 DSR 仅表示 deadline 满足比例。
+
+结果显示，UAV 算力提升总体有利于 deadline 满足，但不同策略的收益方式并不相同。启发式策略在 DSR 单项上仍较高；本文方法除 $0.6\times$ 低算力点外均高于普通 MAPPO，并在 $1.0\times$ 和 $1.4\times$ 下分别达到 0.4055 和 0.4072。有效能效方面，本文方法在全部算力设置下均高于普通 MAPPO，并在 $1.2\times$ 和 $1.4\times$ 高算力设置下超过启发式策略。公平性方面，本文方法在低至中等算力设置下领先，在高算力设置下仍保持较高水平。综合来看，算力敏感性实验进一步说明，本文方法的主要优势是全服务接入下的能效--公平性--服务质量折中，而不是单独最大化 DSR。
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.96\textwidth]{docs/figures/图5-17_UAV算力敏感性三指标对比.pdf}
-    \bicaption{UAV 算力敏感性三指标对比（辅助旧口径）}{Three-metric sensitivity analysis under different UAV computing capacities (auxiliary setting)}
+    \bicaption{force-admission 下 UAV 算力敏感性三指标对比}{Three-metric sensitivity analysis under different UAV computing capacities with force-admission}
     \label{fig:uav-cpu-sensitivity}
 \end{figure}
 
@@ -905,7 +910,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{fig:lagrange-tradeoff}
 \end{figure}
 
-综合 force-admission 主配置、消融、扩展基线与 DSR-priority 结果可以看出，多 UAV-MEC 系统中的能耗、DSR、公平性和 MBS 依赖存在明显权衡。本文双层 MARL 框架在正式评估中并不追求所有单项指标同步最优，而是在保证全部 service request 接入并尝试处理的前提下，将系统推向低 UAV 能耗、高服务公平性和低 MBS 依赖的综合工作点。
+综合 force-admission 主配置、消融、扩展基线、参数敏感性与 DSR-priority 结果可以看出，多 UAV-MEC 系统中的能耗、DSR、公平性和 MBS 依赖存在明显权衡。本文双层 MARL 框架在正式评估中并不追求所有单项指标同步最优，而是在保证全部 service request 接入并尝试处理的前提下，将系统推向低 UAV 能耗、高服务公平性和低 MBS 依赖的综合工作点。
 
 \subsection{方法特点与现有工作的比较}
 \label{subsec:comparison}
@@ -915,4 +920,4 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 
 \label{sec:summary-chap03}
 
-本章围绕无人机辅助 MEC 系统中的轨迹控制与任务卸载协同优化问题展开研究。首先建立了多 UAV、UE 与 MBS 组成的系统模型，分别给出了通信链路、请求到达、计算时延、能耗、电池与无线能量传输模型，并在正式实验口径中加入最近 UAV 服务兜底接入规则。随后，针对该混合连续--离散、多智能体、动态约束优化问题，设计了基于 Attention-MAPPO 的双层协同优化算法：上层负责 UAV 轨迹控制，下层负责请求级卸载决策，并结合质量感知动作 mask 与 Lagrange 软约束机制提升训练稳定性和约束调节能力。实验结果表明，在 force-admission 扩展基线矩阵中，各方法均实现 100\% 服务请求接入，本文方法取得最高公平性（0.9452）、最低 UAV 侧能耗（49.98M）和最低 MBS 负载比例（3.59\%），同时保持 0.3762 的 request-weighted DSR。上述结果说明，所提双层方法的主要优势是全服务接入下的公平、能耗和 MBS 依赖折中，而不是对所有单项服务质量指标的同步最优。
+本章围绕无人机辅助 MEC 系统中的轨迹控制与任务卸载协同优化问题展开研究。首先建立了多 UAV、UE 与 MBS 组成的系统模型，分别给出了通信链路、请求到达、计算时延、能耗、电池与无线能量传输模型，并在正式实验口径中加入最近 UAV 服务兜底接入规则。随后，针对该混合连续--离散、多智能体、动态约束优化问题，设计了基于 Attention-MAPPO 的双层协同优化算法：上层负责 UAV 轨迹控制，下层负责请求级卸载决策，并结合质量感知动作 mask 与 Lagrange 软约束机制提升训练稳定性和约束调节能力。实验结果表明，在 force-admission 扩展基线矩阵中，各方法均实现 100\% 服务请求接入，本文方法取得最高公平性（0.9452）、最低 UAV 侧能耗（49.98M）和最低 MBS 负载比例（3.59\%），同时保持 0.3762 的 request-weighted DSR。上述结果说明，所提双层方法的主要优势是全服务接入下的公平、能耗和 MBS 依赖折中；敏感性实验进一步表明，该折中优势在 UE 负载和 UAV 算力变化下仍具有稳定性，但并不意味着所有单项服务质量指标同步最优。

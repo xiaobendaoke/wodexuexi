@@ -18,9 +18,10 @@
 \begin{enumerate}
     \item 在 force-admission 扩展基线矩阵中，所有方法的服务请求处理率均达到 100\%，说明兜底接入机制能够将未自然覆盖的 service request 纳入处理链路；该处理率不等同于 deadline 满足率。
     \item 本文方法在全服务接入口径下取得最高公平性（0.9452）、最低 UAV 侧能耗（49.98M）和最低 MBS 负载比例（3.59\%），同时保持 0.3762 的 request-weighted DSR，体现了低能耗、高公平性和低 MBS 依赖的综合折中优势。
-    \item 与 IPPO 和 Vanilla MAPPO 相比，本文方法分别提高 DSR 约 35.3\% 和 30.7\%，并显著降低 MBS 依赖；与 Joint MAPPO 和 Uniform 相比，本文方法虽然不是最高 DSR，但能耗和 MBS 负载明显更低，公平性更高。
+    \item 与 IPPO 和 Vanilla MAPPO 相比，本文方法分别提高 DSR 约 35.3\% 和 30.7\%，并大幅降低 MBS 依赖；与 Joint MAPPO 和 Uniform 相比，本文方法虽然不是最高 DSR，但能耗和 MBS 负载明显更低，公平性更高。
     \item force-admission 主配置与消融结果进一步表明，上层轨迹控制主要改善自然覆盖水平和空间公平性，下层请求级卸载主要调节本地、协作与 MBS 执行分布；Lagrange 软约束对抑制 MBS 依赖最关键。
     \item 端到端 \texttt{joint\_mappo} baseline 在 force-admission 矩阵中取得较高 DSR（0.4163），但 reward、能耗、公平性和 MBS 负载均明显劣于分层策略，说明直接联合轨迹--卸载动作学习存在更高综合代价。
+    \item 参数敏感性实验进一步显示，在 UE 数量和 UAV 算力变化下，本文方法通常保持高于普通 MAPPO 的 DSR 和有效能效，并在负载升高时维持较高公平性，验证了其作为综合折中策略的稳定性。
 \end{enumerate}
 
 \section{未来展望}
@@ -41,4 +42,4 @@
 \section{本章小结}
 \label{sec:summary-chap06}
 
-本章总结了本文的研究工作和主要贡献，并展望了未来的研究方向。首先回顾了本文提出的基于 Attention-MAPPO 的双层 MARL 框架及其 force-admission 正式评估口径；然后总结了实验结果，验证了该框架在全服务接入条件下的公平性、能耗和 MBS 负载折中优势；最后提出了未来的研究方向，包括细粒度 Pareto 扫描、三维轨迹控制、Lagrange 乘子自适应更新、服务缓存和内容分发协同优化等。
+本章总结了本文的研究工作和主要贡献，并展望了未来的研究方向。首先回顾了本文提出的基于 Attention-MAPPO 的双层 MARL 框架及其 force-admission 正式评估口径；然后总结了实验结果，验证了该框架在全服务接入条件下的公平性、能耗、MBS 负载和参数敏感性折中优势；最后提出了未来的研究方向，包括细粒度 Pareto 扫描、三维轨迹控制、Lagrange 乘子自适应更新、服务缓存和内容分发协同优化等。
