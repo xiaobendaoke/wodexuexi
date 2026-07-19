@@ -15,7 +15,7 @@
 
 系统时间被划分为长度为 $\tau$ 的离散时隙，一个 episode 包含 $T$ 个时隙。记第 $n$ 个时隙 UAV $i$ 的水平位置为 $\mathbf{q}_n^{(i)}=(x_n^{(i)},y_n^{(i)})$，其中 $i\in\{0,1,\ldots,N-1\}$。UAV 的覆盖半径为 $R_c$，最大飞行速度为 $v_{max}$，任意两架 UAV 之间需保持不低于 $d_{min}$ 的安全间距。系统主要包含 UE-UAV 上行链路、UAV-UAV 协作链路和 UAV-MBS 回传链路，如图 \ref{fig:system-model} 所示。UAV 轨迹控制会改变 UE 与 UAV 的相对距离，进而影响链路速率、任务完成时延、终端能耗以及用户覆盖公平性。
 
-在正式 force-admission 实验口径下，本文进一步引入服务请求兜底接入规则：若某个 service request 在当前时隙不处于任一 UAV 的自然覆盖范围内，系统将其接入距离最近的 UAV，并允许后续通过本地执行、UAV 间协作或 UAV-MBS 回传链路尝试处理。该规则只改变请求接入集合，不改变链路物理计算；远距离 UE-UAV 链路仍按照真实距离计算传输速率、时延和能耗。因此，force-admission 保证服务请求被系统接入并尝试处理，但不保证其一定满足 deadline。
+为保证每个时隙生成的服务请求均进入后续处理流程，系统采用如下请求关联规则：服务请求优先关联至自然覆盖范围内的 UAV；未被任一 UAV 自然覆盖的请求关联至距离最近的 UAV，并可由该 UAV 本地执行、转发至协作 UAV，或经回传链路卸载至 MBS。该关联规则不改变链路物理计算，UE--UAV 链路的传输速率、时延和能耗仍由实际通信距离决定。因此，请求关联仅保证请求进入处理流程，并不保证其满足截止时间约束。
 
 \begin{figure}[!htbp]
     \centering
@@ -192,20 +192,15 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 \end{equation}
 式中，$J_t\in[0,1]$ 为 Jain 公平性指数，定义为 $J_t=\frac{(\sum_{i=1}^M x_i)^2}{M\sum_{i=1}^M x_i^2}$，其中 $x_i$ 表示 UE $i$ 的历史服务覆盖水平；该公平性指标用于衡量不同 UE 被成功服务的均衡程度，不等同于截止时间满足率。$\bar{L}_t$ 为以 $M\cdot T_{penalty}$ 归一化的系统时延，$T_{penalty}$ 为未服务请求惩罚时延；$\bar{E}_t$ 为以 $N\cdot E_{ref}$ 归一化的 UAV 侧能耗；$O_t$ 为式 (\ref{eq:offline-rate}) 给出的 UE 离线率。
 
-截止时间满足率（deadline satisfaction rate, DSR）刻画所有生成服务请求中被成功分配且满足截止时间约束的比例。按请求计数加权时，DSR 定义为
+截止时间满足率（deadline satisfaction rate, DSR）刻画所有生成服务请求中被成功分配且满足截止时间约束的比例。以请求为统计单位时，DSR 定义为
 \begin{equation}
     DSR_t = \frac{|\{m \mid \mathcal{T}_m \in \mathcal{S}, \; a_m \neq \varnothing, \; L_m \leq T_m^{dl}\}|}{|\{m \mid \mathcal{T}_m \in \mathcal{S}\}|},
     \label{eq:dsr-definition}
 \end{equation}
-其中 $L_m$ 为请求 $m$ 的实际处理时延，$a_m\neq\varnothing$ 表示该请求已被分配执行。正式 force-admission 实验结果优先报告 request-weighted DSR，即在一个统计单元内，将满足截止时间的服务请求总数除以全部生成服务请求总数；按时隙或 episode 平均的 DSR 仅作为训练过程和内部诊断指标，不作为正文主要服务质量结论。MBS 负载比例用于约束系统对远端计算节点的依赖程度，定义为所有生成服务请求中最终由 MBS 处理的比例：
+其中 $L_m$ 为请求 $m$ 的实际处理时延，$a_m\neq\varnothing$ 表示该请求已被分配执行。实验统计时，将同一评估单元内各时隙的满足截止时间请求数和生成服务请求数分别累加后计算 DSR，而不对各时隙 DSR 直接取平均。MBS 负载比例用于刻画系统对远端计算节点的依赖程度，定义为所有生成服务请求中最终由 MBS 处理的比例：
 \begin{equation}
     M_t = \frac{|\{m \mid \mathcal{T}_m \in \mathcal{S}, \; a_m = 1\}|}{|\{m \mid \mathcal{T}_m \in \mathcal{S}\}|}.
     \label{eq:mbs-load-definition}
-\end{equation}
-为分析实际卸载动作分布，本文还报告 MBS offloading ratio，其分母为已处理服务请求数：
-\begin{equation}
-    \rho_t^{\mathrm{MBS,off}} = \frac{|\{m \mid \mathcal{T}_m \in \mathcal{S}, \; a_m = 1\}|}{|\{m \mid \mathcal{T}_m \in \mathcal{S}, \; a_m \neq \varnothing\}|}.
-    \label{eq:mbs-offloading-ratio}
 \end{equation}
 其中 $W_J$、$W_L$、$W_E$、$W_O$、$W_{DSR}$ 和 $W_M$ 分别表示公平性、时延、能耗、离线率、截止时间满足率和 MBS 负载对应的奖励权重，各权重的具体取值见第 \ref{sec:simulation-setup} 节仿真参数设置。当 UAV 发生碰撞或越界时，环境额外施加约束惩罚；为稳定 MARL 训练过程中的数值范围，可对最终奖励进行缩放处理。
 
@@ -250,19 +245,19 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 本文框架由两个协同 MARL 决策层组成：
 
 \begin{itemize}
-    \item \textbf{上层 attention-MAPPO}：每架 UAV 作为一个 agent，根据自身位置、邻居 UAV 状态、覆盖 UE 和请求负载信息输出连续轨迹动作（2D 方向向量）。
-    \item \textbf{下层 constrained attention offload MAPPO}：每架 UAV 对其当前自然覆盖或 force-admission 兜底接入的服务请求 slot 输出离散卸载动作；实际动作空间包含 local、MBS 和指定协作 UAV 三类动作。
+    \item \textbf{上层 Attention-MAPPO}：每架 UAV 作为一个智能体，根据自身位置、邻居 UAV 状态、覆盖 UE 和请求负载信息输出二维连续轨迹动作。
+    \item \textbf{下层约束注意力卸载 MAPPO}：每架 UAV 对当前关联的服务请求输出离散卸载动作；实际动作空间包括本地 UAV、MBS 和指定协作 UAV 三类执行位置。
 \end{itemize}
 
-在每个环境 step 中，系统按如下顺序执行：
+在每个环境交互步中，系统按如下顺序执行：
 \begin{enumerate}
     \item 环境生成当前 UAV、UE、链路和请求状态
-    \item 下层读取请求级观测与动作 mask，输出卸载动作
-    \item 环境执行服务请求处理，统计 latency、energy、DSR、processed request ratio、force-admission ratio、MBS load ratio 与 MBS offloading ratio
+    \item 下层读取请求级观测与动作掩码，输出卸载动作
+    \item 环境执行服务请求处理，统计时延、UAV 侧能耗、DSR、服务公平性和 MBS 负载
     \item 上层输出轨迹动作，环境更新下一时刻位置
 \end{enumerate}
 
-上述双层协同优化架构如图~\ref{fig:dual-layer-architecture}~所示。上层 Attention-MAPPO 通过多头交叉注意力机制建模 UAV 间和 UAV-UE 间的交互关系，输出连续轨迹动作；下层 Constrained Attention Offload MAPPO 基于请求级观测和质量感知动作 mask 输出离散卸载决策，同时通过 Lagrange 机制约束 DSR 和 MBS 负载。
+上述双层协同优化架构如图~\ref{fig:dual-layer-architecture}~所示。上层 Attention-MAPPO 通过多头交叉注意力机制建模 UAV 间和 UAV--UE 间的交互关系，输出连续轨迹动作；下层约束注意力卸载 MAPPO 基于请求级观测和质量感知动作掩码输出离散卸载决策，并通过拉格朗日机制协调 DSR 与 MBS 负载。
 
 \begin{figure}[!htbp]
     \centering
@@ -312,10 +307,10 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 
 上层奖励为第 \ref{sec:optimization-objective} 节定义的系统级综合奖励 $R_t$，所有 UAV 共享同一基础奖励值。训练采用 CTDE（Centralized Training Decentralized Execution）框架。
 
-\subsection{下层 constrained attention offload MAPPO}
+\subsection{下层约束注意力卸载 MAPPO}
 \label{sec:lower-layer}
 
-下层同样采用多智能体建模。每架 UAV 是一个 lower-layer agent，处理其当前关联的 bounded request slots，最大 slot 数记为 $K$。每个有效 request slot 的离散动作空间如表 \ref{tab:action-space} 所示。
+下层同样采用多智能体建模。每架 UAV 对其当前关联的服务请求进行决策，最多处理 $K$ 个请求槽。每个有效请求槽的离散动作空间如表 \ref{tab:action-space} 所示。
 
 \begin{table}[!htbp]
     \centering
@@ -325,14 +320,14 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
         \toprule
         动作编号 & 动作含义 & 说明 \\
         \midrule
-        0 & Local UAV execution & 在当前 UAV 本地执行 \\
-        1 & MBS execution & 通过回传链路卸载到宏基站 \\
-        $2+j$ & Cooperative UAV $j$ execution & 选择编号为 $j$ 的邻居 UAV 执行，$j=0,\ldots,N-1$ \\
+        0 & 当前 UAV 本地执行 & 在当前 UAV 本地执行 \\
+        1 & MBS 执行 & 通过回传链路卸载至宏基站 \\
+        $2+j$ & 协作 UAV $j$ 执行 & 选择编号为 $j$ 的协作 UAV 执行，$j=0,\ldots,N-1$ \\
         \bottomrule
     \end{tabularx}
 \end{table}
 
-因此，下层 actor 的实际动作数为 $|A|=2+N$。
+因此，下层策略的实际动作数为 $|A|=2+N$。
 
 下层观测同样按 UAV 构造。第 $i$ 架 UAV 的下层观测为：
 \begin{equation}
@@ -340,9 +335,9 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{eq:lower-obs}
 \end{equation}
 
-其中 $g_i^{self}$ 包含 UAV 归一化位置、当前服务请求队列比例、邻居数量比例和 UAV-MBS 回传速率；$G_i^{req}$ 由最多 $K$ 个 request slot 组成。每个有效请求 slot 包含请求大小、请求编号、deadline、priority、本地缓存命中、协作可用性、本地队列长度、local/cooperative/MBS 时延相对 deadline 的截断比例、最佳邻居计算份额以及 UE-UAV 相对位置等特征。
+其中 $g_i^{self}$ 包含 UAV 归一化位置、当前服务请求队列比例、邻居数量比例和 UAV--MBS 回传速率；$G_i^{req}$ 由最多 $K$ 个请求槽组成。每个有效请求槽包含请求大小、请求编号、截止时间、优先级、本地缓存命中状态、协作可用性、本地队列长度、本地/协作/MBS 路径时延相对截止时间的截断比例、最佳协作 UAV 计算份额以及 UE--UAV 相对位置等特征。
 
-下层 actor 使用 request attention 编码同一 UAV 内多个服务请求之间的相对重要性：先将 UAV 自身特征和每个请求特征编码到隐空间，再对 request slots 做多头自注意力，最后对每个 request slot 输出 local、MBS 或 cooperative UAV 动作的 logits。critic 采用集中式信息估计 value。需要说明的是，下层学习策略主要针对服务请求生成卸载动作；内容请求和能量请求仍由环境中的缓存、下载和 WPT 逻辑处理。下层共享训练奖励函数为：
+下层策略利用请求注意力编码同一 UAV 内多个服务请求的相对重要性：先将 UAV 自身特征和各请求特征编码至隐空间，再对请求槽施加多头自注意力，最后为每个请求槽输出本地 UAV、MBS 或协作 UAV 的动作得分。价值网络基于集中式信息估计状态价值。下层学习策略仅针对服务请求生成卸载动作；内容请求和能量请求仍由环境中的缓存、下载和 WPT 逻辑处理。下层共享训练奖励函数为：
 \begin{equation}
 \begin{aligned}
     R_{lower} ={}& w_{succ} \cdot DSR + w_{coop} \cdot C_{ratio}
@@ -356,21 +351,21 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{eq:lower-reward}
 \end{equation}
 
-其中 $w_{succ}$、$w_{coop}$、$w_{dead}$、$w_{lat}$、$w_{en}$ 和 $w_{mbs}$ 分别为服务成功、协作卸载、deadline 未满足、时延、能耗和 MBS 负载对应的下层奖励权重，具体取值见表 \ref{tab:algorithm-params}。
+其中 $w_{succ}$、$w_{coop}$、$w_{dead}$、$w_{lat}$、$w_{en}$ 和 $w_{mbs}$ 分别为服务成功、协作卸载、截止时间未满足、时延、能耗和 MBS 负载对应的下层奖励权重，具体取值见表 \ref{tab:algorithm-params}。
 
-\subsection{质量感知动作 Mask}
+\subsection{质量感知动作掩码}
 \label{sec:action-mask}
 
-请求级动作 mask 用于减少明显无效的探索：
+请求级动作掩码用于减少明显无效的探索：
 
-\textbf{空请求 slot mask}：若某个 slot 没有真实服务请求，则该 slot 不产生真实卸载动作。此保护在所有实验中始终开启。
+\textbf{空请求槽掩码}：若某个请求槽没有真实服务请求，则该请求槽不产生卸载动作。
 
-\textbf{质量感知 mask}（quality mask）：
+\textbf{质量感知掩码}：
 \begin{itemize}
-    \item \textbf{Cooperative mask}：当系统不存在可用邻居、协作路径时延过高（超过 $\theta_{deadline}\times$ deadline）、协作相对非协作路径无明显优势（超过 $\theta_{latency}\times$ 本地时延）或协作计算份额过低（低于 $\theta_{share}$）时，屏蔽 cooperative 动作。
-    \item \textbf{MBS mask}：当 MBS 路径估计时延超过用于归一化的 deadline clip 阈值时，屏蔽 MBS 动作。
+    \item \textbf{协作动作掩码}：当不存在可用协作 UAV、协作路径时延过高（超过 $\theta_{deadline}$ 倍截止时间）、协作相对本地路径无明显优势（超过 $\theta_{latency}$ 倍本地时延）或协作计算份额过低（低于 $\theta_{share}$）时，屏蔽协作动作。
+    \item \textbf{MBS 动作掩码}：当 MBS 路径的估计时延超过归一化所用的截止时间截断阈值时，屏蔽 MBS 动作。
 \end{itemize}
-其中 $\theta_{deadline}$、$\theta_{latency}$、$\theta_{share}$ 以及 MBS mask 的 deadline clip 阈值均为动作 mask 的实现参数。
+其中 $\theta_{deadline}$、$\theta_{latency}$、$\theta_{share}$ 以及 MBS 动作掩码的截止时间截断阈值均为动作掩码的实现参数。
 
 \subsection{Lagrange 约束机制}
 \label{sec:lagrange}
@@ -381,7 +376,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{eq:lagrange-penalty}
 \end{equation}
 
-其中 $\tau_{dsr}$ 和 $\tau_{mbs}$ 分别为 DSR 与 MBS 负载的软约束目标。$\lambda$ 在每个 rollout 后更新：
+其中 $\tau_{dsr}$ 和 $\tau_{mbs}$ 分别为 DSR 与 MBS 负载的软约束目标。拉格朗日乘子在每个采样批次后更新：
 \begin{equation}
     \lambda_{dsr} \leftarrow \text{clip}(\lambda_{dsr} + \eta_{\lambda} \cdot \bar{v}_{dsr}, 0, \lambda_{max})
     \label{eq:lambda-dsr-update}
@@ -391,9 +386,9 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{eq:lambda-mbs-update}
 \end{equation}
 
-其中 $\eta_{\lambda}$ 为 Lagrange 学习率，$\lambda_{max}$ 为乘子上界，$\bar{v}$ 为 rollout 平均约束违反量。$\tau_{dsr}$、$\tau_{mbs}$、$\eta_{\lambda}$ 和 $\lambda_{max}$ 的具体取值见表 \ref{tab:algorithm-params}。该机制通过提高违反约束时的惩罚权重引导策略减少 DSR 不足和 MBS 负载超限，但属于训练目标中的软约束，并不构成严格可行性保证。
+其中 $\eta_{\lambda}$ 为拉格朗日乘子学习率，$\lambda_{max}$ 为乘子上界，$\bar{v}$ 为采样批次内的平均约束违反量。$\tau_{dsr}$、$\tau_{mbs}$、$\eta_{\lambda}$ 和 $\lambda_{max}$ 的具体取值见表 \ref{tab:algorithm-params}。该机制通过提高违反约束时的惩罚权重，引导策略减少 DSR 不足和 MBS 负载超限，但属于训练目标中的软约束，并不构成严格可行性保证。
 
-基于上述双层协同框架、注意力机制、质量感知动作 Mask 和 Lagrange 约束机制，本文所提算法的完整训练流程如算法 \ref{alg:hierarchical-mappo} 所示。
+基于上述双层协同框架、注意力机制、质量感知动作掩码和拉格朗日约束机制，本文所提算法的完整训练流程如算法 \ref{alg:hierarchical-mappo} 所示。
 
 \begin{algorithm}[!htbp]
     \caption{基于 Attention-MAPPO 的双层协同优化算法}
@@ -403,7 +398,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \KwOut{训练完成的上层策略 $\pi^{upper}$ 和下层策略 $\pi^{lower}$}
 
     初始化上层 Attention-MAPPO 的 actor 参数 $\theta^{U}$ 和 critic 参数 $\phi^{U}$\;
-    初始化下层 Constrained Attention Offload MAPPO 的 actor 参数 $\theta^{L}$ 和 critic 参数 $\phi^{L}$\;
+    初始化下层约束注意力卸载 MAPPO 的 actor 参数 $\theta^{L}$ 和 critic 参数 $\phi^{L}$\;
     初始化 Lagrange 乘子 $\lambda_{dsr}\leftarrow 0$，$\lambda_{mbs}\leftarrow 0$\;
     初始化上层采样缓存 $\mathcal{B}^{U}$ 和下层采样缓存 $\mathcal{B}^{L}$\;
     重置环境并获取初始上层观测 $o^{U}$\;
@@ -412,7 +407,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \For{update $=1,2,\ldots,N_{upd}$}{
         清空 $\mathcal{B}^{U}$、$\mathcal{B}^{L}$ 以及当前 rollout 的约束违反量记录\;
         \For{step $=1,2,\ldots,L$}{
-            根据当前环境状态构造下层观测 $o_i^{L}$ 和动作 mask $\mathbf{m}_{i,k}$\;
+            根据当前环境状态构造下层观测 $o_i^{L}$ 和动作掩码 $\mathbf{m}_{i,k}$\;
             \For{每架 UAV $i$}{
                 下层 actor 根据 $o_i^{L}$ 和 $\mathbf{m}_{i,k}$ 为每个有效请求槽输出卸载动作
                 $\mathbf{a}_i^{L}=\{a_{i,k}^{L}\}_{k=1}^{K}$\;
@@ -464,7 +459,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \item \textbf{Energy 归一化}：系统级奖励使用 $N \cdot E_{ref}$ 为分母，其中 $E_{ref}$ 为每架 UAV 单步参考能耗；下层奖励使用 $N \cdot E_{ref}^{offload}$，其中 $E_{ref}^{offload}$ 为下层每架 UAV 单步最大参考能耗。
 \end{itemize}
 
-与早期版本使用的对数归一化相比，线性归一化的优势在于：(i) 各指标贡献在数值上可加可比，便于权重调参；(ii) 不同策略间的 reward 值可以在统一口径下直接对比；(iii) 避免了 log 函数在接近零值时的数值不稳定性。
+本文采用线性归一化，以使各指标贡献在数值上可加、可比，并避免对数函数在接近零值时的数值不稳定性。该设计便于分析不同奖励权重下的策略行为。
 
 \subsection{复杂度分析}
 \label{sec:complexity}
@@ -497,7 +492,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
         UAV 数量 $N$ / UE 数量 $M$ / MBS 数量 & $5$ / $100$ / $1$ \\
         MBS 位置 & $(350,350,30)\,\mathrm{m}$ \\
         UAV 飞行高度 $H$ & $100\,\mathrm{m}$ \\
-        时隙长度 $\tau$ / episode 长度 $T$ & $1\,\mathrm{s}$ / $1000$ time slots \\
+        时隙长度 $\tau$ / 回合长度 $T$ & $1\,\mathrm{s}$ / $1000$ 个时隙 \\
         最大飞行速度 $v_{max}$ & $15\,\mathrm{m/s}$ \\
         UAV 覆盖半径 $R_c$ / 感知范围 & $100\,\mathrm{m}$ / $460\,\mathrm{m}$ \\
         最小 UAV 间距 $d_{min}$ & $200\,\mathrm{m}$ \\
@@ -506,7 +501,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
         UAV 计算能力 & $\{40,45,\ldots,85\}\times10^9\,\mathrm{cycles/s}$ \\
         MBS 计算能力 $f_{mbs}$ & $200\times10^9\,\mathrm{cycles/s}$ \\
         服务类型数 / 内容文件数 & $25$ / $50$ \\
-        服务请求 deadline & $[0.65,2.10]\,\mathrm{s}$ \\
+        服务请求截止时间 & $[0.65,2.10]\,\mathrm{s}$ \\
         UE 电池容量 $B_{max}$ / 低电量阈值 $B_{low}$ & $500\,\mathrm{J}$ / $50\,\mathrm{J}$ \\
         UE 待机功耗 $P_{static}$ & $0.01\,\mathrm{W}$ \\
         WPT 发射功率 / 采集效率 / 等效采集增益 & $50\,\mathrm{W}$ / $0.8$ / $5\times10^5$ \\
@@ -517,7 +512,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \end{tabularx}
 \end{table}
 
-本文算法训练参数如表 \ref{tab:algorithm-params} 所示。正式主配置实验采用 3 个训练随机种子和 10 个工作负载随机种子；每个工作负载随机种子运行 6 个评估回合，并以（训练随机种子，工作负载随机种子）对应的回合均值作为统计单元，因此每个学习式策略共有 $N=30$ 个统计样本。本文报告均值（mean）、标准差（std）、95\% 置信区间（95\% CI）、配对差值（paired delta）、配对 t 检验（paired t-test）和 Wilcoxon 符号秩检验结果。
+本文算法训练参数如表 \ref{tab:algorithm-params} 所示。主实验采用 3 个训练随机种子和 10 个工作负载随机种子；每个工作负载随机种子运行 6 个评估回合，并以每组（训练随机种子，工作负载随机种子）对应的回合均值作为统计单元，因此每个学习式策略共有 $N=30$ 个统计样本。本文报告均值、标准差、95\% 置信区间、配对差值、配对 t 检验和 Wilcoxon 符号秩检验结果。
 
 \begin{table}[!htbp]
     \centering
@@ -577,7 +572,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 
 \paragraph{下层消融实验}
 
-下层消融实验用于分析请求注意力、质量感知动作掩码和 Lagrange 约束三类组件的作用。实验以lower\_full（即 att+lower）为参考，如表 \ref{tab:ablation-strategies} 所示。
+下层消融实验用于分析请求注意力、质量感知动作掩码和拉格朗日约束三类组件的作用。实验以完整下层策略（\texttt{lower\_full}，即 \texttt{att+lower}）为参考，如表 \ref{tab:ablation-strategies} 所示。
 
 \begin{table}[!htbp]
     \centering
@@ -595,9 +590,9 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \end{tabular}
 \end{table}
 
-\paragraph{扩展基线方法}
+\paragraph{综合对比方法}
 
-扩展基线方法用于检验结论是否依赖单一参考策略，并进一步回答普通 MAPPO 和端到端联合 MAPPO 是否足以替代本文双层结构。除主配置策略组合外，本文进一步设置普通 MAPPO 轨迹控制结合启发式卸载、端到端联合 MAPPO，以及由随机策略（Random）、均匀策略（Uniform）、独立 PPO（IPPO）、普通 MAPPO（Vanilla MAPPO）、联合 MAPPO（Joint MAPPO）和本文方法（Proposed）组成的扩展基线矩阵。扩展基线矩阵中，非学习式方法以工作负载随机种子为统计单元，学习式方法沿用表 \ref{tab:algorithm-params} 中的训练与评估协议。
+综合对比方法用于检验结论是否依赖单一参考策略，并进一步分析普通 MAPPO 和端到端联合 MAPPO 与本文双层结构的性能差异。除主配置策略组合外，本文设置普通 MAPPO 轨迹控制结合启发式卸载、端到端联合 MAPPO，以及随机策略（Random）、均匀策略（Uniform）、独立 PPO（IPPO）、普通 MAPPO（Vanilla MAPPO）、联合 MAPPO（Joint MAPPO）和本文方法（Proposed）。非学习式方法以工作负载随机种子为统计单元；学习式方法沿用表 \ref{tab:algorithm-params} 所示的训练与评估协议。
 
 \subsubsection{评估指标}
 \label{sec:metrics}
@@ -608,13 +603,11 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \item \textbf{系统奖励（$R_t$）}：第 \ref{sec:optimization-objective} 节定义的系统级综合奖励
     \item \textbf{总时延（$L$）}：所有 UE 的总时延（含 $T_{penalty}=20$s 未服务惩罚）
     \item \textbf{总能耗（$E$）}：UAV 侧总能耗（含飞行、悬停、计算、通信、WPT）
-    \item \textbf{公平性（$J$）}：基于各 UE 的 service\_coverage 计算 Jain 指数，衡量用户服务覆盖公平性；该指标反映服务机会分布是否均衡，不等同于 deadline 满足公平性
-    \item \textbf{DSR}：截止时间满足率（deadline satisfaction rate）。正式 force-admission 结果优先报告 request-weighted DSR，即统计单元内满足 deadline 的服务请求数占全部生成服务请求数的比例；该指标不等同于服务接入率
-    \item \textbf{处理率}：已被系统接入并尝试处理的 service request 占全部生成 service request 的比例；在 force-admission 口径下，该比例用于验证兜底接入是否覆盖全部服务请求
-    \item \textbf{强制接入比例}：未被任一 UAV 自然覆盖、但通过最近 UAV 兜底接入的 service request 占全部生成 service request 的比例；自然覆盖比例与强制接入比例共同刻画轨迹覆盖行为
+    \item \textbf{公平性（$J$）}：基于各 UE 的历史服务覆盖量计算 Jain 指数，衡量用户服务机会的均衡程度；该指标不等同于截止时间满足率
+    \item \textbf{DSR}：截止时间满足率（deadline satisfaction rate），即统计单元内满足截止时间约束的服务请求数占全部生成服务请求数的比例
     \item \textbf{离线率（$O$）}：电池低于 $B_{low}$ 的 UE 比例
-    \item \textbf{卸载比例}：本地、协作 UAV 和 MBS 三类卸载比例，采用已处理服务请求作为分母，用于描述实际卸载动作分布
-    \item \textbf{MBS 负载比例}：卸载至 MBS 的服务请求数占全部生成服务请求数的比例，用于衡量系统对 MBS 的总体依赖程度；其分母不同于 MBS 卸载比例
+    \item \textbf{执行位置分布}：由当前 UAV 本地执行、协作 UAV 执行和 MBS 执行的服务请求占全部生成服务请求的比例，用于描述卸载决策行为
+    \item \textbf{MBS 负载比例}：由 MBS 执行的服务请求占全部生成服务请求的比例，用于衡量系统对远端计算资源的依赖程度
 \end{itemize}
 
 为综合衡量系统在能耗和服务质量维度的联合表现，本文补充采用有效能效（Effective Energy Efficiency, EEE）指标：
@@ -630,11 +623,11 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 \subsubsection{综合性能对比}
 \label{sec:main-results}
 
-本小节首先在正式 force-admission 口径下比较三组主配置，用于分析上层轨迹控制、下层卸载决策和完整双层协同的分层贡献。所有配置均启用最近 UAV 兜底接入，因此 service request 的处理率均为 100\%；DSR 仅表示已接入请求中满足截止时间约束的比例，不再与“是否被系统接入”混用。统计单元为训练随机种子与工作负载随机种子的组合均值，$N=30$。
+本小节比较三组主配置，用于分析上层轨迹控制、下层卸载决策和完整双层协同的分层贡献。所有方法均在相同的系统模型和请求关联规则下评估。统计单元为训练随机种子与工作负载随机种子的组合均值，$N=30$。
 
 \begin{table}[!htbp]
     \centering
-    \bicaption{force-admission 主配置实验结果（mean $\pm$ std, $N=30$）}{Force-admission main-configuration results (mean $\pm$ std, $N=30$)}
+    \bicaption{主配置实验结果（均值 $\pm$ 标准差，$N=30$）}{Main-configuration results (mean $\pm$ standard deviation, $N=30$)}
     \label{tab:main-results}
     \begin{tabularx}{\textwidth}{Y c c c c c}
         \toprule
@@ -647,24 +640,24 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \end{tabularx}
 \end{table}
 
-表 \ref{tab:main-results-cont} 进一步给出了接入来源与卸载分布。三组配置的 processed ratio 均为 100\%，说明 force-admission 规则保证所有 service request 均进入处理链路；自然覆盖比例和兜底接入比例则反映策略在空间覆盖上的差异。
+表 \ref{tab:main-results-cont} 进一步给出自然覆盖比例与执行位置分布，用于反映不同策略的空间服务行为和卸载选择。
 
 \begin{table}[!htbp]
     \centering
-    \bicaption{force-admission 主配置接入与卸载分布}{Admission and offloading distribution of main configurations under force-admission}
+    \bicaption{主配置的自然覆盖与执行位置分布}{Natural coverage and execution-location distribution of main configurations}
     \label{tab:main-results-cont}
-    \begin{tabularx}{\textwidth}{Y c c c c c c}
+    \begin{tabularx}{\textwidth}{Y c c c c}
         \toprule
-        策略 & Processed & Natural & Forced & Local & Coop & MBS \\
+        策略 & 自然覆盖 & 本地 UAV 执行 & 协作 UAV 执行 & MBS 执行 \\
         \midrule
-        上层+启发式 & 100.00\% & 50.22\% & 49.78\% & 55.45\% & 42.17\% & 2.38\% \\
-        固定上层+下层 & 100.00\% & 19.98\% & 80.02\% & 35.02\% & 60.22\% & 4.76\% \\
-        完整双层 & 100.00\% & \textbf{52.21\%} & \textbf{47.79\%} & 55.60\% & 40.81\% & 3.59\% \\
+        上层+启发式 & 50.22\% & 55.45\% & 42.17\% & 2.38\% \\
+        固定上层+下层 & 19.98\% & 35.02\% & 60.22\% & 4.76\% \\
+        完整双层 & \textbf{52.21\%} & 55.60\% & 40.81\% & 3.59\% \\
         \bottomrule
     \end{tabularx}
 \end{table}
 
-结果显示，三种配置对应不同的工作点。上层+启发式配置取得最高 DSR（0.4957）和最低 MBS 负载（2.38\%），但 UAV 侧能耗为 74.65M，明显高于完整双层。固定上层+下层配置的协作执行比例最高（60.22\%），但自然覆盖比例仅 19.98\%，系统奖励和公平性均较低，说明若轨迹策略不能提供良好的空间覆盖，仅依赖下层卸载难以形成稳定服务。完整双层配置的 DSR 不是最高，但其能耗最低（49.98M）、公平性最高（0.9452），并将 MBS 负载维持在 3.59\%。因此，完整方法的优势应表述为全服务接入下的能耗、公平性和 MBS 依赖折中，而不是 DSR 单项最优。
+结果显示，三种配置对应不同的性能工作点。上层+启发式配置取得最高 DSR（0.4957）和最低 MBS 负载（2.38\%），但 UAV 侧能耗为 74.65M，明显高于完整双层。固定上层+下层配置的协作执行比例最高（60.22\%），但自然覆盖比例仅为 19.98\%，系统奖励和公平性均较低，说明仅依赖下层卸载难以弥补轨迹策略带来的空间服务差异。完整双层配置的 DSR 并非最高，但其能耗最低（49.98M）、公平性最高（0.9452），并将 MBS 负载维持在 3.59\%。因此，完整方法的优势在于能耗、公平性和 MBS 依赖之间的综合折中。
 
 \subsubsection{分层贡献分析}
 \label{sec:layer-contribution}
@@ -673,15 +666,15 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.92\textwidth]{docs/figures/图5-7_主实验多指标对比.pdf}
-    \bicaption{主配置多指标对比}{Main-configuration multi-metric comparison}
+    \includegraphics[width=0.92\textwidth]{docs/figures/图3-3_主配置性能工作点.pdf}
+    \bicaption{主配置性能工作点与服务约束}{Performance trade-off and service constraints of main configurations}
     \label{fig:main-comparison}
 \end{figure}
 
 \subsubsection{有效能效补充评价}
 \label{sec:eee-comparison}
 
-有效能效 EEE 用于补充观察单位能耗下的有效服务产出。由于本轮正式替换以 force-admission 评价矩阵为准，本文不再将早期 EEE 对比图作为正式结论图使用。正式结果中，完整双层配置和扩展基线矩阵已经同时报告 request-weighted DSR、UAV 侧能耗与公平性：本文方法在 DSR 为 0.3762 的同时，将能耗控制在 49.98M，并取得 0.9452 的公平性。因此，EEE 的作用是解释能耗--服务质量折中，而不是替代 DSR、energy 和 fairness 的分项报告。
+有效能效 EEE 用于补充观察单位能耗下的有效服务产出。本文仍以 DSR、UAV 侧能耗和公平性作为核心性能指标：完整双层配置在 DSR 为 0.3762 时，将能耗控制在 49.98M，并取得 0.9452 的公平性。因此，EEE 用于辅助解释能耗与服务质量之间的折中，不替代各项指标的独立报告。
 
 \subsection{行为机制与模块消融分析}
 \label{subsec:behavior-ablation-analysis}
@@ -722,8 +715,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{fig:trajectory-user-distribution}
 \end{figure}
 
-从图 \ref{fig:trajectory-user-distribution} 可以看出，在 force-admission 口径下，随机策略的移动方向缺乏稳定目标，轨迹更多体现为无规则探索，各 UAV 之间缺乏协调，累计飞行距离约为 53.3 km。IPPO 和 Vanilla MAPPO 形成较明显的局部移动模式，累计飞行距离分别约为 66.4 km 和 67.7 km。相比之下，本文方法的累计飞行距离约为 47.8 km，低于 IPPO 和 Vanilla MAPPO，并以较少 MBS 依赖维持全部服务请求接入。需要强调的是，该可视化结果只说明固定场景下的空间移动模式和移动代价，不直接证明本文方法在所有服务指标或所有运动约束上最优。部分 UAV 在边界缓冲位置附近移动，是策略在给定边界裁剪、兜底接入和动态请求分布下形成的行为结果。
-
+从图 \ref{fig:trajectory-user-distribution} 可以看出，在同一评估场景下，随机策略的移动方向缺乏稳定目标，轨迹更多体现为无规则探索，各 UAV 之间缺乏协调，累计飞行距离约为 53.3 km。IPPO 和 Vanilla MAPPO 形成较明显的局部移动模式，累计飞行距离分别约为 66.4 km 和 67.7 km。相比之下，本文方法的累计飞行距离约为 47.8 km，低于 IPPO 和 Vanilla MAPPO，同时保持较低的 MBS 负载。
 \subsubsection{卸载分布分析}
 \label{sec:offloading-analysis}
 
@@ -734,16 +726,16 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{fig:offloading-dist}
 \end{figure}
 
-图 \ref{fig:offloading-dist} 从主配置角度展示了 force-admission 后的执行位置和接入来源。完整双层配置的本地执行、协作执行和 MBS 执行比例分别为 55.60\%、40.81\% 和 3.59\%，说明其主要依赖 UAV 侧资源处理兜底接入后的请求，而不是简单将未覆盖请求回退至 MBS。相比之下，固定上层+下层配置的兜底接入比例达到 80.02\%，协作执行比例达到 60.22\%，这表明下层策略需要用更多协作执行补偿空间覆盖不足。完整双层配置将兜底接入比例降至 47.79\%，同时保持较低 MBS 负载，是其能耗和公平性优势的重要来源。
+图 \ref{fig:offloading-dist} 展示了主配置下的执行位置分布。完整双层配置的本地 UAV 执行、协作 UAV 执行和 MBS 执行比例分别为 55.60\%、40.81\% 和 3.59\%，说明其主要利用 UAV 侧的本地与协作资源完成服务处理，而非简单增加对 MBS 的依赖。相比之下，固定上层+下层配置的协作执行比例达到 60.22\%，表明在自然覆盖较低时，下层策略更依赖协作执行。完整双层配置在保持较低 MBS 负载的同时，实现了本地与协作执行之间的较均衡分配，这与其能耗和公平性优势相一致。
 
 \subsubsection{下层模块消融}
 \label{sec:ablation-results}
 
-表 \ref{tab:ablation-results} 给出了 force-admission 口径下的下层消融结果。消融实验同样保持 processed ratio 为 100\%，因此各项差异主要来自卸载分布、MBS 依赖和 deadline 满足情况，而不是服务是否被接入。
+表 \ref{tab:ablation-results} 给出了下层模块消融结果，用于分析各组件对卸载行为、MBS 依赖和截止时间满足情况的影响。
 
 \begin{table}[!htbp]
     \centering
-    \bicaption{force-admission 下层消融实验结果（mean, $N=30$）}{Lower-layer ablation results under force-admission (mean, $N=30$)}
+    \bicaption{下层模块消融实验结果（均值，$N=30$）}{Lower-layer ablation results (mean, $N=30$)}
     \label{tab:ablation-results}
     \begin{tabularx}{\textwidth}{Y c c c c c}
         \toprule
@@ -757,7 +749,7 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \end{tabularx}
 \end{table}
 
-消融结果表明，各模块改变的是卸载行为和约束权衡，而不是同步提升所有指标。移除 Lagrange 软约束后，MBS 负载从 4.76\% 大幅升至 36.48\%，同时 fairness 降至 0.6962，说明该约束对抑制 MBS 依赖最关键。移除质量感知 Mask 后，MBS 负载几乎降为 0，但 DSR 和 fairness 均未优于完整下层，说明过强地排斥 MBS 会压缩兜底处理空间。移除请求注意力后，DSR 略高于完整下层（0.4030 vs 0.3977），但 fairness 仍较低，说明 attention 的贡献更偏向请求关系建模和服务均衡，而不是保证 DSR 单项最高。综上，下层模块的作用应表述为约束 MBS 依赖并调节本地、协作与 MBS 执行之间的分布。
+消融结果表明，各模块改变的是卸载行为和约束权衡，而非同步提升所有指标。移除拉格朗日软约束后，MBS 负载从 4.76\% 大幅升至 36.48\%，同时公平性降至 0.6962，说明该约束对抑制 MBS 依赖最关键。移除质量感知动作掩码后，MBS 负载接近于零，但 DSR 和公平性均未优于完整下层，说明过度限制 MBS 动作会压缩可行的卸载选择。移除请求注意力后，DSR 略高于完整下层（0.4030 对 0.3977），但公平性仍较低，说明注意力机制的贡献更偏向请求关系建模和服务均衡，而非保证 DSR 单项最高。综上，下层模块的作用在于约束 MBS 依赖，并调节本地、协作和 MBS 执行之间的分布。
 
 \begin{figure}[!htbp]
     \centering
@@ -766,60 +758,42 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \label{fig:ablation-compare}
 \end{figure}
 
-\subsection{外部基线与端到端边界验证}
+\subsection{综合对比与端到端方法分析}
 \label{subsec:extended-baseline-analysis}
 
-\subsubsection{扩展基线矩阵实验}
+\subsubsection{综合对比实验}
 \label{sec:baseline-matrix-v2}
 
-在主配置验证双层结构有效后，本节进一步引入更广泛的学习式和非学习式基线，并采用 force-admission 作为正式跨算法比较口径。为此，本文构建扩展基线矩阵，将随机策略（Random）、均匀卸载策略（Uniform）、独立 PPO（IPPO）、普通 MAPPO（Vanilla MAPPO）、端到端联合 MAPPO（Joint MAPPO）以及本文方法（Proposed）置于同一评估协议下比较。比较时，所有方法均启用最近 UAV 兜底接入；学习式基线方法与本文方法按（训练随机种子，工作负载随机种子）配对，非学习式基线方法则先对本文方法在不同训练随机种子下的结果取均值后按工作负载随机种子配对。
+在主配置验证双层结构有效后，本节进一步比较学习式与非学习式方法。随机策略（Random）、均匀卸载策略（Uniform）、独立 PPO（IPPO）、普通 MAPPO（Vanilla MAPPO）、端到端联合 MAPPO（Joint MAPPO）和本文方法（Proposed）均在相同系统模型和评估协议下比较。学习式方法与本文方法按（训练随机种子，工作负载随机种子）配对；非学习式方法先对不同训练随机种子下的结果取均值，再按工作负载随机种子配对。
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.96\textwidth]{docs/figures/图5-14_扩展baseline矩阵多指标对比.pdf}
-    \bicaption{扩展基线矩阵多指标对比}{Multi-metric comparison in the extended baseline matrix}
+    \bicaption{综合对比方法的多指标比较}{Multi-metric comparison of benchmark methods}
     \label{fig:baseline-matrix-overview}
 \end{figure}
 
-图 \ref{fig:baseline-matrix-overview} 表明，在所有 service request 均被接入并尝试处理的 force-admission 口径下，本文方法的优势主要集中在系统公平性、能耗控制和低 MBS 依赖。本文方法的最终公平性为 0.9452，在所有方法中最高；相对 IPPO、Vanilla MAPPO、Joint MAPPO、Random 和 Uniform 分别提升约 4.70\%、4.37\%、19.86\%、6.13\% 和 9.86\%。同时，本文方法的最终离线率为 2.25\%，低于 IPPO、Vanilla MAPPO 和 Joint MAPPO，并与随机和均匀策略处于同一低离线水平。
+图 \ref{fig:baseline-matrix-overview} 表明，本文方法的优势主要集中在系统公平性、能耗控制和较低的 MBS 依赖。本文方法的公平性为 0.9452，在所有方法中最高；相对 IPPO、Vanilla MAPPO、Joint MAPPO、Random 和 Uniform 分别提升约 4.70\%、4.37\%、19.86\%、6.13\% 和 9.86\%。同时，本文方法的离线率为 2.25\%，低于 IPPO、Vanilla MAPPO 和 Joint MAPPO，并与随机和均匀策略处于相近水平。
 
-在截止时间满足情况方面，本文方法的请求加权 DSR 为 0.3762，高于 IPPO（0.2780）和 Vanilla MAPPO（0.2878），与 Random（0.3802）接近，但低于 Joint MAPPO（0.4163）和 Uniform（0.4529）。这说明 force-admission 后，均匀或端到端策略可以通过更激进的卸载分配获得更高 DSR，但会付出更高能耗、更高 MBS 依赖或更低公平性的代价。能耗方面，本文方法的 UAV 侧能耗为 49.98M，低于 IPPO、Vanilla MAPPO、Joint MAPPO、Random 和 Uniform，分别降低约 8.73\%、9.92\%、48.04\%、33.37\% 和 29.96\%。因此，本文方法的核心优势不应表述为最高 DSR，而应表述为在全服务接入前提下形成低能耗、高公平性和低 MBS 依赖的综合工作点。
+在截止时间满足情况方面，本文方法的 DSR 为 0.3762，高于 IPPO（0.2780）和 Vanilla MAPPO（0.2878），与 Random（0.3802）接近，但低于 Joint MAPPO（0.4163）和 Uniform（0.4529）。这说明均匀策略或端到端策略能够通过更激进的卸载分配获得更高 DSR，但会付出更高能耗、更高 MBS 依赖或更低公平性的代价。能耗方面，本文方法的 UAV 侧能耗为 49.98M，低于 IPPO、Vanilla MAPPO、Joint MAPPO、Random 和 Uniform，分别降低约 8.73\%、9.92\%、48.04\%、33.37\% 和 29.96\%。因此，本文方法的核心优势在于形成低能耗、高公平性和低 MBS 依赖的综合工作点，而非 DSR 单项最优。
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.94\textwidth]{docs/figures/图5-15_可靠性与卸载机制分析.pdf}
-    \bicaption{扩展基线矩阵中的可靠性与卸载机制分析}{Reliability and offloading behavior in the extended baseline matrix}
+    \bicaption{综合对比方法的服务表现与执行位置分布}{Service performance and execution-location distribution of benchmark methods}
     \label{fig:baseline-matrix-mechanism}
 \end{figure}
 
-图 \ref{fig:baseline-matrix-mechanism} 进一步解释了上述优势的来源。force-admission 使所有方法的处理率均达到 100\%，因此 MBS 卸载比例与 MBS 负载比例具有相同数值但仍保留不同含义。本文方法的 MBS 负载比例为 3.59\%，明显低于 IPPO 的 29.54\%、Vanilla MAPPO 的 8.21\%、Joint MAPPO 的 27.72\%、Random 的 32.28\% 和 Uniform 的 18.37\%。同时，本文方法的本地执行比例为 55.60\%，协作 UAV 执行比例为 40.81\%，说明其主要依赖 UAV 侧本地与协作资源完成兜底接入后的请求处理，而不是简单将远距离请求回退至 MBS。审计结果进一步显示，本文方法的自然覆盖服务比例为 52.30\%，强制接入比例为 47.70\%；因此，force-admission 的作用是保证请求进入处理链路，而服务质量差异仍由轨迹、卸载和链路条件共同决定。综合来看，扩展基线矩阵支持本文方法的核心定位：所提方法追求的是全服务接入下公平、低能耗和低 MBS 依赖的多目标折中。
+图 \ref{fig:baseline-matrix-mechanism} 进一步解释了上述优势的来源。本文方法的 MBS 负载比例为 3.59\%，明显低于 IPPO 的 29.54\%、Vanilla MAPPO 的 8.21\%、Joint MAPPO 的 27.72\%、Random 的 32.28\% 和 Uniform 的 18.37\%。同时，本文方法的本地 UAV 执行比例为 55.60\%，协作 UAV 执行比例为 40.81\%，说明其主要利用 UAV 侧的本地与协作资源完成服务处理，而非简单增加对 MBS 的依赖。综合来看，结果支持本文方法在公平性、能耗和 MBS 依赖之间取得较优折中。
 
-\subsubsection{普通 MAPPO 与端到端 MAPPO 边界实验}
+\subsubsection{端到端联合 MAPPO 对比}
 \label{sec:baseline-boundary}
 
-上层 vanilla MAPPO 消融用于回答“注意力机制是否在所有指标上都优于普通 MAPPO”。表 \ref{tab:vanilla-ablation} 给出了早期补充评估中训练随机种子 42、4 个工作负载随机种子、每个工作负载随机种子运行 8 个回合下的结果；该结果作为注意力机制边界的辅助分析，不作为 force-admission 扩展矩阵的主结论来源。
+端到端联合 MAPPO 用于分析为何不直接训练单一策略同时输出轨迹和卸载动作。该模型使用单一 MAPPO 策略网络同时输出 UAV 连续轨迹动作和请求级离散卸载动作，并使用联合观测和统一 PPO 更新，不复用已训练的上层或下层模型。表 \ref{tab:joint-mappo} 给出该方法在统一评估协议下的结果。
 
 \begin{table}[!htbp]
     \centering
-    \bicaption{上层 vanilla MAPPO 消融结果}{Upper-layer vanilla MAPPO ablation results}
-    \label{tab:vanilla-ablation}
-    \begin{tabularx}{\textwidth}{Y c c c c}
-        \toprule
-        策略 & Reward & Latency & Energy (M) & DSR \\
-        \midrule
-        vanilla MAPPO+heuristic & \makecell[c]{\textbf{-1462.6}\\$\pm$ 328.7} & \makecell[c]{\textbf{841994}\\$\pm$ 95239} & \makecell[c]{120.11\\$\pm$ 15.69} & \makecell[c]{\textbf{0.2822}\\$\pm$ 0.0278} \\
-        att+heuristic & \makecell[c]{-2222.1\\$\pm$ 890.6} & \makecell[c]{1135453\\$\pm$ 132493} & \makecell[c]{\textbf{114.55}\\$\pm$ 13.26} & \makecell[c]{0.2799\\$\pm$ 0.0317} \\
-        \bottomrule
-    \end{tabularx}
-\end{table}
-
-该边界实验表明，vanilla MAPPO 在 reward、latency 和 DSR 上取得更高数值；attention 相对 vanilla 的 latency 增加约 293458（paired t-test $p=0.0085$），reward 降低约 759.5（$p=0.0889$）。另一方面，attention-MAPPO 的 energy 更低（约 -5.57M，$p=0.102$），offline rate 更低，MBS load ratio 也显著更低（0.99\% vs 1.41\%，$p=0.0155$）。因此，attention 机制在当前设置下主要改变的是轨迹协同和负载分配偏好，而不是在所有单项指标上同步提升。
-
-端到端 joint MAPPO 用于回答“为什么不直接训练单一策略同时输出轨迹和卸载动作”。该模型使用单一 MAPPO actor 同时输出 UAV 连续轨迹动作和请求级离散卸载动作，并使用联合观测与统一 PPO 更新，不复用已训练的上层或下层模型。表 \ref{tab:joint-mappo} 给出了 force-admission 扩展矩阵中的 workload-balanced 评估结果。
-
-\begin{table}[!htbp]
-    \centering
-    \bicaption{端到端 joint MAPPO 评估结果}{End-to-end joint MAPPO evaluation results}
+    \bicaption{端到端联合 MAPPO 评估结果}{End-to-end joint MAPPO evaluation results}
     \label{tab:joint-mappo}
     \begin{tabularx}{\textwidth}{Y c c c c}
         \toprule
@@ -830,94 +804,80 @@ UAV 飞行能耗由移动时间和悬停时间共同决定。若 UAV 在当前�
     \end{tabularx}
 \end{table}
 
-端到端 joint MAPPO 在 force-admission 扩展矩阵中取得较高 DSR（0.4163），但其 reward 为 -9081.2、UAV 侧能耗为 96.18M、公平性为 0.7885、MBS 负载比例为 27.72\%，整体代价明显高于分层策略。该对比支持本文的结构选择：在相同训练预算下，将连续轨迹控制和请求级离散卸载直接合并到单一 actor 虽可能提高部分 deadline 指标，但会扩大联合动作空间，并加重 credit assignment 难度；双层分解虽然引入模块边界，但提高了能耗、MBS 负载、公平性和行为可解释性之间的综合稳定性。
+端到端联合 MAPPO 的 DSR 为 0.4163，但其系统奖励为 -9081.2、UAV 侧能耗为 96.18M、公平性为 0.7885、MBS 负载比例为 27.72\%，整体代价明显高于分层策略。该对比支持本文的结构选择：在相同训练预算下，将连续轨迹控制和请求级离散卸载直接合并到单一策略网络，虽可能提高部分截止时间指标，但会扩大联合动作空间并增加策略归因难度；双层分解通过明确模块分工，在能耗、MBS 负载、公平性和行为可解释性之间取得更稳定的综合表现。
 
 \subsection{参数敏感性与鲁棒性分析}
 \label{subsec:sensitivity-analysis}
 
 
-\subsubsection{训练完成效果与学习率说明}
-\label{sec:sensitivity}
-
-本节将 force-admission 敏感性实验纳入正式鲁棒性分析。首先，基于已训练模型的收敛性补充评估显示，本文方法在训练完成后的有效能效、DSR 和公平性均高于普通 MAPPO：本文方法的平均 EEE 为 $2.72\times10^{-4}$，高于普通 MAPPO 的 $1.95\times10^{-4}$；平均 DSR 为 0.3666，高于普通 MAPPO 的 0.2916；公平性为 0.9427，高于普通 MAPPO 的 0.9153。该结果用于说明训练完成后的综合工作点，而不将学习率曲线扩展为正式 force-admission 学习率敏感性结论。图 \ref{fig:lr-convergence} 仅保留为默认学习率选择的过程性参考，后续正式鲁棒性判断以图 \ref{fig:ue-count-sensitivity} 和图 \ref{fig:uav-cpu-sensitivity} 为准。
-
-为分析学习率对训练过程的影响，本文在相同网络结构、奖励函数和环境配置下设置 $1\times10^{-4}$、$3\times10^{-4}$、$5\times10^{-4}$ 和 $1\times10^{-3}$ 四组学习率进行对比。该实验固定随机种子和工作负载随机种子均为 42，每组训练 200 个回合，主要用于观察训练曲线形态，而不作为全局最优学习率的充分证明。综合训练稳定性和正式主配置的一致性，后续实验仍采用表 \ref{tab:algorithm-params} 中的默认学习率 $3\times10^{-4}$。
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.90\textwidth]{docs/figures/图5-11_不同学习率下训练收敛曲线.pdf}
-    \bicaption{不同学习率下本文方法的训练收敛曲线（过程性参考）}{Training convergence curves of the proposed method under different learning rates (process reference)}
-    \label{fig:lr-convergence}
-\end{figure}
-
 \subsubsection{地面节点数量敏感性}
 \label{subsec:ue-count}
 
-图 \ref{fig:ue-count-sensitivity} 给出了 force-admission 口径下不同地面节点数量（$M = 60, 80, 100, 120, 140$）对应的 DSR、有效能效和公平性趋势。所有配置均保持 processed request ratio 为 100\%，因此图中差异反映的是已接入请求的 deadline 满足情况、能效和服务均衡性，而不是服务是否进入处理链路。
+图 \ref{fig:ue-count-sensitivity} 给出了不同地面节点数量（$M = 60, 80, 100, 120, 140$）下 DSR、有效能效和公平性的变化趋势。
 
 从 DSR 看，随着 UE 数量增加，请求密度和资源竞争增强，三种方法的 DSR 均整体下降。启发式策略在 DSR 单项上最高，本文方法低于启发式但始终高于普通 MAPPO，例如在 $M=140$ 时本文方法 DSR 为 0.2897，高于普通 MAPPO 的 0.2158。与此同时，本文方法在所有 UE 数量下均取得最高公平性，且在 $M\geq100$ 的高负载场景下有效能效最高。该结果表明，本文方法在负载升高时并不追求 DSR 单项最优，而是保持更好的能效和服务公平性折中。
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.96\textwidth]{docs/figures/图5-16_地面节点数量敏感性三指标对比.pdf}
-    \bicaption{force-admission 下地面节点数量敏感性三指标对比}{Three-metric sensitivity analysis under different UE counts with force-admission}
+    \bicaption{不同地面节点数量下的三指标敏感性分析}{Three-metric sensitivity analysis under different UE counts}
     \label{fig:ue-count-sensitivity}
 \end{figure}
 
 \subsubsection{UAV 算力敏感性}
 \label{subsec:uav-cpu}
 
-图 \ref{fig:uav-cpu-sensitivity} 展示了 force-admission 口径下 UAV CPU 缩放因子变化对 DSR、有效能效和公平性的影响。与 UE 数量敏感性相同，该实验中所有 service request 均被接入并尝试处理，因此 DSR 仅表示 deadline 满足比例。
+图 \ref{fig:uav-cpu-sensitivity} 展示了 UAV CPU 缩放因子变化对 DSR、有效能效和公平性的影响。
 
-结果显示，UAV 算力提升总体有利于 deadline 满足，但不同策略的收益方式并不相同。启发式策略在 DSR 单项上仍较高；本文方法除 $0.6\times$ 低算力点外均高于普通 MAPPO，并在 $1.0\times$ 和 $1.4\times$ 下分别达到 0.4055 和 0.4072。有效能效方面，本文方法在全部算力设置下均高于普通 MAPPO，并在 $1.2\times$ 和 $1.4\times$ 高算力设置下超过启发式策略。公平性方面，本文方法在低至中等算力设置下领先，在高算力设置下仍保持较高水平。综合来看，算力敏感性实验进一步说明，本文方法的主要优势是全服务接入下的能效--公平性--服务质量折中，而不是单独最大化 DSR。
+结果显示，UAV 算力提升总体有利于截止时间满足，但不同策略的受益方式并不相同。启发式策略在 DSR 单项上仍较高；本文方法除 $0.6\times$ 低算力点外均高于普通 MAPPO，并在 $1.0\times$ 和 $1.4\times$ 下分别达到 0.4055 和 0.4072。有效能效方面，本文方法在全部算力设置下均高于普通 MAPPO，并在 $1.2\times$ 和 $1.4\times$ 高算力设置下超过启发式策略。公平性方面，本文方法在低至中等算力设置下领先，在高算力设置下仍保持较高水平。综合来看，算力敏感性实验进一步说明，本文方法的主要优势是能效、公平性和服务质量之间的折中，而非单独最大化 DSR。
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.96\textwidth]{docs/figures/图5-17_UAV算力敏感性三指标对比.pdf}
-    \bicaption{force-admission 下 UAV 算力敏感性三指标对比}{Three-metric sensitivity analysis under different UAV computing capacities with force-admission}
+    \bicaption{不同 UAV 算力下的三指标敏感性分析}{Three-metric sensitivity analysis under different UAV computing capacities}
     \label{fig:uav-cpu-sensitivity}
 \end{figure}
 
 
-\subsection{服务质量偏好与 Energy-DSR-Fairness 权衡}
+\subsection{服务质量偏好权衡}
 \label{subsec:sensitivity-dsr-priority}
 
-\subsubsection{DSR-priority 配置实验}
+\subsubsection{DSR 优先配置实验}
 \label{sec:dsr-priority}
 
-为进一步分析服务质量偏好调节的边界，本文在 force-admission 口径下比较 base 完整双层配置与 DSR-priority 完整双层配置。DSR-priority 将系统级 DSR 权重提高、能耗权重降低，并放宽下层 MBS 负载目标；其目的不是证明 DSR 一定提升，而是检验偏好调节是否能在泛化评估中稳定移动工作点。
+为进一步分析服务质量偏好调节的边界，本文比较基准完整双层配置与 DSR 优先配置。DSR 优先配置提高系统级 DSR 权重、降低能耗权重，并放宽下层 MBS 负载目标；其目的不是证明 DSR 必然提升，而是检验偏好调节能否在泛化评估中稳定改变性能工作点。
 
 \begin{table}[!htbp]
     \centering
-    \bicaption{force-admission 下 DSR-priority 配置对比（mean $\pm$ std, $N=30$）}{DSR-priority comparison under force-admission (mean $\pm$ std, $N=30$)}
+    \bicaption{DSR 优先配置对比（均值 $\pm$ 标准差，$N=30$）}{Comparison of the DSR-priority configuration (mean $\pm$ standard deviation, $N=30$)}
     \label{tab:dsr-priority}
     \begin{tabularx}{\textwidth}{Y c c c c c}
         \toprule
         配置 & Reward & Energy (M) & DSR & Fairness & MBS load \\
         \midrule
-        完整双层（base） & \makecell[c]{-1096.8\\$\pm$ 292.8} & \makecell[c]{\textbf{49.98}\\$\pm$ 4.71} & \makecell[c]{\textbf{0.3762}\\$\pm$ 0.0283} & \makecell[c]{\textbf{0.9452}\\$\pm$ 0.0139} & \makecell[c]{\textbf{3.59\%}\\$\pm$ 4.19\%} \\
-        DSR-priority & \makecell[c]{\textbf{-972.0}\\$\pm$ 257.3} & \makecell[c]{53.06\\$\pm$ 9.16} & \makecell[c]{0.3524\\$\pm$ 0.0544} & \makecell[c]{0.9321\\$\pm$ 0.0188} & \makecell[c]{23.05\%\\$\pm$ 26.13\%} \\
+        完整双层（基准配置） & \makecell[c]{-1096.8\\$\pm$ 292.8} & \makecell[c]{\textbf{49.98}\\$\pm$ 4.71} & \makecell[c]{\textbf{0.3762}\\$\pm$ 0.0283} & \makecell[c]{\textbf{0.9452}\\$\pm$ 0.0139} & \makecell[c]{\textbf{3.59\%}\\$\pm$ 4.19\%} \\
+        DSR 优先配置 & \makecell[c]{\textbf{-972.0}\\$\pm$ 257.3} & \makecell[c]{53.06\\$\pm$ 9.16} & \makecell[c]{0.3524\\$\pm$ 0.0544} & \makecell[c]{0.9321\\$\pm$ 0.0188} & \makecell[c]{23.05\%\\$\pm$ 26.13\%} \\
         \bottomrule
     \end{tabularx}
 \end{table}
 
-表 \ref{tab:dsr-priority} 和图 \ref{fig:lagrange-tradeoff} 显示，DSR-priority 配置虽然使 reward 从 -1096.8 提升至 -972.0，但泛化评估中的 DSR 并未稳定提升，反而从 0.3762 降至 0.3524；同时，MBS 负载从 3.59\% 升至 23.05\%，公平性从 0.9452 降至 0.9321。该结果说明，单纯提高 DSR target 或放宽 MBS 目标可能推动策略更多依赖 MBS，但不一定带来稳定的 deadline 满足收益。由此可见，服务质量偏好调节存在边界：在全服务接入前提下，提高 DSR 需要与轨迹覆盖、协作资源和 MBS 负载共同设计，不能仅依赖奖励权重放大。
+表 \ref{tab:dsr-priority} 和图 \ref{fig:lagrange-tradeoff} 显示，DSR 优先配置虽然使系统奖励从 -1096.8 提升至 -972.0，但泛化评估中的 DSR 未稳定提升，反而从 0.3762 降至 0.3524；同时，MBS 负载从 3.59\% 升至 23.05\%，公平性从 0.9452 降至 0.9321。该结果说明，单纯提高 DSR 目标或放宽 MBS 目标可能推动策略更多依赖 MBS，但不一定带来稳定的截止时间满足收益。因此，服务质量偏好调节需要与轨迹覆盖、协作资源和 MBS 负载共同设计，不能仅依赖奖励权重放大。
 
 \begin{figure}[!htbp]
     \centering
     \includegraphics[width=0.92\textwidth]{docs/figures/图5-10_DSR优先配置性能权衡.pdf}
-    \bicaption{DSR-priority 配置下的性能权衡}{Performance trade-off under the DSR-priority configuration}
+    \bicaption{DSR 优先配置下的性能权衡}{Performance trade-off under the DSR-priority configuration}
     \label{fig:lagrange-tradeoff}
 \end{figure}
 
-综合 force-admission 主配置、消融、扩展基线、参数敏感性与 DSR-priority 结果可以看出，多 UAV-MEC 系统中的能耗、DSR、公平性和 MBS 依赖存在明显权衡。本文双层 MARL 框架在正式评估中并不追求所有单项指标同步最优，而是在保证全部 service request 接入并尝试处理的前提下，将系统推向低 UAV 能耗、高服务公平性和低 MBS 依赖的综合工作点。
+综合主配置、模块消融、综合对比、参数敏感性和 DSR 优先配置结果可以看出，多 UAV-MEC 系统中的能耗、DSR、公平性和 MBS 依赖存在明显权衡。本文双层 MARL 框架并不追求所有单项指标同步最优，而是将系统推向低 UAV 能耗、高服务公平性和低 MBS 依赖的综合工作点。
 
 \subsection{方法特点与现有工作的比较}
 \label{subsec:comparison}
 
-相比黄子祥等 \cite{huang2026madr} 基于 MADRL 的单层端到端方法，本文的双层分解将轨迹控制与请求级卸载拆开处理，降低了直接联合动作建模的结构复杂度，并提高了策略行为的可解释性。相比尤昕阳等 \cite{you2026soft} 的 SAC 方法，本文通过双层拆分分别处理连续轨迹控制与离散请求卸载，减少了直接构造混合联合动作的难度。相比曾耀平等 \cite{zeng2026uav} 的博弈论方法，本文基于 MARL 的在线执行主要依赖局部和邻居观测，具有较好的动态适应性。
+与现有单层端到端方法相比，本文将连续轨迹控制与离散请求级卸载分解为两个协同决策层，以降低直接联合建模的动作耦合复杂度，并增强策略行为的可解释性\cite{huang2026madr}。与基于 SAC 的联合优化方法相比，本文通过分层结构分别处理连续与离散决策，避免直接构造高维混合联合动作\cite{you2026soft}。与基于博弈论的优化方法相比，本文的 MARL 在线执行主要依赖局部与邻居观测，适用于动态请求和链路状态持续变化的场景\cite{zeng2026uav}。
 \section{本章小结}
 
 \label{sec:summary-chap03}
 
-本章围绕无人机辅助 MEC 系统中的轨迹控制与任务卸载协同优化问题展开研究。首先建立了多 UAV、UE 与 MBS 组成的系统模型，分别给出了通信链路、请求到达、计算时延、能耗、电池与无线能量传输模型，并在正式实验口径中加入最近 UAV 服务兜底接入规则。随后，针对该混合连续--离散、多智能体、动态约束优化问题，设计了基于 Attention-MAPPO 的双层协同优化算法：上层负责 UAV 轨迹控制，下层负责请求级卸载决策，并结合质量感知动作 mask 与 Lagrange 软约束机制提升训练稳定性和约束调节能力。实验结果表明，在 force-admission 扩展基线矩阵中，各方法均实现 100\% 服务请求接入，本文方法取得最高公平性（0.9452）、最低 UAV 侧能耗（49.98M）和最低 MBS 负载比例（3.59\%），同时保持 0.3762 的 request-weighted DSR。上述结果说明，所提双层方法的主要优势是全服务接入下的公平、能耗和 MBS 依赖折中；敏感性实验进一步表明，该折中优势在 UE 负载和 UAV 算力变化下仍具有稳定性，但并不意味着所有单项服务质量指标同步最优。
+本章围绕无人机辅助 MEC 系统中的轨迹控制与任务卸载协同优化问题展开研究。首先建立由多 UAV、UE 和 MBS 组成的系统模型，给出通信链路、请求关联、计算时延、能耗、UE 电池和无线能量传输模型。随后，针对连续--离散混合、多智能体和动态约束并存的优化问题，设计基于 Attention-MAPPO 的双层协同优化算法：上层负责 UAV 轨迹控制，下层负责请求级卸载决策，并结合质量感知动作掩码和拉格朗日软约束调节策略行为。统一实验协议下的结果表明，本文方法取得最高公平性（0.9452）、最低 UAV 侧能耗（49.98M）和最低 MBS 负载比例（3.59\%），同时保持 0.3762 的 DSR。上述结果说明，所提双层方法的主要优势在于公平性、能耗和 MBS 依赖之间的综合折中；敏感性实验进一步表明，该折中在 UE 负载和 UAV 算力变化下具有稳定性，但并不意味着所有单项服务质量指标均最优。
