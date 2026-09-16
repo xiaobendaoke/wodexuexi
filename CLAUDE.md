@@ -35,13 +35,40 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 中山大学硕士论文项目：基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化方法。系统由 5 架 UAV、100 个 UE、1 个 MBS 在 700×700m 区域运行。使用 Python 3.9 + PyTorch 2.6 实现。
 
+## 运行环境与工作边界规范（核心原则）
+
+本项目采用**“本机写作与开发 + 远程服务器跑实验”**的双机协同架构，严禁在本机执行重载实验训练：
+
+### 1. 本机环境 (Local Host: macOS Darwin arm64)
+- **核心职责**：代码编写、静态代码审计、Git 版本管理、LaTeX 论文编写与编译排版（`cd latex && make main` 等）、轻量测试与图表查看。
+- **限制与约束**：
+  - 本机为 Apple Silicon (Darwin arm64) 架构，仓库内置的 `.venv` 为 Linux x86_64 二进制，**严禁在本机直接尝试运行该 `.venv/bin/python`**；
+  - **严禁在本机启动长时间或大规模 MARL 训练实验**；
+  - 本机仅负责无 PyTorch 依赖的轻量静态检查、纯逻辑分析与文档/LaTeX 编译。
+
+### 2. 远程实验服务器 (Remote Server: 100.69.44.85)
+- **核心职责**：所有 MARL 模型训练、基线算法比对、消融实验、敏感性分析、以及生成全量实验数据（`results/`）。
+- **连接方式**：`ssh 100.69.44.85`（通过本机 `~/.ssh/config` 配置的免密别名直连，端口 2222，用户 `PengYanghan`）。
+- **工作目录**：`~/Lunwen/wodexuexi`
+- **运行环境**：服务器端专用 Conda/Python 环境（如 `/home/PengYanghan/miniconda3/envs/drone/bin/python`）。
+- **数据与代码同步流程**：
+  1. 本机完成代码或脚本修改后，通过 `git push` 推送至远程仓库；
+  2. SSH 登录远程服务器拉取最新代码（`git pull`），并在远程后台启动实验（使用 `nohup` 或 shell 脚本）；
+  3. 实验完成后，将远程生成的 `results/` 与图表数据同步回本机（通过 `scp` / `rsync` / git），供本机 LaTeX 编译与论文撰写引用。
+
 ## 常用命令
 
-### Python 实验运行
+### Python 实验运行（必须在远程服务器 100.69.44.85 上执行）
 
 ```bash
-# 激活虚拟环境
+# 1. 本机通过 SSH 登录远程实验服务器
+ssh 100.69.44.85
+cd ~/Lunwen/wodexuexi
+
+# 2. 激活服务器端运行环境
 source .venv/bin/activate
+# 或使用服务器端 Conda:
+# conda activate drone
 
 # 运行单次分层 MAPPO 训练（默认 attention_mappo 上层 + constrained_attention_offload_mappo 下层）
 python run_hierarchical_mappo_experiment.py --seed 42 --episodes 200
