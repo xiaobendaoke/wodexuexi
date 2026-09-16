@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import config
 from environment.env import Env
+from environment.request_types import REQUEST_TYPE_SERVICE
 import environment.comm_model as comms
 
 
@@ -25,14 +26,14 @@ class TestBandwidthInvariantToOffload(unittest.TestCase):
         uav0 = self.env.uavs[0]
         ue0 = self.env.ues[0]
         ue0.pos[:2] = uav0.pos[:2] + np.array([20.0, 0.0], dtype=np.float32)
-        ue0.current_request.req_type = config.REQUEST_TYPE_SERVICE
+        ue0.current_request.req_type = REQUEST_TYPE_SERVICE
         ue0.current_request.is_service = True
         ue0.current_request.req_id = 0
         ue0.current_request.req_size = 1000
 
-        uav0.current_covered_ues = [ue0]
+        uav0._current_covered_ues = [ue0]
         for u in self.env.uavs[1:]:
-            u.current_covered_ues = []
+            u._current_covered_ues = []
 
         # Association count is 1
         n_assoc = len(uav0.current_covered_ues)

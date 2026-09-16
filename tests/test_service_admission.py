@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 import config
 from environment.env import Env
-from environment.user_equipments import UE
+from environment.request_types import REQUEST_TYPE_SERVICE, REQUEST_TYPE_CONTENT
 
 
 class TestServiceAdmission(unittest.TestCase):
@@ -34,13 +34,12 @@ class TestServiceAdmission(unittest.TestCase):
         # Position UE 0 far away at (600, 600), distance > 500m >> 100m
         ue0 = self.env.ues[0]
         ue0.pos[:2] = np.array([600.0, 600.0], dtype=np.float32)
-        # Ensure it has a service request
-        ue0.current_request.req_type = config.REQUEST_TYPE_SERVICE
+        ue0.current_request.req_type = REQUEST_TYPE_SERVICE
         ue0.current_request.is_service = True
 
         # Clear covered sets and re-associate
         for uav in self.env.uavs:
-            uav.current_covered_ues = []
+            uav._current_covered_ues.clear()
         ue0.assigned = False
 
         self.env._associate_ues_to_uavs()
@@ -63,12 +62,12 @@ class TestServiceAdmission(unittest.TestCase):
         # Separate UAVs
         for i, uav in enumerate(self.env.uavs):
             uav.pos[:2] = np.array([150.0 + i * 120.0, 150.0], dtype=np.float32)
-            uav.current_covered_ues = []
+            uav._current_covered_ues.clear()
 
         # Place UE 0 close to UAV 0 (distance = 20m < 100m)
         ue0 = self.env.ues[0]
         ue0.pos[:2] = self.env.uavs[0].pos[:2] + np.array([20.0, 0.0], dtype=np.float32)
-        ue0.current_request.req_type = config.REQUEST_TYPE_SERVICE
+        ue0.current_request.req_type = REQUEST_TYPE_SERVICE
         ue0.current_request.is_service = True
         ue0.assigned = False
 
@@ -89,12 +88,12 @@ class TestServiceAdmission(unittest.TestCase):
             # Position UAVs at (100, 100)
             for uav in self.env.uavs:
                 uav.pos[:2] = np.array([100.0, 100.0], dtype=np.float32)
-                uav.current_covered_ues = []
+                uav._current_covered_ues.clear()
 
             # Put UE 0 far away at (600, 600)
             ue0 = self.env.ues[0]
             ue0.pos[:2] = np.array([600.0, 600.0], dtype=np.float32)
-            ue0.current_request.req_type = config.REQUEST_TYPE_SERVICE
+            ue0.current_request.req_type = REQUEST_TYPE_SERVICE
             ue0.current_request.is_service = True
             ue0.assigned = False
 

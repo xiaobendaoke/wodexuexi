@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import config
 from environment.env import Env
+from environment.request_types import REQUEST_TYPE_SERVICE, REQUEST_TYPE_CONTENT
 
 
 class TestMetricSemantics(unittest.TestCase):
@@ -32,7 +33,7 @@ class TestMetricSemantics(unittest.TestCase):
         for i in range(4):
             ue = self.env.ues[i]
             ue.pos[:2] = np.array([105.0 + i * 2.0, 100.0], dtype=np.float32)
-            ue.current_request.req_type = config.REQUEST_TYPE_SERVICE
+            ue.current_request.req_type = REQUEST_TYPE_SERVICE
             ue.current_request.is_service = True
             ue.current_request.deadline = 10.0  # Large deadline so they easily succeed
             ue.current_request.req_size = 100
@@ -42,7 +43,7 @@ class TestMetricSemantics(unittest.TestCase):
         for i in range(4, 10):
             ue = self.env.ues[i]
             ue.pos[:2] = np.array([500.0 + i * 10.0, 500.0], dtype=np.float32)
-            ue.current_request.req_type = config.REQUEST_TYPE_SERVICE
+            ue.current_request.req_type = REQUEST_TYPE_SERVICE
             ue.current_request.is_service = True
             ue.current_request.deadline = 1.0  # Will fail because unadmitted latency is 20s
             ue.current_request.req_size = 100
@@ -51,12 +52,12 @@ class TestMetricSemantics(unittest.TestCase):
         # Remaining 90 UEs have content requests
         for i in range(10, config.NUM_UES):
             ue = self.env.ues[i]
-            ue.current_request.req_type = config.REQUEST_TYPE_CONTENT
+            ue.current_request.req_type = REQUEST_TYPE_CONTENT
             ue.current_request.is_service = False
 
         # Clear and associate
         for u in self.env.uavs:
-            u.current_covered_ues = []
+            u._current_covered_ues.clear()
         for ue in self.env.ues:
             ue.assigned = False
 
@@ -100,14 +101,14 @@ class TestMetricSemantics(unittest.TestCase):
         uav0 = self.env.uavs[0]
         ue0 = self.env.ues[0]
         ue0.pos[:2] = uav0.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
-        ue0.current_request.req_type = config.REQUEST_TYPE_SERVICE
+        ue0.current_request.req_type = REQUEST_TYPE_SERVICE
         ue0.current_request.is_service = True
         ue0.current_request.req_id = 0
         ue0.current_request.req_size = 50000  # Large compute task
 
-        uav0.current_covered_ues = [ue0]
+        uav0._current_covered_ues = [ue0]
         for u in self.env.uavs[1:]:
-            u.current_covered_ues = []
+            u._current_covered_ues = []
 
         # Offload to MBS
         offload_actions = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)

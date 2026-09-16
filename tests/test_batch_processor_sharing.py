@@ -3,6 +3,7 @@ import numpy as np
 import config
 from environment.env import Env
 from environment.uavs import UAV, _get_computing_latency_and_energy
+from environment.request_types import REQUEST_TYPE_SERVICE
 
 
 class TestBatchProcessorSharing(unittest.TestCase):
@@ -35,26 +36,26 @@ class TestBatchProcessorSharing(unittest.TestCase):
         # UE 0 and UE 1
         ue0 = self.env.ues[0]
         ue1 = self.env.ues[1]
-        ue0.current_request.req_type = config.REQUEST_TYPE_SERVICE
+        ue0.current_request.req_type = REQUEST_TYPE_SERVICE
         ue0.current_request.is_service = True
         ue0.current_request.req_id = 0
         ue0.current_request.req_size = 1000
 
-        ue1.current_request.req_type = config.REQUEST_TYPE_SERVICE
+        ue1.current_request.req_type = REQUEST_TYPE_SERVICE
         ue1.current_request.is_service = True
         ue1.current_request.req_id = 0
         ue1.current_request.req_size = 1000
 
         # UE 2 offloads to MBS
         ue2 = self.env.ues[2]
-        ue2.current_request.req_type = config.REQUEST_TYPE_SERVICE
+        ue2.current_request.req_type = REQUEST_TYPE_SERVICE
         ue2.current_request.is_service = True
         ue2.current_request.req_id = 0
         ue2.current_request.req_size = 1000
 
-        uav.current_covered_ues = [ue0, ue2, ue1]
+        uav._current_covered_ues = [ue0, ue2, ue1]
         for u in self.env.uavs[1:]:
-            u.current_covered_ues = []
+            u._current_covered_ues = []
 
         # Offload actions for UAV 0:
         # Task 0 (ue0) -> Local (0)
@@ -75,9 +76,6 @@ class TestBatchProcessorSharing(unittest.TestCase):
         # Then ue2 offloaded to MBS, load decremented to 2!
         # Then ue1 was processed with load=2!
         # Therefore, ue0 and ue1 have different latencies under legacy code (EXPECTED_RED).
-        
-        # Check compute latency of ue0 vs ue1
-        # Extract transmission latency to compare pure compute or total latency
         self.assertAlmostEqual(
             ue0.latency_current_request, ue1.latency_current_request, places=4,
             msg=f"Local tasks ue0 ({ue0.latency_current_request}s) and ue1 ({ue1.latency_current_request}s) experienced different compute sharing; legacy sequential C2 detected"
@@ -87,21 +85,20 @@ class TestBatchProcessorSharing(unittest.TestCase):
         """Tasks offloaded to MBS must not dilute UAV computing capacity."""
         uav = self.env.uavs[0]
         ue0 = self.env.ues[0]
-        ue0.current_request.req_type = config.REQUEST_TYPE_SERVICE
+        ue0.current_request.req_type = REQUEST_TYPE_SERVICE
         ue0.current_request.is_service = True
         ue0.current_request.req_id = 0
         ue0.current_request.req_size = 1000
 
-        uav.current_covered_ues = [ue0]
+        uav._current_covered_ues = [ue0]
         for u in self.env.uavs[1:]:
-            u.current_covered_ues = []
+            u._current_covered_ues = []
 
         offload_actions = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
         offload_actions[0, 0] = 0  # Local
 
         self.env.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32), offloading_actions=offload_actions)
         
-        # With only 1 local task, N_assigned = 1
         expected_comp_share = float(config.UAV_COMPUTING_CAPACITY[0]) / 1.0
         cpu_cycles = float(config.CPU_CYCLES_PER_BYTE[0]) * 1000.0
         expected_comp_latency = cpu_cycles / expected_comp_share

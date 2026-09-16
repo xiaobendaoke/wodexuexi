@@ -2,6 +2,7 @@ import unittest
 import numpy as np
 import config
 from environment.env import Env
+from environment.request_types import REQUEST_TYPE_SERVICE
 
 
 class TestNoSilentTruncation(unittest.TestCase):
@@ -33,17 +34,18 @@ class TestNoSilentTruncation(unittest.TestCase):
         for i in range(50):
             ue = self.env.ues[i]
             ue.pos[:2] = uav0.pos[:2] + np.array([5.0 + i * 0.5, 0.0], dtype=np.float32)
-            ue.current_request.req_type = config.REQUEST_TYPE_SERVICE
+            ue.current_request.req_type = REQUEST_TYPE_SERVICE
             ue.current_request.is_service = True
             ue.current_request.req_id = i % config.NUM_SERVICES
             ue.current_request.req_size = 1000
             admitted_ues.append(ue)
 
-        uav0.current_covered_ues = admitted_ues
+        uav0._current_covered_ues = admitted_ues
         for u in self.env.uavs[1:]:
-            u.current_covered_ues = []
+            u._current_covered_ues = []
 
-        # Check config capacity first
+        # Check config capacity first: canonical requires >= 50 (specifically 100)
+        # Legacy config has MAX_OFFLOAD_REQUESTS_PER_UAV = 30 (EXPECTED_RED)
         self.assertGreaterEqual(
             config.MAX_OFFLOAD_REQUESTS_PER_UAV, 50,
             f"MAX_OFFLOAD_REQUESTS_PER_UAV is {config.MAX_OFFLOAD_REQUESTS_PER_UAV} < 50; legacy silent truncation active"

@@ -1,8 +1,8 @@
 import unittest
 import numpy as np
-import copy
 import config
 from environment.env import Env
+from environment.request_types import REQUEST_TYPE_SERVICE
 
 
 class TestOrderPermutationInvariance(unittest.TestCase):
@@ -44,15 +44,15 @@ class TestOrderPermutationInvariance(unittest.TestCase):
         ue_c.pos[:2] = uav0_1.pos[:2] + np.array([30.0, 0.0], dtype=np.float32)
 
         for ue in [ue_a, ue_b, ue_c]:
-            ue.current_request.req_type = config.REQUEST_TYPE_SERVICE
+            ue.current_request.req_type = REQUEST_TYPE_SERVICE
             ue.current_request.is_service = True
             ue.current_request.req_id = 0
             ue.current_request.req_size = 1000
 
         # Order 1: [ue_a, ue_b, ue_c]
-        uav0_1.current_covered_ues = [ue_a, ue_b, ue_c]
+        uav0_1._current_covered_ues = [ue_a, ue_b, ue_c]
         for u in env1.uavs[1:]:
-            u.current_covered_ues = []
+            u._current_covered_ues = []
 
         # Actions for Order 1:
         # ue_a -> Local (0), ue_b -> MBS (1), ue_c -> Local (0)
@@ -78,14 +78,14 @@ class TestOrderPermutationInvariance(unittest.TestCase):
         ue_c2.pos[:2] = uav0_2.pos[:2] + np.array([30.0, 0.0], dtype=np.float32)
 
         for ue in [ue_a2, ue_b2, ue_c2]:
-            ue.current_request.req_type = config.REQUEST_TYPE_SERVICE
+            ue.current_request.req_type = REQUEST_TYPE_SERVICE
             ue.current_request.is_service = True
             ue.current_request.req_id = 0
             ue.current_request.req_size = 1000
 
-        uav0_2.current_covered_ues = [ue_c2, ue_a2, ue_b2]
+        uav0_2._current_covered_ues = [ue_c2, ue_a2, ue_b2]
         for u in env2.uavs[1:]:
-            u.current_covered_ues = []
+            u._current_covered_ues = []
 
         # Actions synchronized to request mapping:
         # idx 0 is ue_c2 -> Local (0)

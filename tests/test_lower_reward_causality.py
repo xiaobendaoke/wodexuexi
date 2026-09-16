@@ -46,7 +46,7 @@ class TestLowerRewardCausality(unittest.TestCase):
             env_fly.ues[i].pos[:2] = env_hover.ues[i].pos[:2]
         for i in range(config.NUM_UAVS):
             env_fly.uavs[i].pos[:2] = env_hover.uavs[i].pos[:2]
-            env_fly.uavs[i].current_covered_ues = list(env_hover.uavs[i].current_covered_ues)
+            env_fly.uavs[i]._current_covered_ues = list(env_hover.uavs[i].current_covered_ues)
 
         max_actions = np.ones((config.NUM_UAVS, 2), dtype=np.float32)
         _, system_rewards_fly, metrics_fly = env_fly.step(max_actions, offloading_actions=offload_actions)

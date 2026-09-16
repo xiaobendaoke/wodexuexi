@@ -25,9 +25,10 @@ class TestLowerLogprobContract(unittest.TestCase):
             model_name="constrained_attention_offload_mappo",
             num_agents=config.NUM_UAVS,
             obs_dim=config.OFFLOAD_OBS_DIM_SINGLE,
+            action_dim=config.OFFLOAD_NUM_ACTIONS,
+            device=self.device,
             max_requests=config.MAX_OFFLOAD_REQUESTS_PER_UAV,
             num_actions=config.OFFLOAD_NUM_ACTIONS,
-            device=self.device,
         )
 
     def test_joint_logprob_is_sum_not_mean(self):
