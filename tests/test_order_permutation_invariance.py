@@ -29,38 +29,28 @@ class TestOrderPermutationInvariance(unittest.TestCase):
         Legacy bug: Sequential C2 computing and iteration-dependent working_cache
         produce different latencies depending on iteration order.
         """
-        # Create two identical environments
+        # Order 1: [ue_a, ue_b, ue_c]
         env1 = Env()
         env1.reset()
-
-        # Set up 3 specific requests on UAV 0
         uav0_1 = env1.uavs[0]
         ue_a = env1.ues[0]
         ue_b = env1.ues[1]
         ue_c = env1.ues[2]
 
-        ue_a.pos[:2] = uav0_1.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
-        ue_b.pos[:2] = uav0_1.pos[:2] + np.array([20.0, 0.0], dtype=np.float32)
-        ue_c.pos[:2] = uav0_1.pos[:2] + np.array([30.0, 0.0], dtype=np.float32)
-
         for ue in [ue_a, ue_b, ue_c]:
+            ue.pos[:2] = uav0_1.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
             ue.current_request.req_type = REQUEST_TYPE_SERVICE
             ue.current_request.req_id = 0
             ue.current_request.req_size = 1000
 
-        # Order 1: [ue_a, ue_b, ue_c]
         uav0_1._current_covered_ues = [ue_a, ue_b, ue_c]
-        for u in env1.uavs[1:]:
-            u._current_covered_ues = []
+        uav0_1.calculate_initial_load()
 
         # Actions for Order 1:
         # ue_a -> Local (0), ue_b -> MBS (1), ue_c -> Local (0)
-        actions1 = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
-        actions1[0, 0] = 0
-        actions1[0, 1] = 1
-        actions1[0, 2] = 0
+        actions1 = np.array([0, 1, 0], dtype=np.int64)
+        uav0_1.process_requests(offload_actions=actions1)
 
-        env1.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32), offloading_actions=actions1)
         latency_a_order1 = ue_a.latency_current_request
         latency_c_order1 = ue_c.latency_current_request
 
@@ -72,29 +62,22 @@ class TestOrderPermutationInvariance(unittest.TestCase):
         ue_b2 = env2.ues[1]
         ue_c2 = env2.ues[2]
 
-        ue_a2.pos[:2] = uav0_2.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
-        ue_b2.pos[:2] = uav0_2.pos[:2] + np.array([20.0, 0.0], dtype=np.float32)
-        ue_c2.pos[:2] = uav0_2.pos[:2] + np.array([30.0, 0.0], dtype=np.float32)
-
         for ue in [ue_a2, ue_b2, ue_c2]:
+            ue.pos[:2] = uav0_2.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
             ue.current_request.req_type = REQUEST_TYPE_SERVICE
             ue.current_request.req_id = 0
             ue.current_request.req_size = 1000
 
         uav0_2._current_covered_ues = [ue_c2, ue_a2, ue_b2]
-        for u in env2.uavs[1:]:
-            u._current_covered_ues = []
+        uav0_2.calculate_initial_load()
 
         # Actions synchronized to request mapping:
         # idx 0 is ue_c2 -> Local (0)
         # idx 1 is ue_a2 -> Local (0)
         # idx 2 is ue_b2 -> MBS (1)
-        actions2 = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
-        actions2[0, 0] = 0
-        actions2[0, 1] = 0
-        actions2[0, 2] = 1
+        actions2 = np.array([0, 0, 1], dtype=np.int64)
+        uav0_2.process_requests(offload_actions=actions2)
 
-        env2.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32), offloading_actions=actions2)
         latency_a_order2 = ue_a2.latency_current_request
         latency_c_order2 = ue_c2.latency_current_request
 

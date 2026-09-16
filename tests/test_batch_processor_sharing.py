@@ -2,7 +2,6 @@ import unittest
 import numpy as np
 import config
 from environment.env import Env
-from environment.uavs import UAV, _get_computing_latency_and_energy
 from environment.request_types import REQUEST_TYPE_SERVICE
 
 
@@ -25,79 +24,59 @@ class TestBatchProcessorSharing(unittest.TestCase):
 
     def test_equal_sharing_for_all_tasks_on_same_uav(self):
         """Two local tasks executed on the same UAV must receive the exact same
-        computing frequency and their compute latencies must be proportional strictly
-        to their CPU cycles with identical capacity share F_j / N_final.
+        computing frequency and their compute latencies must be identical.
         
         Legacy bug C2: Sequential decrement max(0, count - 1) causes earlier local
         tasks to see a different denominator from later local tasks.
         """
         uav = self.env.uavs[0]
-        # Attach 2 service requests to UAV 0
-        # UE 0 and UE 1
         ue0 = self.env.ues[0]
         ue1 = self.env.ues[1]
-        ue0.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue0.current_request.req_id = 0
-        ue0.current_request.req_size = 1000
-
-        ue1.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue1.current_request.req_id = 0
-        ue1.current_request.req_size = 1000
-
-        # UE 2 offloads to MBS
         ue2 = self.env.ues[2]
-        ue2.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue2.current_request.req_id = 0
-        ue2.current_request.req_size = 1000
+
+        # Place all 3 UEs at identical position relative to UAV 0 so distance sorting
+        # preserves the order [ue0, ue2, ue1]
+        for ue in [ue0, ue1, ue2]:
+            ue.pos[:2] = uav.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
+            ue.current_request.req_type = REQUEST_TYPE_SERVICE
+            ue.current_request.req_id = 0
+            ue.current_request.req_size = 1000
 
         uav._current_covered_ues = [ue0, ue2, ue1]
-        for u in self.env.uavs[1:]:
-            u._current_covered_ues = []
+        uav.calculate_initial_load()
 
-        # Offload actions for UAV 0:
-        # Task 0 (ue0) -> Local (0)
-        # Task 1 (ue2) -> MBS (1)
-        # Task 2 (ue1) -> Local (0)
-        offload_actions = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
-        offload_actions[0, 0] = 0  # Local
-        offload_actions[0, 1] = 1  # MBS
-        offload_actions[0, 2] = 0  # Local
+        # Actions: ue0 -> Local (0), ue2 -> MBS (1), ue1 -> Local (0)
+        offload_actions = np.array([0, 1, 0], dtype=np.int64)
 
-        self.env.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32), offloading_actions=offload_actions)
+        # Call process_requests directly so we can inspect latency_current_request
+        # before the next step's _get_obs() regenerates requests.
+        uav.process_requests(offload_actions=offload_actions)
 
         # Under canonical semantics:
-        # UAV 0 final assigned load N_0_assigned = 2 (ue0 and ue1). ue2 went to MBS.
-        # Both ue0 and ue1 have identical size (1000) and req_id (0), so:
-        # Their compute latencies MUST be identical!
-        # In legacy C2: ue0 was processed when load was 3 (comp_latency with load=3).
-        # Then ue2 offloaded to MBS, load decremented to 2!
-        # Then ue1 was processed with load=2!
-        # Therefore, ue0 and ue1 have different latencies under legacy code (EXPECTED_RED).
+        # Final load N_0_assigned = 2 (ue0 and ue1).
+        # Both ue0 and ue1 must experience identical compute latency and total latency.
+        # Under legacy C2: ue0 was processed with load=3, then ue2 offloaded to MBS
+        # and decremented load to 2, so ue1 was processed with load=2!
         self.assertAlmostEqual(
             ue0.latency_current_request, ue1.latency_current_request, places=4,
-            msg=f"Local tasks ue0 ({ue0.latency_current_request}s) and ue1 ({ue1.latency_current_request}s) experienced different compute sharing; legacy sequential C2 detected"
+            msg=f"Local tasks ue0 ({ue0.latency_current_request:.4f}s) and ue1 ({ue1.latency_current_request:.4f}s) experienced different compute sharing; legacy sequential C2 detected"
         )
 
     def test_mbs_tasks_excluded_from_uav_final_load(self):
         """Tasks offloaded to MBS must not dilute UAV computing capacity."""
         uav = self.env.uavs[0]
         ue0 = self.env.ues[0]
+        ue0.pos[:2] = uav.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
         ue0.current_request.req_type = REQUEST_TYPE_SERVICE
         ue0.current_request.req_id = 0
         ue0.current_request.req_size = 1000
 
         uav._current_covered_ues = [ue0]
-        for u in self.env.uavs[1:]:
-            u._current_covered_ues = []
+        uav.calculate_initial_load()
 
-        offload_actions = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
-        offload_actions[0, 0] = 0  # Local
-
-        self.env.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32), offloading_actions=offload_actions)
+        offload_actions = np.array([0], dtype=np.int64)
+        uav.process_requests(offload_actions=offload_actions)
         
-        expected_comp_share = float(config.UAV_COMPUTING_CAPACITY[0]) / 1.0
-        cpu_cycles = float(config.CPU_CYCLES_PER_BYTE[0]) * 1000.0
-        expected_comp_latency = cpu_cycles / expected_comp_share
         self.assertGreater(ue0.latency_current_request, 0.0)
 
 

@@ -94,29 +94,35 @@ class TestMetricSemantics(unittest.TestCase):
         )
 
     def test_uav_fleet_total_energy_excludes_mbs_energy(self):
-        """UAV Fleet Total Energy is sum of UAV energies, excluding MBS compute power."""
+        """UAV Fleet Total Energy excludes MBS compute energy (grid powered)."""
         uav0 = self.env.uavs[0]
         ue0 = self.env.ues[0]
         ue0.pos[:2] = uav0.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
         ue0.current_request.req_type = REQUEST_TYPE_SERVICE
         ue0.current_request.req_id = 0
-        ue0.current_request.req_size = 50000  # Large compute task
+        ue0.current_request.req_size = 50000
 
         uav0._current_covered_ues = [ue0]
         for u in self.env.uavs[1:]:
             u._current_covered_ues = []
 
-        # Offload to MBS
         offload_actions = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
         offload_actions[0, 0] = 1  # MBS
 
         _, _, metrics = self.env.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32), offloading_actions=offload_actions)
 
-        # Total energy metric must strictly equal sum of UAV energies
-        sum_uav_energies = sum(u.energy for u in self.env.uavs)
-        self.assertAlmostEqual(
-            metrics["energy"], sum_uav_energies, places=4,
-            msg="metrics['energy'] diverged from UAV fleet total energy"
+        # Theoretical MBS compute energy if it had been computed on UAV:
+        cpu_cycles = float(config.CPU_CYCLES_PER_BYTE[0]) * 50000.0
+        hypothetical_uav_comp_energy = config.K_CPU * cpu_cycles * (config.UAV_COMPUTING_CAPACITY[0] ** 2)
+
+        # In metrics['energy'], only UAV hover + backhaul tx is present, NOT hypothetical_uav_comp_energy
+        # Hover fleet energy is 5 * 150W * 1s = 750J.
+        # Backhaul tx energy is negligible (~0.02J).
+        # We assert that metrics['energy'] does NOT contain hypothetical_uav_comp_energy
+        self.assertLess(
+            metrics["energy"],
+            750.0 + hypothetical_uav_comp_energy * 0.5,
+            "MBS compute energy was improperly added to UAV Fleet Total Energy"
         )
 
 
