@@ -54,29 +54,57 @@ class TestServiceSnapshot(unittest.TestCase):
                 msg=f"UAV {i} service used non-slot-start rate"
             )
 
-    def test_service_latency_invariant_to_post_step_position_shift(self):
-        """If slot-start snapshot is frozen at Stage 0, perturbing a UAV position
-        AFTER Stage 0 should not retroactively alter the already-evaluated service QoS.
+    def test_service_snapshot_functional_invariance(self):
+        """Verify that all transmission rates and service latencies during slot t
+        strictly evaluate against the slot-start snapshot geometry p_t, and that
+        the UAV moving to p_{t+1} via action a_t does NOT alter slot-t service rates.
         """
         env = Env()
         env.reset()
 
-        # Slot-start snapshot must be immutable
-        uav0 = env.uavs[0]
-        initial_pos = uav0.pos.copy()
-        
-        # Verify that uav has slot-start snapshot semantics available
-        # Under canonical semantics, env exposes or maintains immutable snapshot
-        actions = np.zeros((config.NUM_UAVS, 2), dtype=np.float32)
-        _, _, metrics_hover = env.step(actions)
-        self.assertIn("latency", metrics_hover)
+        # 1. Capture slot-start geometry
+        start_uav_pos = np.array([uav.pos.copy() for uav in env.uavs])
+        start_ue_pos = np.array([ue.pos.copy() for ue in env.ues])
+
+        # Step with significant movement action
+        actions = np.ones((config.NUM_UAVS, 2), dtype=np.float32)
+        _, _, metrics = env.step(actions)
+
+        # 2. Check canonical snapshot existence
+        snapshot = getattr(env, "slot_snapshot", None) or getattr(env, "_slot_snapshot", None)
+        self.assertIsNotNone(snapshot, "Canonical slot_snapshot must exist on env after step")
+
+        # 3. Snapshot positions must match slot-start positions, NOT post-movement positions
+        np.testing.assert_allclose(
+            snapshot.uav_positions, start_uav_pos,
+            err_msg="Snapshot UAV positions did not preserve slot-start positions"
+        )
+
+        # 4. Verify rates in snapshot match slot-start geometry, and distinctly differ from post-step geometry
+        for i in range(config.NUM_UAVS):
+            expected_start_mbs_rate = comms.calculate_uav_mbs_rate(
+                comms.calculate_channel_gain(start_uav_pos[i], config.MBS_POS)
+            )
+            self.assertAlmostEqual(
+                float(snapshot.uav_mbs_rates[i]), float(expected_start_mbs_rate), places=4,
+                msg=f"Snapshot UAV-MBS rate for UAV {i} does not match slot-start rate"
+            )
+            # Verify UAV actually moved and end-of-step rate is different
+            post_mbs_rate = comms.calculate_uav_mbs_rate(
+                comms.calculate_channel_gain(env.uavs[i].pos, config.MBS_POS)
+            )
+            self.assertNotAlmostEqual(
+                float(expected_start_mbs_rate), float(post_mbs_rate), places=2,
+                msg=f"UAV {i} did not move enough to differentiate slot-start from post-step rates"
+            )
 
     def test_canonical_slot_snapshot_structure_exists(self):
         """Under canonical semantics, the environment creates and maintains a formal
         immutable slot-start snapshot (SSOT Section 2.1, 2.3).
         """
-        self.assertTrue(
-            hasattr(self.env, "slot_snapshot") or hasattr(self.env, "_slot_snapshot"),
+        snapshot = getattr(self.env, "slot_snapshot", None) or getattr(self.env, "_slot_snapshot", None)
+        self.assertIsNotNone(
+            snapshot,
             "Canonical slot-start snapshot structure is missing; legacy relies on mutable in-place state"
         )
 

@@ -79,22 +79,37 @@ class TestEnvTemporalAlignment(unittest.TestCase):
         )
 
     def test_terminal_step_energy_not_lost(self):
-        """In an episode's terminal step T, the movement action a_{T-1} must have its
-        energy and boundary/collision effects reflected in step T metrics.
+        """In an episode's terminal step T, the movement action a_T must have its
+        flight/hover energy and boundary/collision effects reflected in step T metrics and rewards,
+        without requiring an extra subsequent step to account for them.
         """
-        env = Env()
-        env.reset()
-        # Step 1: hover
-        env.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32))
-        # Step 2 (terminal): max displacement
-        max_actions = np.ones((config.NUM_UAVS, 2), dtype=np.float32)
-        _, rewards_last, metrics_last = env.step(max_actions)
+        # Env 1: terminal action is pure hover
+        np.random.seed(999)
+        env_term_hover = Env()
+        env_term_hover.reset()
+        env_term_hover.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32))
+        _, rewards_term_hover, metrics_term_hover = env_term_hover.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32))
 
-        for uav in env.uavs:
-            self.assertGreater(
-                uav._dist_moved, 0.0,
-                f"Terminal step did not account for action a_last displacement in energy/metrics"
-            )
+        # Env 2: terminal action is max displacement
+        np.random.seed(999)
+        env_term_fly = Env()
+        env_term_fly.reset()
+        env_term_fly.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32))
+        max_actions = np.ones((config.NUM_UAVS, 2), dtype=np.float32)
+        _, rewards_term_fly, metrics_term_fly = env_term_fly.step(max_actions)
+
+        # Terminal transition energy in metrics must strictly separate fly vs hover
+        self.assertGreater(
+            metrics_term_fly["energy"], metrics_term_hover["energy"],
+            f"Terminal step did not account for action a_T displacement energy in terminal metrics['energy']: "
+            f"fly={metrics_term_fly['energy']} vs hover={metrics_term_hover['energy']}"
+        )
+        # Terminal transition rewards must penalize the higher energy consumed by a_T
+        self.assertLess(
+            float(np.sum(rewards_term_fly)), float(np.sum(rewards_term_hover)),
+            f"Terminal step reward did not reflect terminal action a_T flight energy cost: "
+            f"fly_reward={np.sum(rewards_term_fly)} vs hover_reward={np.sum(rewards_term_hover)}"
+        )
 
 
 if __name__ == "__main__":
