@@ -27,7 +27,6 @@ class TestBandwidthInvariantToOffload(unittest.TestCase):
         ue0 = self.env.ues[0]
         ue0.pos[:2] = uav0.pos[:2] + np.array([20.0, 0.0], dtype=np.float32)
         ue0.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue0.current_request.is_service = True
         ue0.current_request.req_id = 0
         ue0.current_request.req_size = 1000
 

@@ -35,7 +35,6 @@ class TestNoSilentTruncation(unittest.TestCase):
             ue = self.env.ues[i]
             ue.pos[:2] = uav0.pos[:2] + np.array([5.0 + i * 0.5, 0.0], dtype=np.float32)
             ue.current_request.req_type = REQUEST_TYPE_SERVICE
-            ue.current_request.is_service = True
             ue.current_request.req_id = i % config.NUM_SERVICES
             ue.current_request.req_size = 1000
             admitted_ues.append(ue)

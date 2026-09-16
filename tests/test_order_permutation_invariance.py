@@ -45,7 +45,6 @@ class TestOrderPermutationInvariance(unittest.TestCase):
 
         for ue in [ue_a, ue_b, ue_c]:
             ue.current_request.req_type = REQUEST_TYPE_SERVICE
-            ue.current_request.is_service = True
             ue.current_request.req_id = 0
             ue.current_request.req_size = 1000
 
@@ -79,7 +78,6 @@ class TestOrderPermutationInvariance(unittest.TestCase):
 
         for ue in [ue_a2, ue_b2, ue_c2]:
             ue.current_request.req_type = REQUEST_TYPE_SERVICE
-            ue.current_request.is_service = True
             ue.current_request.req_id = 0
             ue.current_request.req_size = 1000
 

@@ -35,7 +35,6 @@ class TestServiceAdmission(unittest.TestCase):
         ue0 = self.env.ues[0]
         ue0.pos[:2] = np.array([600.0, 600.0], dtype=np.float32)
         ue0.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue0.current_request.is_service = True
 
         # Clear covered sets and re-associate
         for uav in self.env.uavs:
@@ -68,7 +67,6 @@ class TestServiceAdmission(unittest.TestCase):
         ue0 = self.env.ues[0]
         ue0.pos[:2] = self.env.uavs[0].pos[:2] + np.array([20.0, 0.0], dtype=np.float32)
         ue0.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue0.current_request.is_service = True
         ue0.assigned = False
 
         self.env._associate_ues_to_uavs()
@@ -94,7 +92,6 @@ class TestServiceAdmission(unittest.TestCase):
             ue0 = self.env.ues[0]
             ue0.pos[:2] = np.array([600.0, 600.0], dtype=np.float32)
             ue0.current_request.req_type = REQUEST_TYPE_SERVICE
-            ue0.current_request.is_service = True
             ue0.assigned = False
 
             self.env._associate_ues_to_uavs()

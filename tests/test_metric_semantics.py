@@ -34,7 +34,6 @@ class TestMetricSemantics(unittest.TestCase):
             ue = self.env.ues[i]
             ue.pos[:2] = np.array([105.0 + i * 2.0, 100.0], dtype=np.float32)
             ue.current_request.req_type = REQUEST_TYPE_SERVICE
-            ue.current_request.is_service = True
             ue.current_request.deadline = 10.0  # Large deadline so they easily succeed
             ue.current_request.req_size = 100
             ue.current_request.req_id = 0
@@ -44,7 +43,6 @@ class TestMetricSemantics(unittest.TestCase):
             ue = self.env.ues[i]
             ue.pos[:2] = np.array([500.0 + i * 10.0, 500.0], dtype=np.float32)
             ue.current_request.req_type = REQUEST_TYPE_SERVICE
-            ue.current_request.is_service = True
             ue.current_request.deadline = 1.0  # Will fail because unadmitted latency is 20s
             ue.current_request.req_size = 100
             ue.current_request.req_id = 0
@@ -53,7 +51,6 @@ class TestMetricSemantics(unittest.TestCase):
         for i in range(10, config.NUM_UES):
             ue = self.env.ues[i]
             ue.current_request.req_type = REQUEST_TYPE_CONTENT
-            ue.current_request.is_service = False
 
         # Clear and associate
         for u in self.env.uavs:
@@ -102,7 +99,6 @@ class TestMetricSemantics(unittest.TestCase):
         ue0 = self.env.ues[0]
         ue0.pos[:2] = uav0.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
         ue0.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue0.current_request.is_service = True
         ue0.current_request.req_id = 0
         ue0.current_request.req_size = 50000  # Large compute task
 

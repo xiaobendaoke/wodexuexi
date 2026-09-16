@@ -29,15 +29,13 @@ class TestEnvTemporalAlignment(unittest.TestCase):
         _, rewards_0, metrics_0 = self.env.step(actions)
 
         # Baseline hover-only energy for 1 slot
-        hover_power = config.UAV_HOVERING_POWER
+        hover_power = config.POWER_HOVER
         slot_duration = config.TIME_SLOT_DURATION
         pure_hover_energy_single = hover_power * slot_duration
         pure_hover_fleet_energy = pure_hover_energy_single * config.NUM_UAVS
 
-        # Flight power is different from hover power, and with max displacement,
-        # moving time = max_dist / v_max = tau, so hover time = 0.
-        # Moving power: P_moving * tau
-        moving_power = config.UAV_MOVING_POWER
+        # Moving power: P_move * tau
+        moving_power = config.POWER_MOVE
         pure_moving_energy_single = moving_power * slot_duration
         expected_pure_flight_fleet_energy = pure_moving_energy_single * config.NUM_UAVS
 
@@ -51,7 +49,6 @@ class TestEnvTemporalAlignment(unittest.TestCase):
         # (plus compute/comm), while dist_moved was 0.
         # Check that dist_moved at the moment of energy calculation was from action a_0 (> 0).
         for uav in self.env.uavs:
-            # Under canonical semantics, the energy of slot 0 must reflect action a_0's movement
             self.assertGreater(
                 uav._dist_moved, 0.0,
                 f"UAV {uav.id} _dist_moved is 0.0 in step 0; current action a_0 displacement was not applied before energy accounting"
@@ -73,15 +70,9 @@ class TestEnvTemporalAlignment(unittest.TestCase):
         max_actions = np.ones((config.NUM_UAVS, 2), dtype=np.float32)
         _, _, metrics_fly = env_fly.step(max_actions)
 
-        # Under canonical semantics, fly and hover must have different fleet energy
-        # because P_moving != P_hovering (or dist_moved differs).
-        # In legacy code, both steps computed energy with _dist_moved=0.0,
-        # so flight/hover energy is identical.
-        # Specifically, UAV flight energy component must differ.
         uav_energy_hover = sum(u.energy for u in env_hover.uavs)
         uav_energy_fly = sum(u.energy for u in env_fly.uavs)
         
-        # We assert they are distinct because UAVs moved max_dist in env_fly
         self.assertNotAlmostEqual(
             uav_energy_hover, uav_energy_fly, places=2,
             msg="Step 0 energy for max movement is identical to pure hover; action displacement is lagged"
@@ -99,7 +90,6 @@ class TestEnvTemporalAlignment(unittest.TestCase):
         max_actions = np.ones((config.NUM_UAVS, 2), dtype=np.float32)
         _, rewards_last, metrics_last = env.step(max_actions)
 
-        # The last step's metrics must account for max_actions movement
         for uav in env.uavs:
             self.assertGreater(
                 uav._dist_moved, 0.0,

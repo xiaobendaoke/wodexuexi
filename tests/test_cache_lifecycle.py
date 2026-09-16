@@ -39,7 +39,6 @@ class TestCacheLifecycle(unittest.TestCase):
         for ue in [ue0, ue1]:
             ue.pos[:2] = uav0.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
             ue.current_request.req_type = REQUEST_TYPE_SERVICE
-            ue.current_request.is_service = True
             ue.current_request.req_id = 0  # Both request file 0
             ue.current_request.req_size = 1000
 
@@ -85,7 +84,6 @@ class TestCacheLifecycle(unittest.TestCase):
         ue0 = self.env.ues[0]
         ue0.pos[:2] = uav0.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
         ue0.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue0.current_request.is_service = True
         ue0.current_request.req_id = 5
         ue0.current_request.req_size = 1000
 

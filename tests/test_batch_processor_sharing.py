@@ -37,19 +37,16 @@ class TestBatchProcessorSharing(unittest.TestCase):
         ue0 = self.env.ues[0]
         ue1 = self.env.ues[1]
         ue0.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue0.current_request.is_service = True
         ue0.current_request.req_id = 0
         ue0.current_request.req_size = 1000
 
         ue1.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue1.current_request.is_service = True
         ue1.current_request.req_id = 0
         ue1.current_request.req_size = 1000
 
         # UE 2 offloads to MBS
         ue2 = self.env.ues[2]
         ue2.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue2.current_request.is_service = True
         ue2.current_request.req_id = 0
         ue2.current_request.req_size = 1000
 
@@ -86,7 +83,6 @@ class TestBatchProcessorSharing(unittest.TestCase):
         uav = self.env.uavs[0]
         ue0 = self.env.ues[0]
         ue0.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue0.current_request.is_service = True
         ue0.current_request.req_id = 0
         ue0.current_request.req_size = 1000
 
