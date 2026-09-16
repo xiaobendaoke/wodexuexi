@@ -34,13 +34,11 @@ class TestBatchProcessorSharing(unittest.TestCase):
         ue1 = self.env.ues[1]
         ue2 = self.env.ues[2]
 
-        # Place all 3 UEs at identical position relative to UAV 0 so distance sorting
-        # preserves the order [ue0, ue2, ue1]
         for ue in [ue0, ue1, ue2]:
             ue.pos[:2] = uav.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
             ue.current_request.req_type = REQUEST_TYPE_SERVICE
             ue.current_request.req_id = 0
-            ue.current_request.req_size = 1000
+            ue.current_request.req_size = 50000
 
         uav._current_covered_ues = [ue0, ue2, ue1]
         uav.calculate_initial_load()

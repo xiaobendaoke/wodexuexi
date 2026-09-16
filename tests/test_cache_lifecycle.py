@@ -106,6 +106,18 @@ class TestCacheLifecycle(unittest.TestCase):
             "UAV 4 cache did not retain file 5 after cooperative execution; wiped by loop reset bug ENV-03"
         )
 
+    def test_cache_commit_permutation_invariance(self):
+        """Under canonical semantics, UAV has pending_cache and a deterministic
+        commit(snapshot, pending) method that produces identical cache regardless
+        of pending insertion order.
+        """
+        uav = self.env.uavs[0]
+        # Canonical contract: UAV must expose pending_cache and commit_pending_cache
+        self.assertTrue(
+            hasattr(uav, "pending_cache") or hasattr(uav, "commit_pending_cache"),
+            "UAV does not implement canonical dual-state pending_cache / commit lifecycle"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

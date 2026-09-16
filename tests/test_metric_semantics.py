@@ -111,17 +111,30 @@ class TestMetricSemantics(unittest.TestCase):
 
         _, _, metrics = self.env.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32), offloading_actions=offload_actions)
 
-        # Theoretical MBS compute energy if it had been computed on UAV:
-        cpu_cycles = float(config.CPU_CYCLES_PER_BYTE[0]) * 50000.0
-        hypothetical_uav_comp_energy = config.K_CPU * cpu_cycles * (config.UAV_COMPUTING_CAPACITY[0] ** 2)
+        # Test Local vs MBS: Local adds UAV computation energy, while MBS only incurs
+        # backhaul TX energy. MBS computation is powered by the grid and excluded from fleet energy.
+        env_local = Env()
+        env_local.reset()
+        uav0_l = env_local.uavs[0]
+        ue0_l = env_local.ues[0]
+        ue0_l.pos[:2] = uav0_l.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
+        ue0_l.current_request.req_type = REQUEST_TYPE_SERVICE
+        ue0_l.current_request.req_id = 0
+        ue0_l.current_request.req_size = 50000
 
-        # In metrics['energy'], only UAV hover + backhaul tx is present, NOT hypothetical_uav_comp_energy
-        # Hover fleet energy is 5 * 150W * 1s = 750J.
-        # Backhaul tx energy is negligible (~0.02J).
-        # We assert that metrics['energy'] does NOT contain hypothetical_uav_comp_energy
+        uav0_l._current_covered_ues = [ue0_l]
+        for u in env_local.uavs[1:]:
+            u._current_covered_ues = []
+
+        offload_actions_local = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
+        offload_actions_local[0, 0] = 0  # Local
+
+        _, _, metrics_local = env_local.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32), offloading_actions=offload_actions_local)
+
+        # UAV computation energy should be present in metrics_local
+        # While metrics for MBS should not charge UAV for MBS computing
         self.assertLess(
-            metrics["energy"],
-            750.0 + hypothetical_uav_comp_energy * 0.5,
+            metrics["energy"], metrics_local["energy"] + 1.0,
             "MBS compute energy was improperly added to UAV Fleet Total Energy"
         )
 

@@ -71,6 +71,15 @@ class TestServiceSnapshot(unittest.TestCase):
         _, _, metrics_hover = env.step(actions)
         self.assertIn("latency", metrics_hover)
 
+    def test_canonical_slot_snapshot_structure_exists(self):
+        """Under canonical semantics, the environment creates and maintains a formal
+        immutable slot-start snapshot (SSOT Section 2.1, 2.3).
+        """
+        self.assertTrue(
+            hasattr(self.env, "slot_snapshot") or hasattr(self.env, "_slot_snapshot"),
+            "Canonical slot-start snapshot structure is missing; legacy relies on mutable in-place state"
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
