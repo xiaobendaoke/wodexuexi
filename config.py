@@ -76,8 +76,9 @@ UE_MAX_WAIT_TIME: int = 10  # in time slots
 
 # 关键变量 USE_HOTSPOTS：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 USE_HOTSPOTS: bool = True  # thesis runs: encourage non-uniform traffic so trajectory/offloading coupling is visible
-# When enabled, service requests outside every UAV coverage disk are admitted by
-# the nearest UAV and still use the real long-distance UE-UAV link rate.
+# [DEPRECATED / LEGACY] In canonical semantics (CANONICAL_SEMANTICS_SPEC.md),
+# force admission is permanently disabled (FORCE_SERVICE_ADMISSION_CANONICAL = FALSE).
+# Out-of-coverage requests remain unadmitted (assigned=False).
 FORCE_SERVICE_ADMISSION: bool = False
 # 关键变量 NUM_HOTSPOTS：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 NUM_HOTSPOTS: int = 2  # number of hotspots

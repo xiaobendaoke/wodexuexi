@@ -21,11 +21,29 @@ from __future__ import annotations
     本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
 """
 
+from dataclasses import dataclass
 import numpy as np
 
 import config
+from environment import comm_model as comms
 from environment.uavs import UAV
 from environment.user_equipments import UE
+
+
+# 规范时隙初快照结构 (ENV-R1)
+@dataclass(frozen=True)
+class SlotSnapshot:
+    slot_index: int
+    uav_positions: np.ndarray
+    ue_positions: np.ndarray
+    uav_mbs_rates: np.ndarray
+    ue_uav_rates: dict[int, float]
+    uav_uav_rates: dict[tuple[int, int], float]
+    associated_ue_ids: dict[int, list[int]]
+    n_assoc: dict[int, int]
+    cache_snapshots: np.ndarray
+    admitted_service_ue_ids: list[int]
+    unadmitted_service_ue_ids: list[int]
 
 
 # 类 Env：仿真环境对象，承载无人机、用户设备、任务请求和奖励计算。
@@ -41,6 +59,7 @@ class Env:
         self._last_runtime_audit: dict[str, object] = {}
         self._last_admission_stats: dict[str, int] = {}
         self._episode_runtime_audit_totals: dict[str, int] = self._make_empty_runtime_audit_totals()
+        self.slot_snapshot: SlotSnapshot | None = None
 
     # 函数 uavs：关键函数，承载本模块的一段可复用实验逻辑。
     @property
@@ -77,29 +96,98 @@ class Env:
             "heuristic_decision_count": 0,
         }
 
+    def _capture_slot_snapshot(self) -> SlotSnapshot:
+        """Capture immutable slot-start snapshot (ENV-R1)."""
+        uav_pos = np.array([uav.pos.copy() for uav in self._uavs], dtype=np.float32)
+        ue_pos = np.array([ue.pos.copy() for ue in self._ues], dtype=np.float32)
+
+        uav_mbs_rates = np.zeros(config.NUM_UAVS, dtype=np.float32)
+        for i, uav in enumerate(self._uavs):
+            rate = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(uav.pos, config.MBS_POS))
+            uav_mbs_rates[i] = rate
+            uav._uav_mbs_rate = float(rate)
+
+        associated_ue_ids: dict[int, list[int]] = {i: [] for i in range(config.NUM_UAVS)}
+        n_assoc: dict[int, int] = {i: len(uav.current_covered_ues) for i, uav in enumerate(self._uavs)}
+        for i, uav in enumerate(self._uavs):
+            associated_ue_ids[i] = [ue.id for ue in uav.current_covered_ues]
+
+        ue_uav_rates: dict[int, float] = {}
+        for i, uav in enumerate(self._uavs):
+            n_covered = max(len(uav.current_covered_ues), 1)
+            for ue in uav.current_covered_ues:
+                gain = comms.calculate_channel_gain(ue.pos, uav.pos)
+                ue_uav_rates[ue.id] = float(comms.calculate_ue_uav_rate(gain, n_covered))
+
+        uav_uav_rates: dict[tuple[int, int], float] = {}
+        for i in range(config.NUM_UAVS):
+            for j in range(config.NUM_UAVS):
+                if i != j:
+                    gain = comms.calculate_channel_gain(self._uavs[i].pos, self._uavs[j].pos)
+                    uav_uav_rates[(i, j)] = float(comms.calculate_uav_uav_rate(gain))
+
+        cache_snapshots = np.array([uav.cache.copy() for uav in self._uavs], dtype=bool)
+        for uav in self._uavs:
+            uav.cache_snapshot = uav.cache.copy()
+
+        admitted_ids = [ue.id for ue in self._ues if ue.current_request.is_service and ue.assigned]
+        unadmitted_ids = [ue.id for ue in self._ues if ue.current_request.is_service and not ue.assigned]
+
+        return SlotSnapshot(
+            slot_index=self._time_step,
+            uav_positions=uav_pos,
+            ue_positions=ue_pos,
+            uav_mbs_rates=uav_mbs_rates,
+            ue_uav_rates=ue_uav_rates,
+            uav_uav_rates=uav_uav_rates,
+            associated_ue_ids=associated_ue_ids,
+            n_assoc=n_assoc,
+            cache_snapshots=cache_snapshots,
+            admitted_service_ue_ids=admitted_ids,
+            unadmitted_service_ue_ids=unadmitted_ids,
+        )
+
     # 函数 reset：重置环境或对象状态，开始新的回合，主要参数：initial_positions。
     def reset(self, initial_positions: list[np.ndarray] | None = None) -> list[np.ndarray]:
         """Resets the environment to an initial state and returns the initial observations."""
-        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if getattr(config, "USE_HOTSPOTS", False):
             UE.generate_hotspots()
 
         self._ues = [UE(i) for i in range(config.NUM_UES)]
         self._uavs = [UAV(i) for i in range(config.NUM_UAVS)]
 
-        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if initial_positions is not None:
-            # 循环处理：遍历 (i, uav) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
             for i, uav in enumerate(self._uavs):
                 uav.pos[:2] = initial_positions[i]
+        else:
+            # Deterministic bounded rejection sampling to enforce pairwise separation >= MIN_UAV_SEPARATION (ENV-R7)
+            min_bound: float = config.UAV_COVERAGE_RADIUS / 2.0
+            min_sep: float = float(config.MIN_UAV_SEPARATION)
+            placed_positions: list[np.ndarray] = []
+            max_retries: int = 2000
+            for i in range(config.NUM_UAVS):
+                placed = False
+                for _ in range(max_retries):
+                    cand = np.array([
+                        np.random.uniform(min_bound, config.AREA_WIDTH - min_bound),
+                        np.random.uniform(min_bound, config.AREA_HEIGHT - min_bound),
+                    ], dtype=np.float32)
+                    if all(float(np.linalg.norm(cand - p)) >= min_sep for p in placed_positions):
+                        placed_positions.append(cand)
+                        self._uavs[i].pos[:2] = cand
+                        placed = True
+                        break
+                if not placed:
+                    raise RuntimeError(f"Failed to place UAV {i} with pairwise separation >= {min_sep}m")
 
         self._time_step = 0
         self._last_step_stats = {}
         self._last_runtime_audit = {}
         self._last_admission_stats = {}
         self._episode_runtime_audit_totals = self._make_empty_runtime_audit_totals()
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return self._get_obs()
+        obs = self._get_obs()
+        self.slot_snapshot = self._capture_slot_snapshot()
+        return obs
 
     # 函数 step：推进环境一个时间步并返回状态转移结果，主要参数：actions, sample_recorder。
     def step(
@@ -108,59 +196,66 @@ class Env:
         sample_recorder=None,
         offloading_actions: np.ndarray | None = None,
     ) -> tuple[list[np.ndarray], list[float], dict[str, float]]:
-        """Execute one time step of the simulation.
-
-        sample_recorder is an optional callable used by the request-level
-        classifier dataset pipeline to record heuristic service decisions.
-        """
+        """Execute one time step of the simulation following canonical temporal order (ENV-R6)."""
         self._time_step += 1
 
-        # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+        # S0: Freeze slot-start snapshot & state
+        self.slot_snapshot = self._capture_slot_snapshot()
         for uav in self._uavs:
+            uav.cache_snapshot = uav.cache.copy()
+            uav.pending_cache.clear()
+            uav._dist_moved = 0.0
+            uav._energy_current_slot = 0.0
+            uav.flight_energy = 0.0
+            uav.hover_energy = 0.0
+            uav.wpt_energy = 0.0
+            uav.service_compute_energy = 0.0
+            uav.service_comm_energy = 0.0
+            uav.service_fetch_or_backhaul_energy = 0.0
+            uav.content_related_energy = 0.0
             uav._current_service_request_count = 0
             uav.calculate_initial_load()
 
-        # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+        # S1-S3: Process requests using slot-start geometry & rates (ENV-R3, ENV-R4, ENV-R5)
         for uav_idx, uav in enumerate(self._uavs):
             uav_offload_actions = None
             if offloading_actions is not None:
                 uav_offload_actions = np.asarray(offloading_actions[uav_idx], dtype=np.int64)
             uav.process_requests(sample_recorder=sample_recorder, offload_actions=uav_offload_actions)
 
-        # 循环处理：遍历 ue 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for ue in self._ues:
-            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if not ue.assigned:
                 ue.update_battery(0.0, 0.0)
             ue.update_service_coverage(self._time_step)
 
-        # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+        # S4: Apply upper actions a_t, resolve collisions and boundary constraints (ENV-R8)
+        self._apply_actions_to_env(actions)
+
+        # S5: Compute flight and hover energy from current action a_t's actual displacement (ENV-R6)
         for uav in self._uavs:
-            uav.update_ema_and_cache()
             uav.update_energy_consumption()
 
+        # S6: Rewards and Metrics for current transition t
         rewards, metrics = self._get_rewards_and_metrics()
         self._last_step_stats = metrics.copy()
         self._last_runtime_audit = self._collect_runtime_audit()
 
-        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        # S7: End of slot boundary - commit pending caches, advance UEs, prepare obs for t+1
+        for uav in self._uavs:
+            uav.update_ema_and_cache()
+
         if self._time_step % config.T_CACHE_UPDATE_INTERVAL == 0:
-            # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
             for uav in self._uavs:
                 uav.gdsf_cache_update()
 
-        # 循环处理：遍历 ue 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for ue in self._ues:
             ue.update_position()
 
-        # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for uav in self._uavs:
             uav.reset_for_next_step()
 
-        self._apply_actions_to_env(actions)
-
         next_obs: list[np.ndarray] = self._get_obs()
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        self.slot_snapshot = self._capture_slot_snapshot()
         return next_obs, rewards, metrics
 
     def get_offloading_obs_and_masks(self) -> tuple[np.ndarray, np.ndarray]:
@@ -343,9 +438,17 @@ class Env:
 
     # 函数 _apply_actions_to_env：仿真环境对象，承载无人机、用户设备、任务请求和奖励计算，主要参数：actions。
     def _apply_actions_to_env(self, actions: np.ndarray) -> None:
-        """Calculates next positions and resolves potential collisions iteratively."""
-        current_positions: np.ndarray = np.array([uav.pos[:2] for uav in self._uavs], dtype=np.float32)
-        max_dist: float = config.UAV_SPEED * config.TIME_SLOT_DURATION
+        """Calculates next positions and resolves potential collisions iteratively (ENV-R8).
+        Simultaneously guarantees:
+        1. actual movement <= vmax * dt
+        2. pairwise separation >= d_min (200m)
+        3. inside boundaries [min_bound, AREA - min_bound]
+        4. non-negative hover time
+        """
+        current_positions: np.ndarray = np.array([uav.pos[:2].copy() for uav in self._uavs], dtype=np.float32)
+        max_dist: float = float(config.UAV_SPEED * config.TIME_SLOT_DURATION)
+        min_boundary_gap: float = float(config.UAV_COVERAGE_RADIUS / 2.0)
+        min_sep: float = float(config.MIN_UAV_SEPARATION)
 
         delta_vec_raw: np.ndarray = np.array(actions, dtype=np.float32)
         raw_magnitude: np.ndarray = np.linalg.norm(delta_vec_raw, axis=1, keepdims=True)
@@ -358,91 +461,103 @@ class Env:
 
         proposed_positions: np.ndarray = current_positions + delta_pos
 
-        min_boundary_gap: float = config.UAV_COVERAGE_RADIUS / 2.0
-        # 循环处理：遍历 (i, uav) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for i, uav in enumerate(self._uavs):
-            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if not (
                 min_boundary_gap <= proposed_positions[i, 0] <= config.AREA_WIDTH - min_boundary_gap
                 and min_boundary_gap <= proposed_positions[i, 1] <= config.AREA_HEIGHT - min_boundary_gap
             ):
                 uav.boundary_violation = True
+
         next_positions: np.ndarray = np.clip(
             proposed_positions,
             [min_boundary_gap, min_boundary_gap],
             [config.AREA_WIDTH - min_boundary_gap, config.AREA_HEIGHT - min_boundary_gap],
         )
 
-        min_sep_sq: float = config.MIN_UAV_SEPARATION**2
-        # 循环处理：遍历 _ 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
-        for _ in range(config.COLLISION_AVOIDANCE_ITERATIONS + 1):
+        # Reproject onto speed ball around current_positions
+        for i in range(config.NUM_UAVS):
+            disp = float(np.linalg.norm(next_positions[i] - current_positions[i]))
+            if disp > max_dist:
+                next_positions[i] = current_positions[i] + (next_positions[i] - current_positions[i]) / disp * max_dist
+
+        # Check for collision violations in initial proposals
+        for i in range(config.NUM_UAVS):
+            for j in range(i + 1, config.NUM_UAVS):
+                if float(np.linalg.norm(next_positions[i] - next_positions[j])) < min_sep:
+                    self._uavs[i].collision_violation = True
+                    self._uavs[j].collision_violation = True
+
+        # Iterative alternating projection
+        for _ in range(config.COLLISION_AVOIDANCE_ITERATIONS + 20):
             collision_detected_in_iter: bool = False
-            # 循环处理：遍历 i 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
             for i in range(config.NUM_UAVS):
-                # 循环处理：遍历 j 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
                 for j in range(i + 1, config.NUM_UAVS):
-                    pos_i: np.ndarray = next_positions[i]
-                    pos_j: np.ndarray = next_positions[j]
-                    dist_sq: float = np.sum((pos_i - pos_j) ** 2)
-                    # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-                    if dist_sq < min_sep_sq:
+                    diff = next_positions[i] - next_positions[j]
+                    dist = float(np.linalg.norm(diff))
+                    if dist < min_sep:
                         self._uavs[i].collision_violation = True
                         self._uavs[j].collision_violation = True
                         collision_detected_in_iter = True
-                        dist: float = np.sqrt(dist_sq) if dist_sq > 0 else config.EPSILON
-                        overlap: float = config.MIN_UAV_SEPARATION - dist
-                        direction: np.ndarray = (pos_i - pos_j) / dist
+                        overlap = min_sep - dist
+                        direction = diff / max(dist, float(config.EPSILON))
                         next_positions[i] += direction * overlap * 0.5
                         next_positions[j] -= direction * overlap * 0.5
-            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+
+            # Reproject each UAV onto boundary and speed ball
+            for k in range(config.NUM_UAVS):
+                next_positions[k] = np.clip(
+                    next_positions[k],
+                    [min_boundary_gap, min_boundary_gap],
+                    [config.AREA_WIDTH - min_boundary_gap, config.AREA_HEIGHT - min_boundary_gap],
+                )
+                disp = float(np.linalg.norm(next_positions[k] - current_positions[k]))
+                if disp > max_dist:
+                    next_positions[k] = current_positions[k] + (next_positions[k] - current_positions[k]) / disp * max_dist
+
             if not collision_detected_in_iter:
                 break
 
-        final_positions: np.ndarray = np.clip(
-            next_positions,
-            [min_boundary_gap, min_boundary_gap],
-            [config.AREA_WIDTH - min_boundary_gap, config.AREA_HEIGHT - min_boundary_gap],
-        )
-        # 循环处理：遍历 (i, uav) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+        # Final joint safety verification & safe hover fallback (ENV-R8)
+        for i in range(config.NUM_UAVS):
+            for j in range(i + 1, config.NUM_UAVS):
+                dist = float(np.linalg.norm(next_positions[i] - next_positions[j]))
+                if dist < min_sep - 1e-3:
+                    self._uavs[i].collision_violation = True
+                    self._uavs[j].collision_violation = True
+                    next_positions[i] = current_positions[i].copy()
+                    next_positions[j] = current_positions[j].copy()
+
+        # Update positions
         for i, uav in enumerate(self._uavs):
-            uav.update_position(final_positions[i])
+            uav.update_position(next_positions[i])
 
     # 函数 _associate_ues_to_uavs：关键函数，承载本模块的一段可复用实验逻辑。
     def _associate_ues_to_uavs(self) -> None:
-        """Assign each UE to at most one UAV, with optional service fallback admission."""
+        """Assign each UE to at most one UAV according to natural coverage (ENV-R2).
+        Forced admission is permanently disabled in canonical semantics.
+        """
         stats = {
             "service_requests_generated": 0,
             "naturally_covered_service_requests": 0,
             "service_requests_uncovered": 0,
             "forced_service_admissions": 0,
         }
-        # 循环处理：遍历 ue 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for ue in self._ues:
             is_service_request = bool(ue.current_request.is_service)
             if is_service_request:
                 stats["service_requests_generated"] += 1
             covering_uavs: list[tuple[UAV, float]] = []
-            nearest_uav: UAV | None = None
-            nearest_distance: float = float("inf")
-            # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
             for uav in self._uavs:
                 distance: float = float(np.linalg.norm(uav.pos[:2] - ue.pos[:2]))
-                if distance < nearest_distance:
-                    nearest_uav = uav
-                    nearest_distance = distance
-                # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
                 if distance <= config.UAV_COVERAGE_RADIUS:
                     covering_uavs.append((uav, distance))
 
-            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
             if not covering_uavs:
+                ue.assigned = False
                 if is_service_request:
                     stats["service_requests_uncovered"] += 1
-                    if getattr(config, "FORCE_SERVICE_ADMISSION", False) and nearest_uav is not None:
-                        nearest_uav.current_covered_ues.append(ue)
-                        ue.assigned = True
-                        stats["forced_service_admissions"] += 1
                 continue
+
             if is_service_request:
                 stats["naturally_covered_service_requests"] += 1
             best_uav, _ = min(covering_uavs, key=lambda x: x[1])
@@ -531,9 +646,27 @@ class Env:
         if total_energy > config.EPSILON:
             effective_energy_efficiency = float(deadline_satisfied_count) / total_energy
 
+        # Energy breakdown instrumentation (ENV-R9)
+        flight_energy: float = float(sum(uav.flight_energy for uav in self._uavs))
+        hover_energy: float = float(sum(uav.hover_energy for uav in self._uavs))
+        wpt_energy: float = float(sum(uav.wpt_energy for uav in self._uavs))
+        service_compute_energy: float = float(sum(uav.service_compute_energy for uav in self._uavs))
+        service_comm_energy: float = float(sum(uav.service_comm_energy for uav in self._uavs))
+        service_fetch_or_backhaul_energy: float = float(sum(uav.service_fetch_or_backhaul_energy for uav in self._uavs))
+        content_related_energy: float = float(sum(uav.content_related_energy for uav in self._uavs))
+        uav_fleet_total_energy: float = float(sum(uav.energy for uav in self._uavs))
+
         metrics: dict[str, float] = {
             "latency": total_latency,
             "energy": total_energy,
+            "flight_energy": flight_energy,
+            "hover_energy": hover_energy,
+            "wpt_energy": wpt_energy,
+            "service_compute_energy": service_compute_energy,
+            "service_comm_energy": service_comm_energy,
+            "service_fetch_or_backhaul_energy": service_fetch_or_backhaul_energy,
+            "content_related_energy": content_related_energy,
+            "uav_fleet_total_energy": uav_fleet_total_energy,
             "fairness": jfi,
             "offline_rate": offline_rate,
             "deadline_satisfaction_rate": deadline_satisfaction_rate,
@@ -545,6 +678,10 @@ class Env:
             "service_requests_generated": float(total_service_requests_generated),
             "service_requests_processed": float(total_service_requests_processed),
             "service_requests_uncovered": float(uncovered_service_requests),
+            "generated_service_count": float(total_service_requests_generated),
+            "admitted_service_count": float(natural_service_requests),
+            "unadmitted_service_count": float(uncovered_service_requests),
+            "processed_service_count": float(total_service_requests_processed),
             "forced_service_admissions": float(forced_service_admissions),
             "forced_admission_ratio": float(forced_admission_ratio),
             "natural_coverage_service_ratio": float(natural_coverage_service_ratio),
