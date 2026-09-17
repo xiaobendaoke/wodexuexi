@@ -32,9 +32,9 @@ class TestCollisionJointFeasibility(unittest.TestCase):
         self.env.uavs[0].pos[:2] = p0
         self.env.uavs[1].pos[:2] = p1
 
-        # Place other UAVs far away
+        # Place other UAVs far away and pairwise separated >= MIN_UAV_SEPARATION
         for i in range(2, config.NUM_UAVS):
-            self.env.uavs[i].pos[:2] = np.array([100.0 + i * 20.0, 100.0], dtype=np.float32)
+            self.env.uavs[i].pos[:2] = np.array([100.0, 100.0 + (i - 2) * 250.0], dtype=np.float32)
 
         # UAV 0 moves full speed towards UAV 1 (right: +x)
         # UAV 1 moves full speed towards UAV 0 (left: -x)

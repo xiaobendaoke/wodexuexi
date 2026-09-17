@@ -321,14 +321,7 @@ class UAV:
         self._neighbors = []
         self._current_service_request_count = 0
         self._freq_counts = np.zeros(config.NUM_FILES, dtype=np.float32)
-        self._energy_current_slot = 0.0
-        self.flight_energy = 0.0
-        self.hover_energy = 0.0
-        self.wpt_energy = 0.0
-        self.service_compute_energy = 0.0
-        self.service_comm_energy = 0.0
-        self.service_fetch_or_backhaul_energy = 0.0
-        self.content_related_energy = 0.0
+        # Note: self._energy_current_slot and component energies persist until S0 of next step
         self._service_request_count = 0
         self._service_offload_local_count = 0
         self._service_offload_cooperative_count = 0

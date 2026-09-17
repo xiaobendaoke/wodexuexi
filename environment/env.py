@@ -255,7 +255,6 @@ class Env:
             uav.reset_for_next_step()
 
         next_obs: list[np.ndarray] = self._get_obs()
-        self.slot_snapshot = self._capture_slot_snapshot()
         return next_obs, rewards, metrics
 
     def get_offloading_obs_and_masks(self) -> tuple[np.ndarray, np.ndarray]:
@@ -273,12 +272,8 @@ class Env:
         mbs_masked_count = 0
 
         for uav_idx, uav in enumerate(self._uavs):
-            uav_mbs_rate = getattr(uav, "_uav_mbs_rate", 0.0)
-            if uav_mbs_rate <= 0.0:
-                from environment import comm_model as comms
-
-                uav_mbs_rate = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(uav.pos, config.MBS_POS))
-                uav._uav_mbs_rate = float(uav_mbs_rate)
+            from environment import comm_model as comms
+            uav_mbs_rate = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(uav.pos, config.MBS_POS))
 
             own_pos = uav.pos[:2] / np.array([config.AREA_WIDTH, config.AREA_HEIGHT], dtype=np.float32)
             own_queue = float(getattr(uav, "_current_service_request_count", 0)) / max(float(config.MAX_ASSOCIATED_UES), 1.0)

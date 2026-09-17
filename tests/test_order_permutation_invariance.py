@@ -55,6 +55,8 @@ class TestOrderPermutationInvariance(unittest.TestCase):
         latency_c_order1 = ue_c.latency_current_request
 
         # Order 2: [ue_c, ue_a, ue_b]
+        # Re-seed to ensure env2 has identical initial geometry, channel conditions, and cache state
+        np.random.seed(42)
         env2 = Env()
         env2.reset()
         uav0_2 = env2.uavs[0]
