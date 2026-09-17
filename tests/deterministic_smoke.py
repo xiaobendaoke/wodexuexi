@@ -11,7 +11,13 @@ Verifies across two independent runs with identical seed:
 8. No NaN, no Inf, no exception
 """
 
+import os
 import sys
+
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if REPO_ROOT not in sys.path:
+    sys.path.insert(0, REPO_ROOT)
+
 import numpy as np
 import config
 from environment.env import Env
