@@ -18,3 +18,27 @@
 自审覆盖：编码映射、空批次、完整候选域、无截断、全局/局部最优区别、不可比较的字典序标量 gap、跨方法缓存计时偏差、训练/场景重复区分、轨迹与原始指标保留。未使用子代理，不将自审称为独立审查。
 
 该交付是运行准备、代码和验证；完整长实验矩阵尚未运行，不代表论文性能或收敛性结论已经成立。
+
+## 最终提交与服务器验收
+
+- 代码提交：`55631fc057f7c85821a37a71a910375c73f225eb`。
+- 源码摘要：`bdafb90ec5c8160aa8e02e68f4a9862b298dc3772100e279eaad3af89451f455`；98 个源码文件在本机和发布版逐项一致。
+- 最终发布验收：66 项测试，0 失败、0 错误、0 跳过；30 个模型短验证通过。
+- 统一入口实际运行通过：MARL 的 30 个训练任务 + 45 个评估任务；第四章 6 个场景/设置任务、25 个聚合方法单位。均为缩小矩阵验证数据。
+- 正式门槛探针：100 UE 场景的 15 个自然接纳服务请求，完整批次比较通过；MC-ITR 以完整邻域无改善终止。正式 manifest 记录上述提交和干净来源。此单快照探针不是正式完整统计结果。
+- 机器可读摘要：`CHAPTER4_ACCEPTANCE_20260920.json`。详细原始证据保存在本机 `output/chapter4_repair_20260920/` 和服务器对应验收目录。
+- 服务器干净源码目录：`/home/PengYanghan/Lunwen/chapter4-committed-55631fc`。
+- 已验收只读发布版：`/home/PengYanghan/Lunwen/canonical-releases/20260920-ch4-55631fc`。
+
+## 正式启动方式（尚未执行全矩阵）
+
+```bash
+ssh 100.69.44.85
+cd /home/PengYanghan/Lunwen/canonical-releases/20260920-ch4-55631fc
+nohup bash run_all_formal_experiments.sh /home/PengYanghan/Lunwen/results/thesis_all_55631fc \
+  --workers 4 --threads 4 > /home/PengYanghan/Lunwen/thesis_all_55631fc.log 2>&1 < /dev/null &
+```
+
+同一命令可恢复已完成或中断的任务。MARL 输出位于结果目录的 `marl/`；第四章位于 `chapter4/`，均含完成状态与统计汇总。动态库路径由入口自动设置，不依赖交互式 Conda 激活；不要用旧发布目录替代这个版本。
+
+现有规范内第三、四、五章的运行入口与验证已补齐。历史 DSR-strong 配置不在新冻结协议内；未定义的新实验或新增学术主张不能由本次验收代为证明。没有自动推送 GitHub，没有启动长期全矩阵，也没有后台持续监控。
