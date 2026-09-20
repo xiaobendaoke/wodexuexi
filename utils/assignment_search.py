@@ -1,7 +1,7 @@
 """Deterministic assignment search; caller must supply the scientific objective.
 
 This module does not silently choose weights or a Chapter 4 formulation.
-The evaluator returns a finite scalar cost for minimization.
+The evaluator returns a finite scalar or fixed-length lexicographic tuple.
 """
 from itertools import product
 import math
@@ -18,10 +18,22 @@ def _space(candidates, initial=None):
 
 
 def _cost(evaluator, assignment):
-    value = float(evaluator(tuple(assignment)))
-    if not math.isfinite(value):
+    raw = evaluator(tuple(assignment))
+    value = tuple(float(v) for v in raw) if isinstance(raw, (tuple, list)) else float(raw)
+    components = value if isinstance(value, tuple) else (value,)
+    if not components or not all(math.isfinite(v) for v in components):
         raise ValueError('Objective must be finite')
     return value
+
+
+def _improves(candidate, current, tau):
+    if isinstance(current, tuple):
+        if tau != 0:
+            raise ValueError('Lexicographic search requires explicit tau=0')
+        if not isinstance(candidate, tuple) or len(candidate) != len(current):
+            raise ValueError('Objective dimensions changed')
+        return candidate < current
+    return candidate < current - tau
 
 
 def best_improvement(candidates, initial, evaluator, *, tau=1e-9, max_rounds=1000):
@@ -42,7 +54,7 @@ def best_improvement(candidates, initial, evaluator, *, tau=1e-9, max_rounds=100
                 proposed = current[:request] + (target,) + current[request + 1:]
                 cost = _cost(evaluator, proposed)
                 evaluations += 1
-                if cost < value - tau:
+                if _improves(cost, value, tau):
                     key = (cost, request, target)
                     if best is None or key < best[0]:
                         best = (key, proposed)
@@ -52,7 +64,7 @@ def best_improvement(candidates, initial, evaluator, *, tau=1e-9, max_rounds=100
                     'evaluations': evaluations}
         verified = _cost(evaluator, best[1])
         evaluations += 1
-        if verified != best[0][0] or not verified < value - tau:
+        if verified != best[0][0] or not _improves(verified, value, tau):
             raise ValueError('Evaluator is not deterministic or move is not improving')
         current, value = best[1], verified
         trace.append(value)

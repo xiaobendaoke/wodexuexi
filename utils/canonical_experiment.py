@@ -38,7 +38,7 @@ def source_manifest() -> dict:
     for folder in ("environment", "marl_models", "utils", "tests", "scripts"):
         paths.extend((ROOT / folder).rglob("*.py"))
     paths.extend(ROOT.glob("run*.sh"))
-    paths.extend(p for p in (ROOT / "CANONICAL_SEMANTICS_SPEC.md", ROOT / "AGENTS.md") if p.exists())
+    paths.extend(p for p in (ROOT / "CANONICAL_SEMANTICS_SPEC.md", ROOT / "CHAPTER4_PROTOCOL.md", ROOT / "AGENTS.md") if p.exists())
     files = {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
     def git(*args):
         result = subprocess.run(["git", "-C", str(ROOT), *args], capture_output=True, text=True)
