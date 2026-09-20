@@ -1,4 +1,5 @@
 import unittest
+import copy
 import numpy as np
 import config
 from environment.env import Env
@@ -34,23 +35,17 @@ class TestLowerRewardCausality(unittest.TestCase):
         zero_actions = np.zeros((config.NUM_UAVS, 2), dtype=np.float32)
         offload_actions = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
 
+        # Clone the same pre-transition state, not next-slot requests or UE
+        # references belonging to another environment.
+        env_fly = copy.deepcopy(env_hover)
         _, system_rewards_hover, metrics_hover = env_hover.step(zero_actions, offloading_actions=offload_actions)
         lower_rewards_hover, _ = lower_rewards_from_metrics(metrics_hover, system_rewards_hover)
-
-        # Env 2: Max movement
-        env_fly = Env()
-        env_fly.reset()
-        # Ensure identical requests by copying from env_hover
-        for i in range(config.NUM_UES):
-            env_fly.ues[i].current_request = env_hover.ues[i].current_request
-            env_fly.ues[i].pos[:2] = env_hover.ues[i].pos[:2]
-        for i in range(config.NUM_UAVS):
-            env_fly.uavs[i].pos[:2] = env_hover.uavs[i].pos[:2]
-            env_fly.uavs[i]._current_covered_ues = list(env_hover.uavs[i].current_covered_ues)
 
         max_actions = np.ones((config.NUM_UAVS, 2), dtype=np.float32)
         _, system_rewards_fly, metrics_fly = env_fly.step(max_actions, offloading_actions=offload_actions)
         lower_rewards_fly, _ = lower_rewards_from_metrics(metrics_fly, system_rewards_fly)
+
+        self.assertNotEqual(metrics_hover["flight_energy"], metrics_fly["flight_energy"])
 
         # In canonical semantics:
         # Lower rewards evaluate strictly causal non-flight energy.

@@ -28,12 +28,12 @@ def set_global_seed(seed: int | None) -> None:
 def apply_lower_ablation(ablation: str) -> str:
     if ablation == "full":
         config.OFFLOAD_MASK_MODE = "quality"
-        config.OFFLOAD_CONSTRAINT_MODE = "lagrange"
+        config.OFFLOAD_CONSTRAINT_MODE = "adaptive_penalty"
         config.OFFLOAD_USE_ATTENTION = True
         return "constrained_attention_offload_mappo"
     if ablation == "no_mask":
         config.OFFLOAD_MASK_MODE = "none"
-        config.OFFLOAD_CONSTRAINT_MODE = "lagrange"
+        config.OFFLOAD_CONSTRAINT_MODE = "adaptive_penalty"
         config.OFFLOAD_USE_ATTENTION = True
         return "constrained_attention_offload_mappo"
     if ablation == "no_lagrange":
@@ -43,7 +43,7 @@ def apply_lower_ablation(ablation: str) -> str:
         return "constrained_attention_offload_mappo"
     if ablation == "no_attention":
         config.OFFLOAD_MASK_MODE = "quality"
-        config.OFFLOAD_CONSTRAINT_MODE = "lagrange"
+        config.OFFLOAD_CONSTRAINT_MODE = "adaptive_penalty"
         config.OFFLOAD_USE_ATTENTION = False
         return "no_attention_offload_mappo"
     raise ValueError(f"Unknown lower-layer ablation: {ablation}")
@@ -54,9 +54,11 @@ def compute_constraint_diagnostics(
     lambda_dsr: float,
     lambda_mbs: float,
 ) -> dict[str, float]:
-    dsr_violation = max(0.0, float(config.OFFLOAD_DSR_TARGET) - float(metrics["deadline_satisfaction_rate"]))
-    mbs_load_violation = max(0.0, float(metrics["mbs_load_ratio"]) - float(config.OFFLOAD_MBS_LOAD_CEILING))
-    if getattr(config, "OFFLOAD_CONSTRAINT_MODE", "lagrange") == "lagrange":
+    if metrics["lower_admitted_service_count"] == 0:
+        return {"dsr_violation": 0.0, "mbs_load_violation": 0.0, "constraint_penalty": 0.0}
+    dsr_violation = max(0.0, float(config.OFFLOAD_DSR_TARGET) - float(metrics["lower_deadline_satisfaction_rate"]))
+    mbs_load_violation = max(0.0, float(metrics["lower_mbs_load_ratio"]) - float(config.OFFLOAD_MBS_LOAD_CEILING))
+    if getattr(config, "OFFLOAD_CONSTRAINT_MODE", "adaptive_penalty") in {"adaptive_penalty", "lagrange"}:
         constraint_penalty = lambda_dsr * dsr_violation + lambda_mbs * mbs_load_violation
     else:
         constraint_penalty = 0.0
@@ -73,19 +75,16 @@ def lower_rewards_from_metrics(
     lambda_dsr: float = 0.0,
     lambda_mbs: float = 0.0,
 ) -> tuple[list[float], dict[str, float]]:
-    deadline_penalty = 1.0 - float(metrics["deadline_satisfaction_rate"])
-    latency_term = float(metrics["latency"]) / (config.NUM_UES * config.NON_SERVED_LATENCY_PENALTY + config.EPSILON)
-    energy_term = float(metrics["energy"]) / (config.NUM_UAVS * config.OFFLOAD_ENERGY_NORM_REF + config.EPSILON)
-    mbs_term = float(metrics["mbs_load_ratio"])
-    coop_term = float(metrics["offloading_ratio_cooperative"])
-    success_term = float(metrics["deadline_satisfaction_rate"])
+    count = float(metrics["lower_admitted_service_count"])
+    if count == 0:
+        return [0.0] * len(system_rewards), {"dsr_violation": 0.0, "mbs_load_violation": 0.0, "constraint_penalty": 0.0}
+    latency_term = float(metrics["lower_service_latency"]) / (count * config.NON_SERVED_LATENCY_PENALTY)
+    energy_term = float(metrics["lower_assignment_energy"]) / (config.NUM_UAVS * config.OFFLOAD_ENERGY_NORM_REF)
     lower_reward = (
-        config.OFFLOAD_REWARD_SUCCESS_BONUS * success_term
-        + config.OFFLOAD_REWARD_COOP_BONUS * coop_term
-        - config.OFFLOAD_REWARD_DEADLINE_WEIGHT * deadline_penalty
+        config.OFFLOAD_REWARD_DSR_WEIGHT * float(metrics["lower_deadline_satisfaction_rate"])
         - config.OFFLOAD_REWARD_LATENCY_WEIGHT * latency_term
         - config.OFFLOAD_REWARD_ENERGY_WEIGHT * energy_term
-        - config.OFFLOAD_REWARD_MBS_WEIGHT * mbs_term
+        - config.OFFLOAD_REWARD_MBS_WEIGHT * float(metrics["lower_mbs_load_ratio"])
     )
     diagnostics = compute_constraint_diagnostics(metrics, lambda_dsr, lambda_mbs)
     lower_reward -= diagnostics["constraint_penalty"]
@@ -141,9 +140,12 @@ def train_hierarchical_mappo(
     lower_ablation: str = "full",
     constraint_mode: str | None = None,
     mask_mode: str | None = None,
+    workload_seed: int | None = None,
 ) -> dict[str, object]:
     if trajectory_config_path is not None:
         load_configs(trajectory_config_path)
+    if config.FORCE_SERVICE_ADMISSION or config.MAX_OFFLOAD_REQUESTS_PER_UAV != config.NUM_UES:
+        raise ValueError("Loaded configuration violates canonical admission or full-request capacity")
     set_global_seed(seed)
 
     timestamp = timestamp or datetime.now().strftime("%Y%m%d_%H%M%S_hierarchical_mappo")
@@ -156,7 +158,7 @@ def train_hierarchical_mappo(
     train_offload = mode in {"lower_only_fixed_upper", "full_hierarchical"}
     use_offload_actions = train_offload
 
-    env = Env()
+    env = Env(scenario_seed=config.SEED if workload_seed is None else workload_seed)
     trajectory_model = get_model(trajectory_model_name)
     if trajectory_model_dir is not None:
         trajectory_model.load(trajectory_model_dir)
@@ -212,6 +214,8 @@ def train_hierarchical_mappo(
     }
 
     max_time_steps = num_episodes * config.STEPS_PER_EPISODE
+    if max_time_steps % config.PPO_ROLLOUT_LENGTH:
+        raise ValueError("Legacy runner requires complete rollouts; use run_canonical_experiment.py for partial final rollouts")
     num_updates = max_time_steps // config.PPO_ROLLOUT_LENGTH
     if num_updates <= 0:
         raise ValueError("num_updates is 0; increase num_episodes or reduce PPO_ROLLOUT_LENGTH.")
@@ -357,7 +361,7 @@ def train_hierarchical_mappo(
                     exploration=False,
                 )
             offload_losses = update_on_policy_model(offload_model, offload_buffer, last_offload_values)
-        if train_offload and getattr(config, "OFFLOAD_CONSTRAINT_MODE", "lagrange") == "lagrange":
+        if train_offload and getattr(config, "OFFLOAD_CONSTRAINT_MODE", "adaptive_penalty") in {"adaptive_penalty", "lagrange"}:
             mean_dsr_violation = float(np.mean(update_dsr_violations)) if update_dsr_violations else 0.0
             mean_mbs_violation = float(np.mean(update_mbs_violations)) if update_mbs_violations else 0.0
             lambda_dsr = float(np.clip(lambda_dsr + config.OFFLOAD_LAGRANGE_LR * mean_dsr_violation, 0.0, config.OFFLOAD_LAGRANGE_MAX))
@@ -393,6 +397,9 @@ def train_hierarchical_mappo(
         json.dump(training_curve, f, indent=2)
 
     summary = {
+        "environment_semantics": config.ENV_SEMANTICS_VERSION,
+        "workload_seed": env.scenario_seed,
+        "canonical_provenance_complete": False,
         "timestamp": timestamp,
         "mode": mode,
         "seed": int(seed) if seed is not None else None,
@@ -427,6 +434,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train upper/lower hierarchical MARL policies for multi-UAV MEC.")
     parser.add_argument("--num_episodes", type=int, default=50)
     parser.add_argument("--timestamp", type=str, default=None)
+    parser.add_argument("--workload_seed", type=int, default=config.SEED)
     parser.add_argument("--mode", type=str, default="full_hierarchical", choices=["upper_only", "lower_only_fixed_upper", "full_hierarchical"])
     parser.add_argument("--seed", type=int, default=None, help="Training seed for NumPy and PyTorch.")
     parser.add_argument(
@@ -439,17 +447,19 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--offload_model", type=str, default=None)
     parser.add_argument("--trajectory_model_dir", type=str, default=None)
     parser.add_argument("--trajectory_config_path", type=str, default=None)
-    parser.add_argument("--constraint_mode", type=str, default=None, choices=["none", "lagrange"])
+    parser.add_argument("--constraint_mode", type=str, default=None, choices=["none", "adaptive_penalty", "lagrange"])
     parser.add_argument("--mask_mode", type=str, default=None, choices=["quality", "none"])
     parser.add_argument("--dsr_target", type=float, default=None)
-    parser.add_argument("--force_service_admission", action="store_true", help="Enable nearest-UAV fallback admission for uncovered service requests")
+    parser.add_argument("--force_service_admission", action="store_true", help="Deprecated; rejected by canonical semantics")
     parser.add_argument("--mbs_load_ceiling", type=float, default=None)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    config.FORCE_SERVICE_ADMISSION = bool(args.force_service_admission)
+    if args.force_service_admission:
+        raise ValueError("Forced service admission is not supported by canonical semantics")
+    config.FORCE_SERVICE_ADMISSION = False
     if args.constraint_mode is not None:
         config.OFFLOAD_CONSTRAINT_MODE = args.constraint_mode
     if args.mask_mode is not None:
@@ -470,6 +480,7 @@ def main() -> None:
         lower_ablation=args.lower_ablation,
         constraint_mode=args.constraint_mode,
         mask_mode=args.mask_mode,
+        workload_seed=args.workload_seed,
     )
     print(json.dumps(summary, indent=2))
 

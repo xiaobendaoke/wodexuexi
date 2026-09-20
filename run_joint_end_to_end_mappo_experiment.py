@@ -43,11 +43,11 @@ def update_joint_model(model, buffer: JointMAPPOBuffer, last_values: np.ndarray)
     return {key: float(np.mean(values)) if values else 0.0 for key, values in losses.items()}
 
 
-def train_joint_end_to_end_mappo(num_episodes: int, timestamp: str | None = None, seed: int | None = None) -> dict[str, object]:
+def train_joint_end_to_end_mappo(num_episodes: int, timestamp: str | None = None, seed: int | None = None, workload_seed: int | None = None) -> dict[str, object]:
     set_global_seed(seed)
     config.MODEL = "joint_mappo"
     timestamp = timestamp or datetime.now().strftime("%Y%m%d_%H%M%S_joint_e2e_mappo")
-    env = Env()
+    env = Env(scenario_seed=config.SEED if workload_seed is None else workload_seed)
     model = get_model("joint_mappo")
     buffer = JointMAPPOBuffer(
         num_agents=config.NUM_UAVS,
@@ -68,6 +68,8 @@ def train_joint_end_to_end_mappo(num_episodes: int, timestamp: str | None = None
     episode = 1
     episode_step = 0
     max_time_steps = num_episodes * config.STEPS_PER_EPISODE
+    if max_time_steps % config.PPO_ROLLOUT_LENGTH:
+        raise ValueError("Legacy runner requires complete rollouts; use run_canonical_experiment.py for partial final rollouts")
     num_updates = max_time_steps // config.PPO_ROLLOUT_LENGTH
     if num_updates <= 0:
         raise ValueError("num_updates is 0; increase num_episodes or reduce PPO_ROLLOUT_LENGTH.")
@@ -96,7 +98,8 @@ def train_joint_end_to_end_mappo(num_episodes: int, timestamp: str | None = None
                 masks=offload_masks,
                 exploration=True,
             )
-            next_obs, system_rewards, metrics = env.step(trajectory_actions, offloading_actions=offload_actions)
+            # Store raw actions for likelihoods; only the physical command is clipped.
+            next_obs, system_rewards, metrics = env.step(np.clip(trajectory_actions, -1.0, 1.0), offloading_actions=offload_actions)
             episode_step += 1
             done = episode_step >= config.STEPS_PER_EPISODE
             buffer.add(joint_obs, trajectory_actions, offload_actions, offload_masks, log_probs, system_rewards, done, values)
@@ -156,6 +159,9 @@ def train_joint_end_to_end_mappo(num_episodes: int, timestamp: str | None = None
     save_dir.mkdir(parents=True, exist_ok=True)
     model.save(str(save_dir))
     summary = {
+        "environment_semantics": config.ENV_SEMANTICS_VERSION,
+        "workload_seed": env.scenario_seed,
+        "canonical_provenance_complete": False,
         "timestamp": timestamp,
         "model_name": "joint_mappo",
         "seed": int(seed) if seed is not None else None,
@@ -176,13 +182,14 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train a true end-to-end joint MAPPO baseline.")
     parser.add_argument("--num_episodes", type=int, default=50)
     parser.add_argument("--timestamp", type=str, default=None)
+    parser.add_argument("--workload_seed", type=int, default=config.SEED)
     parser.add_argument("--seed", type=int, default=None)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    summary = train_joint_end_to_end_mappo(args.num_episodes, args.timestamp, args.seed)
+    summary = train_joint_end_to_end_mappo(args.num_episodes, args.timestamp, args.seed, args.workload_seed)
     print(json.dumps(summary, indent=2, ensure_ascii=False))
 
 

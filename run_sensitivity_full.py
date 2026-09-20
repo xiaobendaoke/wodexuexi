@@ -20,7 +20,7 @@ import numpy as np
 import torch
 
 import config
-config.FORCE_SERVICE_ADMISSION = True
+config.FORCE_SERVICE_ADMISSION = False  # historical forced admission is never enabled
 from environment.env import Env
 from marl_models.utils import get_model
 from utils.baseline_metrics import (
@@ -588,4 +588,10 @@ def main():
 
 
 if __name__ == "__main__":
+    import sys
+    import subprocess
+    raise SystemExit(subprocess.call([sys.executable, str(Path(__file__).with_name('run_formal_suite.py')),
+                                      '--suite', 'sensitivity', *sys.argv[1:]]))
+
+if False:  # Historical force-admission workflow, retained for provenance only.
     main()

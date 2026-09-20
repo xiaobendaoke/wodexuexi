@@ -42,6 +42,9 @@ def run_simulation(seed: int, num_episodes: int = 2, steps_per_episode: int = 5)
 
             next_obs, rewards, metrics = env.step(actions)
 
+            assert np.isfinite(np.asarray(next_obs)).all(), "Non-finite next observations"
+            assert np.isfinite(np.asarray(rewards)).all(), "Non-finite rewards"
+
             # Sanity checks for NaN / Inf
             for k, v in metrics.items():
                 if isinstance(v, (int, float)):
@@ -62,8 +65,8 @@ def run_simulation(seed: int, num_episodes: int = 2, steps_per_episode: int = 5)
                 "wpt_energy": [float(u.wpt_energy) for u in env.uavs],
                 "total_slot_energy": [float(u.energy) for u in env.uavs],
                 "rewards": list(rewards),
-                "admitted_service_count": int(metrics.get("natural_service_requests", 0)),
-                "unadmitted_service_count": int(metrics.get("uncovered_service_requests", 0)),
+                "admitted_service_count": int(metrics["admitted_service_count"]),
+                "unadmitted_service_count": int(metrics["unadmitted_service_count"]),
             }
             ep_history.append(step_data)
 
@@ -80,12 +83,12 @@ def compare_runs(hist1, hist2):
         assert len(ep1) == len(ep2), f"Step count mismatch in ep {ep_idx}"
         for st_idx, (st1, st2) in enumerate(zip(ep1, ep2)):
             # 1. UAV positions
-            np.testing.assert_allclose(
+            np.testing.assert_array_equal(
                 st1["uav_positions"], st2["uav_positions"],
                 err_msg=f"UAV position mismatch at ep {ep_idx} step {st_idx}"
             )
             # 2. UE positions
-            np.testing.assert_allclose(
+            np.testing.assert_array_equal(
                 st1["ue_positions"], st2["ue_positions"],
                 err_msg=f"UE position mismatch at ep {ep_idx} step {st_idx}"
             )
@@ -99,19 +102,19 @@ def compare_runs(hist1, hist2):
                 v1 = st1["metrics"][k]
                 v2 = st2["metrics"][k]
                 if isinstance(v1, (int, float)):
-                    assert abs(v1 - v2) < 1e-6, f"Metric {k} mismatch at ep {ep_idx} step {st_idx}: {v1} != {v2}"
+                    assert v1 == v2, f"Metric {k} mismatch at ep {ep_idx} step {st_idx}: {v1} != {v2}"
             # 5. Component energies
             for comp in [
                 "flight_energy", "hover_energy", "service_compute_energy",
                 "service_comm_energy", "service_fetch_energy", "content_energy",
                 "wpt_energy", "total_slot_energy"
             ]:
-                np.testing.assert_allclose(
+                np.testing.assert_array_equal(
                     st1[comp], st2[comp],
                     err_msg=f"Energy component {comp} mismatch at ep {ep_idx} step {st_idx}"
                 )
             # 6. Rewards
-            np.testing.assert_allclose(
+            np.testing.assert_array_equal(
                 st1["rewards"], st2["rewards"],
                 err_msg=f"Reward mismatch at ep {ep_idx} step {st_idx}"
             )

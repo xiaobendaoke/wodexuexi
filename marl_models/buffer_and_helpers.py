@@ -287,7 +287,13 @@ class DiscreteOffloadRolloutBuffer:
             delta = self.rewards[t] + gamma * next_values * (1.0 - self.dones[t]) - self.values[t]
             self.advantages[t] = last_gae_lam = delta + gamma * gae_lambda * (1.0 - self.dones[t]) * last_gae_lam
         self.returns = self.advantages + self.values
-        self.advantages = (self.advantages - self.advantages.mean()) / (self.advantages.std() + 1e-8)
+        active = self.valid_slots.sum(axis=-1) > 0
+        if active.any():
+            center = self.advantages[active].mean()
+            scale = self.advantages[active].std() + 1e-8
+            self.advantages = np.where(active, (self.advantages - center) / scale, 0.0).astype(np.float32)
+        else:
+            self.advantages.fill(0.0)
 
     def get_batches(self, batch_size: int):
         t_obs = torch.from_numpy(self.observations).to(self.device)

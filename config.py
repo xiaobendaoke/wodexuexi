@@ -45,7 +45,8 @@ import numpy as np
 MODEL: str = "attention_mappo"  # options: "attention_mappo", "vanilla_mappo", "joint_mappo", "uncoordinated_greedy"
 # 关键变量 SEED：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 SEED: int = 42  # random seed for reproducibility
-np.random.seed(SEED)  # set numpy random seed
+_static_rng = np.random.RandomState(SEED)  # hardware draws never reset the policy/workload RNG
+ENV_SEMANTICS_VERSION: str = "canonical_v3_global_batch_joint_sum"
 # 关键变量 STEPS_PER_EPISODE：训练或测试的回合编号。
 STEPS_PER_EPISODE: int = 1000  # total T
 # 关键变量 LOG_FREQ：全局常量或配置项，会影响环境规模、训练过程或实验输出。
@@ -96,9 +97,9 @@ UAV_ALTITUDE: int = 100  # H in meters
 # 关键变量 UAV_SPEED：无人机对象，包含位置、电量、计算资源和缓存服务。
 UAV_SPEED: float = 15.0  # v^UAV in m/s
 # 关键变量 UAV_STORAGE_CAPACITY：无人机对象，包含位置、电量、计算资源和缓存服务。
-UAV_STORAGE_CAPACITY: np.ndarray = np.random.choice(np.arange(120 * 10**6, 180 * 10**6, 10**6), size=NUM_UAVS).astype(np.int64)  # S_u in bytes
+UAV_STORAGE_CAPACITY: np.ndarray = _static_rng.choice(np.arange(120 * 10**6, 180 * 10**6, 10**6), size=NUM_UAVS).astype(np.int64)  # S_u in bytes
 # 关键变量 UAV_COMPUTING_CAPACITY：无人机对象，包含位置、电量、计算资源和缓存服务。
-UAV_COMPUTING_CAPACITY: np.ndarray = np.random.choice(np.arange(40 * 10**9, 90 * 10**9, 5 * 10**9), size=NUM_UAVS).astype(np.int64)  # F_u in cycles/sec
+UAV_COMPUTING_CAPACITY: np.ndarray = _static_rng.choice(np.arange(40 * 10**9, 90 * 10**9, 5 * 10**9), size=NUM_UAVS).astype(np.int64)  # F_u in cycles/sec
 # 关键变量 UAV_SENSING_RANGE：无人机对象，包含位置、电量、计算资源和缓存服务。
 UAV_SENSING_RANGE: float = 460.0  # R^sense in meters; keeps cooperative UAVs visible in thesis runtime experiments
 # 关键变量 UAV_COVERAGE_RADIUS：无人机对象，包含位置、电量、计算资源和缓存服务。
@@ -137,9 +138,9 @@ NUM_CONTENTS: int = 50  # K
 # 关键变量 NUM_FILES：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 NUM_FILES: int = NUM_SERVICES + NUM_CONTENTS  # S + K
 # 关键变量 CPU_CYCLES_PER_BYTE：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-CPU_CYCLES_PER_BYTE: np.ndarray = np.random.randint(1200, 2800, size=NUM_SERVICES)  # omega_s_m
+CPU_CYCLES_PER_BYTE: np.ndarray = _static_rng.randint(1200, 2800, size=NUM_SERVICES)  # omega_s_m
 # 关键变量 FILE_SIZES：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-FILE_SIZES: np.ndarray = np.random.randint(10**6, 5 * 10**6, size=NUM_FILES).astype(np.int64)  # in bytes
+FILE_SIZES: np.ndarray = _static_rng.randint(10**6, 5 * 10**6, size=NUM_FILES).astype(np.int64)  # in bytes
 # 关键变量 MIN_INPUT_SIZE：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 MIN_INPUT_SIZE: int = 1 * 10**6  # in bytes
 # 关键变量 MAX_INPUT_SIZE：全局常量或配置项，会影响环境规模、训练过程或实验输出。
@@ -183,7 +184,7 @@ SERVICE_OFFLOAD_POLICY_CHECKPOINT: str | None = None  # checkpoint for the stand
 # Each UAV is a lower-layer agent and makes at most MAX_OFFLOAD_REQUESTS_PER_UAV
 # request-level decisions per environment step.
 OFFLOAD_MODEL_NAME: str = "constrained_attention_offload_mappo"
-MAX_OFFLOAD_REQUESTS_PER_UAV: int = MAX_ASSOCIATED_UES
+MAX_OFFLOAD_REQUESTS_PER_UAV: int = NUM_UES
 OFFLOAD_ACTION_LOCAL: int = 0
 OFFLOAD_ACTION_MBS: int = 1
 OFFLOAD_ACTION_COOP_BASE: int = 2
@@ -197,8 +198,11 @@ OFFLOAD_REWARD_ENERGY_WEIGHT: float = 1.2
 OFFLOAD_REWARD_MBS_WEIGHT: float = 0.35
 OFFLOAD_REWARD_COOP_BONUS: float = 0.08
 OFFLOAD_REWARD_SUCCESS_BONUS: float = 0.40
+# Preserve the historical marginal DSR weight without the constant failure
+# offset or an extra cooperation bonus (SSOT 7.2.2).
+OFFLOAD_REWARD_DSR_WEIGHT: float = OFFLOAD_REWARD_DEADLINE_WEIGHT + OFFLOAD_REWARD_SUCCESS_BONUS
 OFFLOAD_REWARD_SCALING_FACTOR: float = 1.0
-OFFLOAD_CONSTRAINT_MODE: str = "lagrange"  # options: "none", "lagrange"
+OFFLOAD_CONSTRAINT_MODE: str = "adaptive_penalty"  # "lagrange" remains a legacy input alias
 OFFLOAD_MASK_MODE: str = "quality"  # options: "quality", "none"
 OFFLOAD_USE_ATTENTION: bool = True
 OFFLOAD_DSR_TARGET: float = 0.18
