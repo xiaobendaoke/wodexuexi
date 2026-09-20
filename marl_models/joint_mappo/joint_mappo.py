@@ -31,7 +31,7 @@ class JointMAPPO(MARLModel):
     def select_actions(self, observations: np.ndarray, exploration: bool) -> np.ndarray:
         masks = np.ones((observations.shape[0], self.max_requests, self.num_offload_actions), dtype=np.float32)
         trajectory_actions, _, _, _ = self.get_action_and_value(observations, masks=masks, exploration=exploration)
-        return trajectory_actions
+        return np.clip(trajectory_actions, -1.0, 1.0)
 
     def get_action_and_value(
         self,
@@ -58,12 +58,12 @@ class JointMAPPO(MARLModel):
             trajectory_log_probs = trajectory_dist.log_prob(trajectory_actions).sum(dim=-1)
             valid_slots = (masks_tensor.sum(dim=-1) > 0.0).float()
             offload_slot_log_probs = offload_dist.log_prob(offload_actions) * valid_slots
-            denom = valid_slots.sum(dim=-1).clamp_min(1.0)
-            offload_log_probs = offload_slot_log_probs.sum(dim=-1) / denom
+            offload_log_probs = offload_slot_log_probs.sum(dim=-1)
+            offload_actions = torch.where(valid_slots.bool(), offload_actions, torch.zeros_like(offload_actions))
             log_probs = trajectory_log_probs + offload_log_probs
             values = self.critic(obs_tensor.unsqueeze(0)).squeeze(0)
         return (
-            torch.clamp(trajectory_actions, -1.0, 1.0).cpu().numpy(),
+            trajectory_actions.cpu().numpy(),
             offload_actions.cpu().numpy(),
             log_probs.cpu().numpy(),
             values.cpu().numpy(),
@@ -96,27 +96,29 @@ class JointMAPPO(MARLModel):
         offload_dist = Categorical(logits=offload_logits)
         trajectory_log_probs = trajectory_dist.log_prob(trajectory_actions_batch).sum(dim=-1)
         offload_slot_log_probs = offload_dist.log_prob(offload_actions_batch) * valid_slots
-        denom = valid_slots.sum(dim=-1).clamp_min(1.0)
-        offload_log_probs = offload_slot_log_probs.sum(dim=-1) / denom
+        offload_log_probs = offload_slot_log_probs.sum(dim=-1)
         new_log_probs = trajectory_log_probs + offload_log_probs
         trajectory_entropy = trajectory_dist.entropy().sum(dim=-1)
-        offload_entropy = (offload_dist.entropy() * valid_slots).sum(dim=-1) / denom
+        offload_entropy = (offload_dist.entropy() * valid_slots).sum(dim=-1)
         entropy = trajectory_entropy + offload_entropy
 
-        ratio = torch.exp(new_log_probs - old_log_probs)
+        ratio = torch.exp((new_log_probs - old_log_probs).double())
+        if not torch.isfinite(ratio).all():
+            raise FloatingPointError("Non-finite joint PPO ratio")
         surr1 = ratio * advantages
         surr2 = torch.clamp(ratio, 1.0 - config.PPO_CLIP_EPS, 1.0 + config.PPO_CLIP_EPS) * advantages
         actor_loss = -torch.min(surr1, surr2).mean() - config.PPO_ENTROPY_COEF * entropy.mean()
 
         self.actor_optimizer.zero_grad(set_to_none=True)
         actor_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), config.MAX_GRAD_NORM)
+        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), config.MAX_GRAD_NORM, error_if_nonfinite=True)
         self.actor_optimizer.step()
 
         return {
             "actor": float(actor_loss.item()),
             "critic": float(critic_loss.item()),
             "entropy": float(entropy.mean().item()),
+            "ratio_mean": float(ratio.mean().item()),
         }
 
     def reset(self) -> None:
@@ -130,6 +132,8 @@ class JointMAPPO(MARLModel):
                 "actor_optimizer": self.actor_optimizer.state_dict(),
                 "critic_optimizer": self.critic_optimizer.state_dict(),
                 "metadata": {
+                    "probability_contract": "raw_motion_joint_sum_v1",
+                    "environment_semantics": config.ENV_SEMANTICS_VERSION,
                     "joint_obs_dim": self.joint_obs_dim,
                     "trajectory_action_dim": self.trajectory_action_dim,
                     "max_requests": self.max_requests,
@@ -145,6 +149,13 @@ class JointMAPPO(MARLModel):
         if not os.path.exists(path):
             raise FileNotFoundError(f"Model file not found: {path}")
         checkpoint: dict[str, Any] = torch.load(path, map_location=self.device, weights_only=True)
+        metadata = checkpoint.get("metadata", {})
+        if (metadata.get("probability_contract") != "raw_motion_joint_sum_v1"
+                or metadata.get("environment_semantics") != config.ENV_SEMANTICS_VERSION
+                or metadata.get("max_requests") != self.max_requests
+                or metadata.get("joint_obs_dim") != self.joint_obs_dim
+                or metadata.get("num_agents") != self.num_agents):
+            raise ValueError("Incompatible or historical joint checkpoint; retrain under canonical semantics")
         load_safe(self.actor, checkpoint["actor"])
         load_safe(self.critic, checkpoint["critic"])
         self.actor_optimizer.load_state_dict(checkpoint["actor_optimizer"])

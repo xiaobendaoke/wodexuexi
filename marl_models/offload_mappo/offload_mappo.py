@@ -242,8 +242,8 @@ class OffloadMAPPO(MARLModel):
                 actions = torch.argmax(logits, dim=-1)
             slot_valid = (masks_tensor.sum(dim=-1) > 0.0).float()
             action_log_probs = dist.log_prob(actions) * slot_valid
-            denom = slot_valid.sum(dim=-1).clamp_min(1.0)
-            log_probs = action_log_probs.sum(dim=-1) / denom
+            log_probs = action_log_probs.sum(dim=-1)
+            actions = torch.where(slot_valid.bool(), actions, torch.zeros_like(actions))
             values = self.critic(obs_tensor.unsqueeze(0)).squeeze(0)
         return actions.cpu().numpy(), log_probs.cpu().numpy(), values.cpu().numpy()
 
@@ -280,24 +280,29 @@ class OffloadMAPPO(MARLModel):
         logits = self.actor(obs_batch, masks_batch)
         dist = Categorical(logits=logits)
         slot_log_probs = dist.log_prob(actions_batch) * valid_slots
-        denom = valid_slots.sum(dim=-1).clamp_min(1.0)
-        new_log_probs = slot_log_probs.sum(dim=-1) / denom
-        entropy = (dist.entropy() * valid_slots).sum(dim=-1) / denom
+        new_log_probs = slot_log_probs.sum(dim=-1)
+        entropy = (dist.entropy() * valid_slots).sum(dim=-1)
+        active = valid_slots.sum(dim=-1) > 0
 
-        ratio = torch.exp(new_log_probs - old_log_probs)
+        ratio = torch.exp((new_log_probs - old_log_probs).double())
+        if not torch.isfinite(ratio).all():
+            raise FloatingPointError("Non-finite joint lower PPO ratio")
         surr1 = ratio * advantages
         surr2 = torch.clamp(ratio, 1.0 - config.PPO_CLIP_EPS, 1.0 + config.PPO_CLIP_EPS) * advantages
-        actor_loss = -torch.min(surr1, surr2).mean() - config.PPO_ENTROPY_COEF * entropy.mean()
+        actor_loss = (-(torch.min(surr1, surr2)[active]).mean()
+                      - config.PPO_ENTROPY_COEF * entropy[active].mean()) if active.any() else logits.sum() * 0.0
 
         self.actor_optimizer.zero_grad(set_to_none=True)
-        actor_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.actor.parameters(), config.MAX_GRAD_NORM)
-        self.actor_optimizer.step()
+        if active.any():
+            actor_loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), config.MAX_GRAD_NORM, error_if_nonfinite=True)
+            self.actor_optimizer.step()
 
         return {
             "actor": float(actor_loss.item()),
             "critic": float(critic_loss.item()),
-            "entropy": float(entropy.mean().item()),
+            "entropy": float(entropy[active].mean().item()) if active.any() else 0.0,
+            "ratio_mean": float(ratio[active].mean().item()) if active.any() else 1.0,
         }
 
     def reset(self) -> None:
@@ -311,6 +316,8 @@ class OffloadMAPPO(MARLModel):
                 "actor_optimizer": self.actor_optimizer.state_dict(),
                 "critic_optimizer": self.critic_optimizer.state_dict(),
                 "metadata": {
+                    "probability_contract": "joint_sum_v1",
+                    "environment_semantics": config.ENV_SEMANTICS_VERSION,
                     "max_requests": self.max_requests,
                     "num_actions": self.num_actions,
                     "obs_dim": self.obs_dim,
@@ -325,6 +332,14 @@ class OffloadMAPPO(MARLModel):
         if not os.path.exists(path):
             raise FileNotFoundError(f"Model file not found: {path}")
         checkpoint: dict[str, Any] = torch.load(path, map_location=self.device, weights_only=True)
+        metadata = checkpoint.get("metadata", {})
+        if (metadata.get("probability_contract") != "joint_sum_v1"
+                or metadata.get("environment_semantics") != config.ENV_SEMANTICS_VERSION
+                or metadata.get("max_requests") != self.max_requests
+                or metadata.get("obs_dim") != self.obs_dim
+                or metadata.get("num_actions") != self.num_actions
+                or metadata.get("constrained_attention_actor") != self.use_attention):
+            raise ValueError("Incompatible or historical lower checkpoint; retrain under canonical semantics")
         load_safe(self.actor, checkpoint["actor"])
         load_safe(self.critic, checkpoint["critic"])
         self.actor_optimizer.load_state_dict(checkpoint["actor_optimizer"])

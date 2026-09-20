@@ -71,10 +71,12 @@ class TestCacheLifecycle(unittest.TestCase):
         Legacy bug ENV-03: UAV 4 starts with `self._working_cache = self.cache.copy()`,
         wiping whatever UAV 0 added to UAV 4's working cache.
         """
+        # A physically valid cooperative layout (>=200m separation, <=460m sensing).
+        self.env.reset(initial_positions=[
+            [100, 100], [520, 100], [100, 500], [520, 500], [310, 100],
+        ])
         uav0 = self.env.uavs[0]
         uav4 = self.env.uavs[4]
-        # Place UAV 0 and UAV 4 close enough to cooperate
-        uav4.pos[:2] = uav0.pos[:2] + np.array([50.0, 0.0], dtype=np.float32)
         uav0.set_neighbors(self.env.uavs)
         uav4.set_neighbors(self.env.uavs)
 

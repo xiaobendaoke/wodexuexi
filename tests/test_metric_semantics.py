@@ -24,10 +24,9 @@ class TestMetricSemantics(unittest.TestCase):
         while 6 are out-of-coverage (unadmitted), System DSR must be 4/10 = 0.4,
         NOT 4/4 = 1.0.
         """
-        # Place UAV 0 at (100, 100), others far away
-        self.env.uavs[0].pos[:2] = np.array([100.0, 100.0], dtype=np.float32)
-        for u in self.env.uavs[1:]:
-            u.pos[:2] = np.array([1000.0, 1000.0], dtype=np.float32)
+        self.env.reset(initial_positions=[
+            [100, 100], [310, 100], [520, 100], [100, 310], [310, 310],
+        ])
 
         # 4 UEs near UAV 0 (in coverage)
         for i in range(4):
@@ -51,6 +50,8 @@ class TestMetricSemantics(unittest.TestCase):
         for i in range(10, config.NUM_UES):
             ue = self.env.ues[i]
             ue.current_request.req_type = REQUEST_TYPE_CONTENT
+            ue.current_request.req_id = config.NUM_SERVICES
+            ue.pos[:2] = [650, 650]
 
         # Clear and associate
         for u in self.env.uavs:

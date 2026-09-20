@@ -49,17 +49,34 @@ class SlotSnapshot:
 # 类 Env：仿真环境对象，承载无人机、用户设备、任务请求和奖励计算。
 class Env:
     # 函数 __init__：关键函数，承载本模块的一段可复用实验逻辑。
-    def __init__(self) -> None:
+    def __init__(self, scenario_seed: int | None = None) -> None:
+        self.scenario_seed = int(np.random.randint(0, 2**31)) if scenario_seed is None else int(scenario_seed)
+        if self.scenario_seed < 0:
+            raise ValueError("scenario_seed must be nonnegative")
+        self._episode_index = -1
+        self._rng = np.random.RandomState(self.scenario_seed)
         self._mbs_pos: np.ndarray = config.MBS_POS
-        UE.initialize_ue_class()
-        self._ues: list[UE] = [UE(i) for i in range(config.NUM_UES)]
-        self._uavs: list[UAV] = [UAV(i) for i in range(config.NUM_UAVS)]
+        UE.initialize_ue_class(self._rng)
+        self._population = {
+            "all_ids": UE.all_ids.copy(), "global_probs": UE.global_probs.copy(),
+            "rank_map": dict(UE.id_to_rank_map),
+            "hotspot_centers": [c.copy() for c in getattr(UE, "hotspot_centers", [])],
+        }
+        self._create_entities()
         self._time_step: int = 0
         self._last_step_stats: dict[str, float] = {}
         self._last_runtime_audit: dict[str, object] = {}
         self._last_admission_stats: dict[str, int] = {}
         self._episode_runtime_audit_totals: dict[str, int] = self._make_empty_runtime_audit_totals()
         self.slot_snapshot: SlotSnapshot | None = None
+
+    def _create_entities(self) -> None:
+        def stream(ue_id, channel):
+            seed = np.random.SeedSequence([self.scenario_seed, self._episode_index + 1, ue_id, channel]).generate_state(1)[0]
+            return np.random.RandomState(seed)
+        self._ues = [UE(i, rng=stream(i, 1), mobility_rng=stream(i, 2), population=self._population)
+                     for i in range(config.NUM_UES)]
+        self._uavs = [UAV(i, rng=self._rng, rank_map=self._population["rank_map"]) for i in range(config.NUM_UAVS)]
 
     # 函数 uavs：关键函数，承载本模块的一段可复用实验逻辑。
     @property
@@ -150,13 +167,16 @@ class Env:
     # 函数 reset：重置环境或对象状态，开始新的回合，主要参数：initial_positions。
     def reset(self, initial_positions: list[np.ndarray] | None = None) -> list[np.ndarray]:
         """Resets the environment to an initial state and returns the initial observations."""
+        self._episode_index += 1
         if getattr(config, "USE_HOTSPOTS", False):
-            UE.generate_hotspots()
+            UE.generate_hotspots(self._rng)
+            self._population["hotspot_centers"] = [c.copy() for c in UE.hotspot_centers]
 
-        self._ues = [UE(i) for i in range(config.NUM_UES)]
-        self._uavs = [UAV(i) for i in range(config.NUM_UAVS)]
+        self._create_entities()
 
         if initial_positions is not None:
+            initial_positions = np.asarray(initial_positions, dtype=np.float64)
+            self._validate_positions(initial_positions)
             for i, uav in enumerate(self._uavs):
                 uav.pos[:2] = initial_positions[i]
         else:
@@ -169,8 +189,8 @@ class Env:
                 placed = False
                 for _ in range(max_retries):
                     cand = np.array([
-                        np.random.uniform(min_bound, config.AREA_WIDTH - min_bound),
-                        np.random.uniform(min_bound, config.AREA_HEIGHT - min_bound),
+                        self._rng.uniform(min_bound, config.AREA_WIDTH - min_bound),
+                        self._rng.uniform(min_bound, config.AREA_HEIGHT - min_bound),
                     ], dtype=np.float32)
                     if all(float(np.linalg.norm(cand - p)) >= min_sep for p in placed_positions):
                         placed_positions.append(cand)
@@ -197,6 +217,17 @@ class Env:
         offloading_actions: np.ndarray | None = None,
     ) -> tuple[list[np.ndarray], list[float], dict[str, float]]:
         """Execute one time step of the simulation following canonical temporal order (ENV-R6)."""
+        actions = np.asarray(actions, dtype=np.float64)
+        if actions.shape != (config.NUM_UAVS, 2) or not np.isfinite(actions).all():
+            raise ValueError("Trajectory actions must be finite with shape (NUM_UAVS, 2)")
+        if offloading_actions is not None:
+            offloading_actions = np.asarray(offloading_actions)
+            needed = max(sum(ue.current_request.is_service for ue in u.current_covered_ues) for u in self._uavs)
+            if (offloading_actions.ndim != 2 or offloading_actions.shape[0] != config.NUM_UAVS
+                    or offloading_actions.shape[1] < needed or needed > config.MAX_OFFLOAD_REQUESTS_PER_UAV
+                    or not np.isfinite(offloading_actions).all()
+                    or not np.equal(offloading_actions, np.floor(offloading_actions)).all()):
+                raise ValueError("Lower actions must be finite integers covering every admitted request")
         self._time_step += 1
 
         # S0: Freeze slot-start snapshot & state
@@ -210,18 +241,25 @@ class Env:
             uav.hover_energy = 0.0
             uav.wpt_energy = 0.0
             uav.service_compute_energy = 0.0
+            uav.assignment_causal_energy = 0.0
             uav.service_comm_energy = 0.0
             uav.service_fetch_or_backhaul_energy = 0.0
             uav.content_related_energy = 0.0
             uav._current_service_request_count = 0
             uav.calculate_initial_load()
 
-        # S1-S3: Process requests using slot-start geometry & rates (ENV-R3, ENV-R4, ENV-R5)
+        # S1-S2: Resolve the entire fleet before mutating any compute load.
+        plans = []
         for uav_idx, uav in enumerate(self._uavs):
             uav_offload_actions = None
             if offloading_actions is not None:
                 uav_offload_actions = np.asarray(offloading_actions[uav_idx], dtype=np.int64)
-            uav.process_requests(sample_recorder=sample_recorder, offload_actions=uav_offload_actions)
+            service, others = uav.resolve_requests(
+                sample_recorder=sample_recorder, offload_actions=uav_offload_actions,
+            )
+            plans.append((uav, service, others))
+        # S3: All local and incoming tasks share the same final denominator.
+        UAV.execute_request_batch(plans)
 
         for ue in self._ues:
             if not ue.assigned:
@@ -262,6 +300,11 @@ class Env:
         for uav in self._uavs:
             uav._current_service_request_count = 0
             uav.calculate_initial_load()
+            # The previous step preserves its audit snapshot, but observations
+            # belong to the new geometry after movement.
+            uav._uav_mbs_rate = float(comms.calculate_uav_mbs_rate(
+                comms.calculate_channel_gain(uav.pos, config.MBS_POS)
+            ))
 
         all_obs = np.zeros((config.NUM_UAVS, config.OFFLOAD_OBS_DIM_SINGLE), dtype=np.float32)
         all_masks = np.zeros(
@@ -270,13 +313,13 @@ class Env:
         )
         coop_masked_count = 0
         mbs_masked_count = 0
+        hard_masks = np.zeros_like(all_masks)
 
         for uav_idx, uav in enumerate(self._uavs):
-            from environment import comm_model as comms
-            uav_mbs_rate = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(uav.pos, config.MBS_POS))
+            uav_mbs_rate = uav._uav_mbs_rate
 
             own_pos = uav.pos[:2] / np.array([config.AREA_WIDTH, config.AREA_HEIGHT], dtype=np.float32)
-            own_queue = float(getattr(uav, "_current_service_request_count", 0)) / max(float(config.MAX_ASSOCIATED_UES), 1.0)
+            own_queue = float(getattr(uav, "_current_service_request_count", 0)) / max(float(config.MAX_OFFLOAD_REQUESTS_PER_UAV), 1.0)
             own_neighbor_count = float(len(uav.neighbors)) / max(float(config.MAX_UAV_NEIGHBORS), 1.0)
             own_mbs_rate = np.log10(max(float(uav_mbs_rate), float(config.EPSILON))) / 10.0
             own_features = np.array([own_pos[0], own_pos[1], own_queue, own_neighbor_count, own_mbs_rate], dtype=np.float32)
@@ -287,12 +330,11 @@ class Env:
             )
             service_ues = [ue for ue in uav.current_covered_ues if ue.current_request.is_service]
             service_ues = sorted(service_ues, key=lambda ue: float(np.linalg.norm(uav.pos[:2] - ue.pos[:2])))
-            service_ues = service_ues[: config.MAX_OFFLOAD_REQUESTS_PER_UAV]
+            if len(service_ues) > config.MAX_OFFLOAD_REQUESTS_PER_UAV:
+                raise ValueError("Lower observation capacity would truncate admitted requests")
 
             for req_idx, ue in enumerate(service_ues):
                 request = ue.current_request
-                from environment import comm_model as comms
-
                 ue_uav_rate = comms.calculate_ue_uav_rate(
                     comms.calculate_channel_gain(ue.pos, uav.pos),
                     max(len(uav.current_covered_ues), 1),
@@ -311,7 +353,7 @@ class Env:
                         float(request.priority) / float(config.SERVICE_PRIORITY_MAX),
                         float(context.local_cache_hit),
                         float(context.cooperative_available),
-                        float(context.local_queue_length) / max(float(config.MAX_ASSOCIATED_UES), 1.0),
+                        float(context.local_queue_length) / max(float(config.MAX_OFFLOAD_REQUESTS_PER_UAV), 1.0),
                         local_ratio,
                         coop_ratio,
                         mbs_ratio,
@@ -323,6 +365,7 @@ class Env:
                 )
                 all_masks[uav_idx, req_idx, config.OFFLOAD_ACTION_LOCAL] = 1.0
                 all_masks[uav_idx, req_idx, config.OFFLOAD_ACTION_MBS] = 1.0
+                hard_masks[uav_idx, req_idx, :config.OFFLOAD_ACTION_COOP_BASE] = 1.0
                 best_noncoop_latency = min(float(context.local_latency), float(context.mbs_latency))
                 local_compute_share = max(float(context.local_compute_share), float(config.EPSILON))
                 req_size = float(request.req_size)
@@ -330,7 +373,7 @@ class Env:
                 cpu_cycles = float(config.CPU_CYCLES_PER_BYTE[request.req_id]) * req_size
                 ue_uav_upload_latency = req_size * float(config.BITS_PER_BYTE) / max(float(ue_uav_rate), float(config.EPSILON))
                 for neighbor in uav.neighbors:
-                    if neighbor.id == uav_idx or neighbor.id < 0 or neighbor.id >= config.NUM_UAVS:
+                    if neighbor.id == uav.id or neighbor.id < 0 or neighbor.id >= config.NUM_UAVS:
                         continue
                     belief_prob = uav._get_service_neighbor_cache_belief(request.req_id, neighbor)
                     uav_uav_rate = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(uav.pos, neighbor.pos))
@@ -357,6 +400,14 @@ class Env:
                         and coop_compute_ratio >= float(config.OFFLOAD_COOP_MIN_COMPUTE_SHARE_RATIO)
                     )
                     action_idx = int(config.OFFLOAD_ACTION_COOP_BASE + neighbor.id)
+                    hard_feasible = (
+                        np.isfinite(uav_uav_rate) and uav_uav_rate > 0
+                        and np.isfinite(neighbor_mbs_rate) and neighbor_mbs_rate > 0
+                        and np.isfinite(neighbor_compute_share) and neighbor_compute_share > 0
+                    )
+                    if not hard_feasible:
+                        continue
+                    hard_masks[uav_idx, req_idx, action_idx] = 1.0
                     if getattr(config, "OFFLOAD_MASK_MODE", "quality") != "quality" or coop_feasible:
                         all_masks[uav_idx, req_idx, action_idx] = 1.0
                     else:
@@ -374,6 +425,11 @@ class Env:
 
         self._last_runtime_audit["step_coop_masked_count"] = int(coop_masked_count)
         self._last_runtime_audit["step_mbs_masked_count"] = int(mbs_masked_count)
+        self.last_offload_mask_components = {
+            "padding_valid": hard_masks.sum(axis=-1) > 0,
+            "hard": hard_masks,
+            "quality": all_masks.copy(),
+        }
         return all_obs, all_masks
 
     @staticmethod
@@ -512,19 +568,49 @@ class Env:
             if not collision_detected_in_iter:
                 break
 
-        # Final joint safety verification & safe hover fallback (ENV-R8)
-        for i in range(config.NUM_UAVS):
-            for j in range(i + 1, config.NUM_UAVS):
-                dist = float(np.linalg.norm(next_positions[i] - next_positions[j]))
-                if dist < min_sep - 1e-3:
-                    self._uavs[i].collision_violation = True
-                    self._uavs[j].collision_violation = True
-                    next_positions[i] = current_positions[i].copy()
-                    next_positions[j] = current_positions[j].copy()
+        next_positions = self._finalize_joint_positions(current_positions, next_positions)
 
         # Update positions
         for i, uav in enumerate(self._uavs):
             uav.update_position(next_positions[i])
+
+    @staticmethod
+    def _validate_positions(positions: np.ndarray) -> None:
+        tolerance = 1e-3
+        gap = float(config.UAV_COVERAGE_RADIUS / 2)
+        upper = np.array([config.AREA_WIDTH - gap, config.AREA_HEIGHT - gap])
+        if positions.shape != (config.NUM_UAVS, 2) or not np.isfinite(positions).all():
+            raise ValueError("UAV positions must be finite with shape (NUM_UAVS, 2)")
+        if np.any(positions < gap - tolerance) or np.any(positions > upper + tolerance):
+            raise ValueError("UAV positions lie outside the flight boundaries")
+        for i in range(len(positions)):
+            for j in range(i + 1, len(positions)):
+                if np.linalg.norm(positions[i] - positions[j]) < config.MIN_UAV_SEPARATION - tolerance:
+                    raise ValueError("UAV positions violate minimum separation")
+
+    def _finalize_joint_positions(self, current_positions, next_positions):
+        """Propagate hover fallback until no old or newly-created conflict remains."""
+        self._validate_positions(current_positions)
+        next_positions = np.array(next_positions, dtype=np.float64, copy=True)
+        stopped = set()
+        for _ in range(config.NUM_UAVS + 1):
+            conflicts = set()
+            for i in range(config.NUM_UAVS):
+                for j in range(i + 1, config.NUM_UAVS):
+                    if np.linalg.norm(next_positions[i] - next_positions[j]) < config.MIN_UAV_SEPARATION - 1e-3:
+                        conflicts.update((i, j))
+            if not conflicts:
+                break
+            if conflicts <= stopped:
+                raise RuntimeError("Hover fallback cannot restore a feasible joint state")
+            stopped.update(conflicts)
+            for i in conflicts:
+                self._uavs[i].collision_violation = True
+                next_positions[i] = current_positions[i]
+        self._validate_positions(next_positions)
+        if np.any(np.linalg.norm(next_positions - current_positions, axis=1) > config.UAV_SPEED * config.TIME_SLOT_DURATION + 1e-3):
+            raise RuntimeError("Collision repair exceeded the movement budget")
+        return next_positions
 
     # 函数 _associate_ues_to_uavs：关键函数，承载本模块的一段可复用实验逻辑。
     def _associate_ues_to_uavs(self) -> None:
@@ -648,10 +734,24 @@ class Env:
         service_compute_energy: float = float(sum(uav.service_compute_energy for uav in self._uavs))
         service_comm_energy: float = float(sum(uav.service_comm_energy for uav in self._uavs))
         service_fetch_or_backhaul_energy: float = float(sum(uav.service_fetch_or_backhaul_energy for uav in self._uavs))
+        lower_requests = [ue for uav in self._uavs for ue in uav.current_covered_ues if ue.current_request.is_service]
+        lower_count = len(lower_requests)
+        lower_successes = sum(ue.latency_current_request <= ue.current_request.deadline for ue in lower_requests)
+        lower_latency = sum(ue.latency_current_request for ue in lower_requests)
+        lower_energy = sum(uav.assignment_causal_energy for uav in self._uavs)
         content_related_energy: float = float(sum(uav.content_related_energy for uav in self._uavs))
         uav_fleet_total_energy: float = float(sum(uav.energy for uav in self._uavs))
 
         metrics: dict[str, float] = {
+            "lower_admitted_service_count": float(lower_count),
+            "lower_deadline_satisfaction_rate": float(lower_successes / lower_count) if lower_count else 0.0,
+            "lower_service_latency": float(lower_latency),
+            "lower_assignment_energy": float(lower_energy),
+            "lower_mbs_load_ratio": float(total_mbs_offloads / lower_count) if lower_count else 0.0,
+            "lower_visible_count": float(lower_count),
+            "capacity_fallback_count": 0.0,  # capacity violations raise before execution
+            "invalid_action_fallback_count": float(total_fallbacks - total_predict_exception_fallbacks),
+            "deadline_satisfied_count": float(deadline_satisfied_count),
             "latency": total_latency,
             "energy": total_energy,
             "flight_energy": flight_energy,

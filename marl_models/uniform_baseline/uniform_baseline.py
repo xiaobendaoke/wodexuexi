@@ -68,7 +68,12 @@ class UniformBaseline(MARLModel):
                     continue
 
                 # 选择负载最小的合法目标
-                legal_loads = self._load_counts[legal]
+                # Local action 0 refers to the source UAV, not one shared
+                # fleet-wide execution resource. Cooperative actions already
+                # encode the destination UAV; MBS remains resource 1.
+                resources = np.where(legal == config.OFFLOAD_ACTION_LOCAL,
+                                     config.OFFLOAD_ACTION_COOP_BASE + uav_idx, legal)
+                legal_loads = self._load_counts[resources]
                 min_load = np.min(legal_loads)
                 min_load_indices = legal[legal_loads <= min_load + 1e-6]
 
@@ -80,7 +85,8 @@ class UniformBaseline(MARLModel):
                     chosen = min_load_indices[0]
 
                 offload_actions[uav_idx, req_idx] = chosen
-                self._load_counts[chosen] += 1
+                resource = config.OFFLOAD_ACTION_COOP_BASE + uav_idx if chosen == config.OFFLOAD_ACTION_LOCAL else chosen
+                self._load_counts[resource] += 1
 
         return offload_actions
 

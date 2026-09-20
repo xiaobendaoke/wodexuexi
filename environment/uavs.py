@@ -54,9 +54,9 @@ def _comm_energy(power_watts: float, duration_seconds: float) -> float:
 
 
 # 函数 _get_belief_probability：关键函数，承载本模块的一段可复用实验逻辑，主要参数：file_id, neighbor_id。
-def _get_belief_probability(file_id: int, neighbor_id: int) -> float:
+def _get_belief_probability(file_id: int, neighbor_id: int, rank_map=None) -> float:
     """Returns the estimated probability P_{v,i} that a neighbor has file_i."""
-    rank: int = UE.id_to_rank_map[file_id]
+    rank: int = (UE.id_to_rank_map if rank_map is None else rank_map)[file_id]
     c_hat_v: float = config.UAV_STORAGE_CAPACITY[neighbor_id] / config.AVG_FILE_SIZE
     exponent: float = config.PROB_GAMMA * (rank - c_hat_v)
     probability: float = 1.0 / (1.0 + np.exp(exponent))
@@ -91,13 +91,15 @@ class UAV:
     _policy_cache: dict[tuple[str, str | None, float | None], dict[str, object | None]] = {}
 
     # 函数 __init__：关键函数，承载本模块的一段可复用实验逻辑，主要参数：uav_id。
-    def __init__(self, uav_id: int) -> None:
+    def __init__(self, uav_id: int, rng=None, rank_map=None) -> None:
+        rng = np.random if rng is None else rng
+        self._rank_map = dict(UE.id_to_rank_map if rank_map is None else rank_map)
         self.id: int = uav_id
         min_bound: float = config.UAV_COVERAGE_RADIUS / 2.0
         self.pos: np.ndarray = np.array(
             [
-                np.random.uniform(min_bound, config.AREA_WIDTH - min_bound),
-                np.random.uniform(min_bound, config.AREA_HEIGHT - min_bound),
+                rng.uniform(min_bound, config.AREA_WIDTH - min_bound),
+                rng.uniform(min_bound, config.AREA_HEIGHT - min_bound),
                 config.UAV_ALTITUDE,
             ],
             dtype=np.float32,
@@ -139,6 +141,7 @@ class UAV:
         self._service_predict_exception_fallback_count: int = 0
 
         self._uav_mbs_rate: float = 0.0
+        self.assignment_causal_energy: float = 0.0
         policy_entry = self._get_service_offload_policy()
         self._service_offload_policy = policy_entry["policy"]
         self._service_offload_policy_requested: str = str(policy_entry["requested_policy"])
@@ -391,7 +394,16 @@ class UAV:
         sample_recorder: Callable[[ServiceOffloadContext, int], None] | None = None,
         offload_actions: np.ndarray | None = None,
     ) -> None:
-        """Process requests while optionally recording heuristic service samples."""
+        """Execute an isolated source batch. Multi-UAV slots use Env.step."""
+        service, others = self.resolve_requests(sample_recorder, offload_actions)
+        self.execute_request_batch([(self, service, others)])
+
+    def resolve_requests(
+        self,
+        sample_recorder: Callable[[ServiceOffloadContext, int], None] | None = None,
+        offload_actions: np.ndarray | None = None,
+    ) -> tuple[list[tuple[UE, float, int, "UAV" | None]], list[UE]]:
+        """Resolve assignments without changing any UAV's load or executing tasks."""
         if not hasattr(self, "cache_snapshot") or self.cache_snapshot is None:
             self.cache_snapshot = self.cache.copy()
         self._uav_mbs_rate = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(self.pos, config.MBS_POS))
@@ -400,6 +412,10 @@ class UAV:
         other_ues = [ue for ue in self._current_covered_ues if not ue.current_request.is_service]
 
         if offload_actions is not None:
+            if (np.asarray(offload_actions).ndim != 1
+                    or len(offload_actions) < len(service_ues)
+                    or len(service_ues) > config.MAX_OFFLOAD_REQUESTS_PER_UAV):
+                raise ValueError("External lower actions must cover every admitted service request")
             service_ues = sorted(
                 service_ues,
                 key=lambda ue: float(np.linalg.norm(self.pos[:2] - ue.pos[:2])),
@@ -420,7 +436,7 @@ class UAV:
             if sample_recorder is not None:
                 sample_recorder(service_context, heuristic_target_idx)
 
-            if offload_actions is not None and service_action_cursor < int(config.MAX_OFFLOAD_REQUESTS_PER_UAV):
+            if offload_actions is not None:
                 requested_target_idx = int(offload_actions[service_action_cursor])
                 best_target_idx, best_target_uav = self._resolve_external_service_offload_action(
                     requested_target_idx,
@@ -444,13 +460,34 @@ class UAV:
             self._record_service_offload_choice(best_target_idx)
             resolved_service.append((ue, ue_uav_rate, best_target_idx, best_target_uav))
 
-        # Aggregate Final Loads (ENV-R3): compute tasks executed on self
-        local_service_count = sum(1 for (_, _, tidx, _) in resolved_service if tidx == OFFLOAD_TARGET_LOCAL)
-        self._current_service_request_count = local_service_count
-        for (_, _, tidx, tuav) in resolved_service:
-            if tidx == OFFLOAD_TARGET_COOPERATIVE and tuav is not None:
-                tuav._current_service_request_count += 1
+        return resolved_service, other_ues
 
+    @staticmethod
+    def execute_request_batch(plans) -> None:
+        """Freeze fleet-wide final compute loads before executing any request.
+
+        Each plan is (source UAV, resolved service tasks, other requests).
+        MBS tasks never enter a UAV's denominator. Incoming tasks cannot be
+        overwritten when their destination subsequently executes its own plan.
+        """
+        destinations = {source for source, _, _ in plans}
+        for source, service, _ in plans:
+            for _, _, target, neighbor in service:
+                if target == OFFLOAD_TARGET_COOPERATIVE:
+                    assert neighbor is not None
+                    destinations.add(neighbor)
+        for uav in destinations:
+            uav._current_service_request_count = 0
+        for source, service, _ in plans:
+            for _, _, target, neighbor in service:
+                if target == OFFLOAD_TARGET_LOCAL:
+                    source._current_service_request_count += 1
+                elif target == OFFLOAD_TARGET_COOPERATIVE:
+                    neighbor._current_service_request_count += 1
+        for source, service, others in plans:
+            source._execute_resolved_requests(service, others)
+
+    def _execute_resolved_requests(self, resolved_service, other_ues) -> None:
         # --- PHASE B: Execute Service and Content Requests (ENV-R4) ---
         for (ue, ue_uav_rate, best_target_idx, best_target_uav) in resolved_service:
             current_req = ue.current_request
@@ -716,7 +753,7 @@ class UAV:
         best_neighbor_cache_belief: float = 0.0
         # 循环处理：遍历 neighbor 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for neighbor in self._neighbors:
-            belief_prob: float = _get_belief_probability(req_id, neighbor.id)
+            belief_prob: float = _get_belief_probability(req_id, neighbor.id, self._rank_map)
             uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, neighbor.pos))
             neighbor_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(neighbor.pos, config.MBS_POS))
             exp_neighbor_fetch_latency: float = (1.0 - belief_prob) * _tx_latency_bytes(file_size, neighbor_mbs_rate)
@@ -745,7 +782,7 @@ class UAV:
         )
 
     def _get_service_neighbor_cache_belief(self, req_id: int, neighbor: "UAV") -> float:
-        return _get_belief_probability(req_id, neighbor.id)
+        return _get_belief_probability(req_id, neighbor.id, self._rank_map)
 
     # 函数 _estimate_best_cooperative_service_latency：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
     def _estimate_best_cooperative_service_latency(self, current_req: Request, ue_uav_rate: float) -> tuple[float, "UAV" | None]:
@@ -781,7 +818,7 @@ class UAV:
         best_neighbor: UAV | None = None
         # 循环处理：遍历 neighbor 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for neighbor in self._neighbors:
-            belief_prob: float = _get_belief_probability(req_id, neighbor.id)
+            belief_prob: float = _get_belief_probability(req_id, neighbor.id, self._rank_map)
             uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, neighbor.pos))
             uav_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(neighbor.pos, config.MBS_POS))
             uav_uav_download_latency: float = _tx_latency_bytes(file_size, uav_uav_rate)
@@ -818,12 +855,14 @@ class UAV:
                 f_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
                 self._energy_current_slot += f_energy
                 self.service_fetch_or_backhaul_energy += f_energy
+                self.assignment_causal_energy += f_energy
                 _try_add_file_to_cache(self, req_id)
 
             comp_latency, comp_energy = _get_computing_latency_and_energy(self, cpu_cycles)
             ue.latency_current_request = ue_uav_upload_latency + fetch_latency + comp_latency
             self._energy_current_slot += comp_energy
             self.service_compute_energy += comp_energy
+            self.assignment_causal_energy += comp_energy
 
         elif target_idx == OFFLOAD_TARGET_COOPERATIVE:
             assert target_uav is not None
@@ -834,8 +873,10 @@ class UAV:
             target_rx_energy: float = _comm_energy(config.UAV_COMM_RX_POWER, uav_uav_upload_latency)
             self._energy_current_slot += tx_energy
             self.service_comm_energy += tx_energy
+            self.assignment_causal_energy += tx_energy
             target_uav._energy_current_slot += target_rx_energy
             target_uav.service_comm_energy += target_rx_energy
+            target_uav.assignment_causal_energy += target_rx_energy
 
             fetch_latency = 0.0
             target_read_cache = getattr(target_uav, "cache_snapshot", target_uav.cache)
@@ -844,13 +885,14 @@ class UAV:
                 t_f_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
                 target_uav._energy_current_slot += t_f_energy
                 target_uav.service_fetch_or_backhaul_energy += t_f_energy
+                target_uav.assignment_causal_energy += t_f_energy
                 _try_add_file_to_cache(target_uav, req_id)
 
             comp_latency, comp_energy = _get_computing_latency_and_energy(target_uav, cpu_cycles)
             ue.latency_current_request = ue_uav_upload_latency + uav_uav_upload_latency + fetch_latency + comp_latency
             target_uav._energy_current_slot += comp_energy
             target_uav.service_compute_energy += comp_energy
-            _try_add_file_to_cache(self, req_id)
+            target_uav.assignment_causal_energy += comp_energy
 
         else:
             uav_mbs_upload_latency: float = _tx_latency_bytes(req_size, self._uav_mbs_rate)
@@ -858,8 +900,8 @@ class UAV:
             mbs_tx_energy: float = _comm_energy(config.UAV_BACKHAUL_TX_POWER, uav_mbs_upload_latency)
             self._energy_current_slot += mbs_tx_energy
             self.service_fetch_or_backhaul_energy += mbs_tx_energy
+            self.assignment_causal_energy += mbs_tx_energy
             ue.latency_current_request = ue_uav_upload_latency + uav_mbs_upload_latency + mbs_compute_latency
-            _try_add_file_to_cache(self, req_id)
 
     # 函数 _process_content_request：用户设备产生的任务请求，主要参数：ue, ue_uav_rate, target_idx, target_uav。
     def _process_content_request(self, ue: UE, ue_uav_rate: float, target_idx: int, target_uav: "UAV" | None) -> None:
@@ -942,7 +984,7 @@ class UAV:
     def gdsf_cache_update(self) -> None:
         """Update cache using the GDSF caching policy at a longer timescale."""
         priority_scores: np.ndarray = self._ema_scores / np.maximum(config.FILE_SIZES, 1.0)
-        sorted_file_ids: np.ndarray = np.argsort(-priority_scores)
+        sorted_file_ids: np.ndarray = np.lexsort((np.arange(config.NUM_FILES), -priority_scores))
         self.cache = np.zeros(config.NUM_FILES, dtype=bool)
         used_space = 0.0
         # 循环处理：遍历 file_id 对应的数据集合，逐项执行环境交互、训练更新或结果统计。

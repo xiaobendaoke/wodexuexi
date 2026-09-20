@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+echo "此历史脚本依赖已移除的配置生成器与旧实验协议。正式主实验/消融/敏感性请使用经 prepare_formal_release.py 验收后的 run_linear_v2_full.sh。" >&2
+exit 1
 cd "."
 # DSR-Aware - 强配置，目标 DSR >= 0.27
 
