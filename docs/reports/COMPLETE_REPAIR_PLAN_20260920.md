@@ -1,5 +1,7 @@
 # 全论文实验准备补全与 Git 提交
 
+> 后续更新：用户已确定目标组成及优先关系，第四章实现阶段已将字典序、归一化常数、方法与评估协议冻结到 `CHAPTER4_PROTOCOL.md`。下文待确认描述保留为此前阶段记录，最新实现见 `CHAPTER4_IMPLEMENTATION_20260920.md`。
+
 本轮授权：完成剩余修复并提交 Git。保留已有无关暂存和未追踪文件，不推送、不启动完整长训练矩阵。
 
 1. `run_remote_python.sh`、`run_linear_v2_full.sh`：统一启动时加载所选环境的动态库，验证新进程中两种 NumPy/PyTorch 导入顺序。

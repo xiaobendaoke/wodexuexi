@@ -1,5 +1,7 @@
 # Git 提交与服务器验收状态
 
+> 后续更新：本文件保留 bfb0300 阶段状态。第四章现已进入实现并冻结目标，最新范围见 `CHAPTER4_IMPLEMENTATION_20260920.md` 和根目录 `CHAPTER4_PROTOCOL.md`；下文“尚待确认”为历史记录。
+
 代码提交：`bfb030099096d56d2349df9562a4b06a289537da`。
 源码摘要：`eb34d0b0e59a056276c2310a98a1dac05875d1ed19b94cc5699fac0efd6b70d3`。
 
