@@ -34,3 +34,36 @@ class TestCollisionFallback(unittest.TestCase):
             env.step(actions)
         self.assertEqual(env._time_step, 0)
         np.testing.assert_array_equal(before, [u.pos for u in env.uavs])
+
+    def test_valid_stored_positions_survive_next_step(self):
+        env = Env()
+        positions = np.array([
+            [290.7232243706553, 293.62931818878013],
+            [470.0763942917365, 205.13049989012836],
+            [100., 100.], [100., 500.], [500., 500.],
+        ], dtype=np.float64)
+        env._validate_positions(positions)
+        for uav, pos in zip(env.uavs, positions):
+            uav.update_position(pos)
+        env._apply_actions_to_env(np.zeros((config.NUM_UAVS, 2)))
+        env._validate_positions(np.array([u.pos[:2] for u in env.uavs]))
+
+    def test_validation_uses_same_precision_as_fallback(self):
+        positions = np.array([
+            [334.0891418457031, 223.015869140625],
+            [492.77557373046875, 101.28578186035156],
+            [100., 100.], [100., 500.], [500., 500.],
+        ], dtype=np.float32)
+        # float32 norm rounds this invalid distance up across the tolerance.
+        with self.assertRaises(ValueError):
+            Env._validate_positions(positions)
+
+    def test_reset_preserves_valid_supplied_geometry(self):
+        positions = np.array([
+            [290.7232243706553, 293.62931818878013],
+            [470.0763942917365, 205.13049989012836],
+            [100., 100.], [100., 500.], [500., 500.],
+        ])
+        env = Env()
+        env.reset(initial_positions=positions)
+        np.testing.assert_array_equal([u.pos[:2] for u in env.uavs], positions)

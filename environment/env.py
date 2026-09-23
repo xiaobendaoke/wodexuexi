@@ -178,7 +178,7 @@ class Env:
             initial_positions = np.asarray(initial_positions, dtype=np.float64)
             self._validate_positions(initial_positions)
             for i, uav in enumerate(self._uavs):
-                uav.pos[:2] = initial_positions[i]
+                uav.pos = np.append(initial_positions[i], config.UAV_ALTITUDE)
         else:
             # Deterministic bounded rejection sampling to enforce pairwise separation >= MIN_UAV_SEPARATION (ENV-R7)
             min_bound: float = config.UAV_COVERAGE_RADIUS / 2.0
@@ -496,7 +496,9 @@ class Env:
         3. inside boundaries [min_bound, AREA - min_bound]
         4. non-negative hover time
         """
-        current_positions: np.ndarray = np.array([uav.pos[:2].copy() for uav in self._uavs], dtype=np.float32)
+        # Preserve stored geometry: float32 rounding can cross the separation
+        # tolerance and make even the all-hover fallback infeasible.
+        current_positions: np.ndarray = np.array([uav.pos[:2].copy() for uav in self._uavs], dtype=np.float64)
         max_dist: float = float(config.UAV_SPEED * config.TIME_SLOT_DURATION)
         min_boundary_gap: float = float(config.UAV_COVERAGE_RADIUS / 2.0)
         min_sep: float = float(config.MIN_UAV_SEPARATION)
@@ -576,6 +578,7 @@ class Env:
 
     @staticmethod
     def _validate_positions(positions: np.ndarray) -> None:
+        positions = np.asarray(positions, dtype=np.float64)
         tolerance = 1e-3
         gap = float(config.UAV_COVERAGE_RADIUS / 2)
         upper = np.array([config.AREA_WIDTH - gap, config.AREA_HEIGHT - gap])
@@ -590,6 +593,7 @@ class Env:
 
     def _finalize_joint_positions(self, current_positions, next_positions):
         """Propagate hover fallback until no old or newly-created conflict remains."""
+        current_positions = np.asarray(current_positions, dtype=np.float64)
         self._validate_positions(current_positions)
         next_positions = np.array(next_positions, dtype=np.float64, copy=True)
         stopped = set()

@@ -1,4 +1,4 @@
-"""Create and validate an isolated source snapshot without committing user changes."""
+"""Create and validate an isolated source snapshot from a clean Git checkout."""
 import argparse
 import hashlib
 import json
@@ -18,6 +18,8 @@ def prepare(destination):
     import numpy as np
     import torch
     source = source_manifest()
+    if source['git_clean'] is not True or not source['git_sha']:
+        raise RuntimeError('Formal release requires a clean, committed Git checkout')
     dest = Path(destination).resolve()
     dest.mkdir(parents=True, exist_ok=False)
     for relative in source['files']:
