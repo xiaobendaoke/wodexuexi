@@ -12,6 +12,23 @@ LEARNED = ['hierarchical', 'vanilla_hierarchical', 'ippo', 'joint',
 NONLEARNED = ['greedy', 'local', 'mbs', 'random', 'uniform']
 
 
+def verify_completed_job(directory, source_hash):
+    """Read a completed job only when its files and source match this suite."""
+    directory = Path(directory)
+    done = json.loads((directory / 'completed.json').read_text())
+    if done.get('status') != 'PASS':
+        raise ValueError(f'Incomplete result: {directory}')
+    for relative, expected in done['hashes'].items():
+        path = directory / relative
+        if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+            raise ValueError(f'Altered result: {path}')
+    attempt = directory / done['attempt']
+    manifest = json.loads((attempt / 'manifest.json').read_text())
+    if manifest['source']['source_hash'] != source_hash:
+        raise ValueError(f'Mixed source versions: {directory}')
+    return attempt
+
+
 def verify_release(lock_path, report_path, source):
     if not lock_path or not report_path:
         raise ValueError('Formal runs require a verified source release and validation report')
@@ -22,7 +39,9 @@ def verify_release(lock_path, report_path, source):
             or lock.get('files') != source['files']
             or lock.get('validation_sha256') != hashlib.sha256(report_bytes).hexdigest()
             or report.get('source_hash') != source['source_hash']
-            or report.get('status') != 'PASS'):
+            or report.get('status') != 'PASS'
+            or lock.get('git_clean') is not True
+            or not lock.get('git_sha')):
         raise ValueError('Release source or validation evidence changed')
     import numpy as np
     import torch

@@ -1,4 +1,5 @@
 import json
+import hashlib
 from pathlib import Path
 import tempfile
 import unittest
@@ -8,7 +9,7 @@ import numpy as np
 from analyze_canonical_suite import paired_effect
 from run_canonical_experiment import parse_args, train
 from run_formal_suite import run_suite
-from utils.formal_protocol import matrix, verify_release
+from utils.formal_protocol import matrix, verify_completed_job, verify_release
 from utils.canonical_experiment import source_manifest
 
 
@@ -25,6 +26,21 @@ class TestFormalProtocol(unittest.TestCase):
     def test_formal_run_rejects_missing_release(self):
         with self.assertRaises(ValueError):
             verify_release(None, None, source_manifest())
+
+    def test_completed_job_rejects_different_source_even_when_files_are_intact(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            job = Path(tmp)
+            attempt = job / 'attempt_0000'
+            attempt.mkdir()
+            manifest = attempt / 'manifest.json'
+            manifest.write_text(json.dumps({'source': {'source_hash': 'old'}}))
+            (job / 'completed.json').write_text(json.dumps({
+                'status': 'PASS', 'attempt': attempt.name,
+                'hashes': {'attempt_0000/manifest.json': hashlib.sha256(manifest.read_bytes()).hexdigest()},
+            }))
+            self.assertEqual(verify_completed_job(job, 'old'), attempt)
+            with self.assertRaisesRegex(ValueError, 'Mixed source versions'):
+                verify_completed_job(job, 'repaired')
 
     def test_uniform_counts_physical_execution_destinations(self):
         import config

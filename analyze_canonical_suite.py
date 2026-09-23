@@ -1,24 +1,16 @@
 """Complete-matrix aggregation; paired training-seed effects, never episode pseudoreplication."""
 import argparse
 import csv
-import hashlib
 import json
 from pathlib import Path
 
 import numpy as np
 from utils.canonical_experiment import write_json
-from utils.formal_protocol import NONLEARNED
+from utils.formal_protocol import NONLEARNED, verify_completed_job
 
 
 def read_unit(directory, episodes, source_hash):
-    done = json.loads((directory / 'completed.json').read_text())
-    for rel, expected in done['hashes'].items():
-        if hashlib.sha256((directory / rel).read_bytes()).hexdigest() != expected:
-            raise ValueError(f'Altered result: {directory / rel}')
-    attempt = directory / done['attempt']
-    manifest = json.loads((attempt / 'manifest.json').read_text())
-    if manifest['source']['source_hash'] != source_hash:
-        raise ValueError('Mixed source versions')
+    attempt = verify_completed_job(directory, source_hash)
     files = sorted((attempt / 'episodes').glob('*.json'))
     if len(files) != episodes:
         raise ValueError('Missing or extra evaluation episodes')
@@ -75,8 +67,8 @@ def analyze(output):
                 base = output / variant['name'] / method
                 if seed is not None:
                     base /= f'seed_{seed}'
-                    done = json.loads((base / 'train/completed.json').read_text())
-                    for path in sorted((base / 'train' / done['attempt'] / 'episodes').glob('*.json')):
+                    trained = verify_completed_job(base / 'train', suite['source_hash'])
+                    for path in sorted((trained / 'episodes').glob('*.json')):
                         ep = json.loads(path.read_text())
                         curves.append({'variant': variant['name'], 'method': method, 'training_seed': seed,
                                        'episode': ep['episode'], 'training_DSR': ep['request_weighted_dsr'],

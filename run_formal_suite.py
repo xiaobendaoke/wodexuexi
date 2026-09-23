@@ -11,7 +11,7 @@ import time
 import shutil
 
 from utils.canonical_experiment import ROOT, digest, source_manifest, write_json
-from utils.formal_protocol import NONLEARNED, matrix, verify_release
+from utils.formal_protocol import NONLEARNED, matrix, verify_completed_job, verify_release
 
 
 def groups(plan):
@@ -57,11 +57,7 @@ def run_suite(plan, output, source_lock=None, validation_report=None, workers=1,
             directory.mkdir(parents=True, exist_ok=True)
             marker = directory / 'completed.json'
             if marker.exists():
-                done = json.loads(marker.read_text())
-                for rel, expected in done['hashes'].items():
-                    if hashlib.sha256((directory / rel).read_bytes()).hexdigest() != expected:
-                        raise ValueError(f'Completed result changed: {directory / rel}')
-                return directory / done['attempt']
+                return verify_completed_job(directory, source['source_hash'])
             attempts = sorted(directory.glob('attempt_*'))
             resume = False
             if checkpoint is None and method not in NONLEARNED and attempts and (attempts[-1] / 'latest.json').exists():
