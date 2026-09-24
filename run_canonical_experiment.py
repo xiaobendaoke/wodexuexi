@@ -22,13 +22,15 @@ from marl_models.utils import get_model
 from run_hierarchical_mappo_experiment import apply_lower_ablation, lower_rewards_from_metrics, update_on_policy_model
 from utils.canonical_experiment import config_snapshot, digest, exogenous_frame, scenario_manifest, source_manifest, write_json
 
-METHODS = ("upper_attention", "upper_vanilla", "hierarchical", "no_attention", "no_quality_mask", "no_penalty", "joint", "vanilla_hierarchical", "lower_no_attention", "ippo",
+METHODS = ("upper_attention", "upper_vanilla", "hierarchical", "no_attention", "no_quality_mask", "no_penalty", "joint", "vanilla_hierarchical", "lower_no_attention", "lower_actor_attention_only", "lower_critic_attention_only", "ippo",
            "greedy", "local", "mbs", "random", "uniform")
 NONLEARNED = {"greedy", "local", "mbs", "random", "uniform"}
 
 
 def configure_method(method):
-    ablation = {"no_attention": "no_attention", "lower_no_attention": "no_attention", "no_quality_mask": "no_mask", "no_penalty": "no_lagrange"}.get(method, "full")
+    ablation = {"no_attention": "no_attention", "lower_no_attention": "no_attention",
+                "lower_actor_attention_only": "actor_only", "lower_critic_attention_only": "critic_only",
+                "no_quality_mask": "no_mask", "no_penalty": "no_lagrange"}.get(method, "full")
     lower_name = apply_lower_ablation(ablation)
     if method in NONLEARNED:
         name = {"random": "random_baseline", "uniform": "uniform_baseline"}.get(method, "uncoordinated_greedy")
