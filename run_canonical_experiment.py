@@ -22,13 +22,20 @@ from marl_models.utils import get_model
 from run_hierarchical_mappo_experiment import apply_lower_ablation, lower_rewards_from_metrics, update_on_policy_model
 from utils.canonical_experiment import config_snapshot, digest, exogenous_frame, scenario_manifest, source_manifest, write_json
 
-METHODS = ("upper_attention", "upper_vanilla", "hierarchical", "no_attention", "no_quality_mask", "no_penalty", "joint", "vanilla_hierarchical", "lower_no_attention", "lower_actor_attention_only", "lower_critic_attention_only", "ippo",
+METHODS = ("upper_attention", "upper_vanilla", "hierarchical", "no_attention", "no_quality_mask", "no_penalty", "joint", "vanilla_hierarchical", "lower_no_attention", "lower_actor_attention_only", "lower_critic_attention_only", "lower_mlp_upper_dsr_w5", "lower_mlp_upper_energy_ref25k", "ippo",
            "greedy", "local", "mbs", "random", "uniform")
 NONLEARNED = {"greedy", "local", "mbs", "random", "uniform"}
+REWARD_PILOT_OVERRIDES = {
+    "lower_mlp_upper_dsr_w5": {"REWARD_W_DSR": 5.0},
+    "lower_mlp_upper_energy_ref25k": {"REWARD_NORM_ENERGY_REF": 25000.0},
+}
 
 
 def configure_method(method):
+    for key, value in REWARD_PILOT_OVERRIDES.get(method, {}).items():
+        setattr(config, key, value)
     ablation = {"no_attention": "no_attention", "lower_no_attention": "no_attention",
+                "lower_mlp_upper_dsr_w5": "no_attention", "lower_mlp_upper_energy_ref25k": "no_attention",
                 "lower_actor_attention_only": "actor_only", "lower_critic_attention_only": "critic_only",
                 "no_quality_mask": "no_mask", "no_penalty": "no_lagrange"}.get(method, "full")
     lower_name = apply_lower_ablation(ablation)
