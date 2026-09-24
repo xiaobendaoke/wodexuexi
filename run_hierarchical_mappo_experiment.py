@@ -46,6 +46,12 @@ def apply_lower_ablation(ablation: str) -> str:
         config.OFFLOAD_CONSTRAINT_MODE = "adaptive_penalty"
         config.OFFLOAD_USE_ATTENTION = False
         return "no_attention_offload_mappo"
+    if ablation in {"actor_only", "critic_only"}:
+        config.OFFLOAD_MASK_MODE = "quality"
+        config.OFFLOAD_CONSTRAINT_MODE = "adaptive_penalty"
+        config.OFFLOAD_USE_ATTENTION = ablation == "actor_only"
+        return {"actor_only": "actor_attention_only_offload_mappo",
+                "critic_only": "critic_attention_only_offload_mappo"}[ablation]
     raise ValueError(f"Unknown lower-layer ablation: {ablation}")
 
 

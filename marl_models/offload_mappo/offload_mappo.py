@@ -24,24 +24,25 @@ class OffloadActor(nn.Module):
         expected_obs_dim = self.own_dim + self.max_requests * self.request_dim
         if obs_dim != expected_obs_dim:
             raise ValueError(f"Unexpected offload obs dim: {obs_dim} != {expected_obs_dim}")
+        hidden_dim = config.OFFLOAD_ATTN_HIDDEN_DIM
 
         self.own_encoder = nn.Sequential(
-            layer_init(nn.Linear(self.own_dim, config.ATTN_HIDDEN_DIM)),
-            nn.LayerNorm(config.ATTN_HIDDEN_DIM),
+            layer_init(nn.Linear(self.own_dim, hidden_dim)),
+            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
         )
         self.request_encoder = nn.Sequential(
-            layer_init(nn.Linear(self.request_dim, config.ATTN_HIDDEN_DIM)),
-            nn.LayerNorm(config.ATTN_HIDDEN_DIM),
+            layer_init(nn.Linear(self.request_dim, hidden_dim)),
+            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
         )
         self.request_attention = nn.MultiheadAttention(
-            embed_dim=config.ATTN_HIDDEN_DIM,
-            num_heads=config.ATTN_NUM_HEADS,
+            embed_dim=hidden_dim,
+            num_heads=config.OFFLOAD_ATTN_NUM_HEADS,
             batch_first=True,
         )
         self.head = nn.Sequential(
-            layer_init(nn.Linear(config.ATTN_HIDDEN_DIM * 3, config.MLP_HIDDEN_DIM)),
+            layer_init(nn.Linear(hidden_dim * 3, config.MLP_HIDDEN_DIM)),
             nn.LayerNorm(config.MLP_HIDDEN_DIM),
             nn.ReLU(),
             layer_init(nn.Linear(config.MLP_HIDDEN_DIM, num_actions), std=0.01),
@@ -107,21 +108,22 @@ class OffloadActor(nn.Module):
 class OffloadCritic(nn.Module):
     def __init__(self, obs_dim: int) -> None:
         super().__init__()
+        hidden_dim = config.OFFLOAD_ATTN_HIDDEN_DIM
         self.encoder = nn.Sequential(
             layer_init(nn.Linear(obs_dim, config.MLP_HIDDEN_DIM)),
             nn.LayerNorm(config.MLP_HIDDEN_DIM),
             nn.ReLU(),
-            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, config.ATTN_HIDDEN_DIM)),
-            nn.LayerNorm(config.ATTN_HIDDEN_DIM),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, hidden_dim)),
+            nn.LayerNorm(hidden_dim),
             nn.ReLU(),
         )
         self.attn = nn.MultiheadAttention(
-            embed_dim=config.ATTN_HIDDEN_DIM,
-            num_heads=config.ATTN_NUM_HEADS,
+            embed_dim=hidden_dim,
+            num_heads=config.OFFLOAD_ATTN_NUM_HEADS,
             batch_first=True,
         )
         self.value = nn.Sequential(
-            layer_init(nn.Linear(config.ATTN_HIDDEN_DIM * 2, config.MLP_HIDDEN_DIM)),
+            layer_init(nn.Linear(hidden_dim * 2, config.MLP_HIDDEN_DIM)),
             nn.LayerNorm(config.MLP_HIDDEN_DIM),
             nn.ReLU(),
             layer_init(nn.Linear(config.MLP_HIDDEN_DIM, 1), std=1.0),
@@ -201,13 +203,20 @@ class OffloadMAPPO(MARLModel):
         super().__init__(model_name, num_agents, obs_dim, action_dim, device)
         self.max_requests = int(max_requests or config.MAX_OFFLOAD_REQUESTS_PER_UAV)
         self.num_actions = int(num_actions or config.OFFLOAD_NUM_ACTIONS)
-        self.use_attention = bool(getattr(config, "OFFLOAD_USE_ATTENTION", True)) and model_name != "no_attention_offload_mappo"
-        if self.use_attention:
-            self.actor = OffloadActor(obs_dim, self.max_requests, self.num_actions).to(device)
-            self.critic = OffloadCritic(obs_dim).to(device)
-        else:
-            self.actor = OffloadMLPActor(obs_dim, self.max_requests, self.num_actions).to(device)
-            self.critic = OffloadMLPCritic(obs_dim).to(device)
+        both_attention = bool(getattr(config, "OFFLOAD_USE_ATTENTION", True))
+        architecture = {
+            "no_attention_offload_mappo": (False, False),
+            "actor_attention_only_offload_mappo": (True, False),
+            "critic_attention_only_offload_mappo": (False, True),
+        }
+        self.actor_attention, self.critic_attention = architecture.get(
+            model_name, (both_attention, both_attention)
+        )
+        self.use_attention = self.actor_attention  # historical actor-attention inspection API
+        actor_type = OffloadActor if self.actor_attention else OffloadMLPActor
+        critic_type = OffloadCritic if self.critic_attention else OffloadMLPCritic
+        self.actor = actor_type(obs_dim, self.max_requests, self.num_actions).to(device)
+        self.critic = critic_type(obs_dim).to(device)
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.ACTOR_LR)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=config.CRITIC_LR)
 
@@ -321,7 +330,9 @@ class OffloadMAPPO(MARLModel):
                     "max_requests": self.max_requests,
                     "num_actions": self.num_actions,
                     "obs_dim": self.obs_dim,
-                    "constrained_attention_actor": self.use_attention,
+                    "constrained_attention_actor": self.actor_attention,
+                    "lower_actor_attention": self.actor_attention,
+                    "lower_critic_attention": self.critic_attention,
                 },
             },
             os.path.join(directory, "offload_mappo.pth"),
@@ -338,7 +349,10 @@ class OffloadMAPPO(MARLModel):
                 or metadata.get("max_requests") != self.max_requests
                 or metadata.get("obs_dim") != self.obs_dim
                 or metadata.get("num_actions") != self.num_actions
-                or metadata.get("constrained_attention_actor") != self.use_attention):
+                or metadata.get("lower_actor_attention", metadata.get("constrained_attention_actor"))
+                != self.actor_attention
+                or metadata.get("lower_critic_attention", metadata.get("constrained_attention_actor"))
+                != self.critic_attention):
             raise ValueError("Incompatible or historical lower checkpoint; retrain under canonical semantics")
         load_safe(self.actor, checkpoint["actor"])
         load_safe(self.critic, checkpoint["critic"])

@@ -354,3 +354,7 @@ ATTN_HIDDEN_DIM: int = 64  # Embedding size for internal attention representatio
 # 关键变量 ATTN_NUM_HEADS：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 ATTN_NUM_HEADS: int = 8  # Number of attention heads
 assert ATTN_HIDDEN_DIM % ATTN_NUM_HEADS == 0, f"ATTN_HIDDEN_DIM ({ATTN_HIDDEN_DIM}) must be divisible by ATTN_NUM_HEADS ({ATTN_NUM_HEADS})"
+# Keep lower-layer attention tunable without changing the upper trajectory model.
+OFFLOAD_ATTN_HIDDEN_DIM: int = 64
+OFFLOAD_ATTN_NUM_HEADS: int = 8
+assert OFFLOAD_ATTN_HIDDEN_DIM % OFFLOAD_ATTN_NUM_HEADS == 0
