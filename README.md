@@ -31,6 +31,9 @@ eval_episodes = 10
 train_episodes = 200  # learning baselines
 ```
 
+> [!NOTE]
+> 该汇总表是运行时产物，未提交到本分支。分支上现存的数据目录为 `results/baseline_matrix_*`、`results/final_force_admission/`、`results/sensitivity_force_admission/`。要得到上表，需按「复现实验命令」一节重新运行；仓库 `.gitignore` 已排除 `logs/`、`saved_models/`、`train_logs/`、`recent/`，这些目录不会被版本控制追踪。
+
 新增有效能效指标定义为：
 
 ```text
@@ -96,23 +99,17 @@ joint_mappo
 proposed
 ```
 
-注意：`random`、`uniform` 是非学习 baseline，没有 `training_curve_seed_42.json` 和 `training_summary_seed_42.json`。`joint_mappo` 当前有 `training_summary_seed_42.json`，没有单独的 `training_curve_seed_42.json`。
+注意：`random`、`uniform` 是非学习 baseline，没有 `training_curve_seed_42.json` 和 `training_summary_seed_42.json`。`joint_mappo` 当前有 `training_summary_seed_42.json`，没有单独的 `training_curve_seed_42.json`。上述目录均为运行时生成，仓库未提交。
 
 ### 旧数据归档
 
-旧 baseline 数据已归档到：
+旧 baseline 数据曾归档到：
 
 ```text
 recent/archive_baseline_before_energy_efficiency_20260604/
 ```
 
-该目录中的数据包括旧 `workload_1001` 结果和旧 `baseline_comparison_full` 结果。这些结果生成时还没有最新的 `energy_efficiency` 指标，不作为本 README 最新主结论依据。
-
-归档说明文件：
-
-```text
-recent/archive_baseline_before_energy_efficiency_20260604/README.txt
-```
+该目录已被 `.gitignore` 排除（`recent/`），当前分支不包含，其中的旧 `workload_1001` 与旧 `baseline_comparison_full` 结果无法从仓库获取。这些结果生成时还没有最新的 `energy_efficiency` 指标，不作为本 README 最新主结论依据。
 
 ### 论文与方案文档
 
@@ -122,45 +119,102 @@ recent/archive_baseline_before_energy_efficiency_20260604/README.txt
 | 第 1 章 | `latex/docs/chap01.tex` |
 | 第 2 章 | `latex/docs/chap02.tex` |
 | 第 3 章 | `latex/docs/chap03.tex` |
-| 第 4 章 | `latex/docs/chap04.tex` |
-| 第 5 章 | `latex/docs/chap05.tex` |
+| 第 4 章 | `latex/docs/chap04.tex`（本分支不存在） |
+| 第 5 章 | `latex/docs/chap05.tex`（本分支不存在） |
 | 第 6 章 | `latex/docs/chap06.tex` |
+| 补充内容 | `latex/docs/complementary.tex` |
 | 参考文献 | `latex/reference.bib` |
-| baseline 对比方案 | `docs/baseline_comparison_plan.md` |
-| 画图方案 | `docs/figure_generation_plan.md` |
+| 基线方案与证据审计 | `docs/baseline_comparison_plan.md`（本分支不存在）；现存方案类文档为 `docs/claim_evidence_matrix_20260702.md`、`docs/force_admission_replacement_runbook.md`、`docs/defense_experiment_audit.md` |
+| 画图方案 | `docs/figure_generation_plan.md`（本分支不存在）；图表脚本位于 `docs/figures/scripts/` |
 
 ## 复现实验命令
 
-建议使用项目虚拟环境：
+本节给出从零开始到跑通实验的完整路径：获取代码 → 创建虚拟环境 → 安装依赖 → 验证环境 → 运行 baseline。仓库不提交 `.venv`，依赖清单需按本节手动安装；版本与 `ENV_REPAIR_REPORT.md` 记录的基准环境一致（Python 3.12.11 / torch 2.6.0+cpu / numpy 2.0.1）。
+
+### 1. 获取代码
 
 ```bash
-.venv/bin/python --version
+git clone -b "双层注意力MAPPO多智能体强化学习" \
+  https://github.com/xiaobendaoke/wodexuexi.git
+cd wodexuexi
 ```
+
+默认分支 `main` 为占位分支，论文实验代码全部在 `双层注意力MAPPO多智能体强化学习` 分支上，克隆时必须用 `-b` 指定。
+
+### 2. 创建虚拟环境
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate      # Windows: .venv\Scripts\activate
+```
+
+后续命令均在已激活的虚拟环境中执行，因此统一写成 `python` 而不再写 `.venv/bin/python`。
+
+### 3. 安装依赖
+
+```bash
+pip install --upgrade pip
+
+# PyTorch CPU 版（基准环境为 CPU 执行，未启用 CUDA）
+pip install torch==2.6.0 \
+  --index-url https://download.pytorch.org/whl/cpu
+
+# 其余依赖
+pip install "numpy==2.0.1" matplotlib scipy
+```
+
+版本说明：
+
+- `torch` 安装 CPU 构建，与基准环境 `torch 2.6.0+cpu`、`torch.cuda.is_available = False` 保持一致，同时避免下载数 GB 的 CUDA 运行时。若本机有 GPU 且希望使用，可改装 `https://download.pytorch.org/whl/cu124` 对应版本；仿真为 CPU 密集，实际收益有限。
+- `numpy==2.0.1` 为基准环境版本，勿使用旧版 1.x，浮点与随机数行为存在差异。
+- `scipy` 仅用于 `analyze_experiment_statistics.py`、`analyze_baseline_matrix_v2.py` 两个统计分析脚本；baseline 训练与评估不依赖它。
+
+### 4. 验证环境
+
+```bash
+python --version
+python -c "import torch, numpy, matplotlib; print(torch.__version__, numpy.__version__)"
+python tests/deterministic_smoke.py
+```
+
+最后一条是无训练开销的确定性冒烟测试，两次 episode 需逐位一致。若只需完整测试集，可运行 `python tests/run_all_tests.py`（unittest，覆盖 `tests/test_*.py`）。
+
+### 5. 运行 baseline
+
+运行入口为 `run_baseline_comparison_experiment.py`，`--baseline` 取值：`random`、`uniform`、`ippo`、`vanilla_mappo`、`joint_mappo`、`proposed`。
 
 单个 baseline 示例：
 
 ```bash
-.venv/bin/python run_baseline_comparison_experiment.py --baseline proposed --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42
+python run_baseline_comparison_experiment.py --baseline proposed --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42
 ```
 
 完整复现最新 6 个 baseline：
 
 ```bash
-.venv/bin/python run_baseline_comparison_experiment.py --baseline random --eval_episodes 10 --seed 42 --workload_seed 42
-.venv/bin/python run_baseline_comparison_experiment.py --baseline uniform --eval_episodes 10 --seed 42 --workload_seed 42
-.venv/bin/python run_baseline_comparison_experiment.py --baseline ippo --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42
-.venv/bin/python run_baseline_comparison_experiment.py --baseline vanilla_mappo --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42
-.venv/bin/python run_baseline_comparison_experiment.py --baseline joint_mappo --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42
-.venv/bin/python run_baseline_comparison_experiment.py --baseline proposed --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42
+python run_baseline_comparison_experiment.py --baseline random --eval_episodes 10 --seed 42 --workload_seed 42
+python run_baseline_comparison_experiment.py --baseline uniform --eval_episodes 10 --seed 42 --workload_seed 42
+python run_baseline_comparison_experiment.py --baseline ippo --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42
+python run_baseline_comparison_experiment.py --baseline vanilla_mappo --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42
+python run_baseline_comparison_experiment.py --baseline joint_mappo --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42
+python run_baseline_comparison_experiment.py --baseline proposed --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42
 ```
 
-如果希望多进程并行跑，可参考之前使用的日志路径：
+以上命令与 `results/baseline_comparison/summary_energy_efficiency.tsv` 中记录的结果使用相同超参：`seed=42`、`workload_seed=42`、`eval_episodes=10`、学习方法 `train_episodes=200`。`--output_dir` 默认为 `results/baseline_comparison`，可用 `--output_dir` 覆盖。
 
-```text
-logs/baseline_<method>_energy_efficiency.log
+注意 `random`、`uniform` 是非学习 baseline，不需要训练，`--train_episodes` 对其无效。学习方法必须带 `--train_episodes`，否则入口脚本会创建一个未训练的随机初始化模型，结果不具可比性。
+
+学习类 baseline 在 CPU 上耗时较长（`STEPS_PER_EPISODE = 1000`，见 `config.py`），建议在远程实验机上用 `nohup` 后台运行，并设置 `OMP_NUM_THREADS` 限制线程数。
+
+如需多进程并行跑，建议为每个进程指定独立 `--output_dir` 并分别重定向标准输出到日志文件，避免结果与输出相互覆盖：
+
+```bash
+OMP_NUM_THREADS=4 python run_baseline_comparison_experiment.py \
+  --baseline proposed --train_episodes 200 --eval_episodes 10 --seed 42 --workload_seed 42 \
+  > logs/baseline_proposed_energy_efficiency.log 2>&1
 ```
 
-并行运行时建议为每个进程单独写日志，避免输出混在一起。
+`logs/`、`results/` 下的运行产物均未提交到仓库，需自行创建并管理。
 
 ## 代码入口
 
@@ -199,4 +253,4 @@ logs/baseline_<method>_energy_efficiency.log
 results/baseline_comparison/summary_energy_efficiency.tsv
 ```
 
-更早的 `results/final/`、`results/full_cpu_runs/`、`results/joint_experiments/` 等目录可能仍包含历史主实验、消融实验或调参实验结果，但它们不作为本 README 的最新 baseline 结论来源。需要回溯旧实验时，优先查看对应目录中的 `statistics.json`、`statistics.md`、`manifest.json` 或控制日志。
+本分支 `results/` 下实际存在的目录为：`results/baseline_matrix_*`（含 `*_smoke` 与 `*_resume`）、`results/final_force_admission/`、`results/sensitivity_force_admission/`。历史主实验、消融实验或调参实验目录（如 `results/final/`、`results/full_cpu_runs/`、`results/joint_experiments/`）当前不在仓库中。需要回溯旧实验时，优先查看对应目录中的 `statistics.json`、`statistics.md`、`manifest.json` 或控制日志。
