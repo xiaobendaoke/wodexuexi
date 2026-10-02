@@ -733,5 +733,14 @@
       "output": "",
       "note": "Treat archived CSV CRLF as valid; preserve original result bytes."
     }
+  },
+  "migration_followup": {
+    "paths": {
+      "CLEAN_SLATE_AUDIT.md": "docs/provenance/CLEAN_SLATE_AUDIT.md",
+      "ENV_REPAIR_REPORT.md": "docs/reports/ENV_REPAIR_REPORT.md",
+      "TDD_RED_BASELINE.md": "docs/provenance/TDD_RED_BASELINE.md"
+    },
+    "reason": "Three source deletions were hidden by combined staged/unstaged rename detection when assembling the initial path list; new destinations were committed with identical bytes.",
+    "status": "Identical relocated content verified; commit original-path deletions without rewriting pushed history."
   }
 }
