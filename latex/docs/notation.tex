@@ -2,30 +2,36 @@
 
 \begin{notation}
 
-  \begin{notationlist}{2em}
+  \begin{notationlist}{2.6em}
     \item[$\displaystyle N$] UAV 数量
     \item[$\displaystyle M$] UE 数量
     \item[$\displaystyle H$] UAV 飞行高度
-    \item[$\displaystyle \tau$] 时间步时长
-    \item[$\displaystyle T$] episode 总时间步数
-    \item[$\displaystyle R_c$] UAV 覆盖半径
-    \item[$\displaystyle v_{max}$] UAV 最大飞行速度
-    \item[$\displaystyle B_{max}$] UE 电池容量
-    \item[$\displaystyle B_{low}$] UE 电池临界阈值
-    \item[$\displaystyle P_{move}$] UAV 飞行功率
-    \item[$\displaystyle P_{hover}$] UAV 悬停功率
-    \item[$\displaystyle P_{wpt}$] WPT 发射功率
-    \item[$\displaystyle f_{mbs}$] MBS 计算能力
-    \item[$\displaystyle f_{uav}$] UAV 计算能力
-    \item[$\displaystyle \eta$] WPT 能量采集效率
-    \item[$\displaystyle \beta_0$] 参考距离 1m 时的信道功率增益
-    \item[$\displaystyle DSR$] Deadline satisfaction rate
-    \item[$\displaystyle P_{nat}$] 自然覆盖服务比例
+    \item[$\displaystyle \tau$] 时隙时长
+    \item[$\displaystyle T$] episode 总时隙数
+    \item[$\displaystyle \mathbf{q}_u(t)$] UAV $u$ 在第 $t$ 个时隙的水平位置
+    \item[$\displaystyle v_{\max}$] UAV 最大飞行速度
+    \item[$\displaystyle d_{\min}$] UAV 间最小安全距离
+    \item[$\displaystyle R_c$] UAV 服务覆盖半径
+    \item[$\displaystyle R_s$] UAV 感知半径
+    \item[$\displaystyle G,\ A,\ S$] 评估单元内实际生成、自然接纳、按时完成的服务请求数
+    \item[$\displaystyle DSR$] 截止期满足率，$S/G$
     \item[$\displaystyle J$] Jain 公平性指数
-    \item[$\displaystyle R_t$] 系统级综合奖励
-    \item[$\displaystyle R_{lower}$] 下层局部训练奖励
-    \item[$\displaystyle \lambda_{dsr}$] DSR Lagrange 乘子
-    \item[$\displaystyle \lambda_{mbs}$] MBS load Lagrange 乘子
+    \item[$\displaystyle c_m$] UE $m$ 的累计服务覆盖量
+    \item[$\displaystyle g(\mathbf{p}_1,\mathbf{p}_2)$] 自由空间路径损耗信道功率增益
+    \item[$\displaystyle P^{\mathrm{comm}}$] 通信发射功率
+    \item[$\displaystyle \sigma^2$] 噪声功率
+    \item[$\displaystyle B^{\mathrm{edge}},B^{\mathrm{inter}},B^{\mathrm{backhaul}}$] 接入、机间、回传链路带宽
+    \item[$\displaystyle B_{\max},\ B_{\mathrm{low}}$] UE 电池容量与临界阈值
+    \item[$\displaystyle \beta$] 请求流行度 Zipf 指数
+    \item[$\displaystyle \mathcal{M}$] 固定快照中自然接纳的服务请求集合
+    \item[$\displaystyle \mathbf{a}$] 请求卸载分配向量
+    \item[$\displaystyle T_m,\ D_m$] 请求 $m$ 的完成时延与截止时间
+    \item[$\displaystyle T_{\mathrm{tx}}$] 传输时延，$8D/R$
+    \item[$\displaystyle T^{\mathrm{cmp}}_m,\ E^{\mathrm{cmp}}_m$] 请求 $m$ 的计算时延与计算能耗
+    \item[$\displaystyle \omega_m$] 请求 $m$ 每字节所需 CPU 周期数
+    \item[$\displaystyle \kappa$] 芯片电容系数
+    \item[$\displaystyle F_u,\ F_{\mathrm{mbs}}$] UAV $u$ 与 MBS 的计算能力
+    \item[$\displaystyle E_{\mathrm{assign}}$] 卸载分配相关的非飞行 UAV 能耗
   \end{notationlist}
 
 \end{notation}
