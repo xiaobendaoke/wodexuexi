@@ -1,0 +1,53 @@
+{
+  "protocol": "marl_request_weighted_reward_pilot_v1",
+  "purpose": "pilot",
+  "training_seeds": [
+    2767,
+    3191,
+    3623,
+    4081,
+    4597
+  ],
+  "workload_seeds": [
+    1433,
+    1471,
+    1511,
+    1553,
+    1601
+  ],
+  "training_workload_seed": 3079,
+  "train_episodes": 200,
+  "eval_episodes": 6,
+  "steps": 1000,
+  "rollout": 1000,
+  "ppo_epochs": 8,
+  "batch_size": 256,
+  "checkpoint_every": 20,
+  "variants": [
+    {
+      "name": "main",
+      "ue_count": 100,
+      "compute_scale": 1.0,
+      "methods": [
+        "lower_no_attention",
+        "lower_mlp_upper_success_count"
+      ]
+    }
+  ],
+  "statistical_unit": "training seed after averaging paired workloads; evaluation episodes are not independent training replicates",
+  "primary_outcome": "DSR = deadline-satisfied generated service requests / all generated service requests",
+  "primary_contrasts": [
+    "lower_mlp_upper_success_count minus lower_no_attention"
+  ],
+  "secondary_outcomes": [
+    "Admission fraction",
+    "Deadline satisfaction among admitted",
+    "Latency per admitted service request",
+    "Non-flight assignment energy",
+    "UAV Fleet Total Energy",
+    "Effective tasks per MJ",
+    "MBS offload fraction"
+  ],
+  "decision_rule": "A positive paired 95% DSR interval across training seeds and workload seeds motivates untouched held-out confirmation; an interval crossing zero establishes neither benefit nor equivalence. Also inspect admission and conditional success, energy and latency for tradeoffs.",
+  "scope": "Exploratory MARL pilot. Only the upper reward DSR denominator changes from current generated count to fixed 28 requests per slot; 28 approximates 27.920633 mean generated service requests per step in the previous 150000-step baseline. The evaluation DSR, lower reward, model architectures, default methods, and Chapter 4 objective are unchanged."
+}

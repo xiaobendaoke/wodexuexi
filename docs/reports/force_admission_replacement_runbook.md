@@ -6,7 +6,7 @@
 
 - 扩展基线矩阵：`results/baseline_matrix_force_admission_20260626_resume`
 - 正式统计文件：`statistics_workload_balanced.json`
-- 审计文件：`docs/defense_experiment_audit_force_admission_full.md`
+- 审计文件：`docs/reports/defense_experiment_audit_force_admission_full.md`
 - 关键口径：所有方法 `processed_request_ratio = 1.0`；Proposed 的 request-weighted DSR 为 `0.3762`，energy 为 `49.98M`，fairness 为 `0.9452`，MBS load ratio 为 `0.0359`。
 
 ## 立即重生成可替换图表

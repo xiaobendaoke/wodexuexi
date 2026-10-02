@@ -1,0 +1,163 @@
+{
+  "plan": {
+    "protocol": "canonical_formal_v1",
+    "purpose": "formal",
+    "training_seeds": [
+      42,
+      84,
+      126,
+      168,
+      210
+    ],
+    "workload_seeds": [
+      42,
+      84,
+      126,
+      168,
+      210,
+      252,
+      294,
+      336,
+      378,
+      420
+    ],
+    "training_workload_seed": 2026,
+    "train_episodes": 200,
+    "eval_episodes": 6,
+    "steps": 1000,
+    "rollout": 1000,
+    "ppo_epochs": 8,
+    "batch_size": 256,
+    "checkpoint_every": 20,
+    "variants": [
+      {
+        "name": "main",
+        "ue_count": 100,
+        "compute_scale": 1.0,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "ippo",
+          "joint",
+          "upper_attention",
+          "upper_vanilla",
+          "lower_no_attention",
+          "no_attention",
+          "no_quality_mask",
+          "no_penalty",
+          "greedy",
+          "local",
+          "mbs",
+          "random",
+          "uniform"
+        ]
+      },
+      {
+        "name": "ue_60",
+        "ue_count": 60,
+        "compute_scale": 1.0,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "greedy"
+        ]
+      },
+      {
+        "name": "ue_80",
+        "ue_count": 80,
+        "compute_scale": 1.0,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "greedy"
+        ]
+      },
+      {
+        "name": "ue_100",
+        "ue_count": 100,
+        "compute_scale": 1.0,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "greedy"
+        ]
+      },
+      {
+        "name": "ue_120",
+        "ue_count": 120,
+        "compute_scale": 1.0,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "greedy"
+        ]
+      },
+      {
+        "name": "ue_140",
+        "ue_count": 140,
+        "compute_scale": 1.0,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "greedy"
+        ]
+      },
+      {
+        "name": "compute_0.6",
+        "ue_count": 100,
+        "compute_scale": 0.6,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "greedy"
+        ]
+      },
+      {
+        "name": "compute_0.8",
+        "ue_count": 100,
+        "compute_scale": 0.8,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "greedy"
+        ]
+      },
+      {
+        "name": "compute_1",
+        "ue_count": 100,
+        "compute_scale": 1.0,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "greedy"
+        ]
+      },
+      {
+        "name": "compute_1.2",
+        "ue_count": 100,
+        "compute_scale": 1.2,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "greedy"
+        ]
+      },
+      {
+        "name": "compute_1.4",
+        "ue_count": 100,
+        "compute_scale": 1.4,
+        "methods": [
+          "hierarchical",
+          "vanilla_hierarchical",
+          "greedy"
+        ]
+      }
+    ],
+    "sensitivity_interpretation": "retrain per setting; fixed pretrained transfer is a separate experiment",
+    "statistical_unit": "training seed after averaging paired workloads; evaluation episodes are not independent training replicates"
+  },
+  "source_hash": "49b3643555c00cbe0406a8f7a749cd873aad8482a27b435829ca0dcf1750b573",
+  "threads": 4,
+  "git_sha": "55631fc057f7c85821a37a71a910375c73f225eb",
+  "git_clean": true
+}

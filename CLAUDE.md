@@ -153,12 +153,9 @@ make cleanall  # 清理所有生成文件（含 PDF）
 - **Lagrange 约束**：下层使用可学习的 lambda_dsr 和 lambda_mbs 拉格朗日乘子，约束 DSR≥target 且 MBS 负载≤ceiling
 - **模型命名**：`get_model()` 工厂函数根据字符串名称（如 "constrained_attention_offload_mappo"）返回对应模型实例
 
-## 输出目录
+## 文件位置与生成物规则
 
-- `results/` — 实验输出（JSON 指标、报告）
-- `saved_models/` — 模型检查点（按实验名/seed/episode 组织）
-- `train_logs/` — 训练日志
-- `docs/figures/` — 论文图表（PDF/PNG），生成脚本在 `docs/figures/scripts/`
+创建、移动或生成文件前，必须读取并遵守根目录 [AGENTS.md 的文件位置与生成物规则](AGENTS.md#文件位置与生成物规则)。目录归属、命名、路径构造、迁移与交付检查以该节为唯一维护来源。
 
 ## 多模态文件自动处理（MCP）
 
@@ -201,6 +198,6 @@ make cleanall  # 清理所有生成文件（含 PDF）
 ## 注意事项
 
 - 无 requirements.txt，依赖安装在 `.venv/` 中手动管理
-- 无正式测试套件，验证通过烟雾测试和实验级评估完成
+- 已有 `tests/` 单元、回归及烟雾验证；按改动选择检查。本机仅运行无 PyTorch 依赖的轻量验证，完整实验在远程执行
 - 实验脚本使用 `nohup` 后台运行，通过 `--max_workers` 控制并行度
 - 环境变量 `OMP_NUM_THREADS=4`, `MKL_NUM_THREADS=4`, `OPENBLAS_NUM_THREADS=4` 用于限制线程数

@@ -4,11 +4,14 @@
 import subprocess
 import os
 from pathlib import Path
+from paths import REPO_ROOT
 import time
 
-# 文献目录
+# 外部文献源保留服务器默认位置以兼容旧流程；仓库内输出使用 REPO_ROOT。
 REF_DIR = Path("/home/PengYanghan/Lunwen/CanKaoWenXian")
-OUTPUT_DIR = Path("/home/PengYanghan/Lunwen/wodexuexi/extracted_references")
+OUTPUT_DIR = REPO_ROOT / "docs" / "literature" / "extracted"
+
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # 获取所有 PDF 文件
 pdf_files = sorted(REF_DIR.glob("*.pdf"))

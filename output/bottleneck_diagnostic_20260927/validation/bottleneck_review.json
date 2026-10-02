@@ -1,0 +1,216 @@
+{
+  "status": "PASS",
+  "scope": "Exploratory, fixed-trajectory, one-slot counterfactual on existing trained checkpoints; no retraining or large-scale experiment.",
+  "source_commit": "20c4299d351045eb608d6257815860ee94616113",
+  "source_hash": "0f177aec289d032a5ec56f138d78c9d9864162754de206ef1ea26c62ffb500c7",
+  "probe_script": "/Users/wangpengfei/Documents/毕业论文/我的论文/wodexuexi/.tmp/bottleneck_diagnostic_20260927/probe.py",
+  "probe_script_sha256": "a799b292b9da2b908af0d26be7ad63bebce96c08a99e84182ede02857e8a61ec",
+  "full_evaluation": {
+    "unit_count": 25,
+    "training_seeds": [
+      2767,
+      3191,
+      3623,
+      4081,
+      4597
+    ],
+    "workload_seeds": [
+      1433,
+      1471,
+      1511,
+      1553,
+      1601
+    ],
+    "success_fraction": 0.24590536509786162,
+    "admission_fraction": 0.5185934538719156,
+    "uncovered_fraction": 0.4814065461280844,
+    "admitted_deadline_miss_fraction": 0.2726880887740539,
+    "fraction_of_failures_uncovered": 0.6383900956815033,
+    "interpretation": "Descriptive decomposition of measured generated requests; it does not establish the recoverable improvement from changing trajectory."
+  },
+  "snapshot_protocol": {
+    "training_seeds": [
+      2767,
+      3191,
+      3623,
+      4081,
+      4597
+    ],
+    "workload_seeds": [
+      1433,
+      1511
+    ],
+    "episode": 0,
+    "steps": [
+      100,
+      300,
+      500,
+      700,
+      900
+    ],
+    "snapshots": 50,
+    "candidate_sets": [
+      "original quality mask",
+      "hard physical mask"
+    ],
+    "objective": "frozen Chapter 4 strict lexicographic; deadline misses first, normalized latency second, assignment energy third",
+    "search": "best-improvement from learned assignment, at most two single-request changes; not exact or converged",
+    "replay_check": "Each replayed step from 0 through each sampled step matched original evaluation generated, admitted, deadline-success and fleet-energy metrics; each frozen learned assignment matched its live transition."
+  },
+  "snapshot_totals": {
+    "generated": 1540.0,
+    "admitted": 790,
+    "uncovered": 750.0,
+    "learned_success": 362.0,
+    "learned_admitted_deadline_misses": 428.0,
+    "quality_search_success": 441.0,
+    "quality_search_gain": 79.0,
+    "quality_search_gain_percentage_points": 5.12987012987013,
+    "hard_search_success": 455.0,
+    "hard_search_gain": 93.0,
+    "quality_search_improved_snapshots": 43,
+    "quality_search_termination": {
+      "iteration_budget": 49,
+      "no_improving_move": 1
+    },
+    "quality_search_evaluations": 5071,
+    "learned_assignment_energy_j": 2768023.7997571155,
+    "quality_search_assignment_energy_j": 3400770.518769919,
+    "assignment_energy_relative_change": 0.22859150238098547,
+    "learned_mbs_offloads": 11.0,
+    "quality_search_mbs_offloads": 19.0
+  },
+  "paired_snapshot_groups": [
+    {
+      "training_seed": 2767,
+      "workload_seed": 1433,
+      "snapshots": 5,
+      "generated": 136.0,
+      "learned_success": 37.0,
+      "quality_search_success": 43.0,
+      "hard_search_success": 43.0
+    },
+    {
+      "training_seed": 2767,
+      "workload_seed": 1511,
+      "snapshots": 5,
+      "generated": 172.0,
+      "learned_success": 31.0,
+      "quality_search_success": 37.0,
+      "hard_search_success": 37.0
+    },
+    {
+      "training_seed": 3191,
+      "workload_seed": 1433,
+      "snapshots": 5,
+      "generated": 136.0,
+      "learned_success": 38.0,
+      "quality_search_success": 43.0,
+      "hard_search_success": 44.0
+    },
+    {
+      "training_seed": 3191,
+      "workload_seed": 1511,
+      "snapshots": 5,
+      "generated": 172.0,
+      "learned_success": 38.0,
+      "quality_search_success": 45.0,
+      "hard_search_success": 46.0
+    },
+    {
+      "training_seed": 3623,
+      "workload_seed": 1433,
+      "snapshots": 5,
+      "generated": 136.0,
+      "learned_success": 29.0,
+      "quality_search_success": 37.0,
+      "hard_search_success": 38.0
+    },
+    {
+      "training_seed": 3623,
+      "workload_seed": 1511,
+      "snapshots": 5,
+      "generated": 172.0,
+      "learned_success": 30.0,
+      "quality_search_success": 37.0,
+      "hard_search_success": 37.0
+    },
+    {
+      "training_seed": 4081,
+      "workload_seed": 1433,
+      "snapshots": 5,
+      "generated": 136.0,
+      "learned_success": 41.0,
+      "quality_search_success": 52.0,
+      "hard_search_success": 54.0
+    },
+    {
+      "training_seed": 4081,
+      "workload_seed": 1511,
+      "snapshots": 5,
+      "generated": 172.0,
+      "learned_success": 40.0,
+      "quality_search_success": 50.0,
+      "hard_search_success": 52.0
+    },
+    {
+      "training_seed": 4597,
+      "workload_seed": 1433,
+      "snapshots": 5,
+      "generated": 136.0,
+      "learned_success": 41.0,
+      "quality_search_success": 47.0,
+      "hard_search_success": 51.0
+    },
+    {
+      "training_seed": 4597,
+      "workload_seed": 1511,
+      "snapshots": 5,
+      "generated": 172.0,
+      "learned_success": 37.0,
+      "quality_search_success": 50.0,
+      "hard_search_success": 53.0
+    }
+  ],
+  "interpretation": [
+    "Uncovered requests are the largest observed failure category in the full evaluation. This is a loss decomposition, not a trajectory-optimization gain estimate.",
+    "Holding trajectories and admission fixed, a two-round search over the original quality-masked actions finds additional deadline successes. This is a constructive lower bound on offload headroom, not a deployable policy result.",
+    "The counterfactual raises assignment energy and MBS use. Longer-horizon effects and formal statistics are not evaluated.",
+    "The hard-mask search adds a smaller increment, but two-round local search cannot isolate the complete mask effect or optimal assignment."
+  ],
+  "architecture_pilot_crosscheck": {
+    "source": "results/lower_attention_pilot_20260924/analysis.json",
+    "source_hash": "19569d62d567294068ed1ac9f1bf8e4314223097b0b2042f0237bb72ca088508",
+    "methods": {
+      "hierarchical": {
+        "units": 25,
+        "success_fraction": 0.22673968011851348,
+        "uncovered_fraction": 0.47910435599826906,
+        "admitted_deadline_miss_fraction": 0.29415596388321746,
+        "fraction_of_failures_uncovered": 0.6195899927616858
+      },
+      "lower_actor_attention_only": {
+        "units": 25,
+        "success_fraction": 0.23929663490305297,
+        "uncovered_fraction": 0.4325915392825562,
+        "admitted_deadline_miss_fraction": 0.3281118258143908,
+        "fraction_of_failures_uncovered": 0.5686730979919158
+      },
+      "lower_critic_attention_only": {
+        "units": 25,
+        "success_fraction": 0.2460540192873273,
+        "uncovered_fraction": 0.4554139522792593,
+        "admitted_deadline_miss_fraction": 0.2985320284334134,
+        "fraction_of_failures_uncovered": 0.6040405598406083
+      },
+      "lower_no_attention": {
+        "units": 25,
+        "success_fraction": 0.2438721011903497,
+        "uncovered_fraction": 0.46379618041622817,
+        "admitted_deadline_miss_fraction": 0.29233171839342215,
+        "fraction_of_failures_uncovered": 0.6133832399867387
+      }
+    },
+    "interpretation": "Independent exploratory seed cohort. All four lower architectures show uncovered requests as the larger direct failure category. Absolute rates are not treatment contrasts with the reward-denominator cohort."
+  }
+}

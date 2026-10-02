@@ -1,3 +1,5 @@
+> **2026-09-20 正式实验入口更新**：当前 canonical 正式流程见 [正式实验运行说明](docs/reports/FORMAL_EXPERIMENT_READINESS_20260920.md)。使用 `prepare_formal_release.py` 生成并验收源码快照，再运行发布目录中的 `run_formal_suite.py` / `run_linear_v2_full.sh`。协议为 5 个训练种子 × 10 个评估场景，训练场景与评估场景分离。以下旧结果与旧命令属于历史记录，不能替代新语义的正式重训/重评结论。
+
 # 基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化方法
 
 Attention-MAPPO Based Collaborative Trajectory and Task Offloading Optimization for Multi-UAV Mobile Edge Computing
@@ -13,6 +15,45 @@ Attention-MAPPO Based Collaborative Trajectory and Task Offloading Optimization 
 - 系统模型显式统计 UAV 飞行能耗、计算能耗、通信能耗、WPT 能耗以及 UE 电池动态。
 
 完整论文正文以 `latex/docs/*.tex` 为准；本 README 作为项目主页、最新结果索引和复现实验导航。
+
+## 文件放在哪里
+
+文件创建与迁移遵循 [AGENTS.md](AGENTS.md#文件位置与生成物规则)。现有根目录实验入口保持兼容，新文件按用途进入对应子目录。
+
+| 内容 | 位置 |
+|---|---|
+| 工作计划 | [docs/plans/](docs/plans/) |
+| 审计、修复、验收报告 | [docs/reports/](docs/reports/) |
+| 历史工程证据与迁移记录 | [docs/provenance/](docs/provenance/) |
+| 文献提取文本 / 分析结果 | [提取文本](docs/literature/extracted/) / [分析结果](docs/literature/analysis/) |
+| 正式论文图与源数据 | [docs/figures/](docs/figures/) |
+| AI 任务最终成果 / 验证 / 素材 | `output/<主题>_YYYYMMDD/{deliverables,validation,assets}/` |
+| 临时中间文件 | `.tmp/<主题>/` |
+| 新分析 / 文献 / 维护脚本 | `scripts/{analysis,literature,maintenance}/` |
+
+组会 PPT 已放入 [任务交付目录](output/group_meeting_progress_20260920/deliverables/group_meeting_progress_cn.pptx)。原 `output/assets/` 未确认归属，暂时保留。
+
+整理详情见 [现行整理计划](docs/plans/REPO_CLEANUP_PLAN.md) 和 [逐文件迁移清单](docs/provenance/REPO_LAYOUT_MIGRATION_20260920.md)。检查根目录是否出现未归类项：
+
+```bash
+python3 scripts/maintenance/check_layout.py
+```
+
+## 仓库架构与导航 (Repository Navigation)
+
+| 核心组件 | 路径 | 角色与状态 |
+| :--- | :--- | :--- |
+| **物理与仿真规范 (SSOT)** | [`CANONICAL_SEMANTICS_SPEC.md`](CANONICAL_SEMANTICS_SPEC.md) | **Frozen SSOT**（仿真物理与契约事实来源） |
+| **全局参数配置** | [`config.py`](config.py) | **Canonical Production**（系统与超参数集中配置） |
+| **路径解析模块** | [`paths.py`](paths.py) | **Canonical Production**（动态项目根与路径解析） |
+| **主算法训练入口** | [`run_hierarchical_mappo_experiment.py`](run_hierarchical_mappo_experiment.py) | **Current Production**（分层 Attention-MAPPO 主算法） |
+| **联合基线训练入口** | [`run_joint_end_to_end_mappo_experiment.py`](run_joint_end_to_end_mappo_experiment.py) | **Current Baseline**（端到端 Joint-MAPPO 基线） |
+| **仿真物理环境** | [`environment/`](environment/) | **Canonical Source**（多无人机 MEC 仿真环境 `clean_v1`） |
+| **强化学习模型库** | [`marl_models/`](marl_models/) | **Canonical Source**（Attention-MAPPO、基线及策略网络） |
+| **单元与回归测试** | [`tests/`](tests/) | **Canonical Test**（单元、回归及烟雾验证） |
+| **里程碑交付报告** | [`docs/reports/`](docs/reports/) | **Milestone Reports**（环境修复、状态快照、验收报告） |
+| **工程溯源档案** | [`docs/provenance/`](docs/provenance/) | **Provenance Reports**（Codebase 全面审计、RED Baseline 报告） |
+| **毕业论文源码** | [`latex/`](latex/) | **LaTeX Source**（硕士毕业论文正文与答辩材料源码） |
 
 ## 最新实验结论
 

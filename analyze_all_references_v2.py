@@ -3,11 +3,12 @@
 
 import json
 from pathlib import Path
+from paths import REPO_ROOT
 import re
 
 # 目录配置
-EXTRACTED_DIR = Path("/home/PengYanghan/Lunwen/wodexuexi/extracted_references")
-OUTPUT_FILE = Path("/home/PengYanghan/Lunwen/wodexuexi/analysis_results/detailed_analysis_v2.json")
+EXTRACTED_DIR = REPO_ROOT / "docs" / "literature" / "extracted"
+OUTPUT_FILE = REPO_ROOT / "docs" / "literature" / "analysis" / "detailed_analysis_v2.json"
 
 def analyze_document(content, filename):
     """分析单篇文献"""

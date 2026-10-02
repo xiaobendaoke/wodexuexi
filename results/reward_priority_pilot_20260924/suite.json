@@ -1,0 +1,60 @@
+{
+  "plan": {
+    "protocol": "marl_reward_scale_pilot_v1",
+    "purpose": "pilot",
+    "training_seeds": [
+      2718,
+      3141,
+      3559,
+      4027,
+      4513
+    ],
+    "workload_seeds": [
+      1201,
+      1247,
+      1291,
+      1331,
+      1393
+    ],
+    "training_workload_seed": 3031,
+    "train_episodes": 200,
+    "eval_episodes": 6,
+    "steps": 1000,
+    "rollout": 1000,
+    "ppo_epochs": 8,
+    "batch_size": 256,
+    "checkpoint_every": 20,
+    "variants": [
+      {
+        "name": "main",
+        "ue_count": 100,
+        "compute_scale": 1.0,
+        "methods": [
+          "lower_no_attention",
+          "lower_mlp_upper_dsr_w5",
+          "lower_mlp_upper_energy_ref25k"
+        ]
+      }
+    ],
+    "statistical_unit": "training seed after averaging paired workloads; evaluation episodes are not independent training replicates",
+    "primary_outcome": "DSR = deadline-satisfied generated service requests / all generated service requests",
+    "primary_contrasts": [
+      "lower_mlp_upper_dsr_w5 minus lower_no_attention",
+      "lower_mlp_upper_energy_ref25k minus lower_no_attention"
+    ],
+    "secondary_outcomes": [
+      "Admission fraction",
+      "Latency per admitted service request",
+      "Non-flight assignment energy",
+      "UAV Fleet Total Energy",
+      "Effective tasks per MJ",
+      "MBS offload fraction"
+    ],
+    "decision_rule": "Only a positive paired 95% DSR interval motivates final held-out confirmation; intervals crossing zero do not establish benefit or equivalence.",
+    "scope": "Exploratory MARL reward-scale pilot. The separately frozen Chapter 4 lexicographic offloading objective and default MARL methods are unchanged."
+  },
+  "source_hash": "b4ce906cc431c646c214b9dc7d33e13ccef8d43311cd18fa6aa6b33982d17831",
+  "threads": 4,
+  "git_sha": "49b892b0032eae7a312a0b5b58ace6f11fedffdb",
+  "git_clean": true
+}

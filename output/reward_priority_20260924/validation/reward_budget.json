@@ -1,0 +1,29 @@
+{
+  "source_suite": "results/lower_attention_pilot_20260924",
+  "source_method": "lower_no_attention",
+  "evaluated_steps": 150000,
+  "mean_per_step": {
+    "DSR": 0.24538995879274964,
+    "admission_fraction": 0.5361824378916723,
+    "upper_fairness_reward": 0.8564012776824521,
+    "upper_latency_penalty": 0.49963180527665907,
+    "upper_energy_penalty": 1.048108379737689,
+    "upper_dsr_reward": 0.24538995879274964,
+    "upper_mbs_penalty": 0.0065818595702380085,
+    "lower_dsr_reward": 1.6941351016461346,
+    "lower_latency_penalty": 0.3222715420602274,
+    "lower_energy_penalty": 0.49146492028367533,
+    "nonflight_assignment_energy_share": 0.970038208944737
+  },
+  "proposed_pilot_overrides": {
+    "lower_mlp_upper_dsr_w5": {
+      "REWARD_W_DSR": 5.0
+    },
+    "lower_mlp_upper_energy_ref25k": {
+      "REWARD_NORM_ENERGY_REF": 25000.0
+    }
+  },
+  "note": "Descriptive reward-scale audit; component magnitudes do not imply lexicographic dominance.",
+  "source_hash": "19569d62d567294068ed1ac9f1bf8e4314223097b0b2042f0237bb72ca088508",
+  "git_sha": "63c738b3de7aa3035fc8a4b0debfb134136b13da"
+}

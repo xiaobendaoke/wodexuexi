@@ -1,0 +1,353 @@
+{
+  "purpose": "pilot_effect_review",
+  "source_analysis": "results/lower_attention_pilot_20260924/analysis.json",
+  "source_hash": "19569d62d567294068ed1ac9f1bf8e4314223097b0b2042f0237bb72ca088508",
+  "git_sha": "63c738b3de7aa3035fc8a4b0debfb134136b13da",
+  "n_training_seeds": 5,
+  "n_paired_workloads": 5,
+  "methods": [
+    "hierarchical",
+    "lower_no_attention",
+    "lower_actor_attention_only",
+    "lower_critic_attention_only"
+  ],
+  "means": {
+    "hierarchical": {
+      "DSR": 0.22673968011851348,
+      "Admission fraction": 0.5208956440017307,
+      "Deadline satisfaction among admitted": 0.44540514701364486,
+      "UAV Fleet Total Energy": 53761600.936985224,
+      "Non-flight assignment energy": 52563331.06022395,
+      "Latency per admitted service request": 1.7500041485063935,
+      "Effective tasks per MJ": 138.24948323103558,
+      "MBS offload fraction": 0.01667310304739272
+    },
+    "lower_no_attention": {
+      "DSR": 0.24387210119034972,
+      "Admission fraction": 0.5362038195837718,
+      "Deadline satisfaction among admitted": 0.46050131156892654,
+      "UAV Fleet Total Energy": 52405418.98688452,
+      "Non-flight assignment energy": 51194262.52955114,
+      "Latency per admitted service request": 1.7144733414623463,
+      "Effective tasks per MJ": 155.19397276768763,
+      "MBS offload fraction": 0.026612495505291052
+    },
+    "lower_actor_attention_only": {
+      "DSR": 0.23929663490305295,
+      "Admission fraction": 0.5674084607174437,
+      "Deadline satisfaction among admitted": 0.42509543252089044,
+      "UAV Fleet Total Energy": 51268120.38906046,
+      "Non-flight assignment energy": 50051605.2288995,
+      "Latency per admitted service request": 1.7939562786170933,
+      "Effective tasks per MJ": 154.15489249422575,
+      "MBS offload fraction": 0.017433253833766763
+    },
+    "lower_critic_attention_only": {
+      "DSR": 0.24605401928732737,
+      "Admission fraction": 0.5445860477207407,
+      "Deadline satisfaction among admitted": 0.4623682865883215,
+      "UAV Fleet Total Energy": 53150478.52410667,
+      "Non-flight assignment energy": 51973021.690264896,
+      "Latency per admitted service request": 1.691991250507772,
+      "Effective tasks per MJ": 156.12119937057574,
+      "MBS offload fraction": 0.023806258403334325
+    }
+  },
+  "paired_contrasts": {
+    "hierarchical minus lower_no_attention": {
+      "DSR": {
+        "mean_difference": -0.017132421071836212,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.04513643188996867,
+          0.008895364063154197
+        ],
+        "paired_seed_dz": -0.5112336990161704,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Admission fraction": {
+        "mean_difference": -0.015308175582040964,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.12696988466301526,
+          0.08950479274317728
+        ],
+        "paired_seed_dz": -0.11355640200103825,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Deadline satisfaction among admitted": {
+        "mean_difference": -0.015096164555281611,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.06432651606974343,
+          0.03676277668670766
+        ],
+        "paired_seed_dz": -0.24724096625141453,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "UAV Fleet Total Energy": {
+        "mean_difference": 1356181.9501007004,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -3138906.3172949934,
+          6407983.992538577
+        ],
+        "paired_seed_dz": 0.2330838209370902,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Non-flight assignment energy": {
+        "mean_difference": 1369068.5306728228,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -3115702.253100095,
+          6408817.7488587545
+        ],
+        "paired_seed_dz": 0.23609017299943652,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Latency per admitted service request": {
+        "mean_difference": 0.035530807044047104,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.09065410896107434,
+          0.15713606024911064
+        ],
+        "paired_seed_dz": 0.23547987553069755,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Effective tasks per MJ": {
+        "mean_difference": -16.944489536652068,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -49.356394725115884,
+          10.372636073936231
+        ],
+        "paired_seed_dz": -0.48063555944866326,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "MBS offload fraction": {
+        "mean_difference": -0.009939392457898323,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.03938998553988219,
+          0.013546118495225285
+        ],
+        "paired_seed_dz": -0.30163701210208754,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      }
+    },
+    "lower_actor_attention_only minus lower_no_attention": {
+      "DSR": {
+        "mean_difference": -0.004575466287296729,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.02002751084229664,
+          0.013021182006770061
+        ],
+        "paired_seed_dz": -0.23740436669938825,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Admission fraction": {
+        "mean_difference": 0.031204641133671905,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.022786687950393257,
+          0.09000776795364729
+        ],
+        "paired_seed_dz": 0.4926077976847891,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Deadline satisfaction among admitted": {
+        "mean_difference": -0.035405879048036076,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.06878331469603337,
+          -0.0038154134855549102
+        ],
+        "paired_seed_dz": -1.038844732679407,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "UAV Fleet Total Energy": {
+        "mean_difference": -1137298.5978240722,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -3994224.362788517,
+          1618878.2210592146
+        ],
+        "paired_seed_dz": -0.3411108259116732,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Non-flight assignment energy": {
+        "mean_difference": -1142657.3006516378,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -4002274.9272193336,
+          1628778.032956819
+        ],
+        "paired_seed_dz": -0.3411454273994627,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Latency per admitted service request": {
+        "mean_difference": 0.07948293715474683,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.019933485954738293,
+          0.18077458380217656
+        ],
+        "paired_seed_dz": 0.7029218798876006,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Effective tasks per MJ": {
+        "mean_difference": -1.0390802734618734,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -19.078945874910847,
+          17.09500451803
+        ],
+        "paired_seed_dz": -0.04891412004337447,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "MBS offload fraction": {
+        "mean_difference": -0.009179241671524289,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.03772946586929774,
+          0.01448847490314303
+        ],
+        "paired_seed_dz": -0.2984717937964587,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      }
+    },
+    "lower_critic_attention_only minus lower_no_attention": {
+      "DSR": {
+        "mean_difference": 0.002181918096977601,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.01940483429396721,
+          0.020351279206204588
+        ],
+        "paired_seed_dz": 0.09333410098172734,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Admission fraction": {
+        "mean_difference": 0.008382228136968862,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.0781072369506964,
+          0.103896913400691
+        ],
+        "paired_seed_dz": 0.0766573231708683,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Deadline satisfaction among admitted": {
+        "mean_difference": 0.0018669750193950675,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.05580744935810517,
+          0.05094236847768027
+        ],
+        "paired_seed_dz": 0.030530513567440222,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "UAV Fleet Total Energy": {
+        "mean_difference": 745059.5372221493,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -5078215.193508313,
+          6171164.677841781
+        ],
+        "paired_seed_dz": 0.11016541026938306,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Non-flight assignment energy": {
+        "mean_difference": 778759.1607137418,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -5074020.006747561,
+          6214808.756859657
+        ],
+        "paired_seed_dz": 0.1150347732764403,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Latency per admitted service request": {
+        "mean_difference": -0.02248209095457387,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.1511908887718858,
+          0.1548403724839668
+        ],
+        "paired_seed_dz": -0.1218052307453983,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "Effective tasks per MJ": {
+        "mean_difference": 0.9272266028880761,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -26.632218039542355,
+          28.01745718091605
+        ],
+        "paired_seed_dz": 0.028112390038246275,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      },
+      "MBS offload fraction": {
+        "mean_difference": -0.002806237101956722,
+        "n_training_seeds": 5,
+        "n_workloads": 5,
+        "ci95": [
+          -0.033809527645774974,
+          0.02474950902564357
+        ],
+        "paired_seed_dz": -0.07822989135504471,
+        "ci_method": "paired crossed bootstrap over training seeds and workload seeds",
+        "inference": "CI and effect size primary; only five training replicates under default formal protocol"
+      }
+    }
+  },
+  "interpretation_limit": "Exploratory architecture selection; all DSR 95% intervals versus lower_no_attention include zero. No equivalence margin was pre-registered."
+}
