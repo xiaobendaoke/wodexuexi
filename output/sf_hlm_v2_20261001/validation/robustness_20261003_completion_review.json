@@ -1,0 +1,41 @@
+{
+  "status": "PASS",
+  "verification_scope": "Data integrity and independent statistical reproduction; PASS does not establish every scientific claim.",
+  "recorded_at": "2026-10-03T12:50:33.662801+08:00",
+  "evidence_basis": "Read-only remote audit performed in the preceding result-review turn: every task receipt and file digest, all episode step counters, 100 parent trajectory replays, model fingerprints, pairing, independently recomputed paired t intervals and Holm corrections.",
+  "tasks_verified": 14900,
+  "phase_counts": {
+    "robustness": 14400,
+    "benchmark": 400,
+    "capture": 100
+  },
+  "environment_steps_verified": 14500000,
+  "analysis_raw_file_hashes_verified": 14800,
+  "independent_training_units": 10,
+  "primary_comparisons_verified": 24,
+  "primary_holm_pass": 24,
+  "mechanism_comparisons_verified": 16,
+  "mechanism_holm_pass": 8,
+  "frozen_releases_unchanged": true,
+  "nominal_confirmation_reused": true,
+  "new_training_runs": 0,
+  "latest_shared_receipt_server_local": "2026-10-03T12:09:14.802949",
+  "earliest_isolated_benchmark_log_server_local": "2026-10-03T12:09:17.328976",
+  "shared_before_isolated_timing": true,
+  "failures": [],
+  "limitations": [
+    "Eight scenario evaluations reuse the ten existing training seeds and confirmation workloads; this is frozen-policy robustness, not a new independent training confirmation.",
+    "60 UE / 1.4 compute improves DSR against greedy by 0.667 percentage points, below the 1-point practical target.",
+    "Learning exceeds random after Holm correction in only one of the eight new scenarios.",
+    "Snapshot outcomes cannot be interpreted as long-sequence DSR gains.",
+    "20/50/100 ms are soft wall budgets; all overruns remain in the result.",
+    "UAV energy savings are not a whole-network energy claim."
+  ],
+  "archived_result_files": {
+    "results/sf_hlm_v2_20261001/followup_20261002/robustness_20261003/protocol.json": "3f559ceace32823ba1cb78606e2e1f81a5285481896faf0e4772ab5e0406899e",
+    "results/sf_hlm_v2_20261001/followup_20261002/robustness_20261003/status.json": "efb6db95601c5167602f2e59d2e3665c13514c6205449175494413cf87b19244",
+    "results/sf_hlm_v2_20261001/followup_20261002/robustness_20261003/analysis/robustness.json": "4fd41be8c51af9a4b978dc896d69fe55431f67b00bb9eb063c0f8574c30ada58"
+  },
+  "raw_step_data_location": "100.69.44.85:/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_v2_20261001/followup_20261002/robustness_20261003/",
+  "git_archive_scope": "Aggregate results, protocols, completion status and task validation; multi-gigabyte step payloads and checkpoints remain on the experiment server."
+}
