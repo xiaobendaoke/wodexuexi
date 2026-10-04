@@ -2,6 +2,13 @@
 
 This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
 
+## 分支与最新实验证据（2026-10-04）
+
+- `双层注意力MAPPO多智能体强化学习` 分支保存论文正文与配图；最新算法、实验脚本、分析结果和验证记录位于 [`codex/sf-hlm-results-20261003`](https://github.com/xiaobendaoke/wodexuexi/tree/codex/sf-hlm-results-20261003)，当前归档提交为 `a8bcf9a8731edd68b7bc483e1c959c576807e0d6`。两分支尚未合并。
+- 最新方法合同见实验分支 `docs/plans/sf_hlm_20261001.md`；实现见 `marl_models/sf_hlm*.py`、`utils/sf_hlm*.py`，运行与分析脚本见 `scripts/analysis/`。
+- 独立确认与稳健性分析见实验分支 `results/sf_hlm_v2_20261001/followup_20261002/`；随机基线补充分析见 `results/sf_hlm_random_baselines_20261004/` 及 `output/sf_hlm_random_baselines_20261004/deliverables/analysis.md`；对应验证记录见各任务 `output/.../validation/`。完整分支链接索引见 [README](README.md#分支与最新实验证据)。
+- 上述路径相对于实验分支，不把本分支缺少文件判为未实现或实验未完成。写作时按实验分支的具体协议和分析引用；现行第五章尚未完整同步最新 SF-HLM 方法与结果。原始回合、模型检查点和大型压缩包并未全部进入 Git，仍保留在本机或服务器。
+
 ## 文件位置与生成物规则
 
 创建或修改文件前必须遵循本节；用户明确指定位置时遵从用户，不为常规归类重复询问。

@@ -1,12 +1,37 @@
 > **2026-09-20 正式实验入口更新**：当前 canonical 正式流程见 [正式实验运行说明](docs/reports/FORMAL_EXPERIMENT_READINESS_20260920.md)。使用 `prepare_formal_release.py` 生成并验收源码快照，再运行发布目录中的 `run_formal_suite.py` / `run_linear_v2_full.sh`。协议为 5 个训练种子 × 10 个评估场景，训练场景与评估场景分离。以下旧结果与旧命令属于历史记录，不能替代新语义的正式重训/重评结论。
 
+> **2026-10-04 分支说明**：本分支保存论文正文与配图；最新 SF-HLM 算法、实验脚本、分析结果和验证记录已提交至 [`codex/sf-hlm-results-20261003`](https://github.com/xiaobendaoke/wodexuexi/tree/codex/sf-hlm-results-20261003)。具体入口见下方“分支与最新实验证据”。两分支尚未合并，不能因本分支缺少相应文件而判断实验未完成。
+
 # 基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化方法
 
 Attention-MAPPO Based Collaborative Trajectory and Task Offloading Optimization for Multi-UAV Mobile Edge Computing
 
 本仓库对应一篇关于多无人机辅助移动边缘计算的论文实验工程。研究目标是在动态用户请求、无线链路变化、UAV 能耗、UE 电池状态和宏基站负载约束共同存在的场景下，联合优化 UAV 轨迹控制与请求级任务卸载策略。
 
-本文方法采用双层多智能体强化学习框架：
+## 分支与最新实验证据
+
+截至 2026-10-04，论文写作与最新实验保存在两个分支：
+
+| 分支 | 内容与用途 |
+|---|---|
+| `双层注意力MAPPO多智能体强化学习`（本分支） | 论文 LaTeX 正文、正式配图及已有工程资料；写作入口为 `latex/main.tex` |
+| [`codex/sf-hlm-results-20261003`](https://github.com/xiaobendaoke/wodexuexi/tree/codex/sf-hlm-results-20261003) | 最新 SF-HLM 算法实现、实验运行与分析脚本、实验协议、分析结果及验证记录；当前归档提交为 [`a8bcf9a8`](https://github.com/xiaobendaoke/wodexuexi/commit/a8bcf9a8731edd68b7bc483e1c959c576807e0d6) |
+
+下表路径均相对于**实验分支**，不能按本分支的同名路径读取：
+
+| 内容 | 实验分支入口 |
+|---|---|
+| 方法实现与实验协议说明 | [docs/plans/sf_hlm_20261001.md](https://github.com/xiaobendaoke/wodexuexi/blob/codex/sf-hlm-results-20261003/docs/plans/sf_hlm_20261001.md) |
+| 最新算法 | `marl_models/sf_hlm*.py`、`utils/sf_hlm*.py`；[条件匹配实现](https://github.com/xiaobendaoke/wodexuexi/blob/codex/sf-hlm-results-20261003/utils/sf_hlm_matching.py) |
+| 实验与分析脚本 | [scripts/analysis/](https://github.com/xiaobendaoke/wodexuexi/tree/codex/sf-hlm-results-20261003/scripts/analysis) |
+| 独立确认及稳健性分析 | [results/sf_hlm_v2_20261001/followup_20261002/](https://github.com/xiaobendaoke/wodexuexi/tree/codex/sf-hlm-results-20261003/results/sf_hlm_v2_20261001/followup_20261002) |
+| 随机基线补充分析与写作边界 | [output/sf_hlm_random_baselines_20261004/deliverables/analysis.md](https://github.com/xiaobendaoke/wodexuexi/blob/codex/sf-hlm-results-20261003/output/sf_hlm_random_baselines_20261004/deliverables/analysis.md) |
+| 确认与稳健性验证记录 | [output/sf_hlm_v2_20261001/validation/](https://github.com/xiaobendaoke/wodexuexi/tree/codex/sf-hlm-results-20261003/output/sf_hlm_v2_20261001/validation) |
+| 随机基线补充验证记录 | [output/sf_hlm_random_baselines_20261004/validation/](https://github.com/xiaobendaoke/wodexuexi/tree/codex/sf-hlm-results-20261003/output/sf_hlm_random_baselines_20261004/validation) |
+
+实验分支提交的是代码、协议、分析与验证证据，不是完整原始数据或模型备份；大体积原始回合、检查点和压缩包仍保留在本机或服务器。完整分析及对应协议是论文引用依据，验证通过不自动证明所有科研主张。现行第五章尚未完整同步最新 SF-HLM 方法与结果；下方历史方法、结果与命令不能替代实验分支的最新证据。
+
+以下为历史双注意力框架说明：
 
 - 上层使用 Attention-MAPPO 控制多架 UAV 的二维轨迹动作，建模 UAV 邻居关系和覆盖 UE 状态。
 - 下层使用 constrained attention offload MAPPO 处理每个 UAV 当前覆盖的服务请求，在 local UAV、cooperative UAV 和 MBS 三类目标之间做离散卸载决策。
@@ -55,7 +80,7 @@ python3 scripts/maintenance/check_layout.py
 | **工程溯源档案** | [`docs/provenance/`](docs/provenance/) | **Provenance Reports**（Codebase 全面审计、RED Baseline 报告） |
 | **毕业论文源码** | [`latex/`](latex/) | **LaTeX Source**（硕士毕业论文正文与答辩材料源码） |
 
-## 最新实验结论
+## 历史实验结论（非当前 SF-HLM 结果）
 
 最新可用 baseline 对比数据保存在：
 
@@ -180,7 +205,7 @@ git clone -b "双层注意力MAPPO多智能体强化学习" \
 cd wodexuexi
 ```
 
-默认分支 `main` 为占位分支，论文实验代码全部在 `双层注意力MAPPO多智能体强化学习` 分支上，克隆时必须用 `-b` 指定。
+默认分支 `main` 为占位分支，克隆时必须用 `-b` 指定目标分支。论文写作使用 `双层注意力MAPPO多智能体强化学习`；最新算法与实验证据使用 `codex/sf-hlm-results-20261003`，见上方“分支与最新实验证据”。
 
 ### 2. 创建虚拟环境
 
