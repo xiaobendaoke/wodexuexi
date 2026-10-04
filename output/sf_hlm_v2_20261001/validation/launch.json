@@ -1,0 +1,58 @@
+{
+  "started_unix": 1790837997.6424794,
+  "validation_passed": true,
+  "experiments_completed": false,
+  "processes": {
+    "pipeline": {
+      "pid": 6314,
+      "command": [
+        "/home/PengYanghan/miniconda3/envs/drone/bin/python",
+        "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001/scripts/analysis/sf_hlm_v2_experiment.py",
+        "pipeline",
+        "--source-root",
+        "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929",
+        "--suite-root",
+        "/home/PengYanghan/Lunwen/batch-offload-20260928/pilot",
+        "--extension-root",
+        "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001",
+        "--output",
+        "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_v2_20261001",
+        "--legacy-results",
+        "/home/PengYanghan/Lunwen/sf-hlm-20261001/results/sf_hlm_20261001",
+        "--resources",
+        "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/train_logs/resources"
+      ],
+      "log": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/train_logs/pipeline.log",
+      "previous_pid": 237280
+    },
+    "calibration": {
+      "pid": 237281,
+      "command": [
+        "/home/PengYanghan/miniconda3/envs/drone/bin/python",
+        "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001/scripts/analysis/sf_hlm_calibrate.py",
+        "--source",
+        "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929",
+        "--extension",
+        "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001",
+        "--resources",
+        "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/train_logs/resources",
+        "--dataset",
+        "/home/PengYanghan/Lunwen/sf-hlm-20261001/results/sf_hlm_20261001/dataset/greedy/block_620001_workload_890001/dataset.pt",
+        "--output",
+        "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_v2_20261001/validation/calibration"
+      ],
+      "log": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/train_logs/calibration.log"
+    }
+  },
+  "execution_resource_limits": {
+    "nofile_before": [
+      1024,
+      4096
+    ],
+    "nofile_after": [
+      4096,
+      4096
+    ],
+    "reason": "Torch parameter FD passing with 32 workers; no algorithm or data change"
+  }
+}

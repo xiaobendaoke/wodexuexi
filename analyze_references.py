@@ -5,8 +5,10 @@ import os
 import subprocess
 import json
 from pathlib import Path
+from paths import REPO_ROOT
 
 # 文献目录
+# External source default retained for compatibility; repository outputs use REPO_ROOT.
 REF_DIR = Path("/home/PengYanghan/Lunwen/CanKaoWenXian")
 
 # 获取所有 PDF 文件
@@ -104,7 +106,7 @@ for i, pdf_path in enumerate(pdf_files, 1):
     print(f"  优势: {status_adv} ({analysis['advantage_count']}条) | 不足: {status_lim} ({analysis['limitation_count']}条)")
 
 # 保存结果
-output_path = REF_DIR.parent / "wodexuexi" / "reference_analysis.json"
+output_path = REPO_ROOT / "docs" / "literature" / "analysis" / "reference_analysis.json"
 with open(output_path, "w", encoding="utf-8") as f:
     json.dump(results, f, ensure_ascii=False, indent=2)
 

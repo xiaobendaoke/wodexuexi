@@ -123,6 +123,10 @@ NON_SERVED_LATENCY_PENALTY: float = 20.0  # penalty in latency for non-served re
 MAX_UAV_NEIGHBORS: int = max(0, NUM_UAVS - 1)
 # 关键变量 MAX_ASSOCIATED_UES：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 MAX_ASSOCIATED_UES: int = min(30, NUM_UES // NUM_UAVS + 10)
+# Exploratory upper-layer observation variant. The default preserves the
+# canonical policy's covered-UE information set. The alternative assumes UE
+# beacons are available within the existing sensing radius before admission.
+UPPER_UE_OBSERVATION_MODE: str = "covered"  # Covered only, uncovered distance, service-first, or position-only.
 assert MAX_UAV_NEIGHBORS >= 0 and MAX_UAV_NEIGHBORS <= NUM_UAVS - 1
 assert MAX_ASSOCIATED_UES >= 1 and MAX_ASSOCIATED_UES <= NUM_UES
 

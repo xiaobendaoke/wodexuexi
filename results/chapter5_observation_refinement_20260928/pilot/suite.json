@@ -1,0 +1,48 @@
+{
+  "plan": {
+    "protocol": "chapter5_observation_refinement_pilot_20260928_v1",
+    "purpose": "pilot",
+    "study_phase": "exploratory_observation_selection",
+    "candidate_method": "lower_mlp_upper_uncovered_obs",
+    "training_seeds": [
+      11003,
+      11027,
+      11053,
+      11071,
+      11113
+    ],
+    "workload_seeds": [
+      4103,
+      4127,
+      4153,
+      4177,
+      4201
+    ],
+    "training_workload_seed": 4517,
+    "train_episodes": 200,
+    "eval_episodes": 6,
+    "steps": 1000,
+    "rollout": 1000,
+    "ppo_epochs": 8,
+    "batch_size": 256,
+    "checkpoint_every": 20,
+    "variants": [
+      {
+        "name": "main",
+        "ue_count": 100,
+        "compute_scale": 1.0,
+        "methods": [
+          "lower_mlp_upper_uncovered_obs",
+          "lower_mlp_upper_uncovered_service_first",
+          "lower_mlp_upper_uncovered_position_only"
+        ]
+      }
+    ],
+    "primary_metric": "DSR",
+    "statistical_unit": "training seed after averaging five paired workloads; pilot selection is exploratory"
+  },
+  "source_hash": "1777fc42e3a84b2091bd3fd8f66acd1963adfb689facc8d72d519e85436d9770",
+  "threads": 4,
+  "git_sha": null,
+  "git_clean": false
+}

@@ -4,11 +4,13 @@
 import subprocess
 import os
 from pathlib import Path
+from paths import REPO_ROOT
 import time
 
 # 文献目录
+# External source default retained for compatibility; repository outputs use REPO_ROOT.
 REF_DIR = Path("/home/PengYanghan/Lunwen/CanKaoWenXian")
-OUTPUT_DIR = Path("/home/PengYanghan/Lunwen/wodexuexi/extracted_references")
+OUTPUT_DIR = REPO_ROOT / "docs" / "literature" / "extracted"
 
 # 获取所有 PDF 文件
 pdf_files = sorted(REF_DIR.glob("*.pdf"))

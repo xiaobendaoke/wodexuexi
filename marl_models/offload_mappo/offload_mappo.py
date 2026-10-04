@@ -170,6 +170,68 @@ class OffloadMLPActor(nn.Module):
         return logits
 
 
+class BatchOffloadActor(nn.Module):
+    """Local batch summary and optional causal prefix; no environment access.
+
+    Prefix channels count only THIS UAV's prior assignments. They are not a
+    prediction of fleet-final load. B and C have exactly matching parameters.
+    """
+    def __init__(self, obs_dim, max_requests, num_actions, *, sequential=False):
+        super().__init__()
+        self.max_requests, self.num_actions = max_requests, num_actions
+        self.request_dim = config.OFFLOAD_REQUEST_FEATURE_DIM
+        self.sequential = sequential
+        if obs_dim != 5 + max_requests * self.request_dim:
+            raise ValueError("Unexpected batch offload observation dimension")
+        width = 5 + 2 * self.request_dim + 1 + 2 * num_actions
+        self.net = nn.Sequential(
+            layer_init(nn.Linear(width, config.MLP_HIDDEN_DIM)), nn.LayerNorm(config.MLP_HIDDEN_DIM), nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, config.MLP_HIDDEN_DIM)), nn.LayerNorm(config.MLP_HIDDEN_DIM), nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, num_actions), std=0.01))
+
+    def decide(self, obs, masks, *, exploration=True, actions=None):
+        leading = obs.shape[:-1]
+        flat = obs.reshape(-1, obs.shape[-1])
+        req = flat[:, 5:].reshape(-1, self.max_requests, self.request_dim)
+        mask = masks.reshape(-1, self.max_requests, self.num_actions) > 0
+        valid = (req[..., 0] > 0) & mask.any(dim=-1)
+        clean = torch.where(valid[..., None], req, torch.zeros_like(req))
+        number = valid.sum(-1, keepdim=True)
+        summary = clean.sum(1) / number.clamp_min(1)
+        fraction = number.to(obs.dtype) / self.max_requests
+        prefix_count = flat.new_zeros((len(flat), self.num_actions))
+        prefix_size = torch.zeros_like(prefix_count)
+        teacher = None if actions is None else actions.reshape(-1, self.max_requests)
+        if teacher is not None and teacher.shape != valid.shape:
+            raise ValueError("Teacher action shape mismatch")
+        chosen, logps, entropies = [], [], []
+        for i in range(self.max_requests):
+            context = torch.cat((flat[:, :5], clean[:, i], summary, fraction,
+                                 prefix_count / self.max_requests, prefix_size / self.max_requests), -1)
+            logits = self.net(context)
+            # Empty slots use a harmless distribution and contribute no gradient.
+            legal = mask[:, i] | ~valid[:, i, None]
+            logits = logits.masked_fill(~legal, -1e9)
+            dist = Categorical(logits=logits)
+            action = (dist.sample() if exploration else logits.argmax(-1)) if teacher is None else teacher[:, i]
+            action = torch.where(valid[:, i], action, torch.zeros_like(action))
+            if teacher is not None:
+                if ((action < 0) | (action >= self.num_actions)).any():
+                    raise ValueError("Teacher action out of range")
+                if not legal.gather(1, action[:, None]).all():
+                    raise ValueError("Teacher action is masked")
+            chosen.append(action)
+            logps.append(dist.log_prob(action) * valid[:, i])
+            entropies.append(dist.entropy() * valid[:, i])
+            if self.sequential:
+                weight = valid[:, i].to(obs.dtype)[:, None]
+                prefix_count = prefix_count.scatter_add(1, action[:, None], weight)
+                prefix_size = prefix_size.scatter_add(1, action[:, None], clean[:, i, 1:2] * weight)
+        return (torch.stack(chosen, -1).reshape(*leading, self.max_requests),
+                torch.stack(logps, -1).sum(-1).reshape(leading),
+                torch.stack(entropies, -1).sum(-1).reshape(leading))
+
+
 class OffloadMLPCritic(nn.Module):
     def __init__(self, obs_dim: int) -> None:
         super().__init__()
@@ -206,6 +268,8 @@ class OffloadMAPPO(MARLModel):
         both_attention = bool(getattr(config, "OFFLOAD_USE_ATTENTION", True))
         architecture = {
             "no_attention_offload_mappo": (False, False),
+            "batch_offload_mappo": (False, False),
+            "sequential_offload_mappo": (False, False),
             "actor_attention_only_offload_mappo": (True, False),
             "critic_attention_only_offload_mappo": (False, True),
         }
@@ -215,7 +279,12 @@ class OffloadMAPPO(MARLModel):
         self.use_attention = self.actor_attention  # historical actor-attention inspection API
         actor_type = OffloadActor if self.actor_attention else OffloadMLPActor
         critic_type = OffloadCritic if self.critic_attention else OffloadMLPCritic
-        self.actor = actor_type(obs_dim, self.max_requests, self.num_actions).to(device)
+        self.batch_coordination = model_name in {"batch_offload_mappo", "sequential_offload_mappo"}
+        self.probability_contract = ("conditional_joint_sum_v1" if model_name == "sequential_offload_mappo"
+                                     else "batch_joint_sum_v1" if self.batch_coordination else "joint_sum_v1")
+        self.actor = (BatchOffloadActor(obs_dim, self.max_requests, self.num_actions,
+                      sequential=model_name == "sequential_offload_mappo") if self.batch_coordination
+                      else actor_type(obs_dim, self.max_requests, self.num_actions)).to(device)
         self.critic = critic_type(obs_dim).to(device)
         self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.ACTOR_LR)
         self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=config.CRITIC_LR)
@@ -243,6 +312,10 @@ class OffloadMAPPO(MARLModel):
         else:
             masks_tensor = torch.from_numpy(masks).float().to(self.device)
         with torch.no_grad():
+            if self.batch_coordination:
+                actions, log_probs, _ = self.actor.decide(obs_tensor, masks_tensor, exploration=exploration)
+                values = self.critic(obs_tensor.unsqueeze(0)).squeeze(0)
+                return actions.cpu().numpy(), log_probs.cpu().numpy(), values.cpu().numpy()
             logits = self.actor(obs_tensor, masks_tensor)
             dist = Categorical(logits=logits)
             if exploration:
@@ -286,11 +359,14 @@ class OffloadMAPPO(MARLModel):
         torch.nn.utils.clip_grad_norm_(self.critic.parameters(), config.MAX_GRAD_NORM)
         self.critic_optimizer.step()
 
-        logits = self.actor(obs_batch, masks_batch)
-        dist = Categorical(logits=logits)
-        slot_log_probs = dist.log_prob(actions_batch) * valid_slots
-        new_log_probs = slot_log_probs.sum(dim=-1)
-        entropy = (dist.entropy() * valid_slots).sum(dim=-1)
+        if self.batch_coordination:
+            _, new_log_probs, entropy = self.actor.decide(obs_batch, masks_batch, actions=actions_batch)
+        else:
+            logits = self.actor(obs_batch, masks_batch)
+            dist = Categorical(logits=logits)
+            slot_log_probs = dist.log_prob(actions_batch) * valid_slots
+            new_log_probs = slot_log_probs.sum(dim=-1)
+            entropy = (dist.entropy() * valid_slots).sum(dim=-1)
         active = valid_slots.sum(dim=-1) > 0
 
         ratio = torch.exp((new_log_probs - old_log_probs).double())
@@ -299,7 +375,7 @@ class OffloadMAPPO(MARLModel):
         surr1 = ratio * advantages
         surr2 = torch.clamp(ratio, 1.0 - config.PPO_CLIP_EPS, 1.0 + config.PPO_CLIP_EPS) * advantages
         actor_loss = (-(torch.min(surr1, surr2)[active]).mean()
-                      - config.PPO_ENTROPY_COEF * entropy[active].mean()) if active.any() else logits.sum() * 0.0
+                      - config.PPO_ENTROPY_COEF * entropy[active].mean()) if active.any() else new_log_probs.sum() * 0.0
 
         self.actor_optimizer.zero_grad(set_to_none=True)
         if active.any():
@@ -325,7 +401,7 @@ class OffloadMAPPO(MARLModel):
                 "actor_optimizer": self.actor_optimizer.state_dict(),
                 "critic_optimizer": self.critic_optimizer.state_dict(),
                 "metadata": {
-                    "probability_contract": "joint_sum_v1",
+                    "probability_contract": self.probability_contract,
                     "environment_semantics": config.ENV_SEMANTICS_VERSION,
                     "max_requests": self.max_requests,
                     "num_actions": self.num_actions,
@@ -344,7 +420,7 @@ class OffloadMAPPO(MARLModel):
             raise FileNotFoundError(f"Model file not found: {path}")
         checkpoint: dict[str, Any] = torch.load(path, map_location=self.device, weights_only=True)
         metadata = checkpoint.get("metadata", {})
-        if (metadata.get("probability_contract") != "joint_sum_v1"
+        if (metadata.get("probability_contract") != self.probability_contract
                 or metadata.get("environment_semantics") != config.ENV_SEMANTICS_VERSION
                 or metadata.get("max_requests") != self.max_requests
                 or metadata.get("obs_dim") != self.obs_dim

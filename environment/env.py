@@ -463,7 +463,25 @@ class Env:
                 neighbor_states[i, :] = relative_pos
 
             ue_states: np.ndarray = np.zeros((config.MAX_ASSOCIATED_UES, config.UE_OBS_DIM), dtype=np.float32)
-            ues: list[UE] = sorted(uav.current_covered_ues, key=lambda u: float(np.linalg.norm(uav.pos[:2] - u.pos[:2])))[: config.MAX_ASSOCIATED_UES]
+            def distance_and_id(ue: UE) -> tuple[float, int]:
+                return float(np.linalg.norm(uav.pos[:2] - ue.pos[:2])), ue.id
+
+            ues: list[UE] = sorted(uav.current_covered_ues, key=distance_and_id)
+            mode = config.UPPER_UE_OBSERVATION_MODE
+            if mode in ("covered_plus_uncovered", "covered_plus_uncovered_service_first",
+                        "covered_plus_uncovered_position_only"):
+                # Admission still uses the physical 100 m radius. This pilot
+                # changes only the trajectory actor's pre-action information.
+                ordering = (lambda ue: (not ue.current_request.is_service, *distance_and_id(ue))) \
+                    if mode == "covered_plus_uncovered_service_first" else distance_and_id
+                ues.extend(sorted(
+                    (ue for ue in self._ues
+                     if not ue.assigned and distance_and_id(ue)[0] <= config.UAV_SENSING_RANGE),
+                    key=ordering,
+                ))
+            elif mode != "covered":
+                raise ValueError("Unknown upper UE observation mode")
+            ues = ues[: config.MAX_ASSOCIATED_UES]
             # 循环处理：遍历 (i, ue) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
             for i, ue in enumerate(ues):
                 delta_pos: np.ndarray = (ue.pos[:2] - uav.pos[:2]) / np.array([config.AREA_WIDTH, config.AREA_HEIGHT], dtype=np.float32)
@@ -477,7 +495,7 @@ class Env:
                 request_info: np.ndarray = np.array(
                     [norm_type, norm_size, norm_id, norm_deadline, norm_priority, norm_battery],
                     dtype=np.float32,
-                )
+                ) if not (mode == "covered_plus_uncovered_position_only" and not ue.assigned) else np.zeros(6, dtype=np.float32)
                 ue_states[i, :] = np.concatenate([delta_pos, request_info])
 
             obs: np.ndarray = np.concatenate([own_state, neighbor_states.flatten(), ue_states.flatten()])

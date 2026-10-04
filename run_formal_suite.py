@@ -22,6 +22,9 @@ def groups(plan):
 
 
 def run_suite(plan, output, source_lock=None, validation_report=None, workers=1, threads=4):
+    if plan.get('protocol', '').startswith('batch_offload_'):
+        from scripts.analysis.batch_offload_protocol import validate_plan
+        validate_plan(plan)
     source = source_manifest()
     if plan['purpose'] == 'formal':
         lock = verify_release(source_lock, validation_report, source)
@@ -106,7 +109,11 @@ def run_suite(plan, output, source_lock=None, validation_report=None, workers=1,
             base = Path(variant['name']) / method
             checkpoint = None
             if method not in NONLEARNED:
-                trained = job(base / f'seed_{seed}' / 'train', variant, method, seed, plan['training_workload_seed'])
+                training_workload = plan.get('training_workload_seeds', {}).get(
+                    str(seed), plan.get('training_workload_seed'))
+                if training_workload is None:
+                    raise ValueError('Plan needs training_workload_seed or a per-seed training_workload_seeds map')
+                trained = job(base / f'seed_{seed}' / 'train', variant, method, seed, training_workload)
                 checkpoint = trained / json.loads((trained / 'latest.json').read_text())['checkpoint']
                 base /= f'seed_{seed}'
             for workload in plan['workload_seeds']:
@@ -127,6 +134,7 @@ def run_suite(plan, output, source_lock=None, validation_report=None, workers=1,
 def parse_args(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--suite', choices=['all', 'main', 'sensitivity'], default='all')
+    parser.add_argument('--plan-file', help='Frozen JSON plan for a separately named experiment')
     parser.add_argument('--output', required=True)
     parser.add_argument('--source-lock', default=str(ROOT / 'source-lock.json'))
     parser.add_argument('--validation-report', default=str(ROOT / 'validation.json'))
@@ -139,10 +147,22 @@ def parse_args(argv=None):
 
 if __name__ == '__main__':
     args = parse_args()
-    plan = matrix(args.suite, args.smoke)
+    if args.plan_file and args.smoke:
+        raise ValueError('Use a separate verification plan file; --smoke cannot modify a frozen plan')
+    plan = json.loads(Path(args.plan_file).read_text()) if args.plan_file else matrix(args.suite, args.smoke)
+    required = {'protocol', 'purpose', 'training_seeds', 'workload_seeds', 'train_episodes',
+                'eval_episodes', 'steps', 'rollout', 'ppo_epochs', 'batch_size',
+                'checkpoint_every', 'variants'}
+    if required - plan.keys() or plan['purpose'] not in ('verification', 'pilot', 'formal'):
+        raise ValueError('Invalid experiment plan')
+    if len(set(plan['training_seeds'])) != len(plan['training_seeds']) or len(set(plan['workload_seeds'])) != len(plan['workload_seeds']):
+        raise ValueError('Repeated seed in experiment plan')
+    if any(len(set(variant['methods'])) != len(variant['methods']) for variant in plan['variants']):
+        raise ValueError('Repeated method in experiment plan')
     if args.plan_only:
         write_json(Path(args.output), plan)
         print(json.dumps({'groups': len(list(groups(plan))), 'purpose': plan['purpose'], 'plan': args.output}))
     else:
-        print(run_suite(plan, args.output, None if args.smoke else args.source_lock,
-                        None if args.smoke else args.validation_report, args.workers, args.threads))
+        formal = plan['purpose'] == 'formal'
+        print(run_suite(plan, args.output, args.source_lock if formal else None,
+                        args.validation_report if formal else None, args.workers, args.threads))

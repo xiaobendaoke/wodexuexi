@@ -70,7 +70,7 @@ def get_model(model_name: str) -> MARLModel:
             device=device,
         )
     elif model_name in {"offload_mappo", "constrained_attention_offload_mappo", "no_attention_offload_mappo",
-                        "actor_attention_only_offload_mappo", "critic_attention_only_offload_mappo"}:
+                        "actor_attention_only_offload_mappo", "critic_attention_only_offload_mappo", "batch_offload_mappo", "sequential_offload_mappo"}:
         return OffloadMAPPO(
             model_name=model_name,
             num_agents=config.NUM_UAVS,

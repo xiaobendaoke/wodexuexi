@@ -1,0 +1,100 @@
+{
+  "status": "INDEPENDENT_CONFIRMATION_PASS",
+  "source_hash": "6089feff948dd106e4e138c56d3f808f88aacaa6a6528786306dba7ef42717be",
+  "design": {
+    "baseline": "lower_no_attention",
+    "candidate": "lower_mlp_upper_uncovered_obs",
+    "sole_intended_change": "The upper actor observes currently unadmitted UEs within the existing 460 m sensing radius, while admission remains limited to 100 m.",
+    "new_information_assumption": "Pre-admission UE position and request features are available to the trajectory controller inside the sensing radius; this exploratory assumption requires explicit treatment if adopted for the thesis."
+  },
+  "validation": {
+    "remote_linux_unittest": "79 passed",
+    "remote_linux_smoke": "PASS: two methods, each two 100-step training episodes and one 100-step evaluation episode; checkpoint and paired analysis completed",
+    "local_syntax_and_diff": "PASS",
+    "smoke_inference": "None; the smoke is not a performance experiment"
+  },
+  "a100": {
+    "attempts": 3,
+    "result": "Colab CLI assignment timed out after 120 seconds on every attempt, including after the user-authorized existing CPU assignment was stopped.",
+    "active_assignments_after_attempts": 0,
+    "remaining_compute_units_after_attempts": 33.42,
+    "full_pilot_started": false
+  },
+  "independent_remote_copy": "/home/PengYanghan/Lunwen/coverage-observation-20260927",
+  "remote_linux_pilot": {
+    "started": true,
+    "controller_pid": 80372,
+    "workers": 4,
+    "threads_per_worker": 4,
+    "training_jobs_planned": 10,
+    "evaluation_jobs_planned": 50,
+    "initial_check": "Controller and four lower_no_attention training workers running; four RUNNING state.json files and suite.json present.",
+    "latest_readonly_check": {
+      "state_counts": {
+        "PASS": 34,
+        "RUNNING": 4
+      },
+      "status": "controller and four workers stopped by user request; RUNNING state files are stale and not completed results",
+      "checked_date": "2026-09-27"
+    },
+    "stopped_at_utc": "2026-09-27T08:08:38Z",
+    "controller_alive_after_stop": false,
+    "runner_process_count_after_stop": 0,
+    "completed_jobs_preserved": 34
+  },
+  "note": "G4 pilot is complete and locally verified. The duplicate remote Linux copy was stopped at user request with 34 completed jobs preserved and four stale RUNNING state files. Scientific interpretation remains exploratory.",
+  "g4_pilot": {
+    "session": "coverage-observation-g4-20260927",
+    "hardware": "G4 / NVIDIA RTX PRO 6000 Blackwell Server Edition",
+    "status": "PASS; all 60 planned training/evaluation jobs completed",
+    "training_jobs": 10,
+    "evaluation_jobs": 50,
+    "training_episodes_per_job": 200,
+    "evaluation_episodes_per_job": 6,
+    "total_episode_json_count": 2300,
+    "training_episode_json_count": 2000,
+    "evaluation_episode_json_count": 300,
+    "failed_jobs": 0,
+    "remaining_compute_units_after_stop": 12.19,
+    "session_stopped": true,
+    "result_directory": "results/coverage_observation_g4_20260927/coverage_observation_g4_results",
+    "archive": "results/coverage_observation_g4_20260927/g4_results_20260927.tar.gz",
+    "archive_bytes": 937315937,
+    "archive_sha256": "22fc48608158e3c96abdd7fc303bb4b21005b02cd337ad6371ef44c2ec7bee33",
+    "local_archive_matches_remote_sha256": true,
+    "paired_pilot_summary": "results/coverage_observation_g4_20260927/pilot_paired_comparison.json",
+    "exploratory_DSR_difference_candidate_minus_baseline": 0.032966730110889915,
+    "exploratory_DSR_crossed_bootstrap_ci95": [
+      0.012875480863214283,
+      0.05326727719376246
+    ],
+    "analysis_caveat": "Exploratory 5 training seeds × 5 workloads; not a confirmation cohort or thesis conclusion."
+  },
+  "independent_confirmation": {
+    "status": "PASS",
+    "protocol": "upper_uncovered_observation_independent_confirmation_v1",
+    "plan_sha256": "59fa3b6e4d1624f08036f13a9c205e7f295a7f56ff947e02d31258b6fd935fd3",
+    "source_hash": "6089feff948dd106e4e138c56d3f808f88aacaa6a6528786306dba7ef42717be",
+    "remote_results_directory": "/home/PengYanghan/Lunwen/coverage-observation-20260927/confirmation_results",
+    "controller_pid": 107860,
+    "workers": 8,
+    "threads_per_worker": 4,
+    "training_jobs_planned": 20,
+    "evaluation_jobs_planned": 100,
+    "started_at_or_before_utc": "2026-09-27T08:12:19Z",
+    "initial_check": "Controller alive; suite.json present; eight training state files report RUNNING and match the new-seed confirmation plan.",
+    "result_inference": "Prespecified DSR decision rule met: mean candidate-minus-baseline difference +0.0349221867, training-seed t 95% CI [+0.0244434149, +0.0454009586], crossed-bootstrap 95% CI [+0.0242968982, +0.0447342176]. Ten of ten training-seed effects are positive.",
+    "completed_training_jobs": 20,
+    "completed_evaluation_jobs": 100,
+    "training_episode_files": 4000,
+    "evaluation_episode_files": 600,
+    "raw_audit_status": "PASS: 120 completed markers, 600 evaluation episodes, 600000 evaluation steps, matching exogenous traces, and only the intended observation-mode configuration difference",
+    "local_summary_directory": "results/coverage_observation_confirmation_20260927",
+    "paired_comparison": "results/coverage_observation_confirmation_20260927/confirmation_paired_comparison.json",
+    "archive": "results/coverage_observation_confirmation_20260927/confirmation_results.tar.gz",
+    "archive_bytes": 2358842456,
+    "archive_sha256": "59bbe3ef5aeeb7aed0ae301564ead9d7ba0f336fa5f1128d10e359d96a7c65cc",
+    "archive_gzip_test": "PASS",
+    "interpretation_boundary": "Supported for the 100-UE simulated main setting and stated pre-admission information assumption. Secondary mechanisms differ between G4 pilot and Linux confirmation; source is content-hashed but not formally Git-release-locked."
+  }
+}

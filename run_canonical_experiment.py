@@ -22,19 +22,39 @@ from marl_models.utils import get_model
 from run_hierarchical_mappo_experiment import apply_lower_ablation, lower_rewards_from_metrics, update_on_policy_model
 from utils.canonical_experiment import config_snapshot, digest, exogenous_frame, scenario_manifest, source_manifest, write_json
 
-METHODS = ("upper_attention", "upper_vanilla", "hierarchical", "no_attention", "no_quality_mask", "no_penalty", "joint", "vanilla_hierarchical", "lower_no_attention", "lower_actor_attention_only", "lower_critic_attention_only", "lower_mlp_upper_dsr_w5", "lower_mlp_upper_energy_ref25k", "ippo",
+METHODS = ("upper_attention", "upper_vanilla", "hierarchical", "no_attention", "no_quality_mask", "no_penalty", "joint", "vanilla_hierarchical", "lower_no_attention", "lower_mlp_upper_uncovered_obs", "lower_mlp_upper_uncovered_service_first", "lower_mlp_upper_uncovered_position_only", "lower_actor_attention_only", "lower_critic_attention_only", "lower_mlp_upper_dsr_w5", "lower_mlp_upper_energy_ref25k", "ippo",
            "greedy", "local", "mbs", "random", "uniform")
+BATCH_METHODS = {
+    "lower_batch_upper_uncovered_obs": ("attention_mappo", "batch_offload_mappo"),
+    "lower_sequential_upper_uncovered_obs": ("attention_mappo", "sequential_offload_mappo"),
+    "vanilla_lower_mlp_upper_uncovered_obs": ("vanilla_mappo", "no_attention_offload_mappo"),
+    "vanilla_lower_batch_upper_uncovered_obs": ("vanilla_mappo", "batch_offload_mappo"),
+    "vanilla_lower_sequential_upper_uncovered_obs": ("vanilla_mappo", "sequential_offload_mappo"),
+}
+METHODS += tuple(BATCH_METHODS)
 NONLEARNED = {"greedy", "local", "mbs", "random", "uniform"}
-REWARD_PILOT_OVERRIDES = {
+METHOD_OVERRIDES = {
     "lower_mlp_upper_dsr_w5": {"REWARD_W_DSR": 5.0},
     "lower_mlp_upper_energy_ref25k": {"REWARD_NORM_ENERGY_REF": 25000.0},
+    "lower_mlp_upper_uncovered_obs": {"UPPER_UE_OBSERVATION_MODE": "covered_plus_uncovered"},
+    "lower_mlp_upper_uncovered_service_first": {"UPPER_UE_OBSERVATION_MODE": "covered_plus_uncovered_service_first"},
+    "lower_mlp_upper_uncovered_position_only": {"UPPER_UE_OBSERVATION_MODE": "covered_plus_uncovered_position_only"},
 }
 
 
 def configure_method(method):
-    for key, value in REWARD_PILOT_OVERRIDES.get(method, {}).items():
+    config.UPPER_UE_OBSERVATION_MODE = "covered"
+    for key, value in METHOD_OVERRIDES.get(method, {}).items():
         setattr(config, key, value)
+    if method in BATCH_METHODS:
+        config.UPPER_UE_OBSERVATION_MODE = "covered_plus_uncovered"
+        apply_lower_ablation("no_attention")
+        upper, lower = BATCH_METHODS[method]
+        return {"upper": get_model(upper), "lower": get_model(lower)}
     ablation = {"no_attention": "no_attention", "lower_no_attention": "no_attention",
+                "lower_mlp_upper_uncovered_obs": "no_attention",
+                "lower_mlp_upper_uncovered_service_first": "no_attention",
+                "lower_mlp_upper_uncovered_position_only": "no_attention",
                 "lower_mlp_upper_dsr_w5": "no_attention", "lower_mlp_upper_energy_ref25k": "no_attention",
                 "lower_actor_attention_only": "actor_only", "lower_critic_attention_only": "critic_only",
                 "no_quality_mask": "no_mask", "no_penalty": "no_lagrange"}.get(method, "full")
@@ -141,7 +161,7 @@ def train(args):
         output.mkdir(parents=True, exist_ok=True)
         manifest = {"settings": settings, "config": snapshot, "source": source, "scenario": scenario,
                     "purpose": args.purpose, "evaluation": evaluation, "created_unix": time.time(),
-                    "runtime": {"python": platform.python_version(), "torch": torch.__version__, "numpy": np.__version__,
+                    "runtime": {"host": platform.node(), "machine": platform.machine(), "threads": args.threads, "timing": "policy_step_wall_cuda_synchronized_v1", "python": platform.python_version(), "torch": torch.__version__, "numpy": np.__version__,
                                 "device": str(next(iter(models.values())).device)}}
         write_json(output / "manifest.json", manifest)
         checkpoint = Path(args.evaluate_checkpoint).resolve() if args.evaluate_checkpoint else None
@@ -155,6 +175,9 @@ def train(args):
         for relative, expected in contract["files"].items():
             if hashlib.sha256((checkpoint / relative).read_bytes()).hexdigest() != expected:
                 raise ValueError("Checkpoint checksum mismatch")
+        if evaluation:
+            manifest["evaluation_checkpoint_contract_sha256"] = hashlib.sha256((checkpoint / "contract.json").read_bytes()).hexdigest()
+            write_json(output / "manifest.json", manifest)
         for name, model in models.items():
             model.load(str(checkpoint / name))
         state = torch.load(checkpoint / "training_state.pt", weights_only=True, map_location="cpu")
@@ -184,7 +207,15 @@ def train(args):
             violations = []
             for index in range(length):
                 trace.update(digest(exogenous_frame(env)).encode())
+                if evaluation:
+                    if torch.cuda.is_available():
+                        torch.cuda.synchronize()
+                    inference_started = time.perf_counter()
                 motion, offload, entries = policy_step(models, env, obs, exploration=not evaluation)
+                if evaluation:
+                    if torch.cuda.is_available():
+                        torch.cuda.synchronize()
+                    inference_seconds = time.perf_counter() - inference_started
                 if args.method in {"local", "mbs"}:
                     offload = np.full((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV),
                                       0 if args.method == "local" else 1, dtype=np.int64)
@@ -201,6 +232,8 @@ def train(args):
                         buffers[name].add(*entry[:-1], lower_rewards if name == "lower" else rewards, done, entry[-1])
                 rows.append({"step": offset + index, "metrics": metrics, "team_reward": float(np.mean(rewards)),
                              "lower_reward": lower_rewards[0], "rho_dsr": rho_dsr, "rho_mbs": rho_mbs})
+                if evaluation:
+                    rows[-1]["policy_inference_seconds"] = inference_seconds
                 obs = np.asarray(next_obs, dtype=np.float32)
             if not evaluation:
                 _, _, bootstrap = policy_step(models, env, obs, exploration=True)

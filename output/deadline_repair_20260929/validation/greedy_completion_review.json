@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "study": "greedy_control",
+  "jobs": 150,
+  "episodes": 300,
+  "steps": 300000,
+  "independent_n": 5,
+  "excluded_jobs": 0,
+  "audit": {
+    "all_episode_sha256_verified": true,
+    "all_metric_identities_verified": true,
+    "all_modes_seeds_same_workload_external_trace": true,
+    "checkpoint_contract_consistent": true,
+    "mask_scope": "archived runner checked quality masks; this audit verifies saved action ranges/counts, cannot reconstruct masks",
+    "greedy_did_not_call_lower_network": true,
+    "greedy_without_repair_preserved_proposals": true
+  },
+  "synced_analysis_files_sha256": {
+    "analysis.json": "cb6b7e034dfb28192e69bf84359260ea35e295fafba2280ecb796171cedcabc8",
+    "seed_metrics.csv": "8364d2a074ca38ec4034cd0aeafd327b0c335e6b08eb571a17b88e191af68d11"
+  },
+  "raw_files_audited": 452,
+  "remote_raw_results": "~/Lunwen/deadline-repair-20260929/results/greedy_control/",
+  "review_method": "explicit self-review plus SciPy arithmetic cross-check; no independent reviewer",
+  "limitations": [
+    "No new independent training; no confirmation claim.",
+    "Coordination latency/energy/loss not modeled.",
+    "Five parallel CPU workers, no isolated realtime guarantee.",
+    "Greedy initialization timing is included; initializers have different absolute energy caps.",
+    "Seed-average DSR decomposition must not multiply group mean ratios.",
+    "Only original configuration; no cross-scenario superiority inference."
+  ]
+}

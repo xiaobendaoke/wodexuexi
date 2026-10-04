@@ -1,0 +1,37 @@
+{
+  "prior_controller": {
+    "phase": "PILOT_RUNNING",
+    "pid": 243568,
+    "source_hash": "b5239f5877a82d72586271de84d428b4a8d5bb7aebddbb2c0e4c0616980eba58",
+    "output": "/home/PengYanghan/Lunwen/batch-offload-20260928/pilot",
+    "time_unix": 1790641543.7701402,
+    "confirmation_started": false
+  },
+  "stopped_processes": [
+    {
+      "pid": 243568,
+      "command": "/home/PengYanghan/miniconda3/envs/drone/bin/python -u /home/PengYanghan/Lunwen/batch-offload-20260928/pilot_controller.py --source /home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929 --output /home/PengYanghan/Lunwen/batch-offload-20260928/pilot --state /home/PengYanghan/Lunwen/batch-offload-20260928/pilot_controller_state.json "
+    },
+    {
+      "pid": 243576,
+      "command": "/home/PengYanghan/miniconda3/envs/drone/bin/python run_formal_suite.py --plan-file docs/plans/batch_offload_pilot_20260928.json --output /home/PengYanghan/Lunwen/batch-offload-20260928/pilot --workers 1 --threads 1 "
+    },
+    {
+      "pid": 243582,
+      "command": "/home/PengYanghan/miniconda3/envs/drone/bin/python /home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/run_canonical_experiment.py --method lower_mlp_upper_uncovered_obs --training-seed 620001 --workload-seed 820001 --episodes 200 --steps 1000 --rollout 1000 --ppo-epochs 8 --batch-size 256 --threads 1 --checkpoint-every 20 --ue-count 100 --compute-scale 1.0 --purpose pilot --output /home/PengYanghan/Lunwen/batch-offload-20260928/pilot/main/lower_mlp_upper_uncovered_obs/seed_620001/train/attempt_0000 "
+    }
+  ],
+  "preserved_checkpoint": {
+    "checkpoint": "checkpoints/episode_00108",
+    "completed_episodes": 109
+  },
+  "source_hash": "b5239f5877a82d72586271de84d428b4a8d5bb7aebddbb2c0e4c0616980eba58",
+  "changed_training_seeds": false,
+  "threads_per_job": 1,
+  "training_workers": 20,
+  "evaluation_workers": 1,
+  "time_unix": 1790645472.7479954,
+  "new_controller_pid": 254755,
+  "controller_sha256": "1ee26891bd46fe1d8e2d613a3635c78e33b7db73fd8809454df8b7260ab03394",
+  "status": "PARALLEL_STARTED"
+}

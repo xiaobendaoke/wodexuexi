@@ -1,0 +1,201 @@
+{
+  "status": "PASS",
+  "purpose": "pilot",
+  "protocol": "upper_uncovered_observation_pilot_v1",
+  "training_seeds": [
+    5341,
+    5573,
+    5801,
+    6043,
+    6299
+  ],
+  "workload_seeds": [
+    1709,
+    1753,
+    1801,
+    1847,
+    1901
+  ],
+  "statistical_unit": "paired mean over workload seeds for each training seed; crossed bootstrap resamples both axes",
+  "bootstrap_draws": 20000,
+  "bootstrap_seed": 20260920,
+  "note": "Exploratory pilot only (5 training seeds × 5 workloads); do not treat episodes or requests as independent training replicates. These comparisons are computed because the generic suite analyzer only emits contrasts for the canonical hierarchical method.",
+  "comparisons": {
+    "DSR": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": 0.032966730110889915,
+      "crossed_bootstrap_ci95": [
+        0.012875480863214283,
+        0.05326727719376246
+      ],
+      "paired_seed_dz": 1.3602119362123808,
+      "seed_means": {
+        "5341": 0.020816008295155265,
+        "5573": 0.05346764760346965,
+        "5801": 0.006147187423408118,
+        "6043": 0.06331835397826126,
+        "6299": 0.02108445325415529
+      }
+    },
+    "Admission fraction": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": 0.017129678651636067,
+      "crossed_bootstrap_ci95": [
+        -0.03682147149491474,
+        0.07979459980635338
+      ],
+      "paired_seed_dz": 0.27572636151239566,
+      "seed_means": {
+        "5341": 0.06771697488246717,
+        "5573": 0.10011293812844332,
+        "5801": -0.022791271502538613,
+        "6043": -0.027022888919962608,
+        "6299": -0.03236735933022894
+      }
+    },
+    "Deadline satisfaction among admitted": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": 0.042746915594795105,
+      "crossed_bootstrap_ci95": [
+        -0.0016004412354900075,
+        0.09050617013423345
+      ],
+      "paired_seed_dz": 0.7854361607041812,
+      "seed_means": {
+        "5341": -0.018781537938047134,
+        "5573": 0.01613736046676074,
+        "5801": 0.028508416444638786,
+        "6043": 0.12484670382142342,
+        "6299": 0.06302363517919972
+      }
+    },
+    "UAV Fleet Total Energy": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": 519406.8476432532,
+      "crossed_bootstrap_ci95": [
+        -1992971.794007547,
+        2824691.3848873554
+      ],
+      "paired_seed_dz": 0.20571141788886832,
+      "seed_means": {
+        "5341": -3953371.6095893546,
+        "5573": 1827655.80349129,
+        "5801": 1031538.9849913627,
+        "6043": 1801275.9461320625,
+        "6299": 1889935.1131909057
+      }
+    },
+    "Non-flight assignment energy": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": 519678.18516547204,
+      "crossed_bootstrap_ci95": [
+        -2009923.3138568148,
+        2834704.7411460136
+      ],
+      "paired_seed_dz": 0.20412544650843714,
+      "seed_means": {
+        "5341": -3991925.7620479763,
+        "5573": 1804448.7672319799,
+        "5801": 1053207.9761461734,
+        "6043": 1798699.8687654808,
+        "6299": 1933960.0757317021
+      }
+    },
+    "Critical-UE Ratio": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": -3.426666666666668e-05,
+      "crossed_bootstrap_ci95": [
+        -0.0007268,
+        0.00047923999999999656
+      ],
+      "paired_seed_dz": -0.06113833458433553,
+      "seed_means": {
+        "5341": -0.000133,
+        "5573": 0.00039299999999999996,
+        "5801": 0.0004823333333333333,
+        "6043": -0.0009260000000000001,
+        "6299": 1.2333333333333326e-05
+      }
+    },
+    "Penalized system latency per generated service request": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": -1.313330392134177,
+      "crossed_bootstrap_ci95": [
+        -4.764278636992902,
+        1.628592657867618
+      ],
+      "paired_seed_dz": -0.40035135104734076,
+      "seed_means": {
+        "5341": -4.061035457389357,
+        "5573": -5.5820391474469195,
+        "5801": 1.00877871546473,
+        "6043": 0.3769094409405945,
+        "6299": 1.6907344877600679
+      }
+    },
+    "Latency per admitted service request": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": -0.13527527894403238,
+      "crossed_bootstrap_ci95": [
+        -0.26771498387556436,
+        0.005180521533954261
+      ],
+      "paired_seed_dz": -0.8320671167084283,
+      "seed_means": {
+        "5341": 0.05246132830151686,
+        "5573": 0.009471443655635037,
+        "5801": -0.1552224577551348,
+        "6043": -0.30361890059011437,
+        "6299": -0.2794678083320647
+      }
+    },
+    "Fairness": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": 0.026915955701383446,
+      "crossed_bootstrap_ci95": [
+        -0.0018971579350158451,
+        0.06514639852660821
+      ],
+      "paired_seed_dz": 0.7191757120994468,
+      "seed_means": {
+        "5341": 0.031451728780443465,
+        "5573": 0.0862920231952021,
+        "5801": -0.0037522825890841547,
+        "6043": 0.02708191029168665,
+        "6299": -0.006493601171330843
+      }
+    },
+    "Effective tasks per MJ": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": 21.958933447677474,
+      "crossed_bootstrap_ci95": [
+        4.865638308953655,
+        38.38183006371298
+      ],
+      "paired_seed_dz": 1.254408286455063,
+      "seed_means": {
+        "5341": 31.540820058522776,
+        "5573": 31.89250260053185,
+        "5801": -4.740762674879619,
+        "6043": 37.72867603464055,
+        "6299": 13.373431219571804
+      }
+    },
+    "MBS offload fraction": {
+      "direction": "lower_mlp_upper_uncovered_obs minus lower_no_attention",
+      "mean_difference": -0.013082682302102163,
+      "crossed_bootstrap_ci95": [
+        -0.05727793218224916,
+        0.0366671319082265
+      ],
+      "paired_seed_dz": -0.21787710865849902,
+      "seed_means": {
+        "5341": -0.031722897220477955,
+        "5573": 0.07618590073476257,
+        "5801": -0.056312146489489144,
+        "6043": 0.01715923638628892,
+        "6299": -0.07072350492159521
+      }
+    }
+  }
+}

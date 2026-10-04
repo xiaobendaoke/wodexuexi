@@ -1,0 +1,868 @@
+{
+  "status": "PASS",
+  "protocol": "whole_system_comparison_20260928_v1",
+  "source_hash": "bebd4640bbf871bb75792b067a21e9a55f2c04db7e220e6bb40f433812e3733e",
+  "candidate": "lower_mlp_upper_uncovered_obs",
+  "training_seeds": [
+    10007,
+    10037,
+    10061,
+    10091,
+    10111,
+    10141,
+    10163,
+    10193,
+    10211,
+    10243
+  ],
+  "workload_seeds": [
+    3001,
+    3037,
+    3061,
+    3097,
+    3121
+  ],
+  "statistical_unit": "paired training-seed mean over workloads for learned comparisons",
+  "primary_metric": "DSR",
+  "primary_comparators": [
+    "lower_no_attention",
+    "hierarchical",
+    "vanilla_hierarchical",
+    "ippo",
+    "joint"
+  ],
+  "comparisons": {
+    "lower_no_attention": {
+      "method": "lower_no_attention",
+      "kind": "learned",
+      "metrics": {
+        "DSR": {
+          "candidate_mean": 0.27981679232266315,
+          "comparator_mean": 0.24589113370104562,
+          "mean_difference": 0.03392565862161758,
+          "paired_crossed_bootstrap_ci95": [
+            0.022280055576689856,
+            0.04531043418532615
+          ],
+          "positive_training_seeds": 10,
+          "positive_seed_workload_units": 47,
+          "training_seed_t_ci95": [
+            0.021283944832983823,
+            0.04656737241025133
+          ],
+          "two_sided_p": 0.00018572183538638926,
+          "holm_adjusted_p": 0.00018572183538638926
+        },
+        "Admission fraction": {
+          "candidate_mean": 0.6247768802345933,
+          "comparator_mean": 0.5269297264454564,
+          "mean_difference": 0.09784715378913689,
+          "paired_crossed_bootstrap_ci95": [
+            0.05929752222147068,
+            0.13319385166160694
+          ]
+        },
+        "Deadline satisfaction among admitted": {
+          "candidate_mean": 0.44911160322808846,
+          "comparator_mean": 0.47032956584812935,
+          "mean_difference": -0.021217962620040894,
+          "paired_crossed_bootstrap_ci95": [
+            -0.049016107324976445,
+            0.00798973503073355
+          ]
+        },
+        "UAV Fleet Total Energy": {
+          "candidate_mean": 50785675.9792711,
+          "comparator_mean": 54603939.34333402,
+          "mean_difference": -3818263.3640629244,
+          "paired_crossed_bootstrap_ci95": [
+            -6501267.979412228,
+            -1084009.0460485024
+          ]
+        },
+        "Non-flight assignment energy": {
+          "candidate_mean": 49562892.71710859,
+          "comparator_mean": 53398035.847804286,
+          "mean_difference": -3835143.1306956895,
+          "paired_crossed_bootstrap_ci95": [
+            -6505655.348939026,
+            -1123572.6804443595
+          ]
+        },
+        "Fairness": {
+          "candidate_mean": 0.9238166075237715,
+          "comparator_mean": 0.8529129237167972,
+          "mean_difference": 0.07090368380697443,
+          "paired_crossed_bootstrap_ci95": [
+            0.04174297440774363,
+            0.10257036347620839
+          ]
+        },
+        "Effective tasks per MJ": {
+          "candidate_mean": 178.81515536712385,
+          "comparator_mean": 145.98480549209805,
+          "mean_difference": 32.830349875025824,
+          "paired_crossed_bootstrap_ci95": [
+            20.488601253321953,
+            47.533454530118725
+          ]
+        },
+        "MBS offload fraction": {
+          "candidate_mean": 0.027726811875216476,
+          "comparator_mean": 0.029224623807873253,
+          "mean_difference": -0.0014978119326567742,
+          "paired_crossed_bootstrap_ci95": [
+            -0.01414321983899185,
+            0.010101159826220027
+          ]
+        }
+      }
+    },
+    "hierarchical": {
+      "method": "hierarchical",
+      "kind": "learned",
+      "metrics": {
+        "DSR": {
+          "candidate_mean": 0.27981679232266315,
+          "comparator_mean": 0.24333361783315244,
+          "mean_difference": 0.03648317448951074,
+          "paired_crossed_bootstrap_ci95": [
+            0.025986755582049804,
+            0.04671082659318067
+          ],
+          "positive_training_seeds": 10,
+          "positive_seed_workload_units": 49,
+          "training_seed_t_ci95": [
+            0.02503769838949744,
+            0.04792865058952402
+          ],
+          "two_sided_p": 5.0243669061962496e-05,
+          "holm_adjusted_p": 0.00010048733812392499
+        },
+        "Admission fraction": {
+          "candidate_mean": 0.6247768802345933,
+          "comparator_mean": 0.5669533422174294,
+          "mean_difference": 0.05782353801716392,
+          "paired_crossed_bootstrap_ci95": [
+            0.03408797060257809,
+            0.08368692348564116
+          ]
+        },
+        "Deadline satisfaction among admitted": {
+          "candidate_mean": 0.44911160322808846,
+          "comparator_mean": 0.430764162981449,
+          "mean_difference": 0.01834744024663942,
+          "paired_crossed_bootstrap_ci95": [
+            -0.005425944606836038,
+            0.041444546686425304
+          ]
+        },
+        "UAV Fleet Total Energy": {
+          "candidate_mean": 50785675.9792711,
+          "comparator_mean": 51191381.66880328,
+          "mean_difference": -405705.68953218503,
+          "paired_crossed_bootstrap_ci95": [
+            -2711865.4147305195,
+            1986865.5262027492
+          ]
+        },
+        "Non-flight assignment energy": {
+          "candidate_mean": 49562892.71710859,
+          "comparator_mean": 49971120.440207385,
+          "mean_difference": -408227.7230987911,
+          "paired_crossed_bootstrap_ci95": [
+            -2718043.652828171,
+            1985794.4145619117
+          ]
+        },
+        "Fairness": {
+          "candidate_mean": 0.9238166075237715,
+          "comparator_mean": 0.8794564098259001,
+          "mean_difference": 0.04436019769787165,
+          "paired_crossed_bootstrap_ci95": [
+            0.022580697855623583,
+            0.06488611074929682
+          ]
+        },
+        "Effective tasks per MJ": {
+          "candidate_mean": 178.81515536712385,
+          "comparator_mean": 153.20625769051787,
+          "mean_difference": 25.608897676606002,
+          "paired_crossed_bootstrap_ci95": [
+            14.619033208522215,
+            39.89285509873143
+          ]
+        },
+        "MBS offload fraction": {
+          "candidate_mean": 0.027726811875216476,
+          "comparator_mean": 0.022668012742779346,
+          "mean_difference": 0.005058799132437132,
+          "paired_crossed_bootstrap_ci95": [
+            -0.010181671314037974,
+            0.01869475287785636
+          ]
+        }
+      }
+    },
+    "vanilla_hierarchical": {
+      "method": "vanilla_hierarchical",
+      "kind": "learned",
+      "metrics": {
+        "DSR": {
+          "candidate_mean": 0.27981679232266315,
+          "comparator_mean": 0.21525618169929292,
+          "mean_difference": 0.0645606106233703,
+          "paired_crossed_bootstrap_ci95": [
+            0.055360352354519575,
+            0.07398490097372089
+          ],
+          "positive_training_seeds": 10,
+          "positive_seed_workload_units": 50,
+          "training_seed_t_ci95": [
+            0.05445037720025916,
+            0.07467084404648146
+          ],
+          "two_sided_p": 1.5640978479386775e-07,
+          "holm_adjusted_p": 6.25639139175471e-07
+        },
+        "Admission fraction": {
+          "candidate_mean": 0.6247768802345933,
+          "comparator_mean": 0.6903527548533335,
+          "mean_difference": -0.06557587461874012,
+          "paired_crossed_bootstrap_ci95": [
+            -0.1021238847022439,
+            -0.02259827310397032
+          ]
+        },
+        "Deadline satisfaction among admitted": {
+          "candidate_mean": 0.44911160322808846,
+          "comparator_mean": 0.3130617784490662,
+          "mean_difference": 0.1360498247790222,
+          "paired_crossed_bootstrap_ci95": [
+            0.11039291001130326,
+            0.16305906472152154
+          ]
+        },
+        "UAV Fleet Total Energy": {
+          "candidate_mean": 50785675.9792711,
+          "comparator_mean": 43737209.62036968,
+          "mean_difference": 7048466.358901412,
+          "paired_crossed_bootstrap_ci95": [
+            4524340.870510594,
+            9731756.346874934
+          ]
+        },
+        "Non-flight assignment energy": {
+          "candidate_mean": 49562892.71710859,
+          "comparator_mean": 42316635.665947385,
+          "mean_difference": 7246257.051161208,
+          "paired_crossed_bootstrap_ci95": [
+            4714055.951842361,
+            9934200.661347697
+          ]
+        },
+        "Fairness": {
+          "candidate_mean": 0.9238166075237715,
+          "comparator_mean": 0.885425790342788,
+          "mean_difference": 0.038390817180983715,
+          "paired_crossed_bootstrap_ci95": [
+            0.014459097251377678,
+            0.06670737335379028
+          ]
+        },
+        "Effective tasks per MJ": {
+          "candidate_mean": 178.81515536712385,
+          "comparator_mean": 158.64462408238126,
+          "mean_difference": 20.170531284742594,
+          "paired_crossed_bootstrap_ci95": [
+            8.809900293766754,
+            33.210476044266414
+          ]
+        },
+        "MBS offload fraction": {
+          "candidate_mean": 0.027726811875216476,
+          "comparator_mean": 0.011095848893927533,
+          "mean_difference": 0.016630962981288945,
+          "paired_crossed_bootstrap_ci95": [
+            0.0014269846272241262,
+            0.031514431092457475
+          ]
+        }
+      }
+    },
+    "ippo": {
+      "method": "ippo",
+      "kind": "learned",
+      "metrics": {
+        "DSR": {
+          "candidate_mean": 0.27981679232266315,
+          "comparator_mean": 0.2162353795527185,
+          "mean_difference": 0.06358141276994468,
+          "paired_crossed_bootstrap_ci95": [
+            0.052194528587367874,
+            0.07459661387230251
+          ],
+          "positive_training_seeds": 10,
+          "positive_seed_workload_units": 50,
+          "training_seed_t_ci95": [
+            0.052270530038798446,
+            0.07489229550109092
+          ],
+          "two_sided_p": 4.6923912223368297e-07,
+          "holm_adjusted_p": 1.407717366701049e-06
+        },
+        "Admission fraction": {
+          "candidate_mean": 0.6247768802345933,
+          "comparator_mean": 0.7163795833190255,
+          "mean_difference": -0.09160270308443211,
+          "paired_crossed_bootstrap_ci95": [
+            -0.11795568398562407,
+            -0.06336487499142543
+          ]
+        },
+        "Deadline satisfaction among admitted": {
+          "candidate_mean": 0.44911160322808846,
+          "comparator_mean": 0.30217188680541385,
+          "mean_difference": 0.14693971642267464,
+          "paired_crossed_bootstrap_ci95": [
+            0.12489358008181661,
+            0.16953147253904324
+          ]
+        },
+        "UAV Fleet Total Energy": {
+          "candidate_mean": 50785675.9792711,
+          "comparator_mean": 42260867.51707072,
+          "mean_difference": 8524808.462200377,
+          "paired_crossed_bootstrap_ci95": [
+            6254894.561713209,
+            10831183.801157162
+          ]
+        },
+        "Non-flight assignment energy": {
+          "candidate_mean": 49562892.71710859,
+          "comparator_mean": 40836000.570076354,
+          "mean_difference": 8726892.147032246,
+          "paired_crossed_bootstrap_ci95": [
+            6458286.326044191,
+            11040679.588148788
+          ]
+        },
+        "Fairness": {
+          "candidate_mean": 0.9238166075237715,
+          "comparator_mean": 0.8957703049536856,
+          "mean_difference": 0.02804630257008596,
+          "paired_crossed_bootstrap_ci95": [
+            0.009151568786957444,
+            0.05160302135626149
+          ]
+        },
+        "Effective tasks per MJ": {
+          "candidate_mean": 178.81515536712385,
+          "comparator_mean": 164.18507450686008,
+          "mean_difference": 14.630080860263751,
+          "paired_crossed_bootstrap_ci95": [
+            3.6320067119261545,
+            29.252689614357493
+          ]
+        },
+        "MBS offload fraction": {
+          "candidate_mean": 0.027726811875216476,
+          "comparator_mean": 0.009238350868320748,
+          "mean_difference": 0.018488461006895728,
+          "paired_crossed_bootstrap_ci95": [
+            0.004912380678022448,
+            0.0317589346698871
+          ]
+        }
+      }
+    },
+    "joint": {
+      "method": "joint",
+      "kind": "learned",
+      "metrics": {
+        "DSR": {
+          "candidate_mean": 0.27981679232266315,
+          "comparator_mean": 0.20742839594498044,
+          "mean_difference": 0.07238839637768275,
+          "paired_crossed_bootstrap_ci95": [
+            0.06191784205000196,
+            0.0833178074360376
+          ],
+          "positive_training_seeds": 10,
+          "positive_seed_workload_units": 50,
+          "training_seed_t_ci95": [
+            0.0627114579560063,
+            0.08206533479935924
+          ],
+          "two_sided_p": 3.942715596031318e-08,
+          "holm_adjusted_p": 1.971357798015659e-07
+        },
+        "Admission fraction": {
+          "candidate_mean": 0.6247768802345933,
+          "comparator_mean": 0.7198860451914543,
+          "mean_difference": -0.09510916495686088,
+          "paired_crossed_bootstrap_ci95": [
+            -0.12096469713193227,
+            -0.0671642581672832
+          ]
+        },
+        "Deadline satisfaction among admitted": {
+          "candidate_mean": 0.44911160322808846,
+          "comparator_mean": 0.2884943909902043,
+          "mean_difference": 0.16061721223788414,
+          "paired_crossed_bootstrap_ci95": [
+            0.14213635552107481,
+            0.17983861571039572
+          ]
+        },
+        "UAV Fleet Total Energy": {
+          "candidate_mean": 50785675.9792711,
+          "comparator_mean": 51448837.07845058,
+          "mean_difference": -663161.0991794883,
+          "paired_crossed_bootstrap_ci95": [
+            -3427019.2056246195,
+            1857104.1375684831
+          ]
+        },
+        "Non-flight assignment energy": {
+          "candidate_mean": 49562892.71710859,
+          "comparator_mean": 50001827.51248226,
+          "mean_difference": -438934.7953736618,
+          "paired_crossed_bootstrap_ci95": [
+            -3203039.2231391114,
+            2083581.4909462812
+          ]
+        },
+        "Fairness": {
+          "candidate_mean": 0.9238166075237715,
+          "comparator_mean": 0.9052119915909445,
+          "mean_difference": 0.01860461593282719,
+          "paired_crossed_bootstrap_ci95": [
+            0.0016233660198890856,
+            0.03670060964114156
+          ]
+        },
+        "Effective tasks per MJ": {
+          "candidate_mean": 178.81515536712385,
+          "comparator_mean": 132.2155051228239,
+          "mean_difference": 46.599650244299944,
+          "paired_crossed_bootstrap_ci95": [
+            36.709153056974664,
+            58.70425663613845
+          ]
+        },
+        "MBS offload fraction": {
+          "candidate_mean": 0.027726811875216476,
+          "comparator_mean": 0.24231330033378054,
+          "mean_difference": -0.2145864884585641,
+          "paired_crossed_bootstrap_ci95": [
+            -0.2348058432694869,
+            -0.19498302904255316
+          ]
+        }
+      }
+    },
+    "greedy": {
+      "method": "greedy",
+      "kind": "nonlearned",
+      "metrics": {
+        "DSR": {
+          "candidate_mean": 0.27981679232266315,
+          "comparator_mean": 0.1792860137197797,
+          "mean_difference": 0.1005307786028835,
+          "paired_crossed_bootstrap_ci95": [
+            0.08612181632273663,
+            0.11685419838293738
+          ],
+          "positive_training_seeds": 10,
+          "positive_seed_workload_units": 50
+        },
+        "Admission fraction": {
+          "candidate_mean": 0.6247768802345933,
+          "comparator_mean": 0.37423082370968563,
+          "mean_difference": 0.2505460565249077,
+          "paired_crossed_bootstrap_ci95": [
+            0.18821988556633804,
+            0.3061673355810289
+          ]
+        },
+        "Deadline satisfaction among admitted": {
+          "candidate_mean": 0.44911160322808846,
+          "comparator_mean": 0.4841277242550791,
+          "mean_difference": -0.03501612102699061,
+          "paired_crossed_bootstrap_ci95": [
+            -0.08681645455067984,
+            0.011475348848518044
+          ]
+        },
+        "UAV Fleet Total Energy": {
+          "candidate_mean": 50785675.9792711,
+          "comparator_mean": 57755445.330559745,
+          "mean_difference": -6969769.351288655,
+          "paired_crossed_bootstrap_ci95": [
+            -11487290.553079791,
+            -2606284.4051422863
+          ]
+        },
+        "Non-flight assignment energy": {
+          "candidate_mean": 49562892.71710859,
+          "comparator_mean": 56982064.01822679,
+          "mean_difference": -7419171.301118195,
+          "paired_crossed_bootstrap_ci95": [
+            -11934920.072651194,
+            -3046797.975931931
+          ]
+        },
+        "Fairness": {
+          "candidate_mean": 0.9238166075237715,
+          "comparator_mean": 0.680046159895882,
+          "mean_difference": 0.24377044762788963,
+          "paired_crossed_bootstrap_ci95": [
+            0.19148490962305756,
+            0.29972022160132505
+          ]
+        },
+        "Effective tasks per MJ": {
+          "candidate_mean": 178.81515536712385,
+          "comparator_mean": 97.41994405173043,
+          "mean_difference": 81.39521131539341,
+          "paired_crossed_bootstrap_ci95": [
+            52.88103936666564,
+            117.58900365579271
+          ]
+        },
+        "MBS offload fraction": {
+          "candidate_mean": 0.027726811875216476,
+          "comparator_mean": 0.026369007039642196,
+          "mean_difference": 0.0013578048355742816,
+          "paired_crossed_bootstrap_ci95": [
+            -0.015514906862770397,
+            0.017696663200203928
+          ]
+        }
+      }
+    },
+    "local": {
+      "method": "local",
+      "kind": "nonlearned",
+      "metrics": {
+        "DSR": {
+          "candidate_mean": 0.27981679232266315,
+          "comparator_mean": 0.17205831788619422,
+          "mean_difference": 0.10775847443646898,
+          "paired_crossed_bootstrap_ci95": [
+            0.09186213521353241,
+            0.1250720517670484
+          ],
+          "positive_training_seeds": 10,
+          "positive_seed_workload_units": 50
+        },
+        "Admission fraction": {
+          "candidate_mean": 0.6247768802345933,
+          "comparator_mean": 0.37423082370968563,
+          "mean_difference": 0.2505460565249077,
+          "paired_crossed_bootstrap_ci95": [
+            0.18821988556633804,
+            0.3061673355810289
+          ]
+        },
+        "Deadline satisfaction among admitted": {
+          "candidate_mean": 0.44911160322808846,
+          "comparator_mean": 0.46359051511154814,
+          "mean_difference": -0.014478911883459617,
+          "paired_crossed_bootstrap_ci95": [
+            -0.052257098105922384,
+            0.025113117920251796
+          ]
+        },
+        "UAV Fleet Total Energy": {
+          "candidate_mean": 50785675.9792711,
+          "comparator_mean": 49850201.934636354,
+          "mean_difference": 935474.0446347356,
+          "paired_crossed_bootstrap_ci95": [
+            -4811974.167525793,
+            6537768.80255152
+          ]
+        },
+        "Non-flight assignment energy": {
+          "candidate_mean": 49562892.71710859,
+          "comparator_mean": 49076869.63574535,
+          "mean_difference": 486023.08136325213,
+          "paired_crossed_bootstrap_ci95": [
+            -5258387.857432576,
+            6075111.241752966
+          ]
+        },
+        "Fairness": {
+          "candidate_mean": 0.9238166075237715,
+          "comparator_mean": 0.6809453982633848,
+          "mean_difference": 0.24287120926038672,
+          "paired_crossed_bootstrap_ci95": [
+            0.19051752329359628,
+            0.29883899934403485
+          ]
+        },
+        "Effective tasks per MJ": {
+          "candidate_mean": 178.81515536712385,
+          "comparator_mean": 109.86942652420802,
+          "mean_difference": 68.94572884291581,
+          "paired_crossed_bootstrap_ci95": [
+            37.46822771280089,
+            105.45425564403615
+          ]
+        },
+        "MBS offload fraction": {
+          "candidate_mean": 0.027726811875216476,
+          "comparator_mean": 0.0,
+          "mean_difference": 0.027726811875216476,
+          "paired_crossed_bootstrap_ci95": [
+            0.016027859406212815,
+            0.039834690848701886
+          ]
+        }
+      }
+    },
+    "mbs": {
+      "method": "mbs",
+      "kind": "nonlearned",
+      "metrics": {
+        "DSR": {
+          "candidate_mean": 0.27981679232266315,
+          "comparator_mean": 0.0513268593448916,
+          "mean_difference": 0.2284899329777716,
+          "paired_crossed_bootstrap_ci95": [
+            0.21446476558388852,
+            0.2405634911927379
+          ],
+          "positive_training_seeds": 10,
+          "positive_seed_workload_units": 50
+        },
+        "Admission fraction": {
+          "candidate_mean": 0.6247768802345933,
+          "comparator_mean": 0.37423082370968563,
+          "mean_difference": 0.2505460565249077,
+          "paired_crossed_bootstrap_ci95": [
+            0.18821988556633804,
+            0.3061673355810289
+          ]
+        },
+        "Deadline satisfaction among admitted": {
+          "candidate_mean": 0.44911160322808846,
+          "comparator_mean": 0.13884117363203413,
+          "mean_difference": 0.31027042959605433,
+          "paired_crossed_bootstrap_ci95": [
+            0.2816095461573931,
+            0.34153402214127804
+          ]
+        },
+        "UAV Fleet Total Energy": {
+          "candidate_mean": 50785675.9792711,
+          "comparator_mean": 785285.1319476163,
+          "mean_difference": 50000390.84732348,
+          "paired_crossed_bootstrap_ci95": [
+            44900229.44879358,
+            54737809.821365215
+          ]
+        },
+        "Non-flight assignment energy": {
+          "candidate_mean": 49562892.71710859,
+          "comparator_mean": 11962.836682562085,
+          "mean_difference": 49550929.88042604,
+          "paired_crossed_bootstrap_ci95": [
+            44445496.23996114,
+            54292975.79103395
+          ]
+        },
+        "Fairness": {
+          "candidate_mean": 0.9238166075237715,
+          "comparator_mean": 0.6870115686396137,
+          "mean_difference": 0.23680503888415796,
+          "paired_crossed_bootstrap_ci95": [
+            0.18564458147092142,
+            0.2904222303171696
+          ]
+        },
+        "Effective tasks per MJ": {
+          "candidate_mean": 178.81515536712385,
+          "comparator_mean": 2062.494861587273,
+          "mean_difference": -1883.679706220149,
+          "paired_crossed_bootstrap_ci95": [
+            -2162.6668893707033,
+            -1636.358384599677
+          ]
+        },
+        "MBS offload fraction": {
+          "candidate_mean": 0.027726811875216476,
+          "comparator_mean": 1.0,
+          "mean_difference": -0.9722731881247835,
+          "paired_crossed_bootstrap_ci95": [
+            -0.9839721405937872,
+            -0.9601653091512982
+          ]
+        }
+      }
+    },
+    "random": {
+      "method": "random",
+      "kind": "nonlearned",
+      "metrics": {
+        "DSR": {
+          "candidate_mean": 0.27981679232266315,
+          "comparator_mean": 0.15275338095875252,
+          "mean_difference": 0.12706341136391067,
+          "paired_crossed_bootstrap_ci95": [
+            0.11141458674496077,
+            0.14276029828155773
+          ],
+          "positive_training_seeds": 10,
+          "positive_seed_workload_units": 50
+        },
+        "Admission fraction": {
+          "candidate_mean": 0.6247768802345933,
+          "comparator_mean": 0.3255661447356538,
+          "mean_difference": 0.2992107354989396,
+          "paired_crossed_bootstrap_ci95": [
+            0.2637781678136268,
+            0.33598586046290047
+          ]
+        },
+        "Deadline satisfaction among admitted": {
+          "candidate_mean": 0.44911160322808846,
+          "comparator_mean": 0.4700067230336723,
+          "mean_difference": -0.020895119805583832,
+          "paired_crossed_bootstrap_ci95": [
+            -0.044802859203587696,
+            0.0022676489145503297
+          ]
+        },
+        "UAV Fleet Total Energy": {
+          "candidate_mean": 50785675.9792711,
+          "comparator_mean": 63827591.125934646,
+          "mean_difference": -13041915.146663558,
+          "paired_crossed_bootstrap_ci95": [
+            -17416330.945687383,
+            -8917629.21443627
+          ]
+        },
+        "Non-flight assignment energy": {
+          "candidate_mean": 49562892.71710859,
+          "comparator_mean": 62536023.37151718,
+          "mean_difference": -12973130.65440858,
+          "paired_crossed_bootstrap_ci95": [
+            -17340869.35632536,
+            -8849532.533030888
+          ]
+        },
+        "Fairness": {
+          "candidate_mean": 0.9238166075237715,
+          "comparator_mean": 0.7862985742051155,
+          "mean_difference": 0.1375180333186562,
+          "paired_crossed_bootstrap_ci95": [
+            0.11258351164854286,
+            0.16310779104063097
+          ]
+        },
+        "Effective tasks per MJ": {
+          "candidate_mean": 178.81515536712385,
+          "comparator_mean": 77.0493012196523,
+          "mean_difference": 101.76585414747156,
+          "paired_crossed_bootstrap_ci95": [
+            81.52827972392629,
+            125.1931156097135
+          ]
+        },
+        "MBS offload fraction": {
+          "candidate_mean": 0.027726811875216476,
+          "comparator_mean": 0.2991085903571813,
+          "mean_difference": -0.2713817784819648,
+          "paired_crossed_bootstrap_ci95": [
+            -0.28361142905747955,
+            -0.259420288973594
+          ]
+        }
+      }
+    },
+    "uniform": {
+      "method": "uniform",
+      "kind": "nonlearned",
+      "metrics": {
+        "DSR": {
+          "candidate_mean": 0.27981679232266315,
+          "comparator_mean": 0.21530462687300736,
+          "mean_difference": 0.06451216544965589,
+          "paired_crossed_bootstrap_ci95": [
+            0.04322810878432033,
+            0.08713192578746184
+          ],
+          "positive_training_seeds": 10,
+          "positive_seed_workload_units": 50
+        },
+        "Admission fraction": {
+          "candidate_mean": 0.6247768802345933,
+          "comparator_mean": 0.37423082370968563,
+          "mean_difference": 0.2505460565249077,
+          "paired_crossed_bootstrap_ci95": [
+            0.18821988556633804,
+            0.3061673355810289
+          ]
+        },
+        "Deadline satisfaction among admitted": {
+          "candidate_mean": 0.44911160322808846,
+          "comparator_mean": 0.5799023528804454,
+          "mean_difference": -0.130790749652357,
+          "paired_crossed_bootstrap_ci95": [
+            -0.17151821824120994,
+            -0.08535915355185252
+          ]
+        },
+        "UAV Fleet Total Energy": {
+          "candidate_mean": 50785675.9792711,
+          "comparator_mean": 82288220.43839386,
+          "mean_difference": -31502544.459122766,
+          "paired_crossed_bootstrap_ci95": [
+            -38706212.61645897,
+            -23256750.07905903
+          ]
+        },
+        "Non-flight assignment energy": {
+          "candidate_mean": 49562892.71710859,
+          "comparator_mean": 81514837.1606238,
+          "mean_difference": -31951944.4435152,
+          "paired_crossed_bootstrap_ci95": [
+            -39158821.41146442,
+            -23706645.371875647
+          ]
+        },
+        "Fairness": {
+          "candidate_mean": 0.9238166075237715,
+          "comparator_mean": 0.6876185335986317,
+          "mean_difference": 0.23619807392514003,
+          "paired_crossed_bootstrap_ci95": [
+            0.1849052510605229,
+            0.2895493529226842
+          ]
+        },
+        "Effective tasks per MJ": {
+          "candidate_mean": 178.81515536712385,
+          "comparator_mean": 85.36423044422915,
+          "mean_difference": 93.4509249228947,
+          "paired_crossed_bootstrap_ci95": [
+            68.34411230550522,
+            125.95154046046864
+          ]
+        },
+        "MBS offload fraction": {
+          "candidate_mean": 0.027726811875216476,
+          "comparator_mean": 0.15352971930988693,
+          "mean_difference": -0.12580290743467046,
+          "paired_crossed_bootstrap_ci95": [
+            -0.139038811139833,
+            -0.111938681901969
+          ]
+        }
+      }
+    }
+  },
+  "decision_rule_met": true,
+  "decision_scope": "DSR relative to all prespecified learned comparators in this 100-UE simulation; secondary metrics and nonlearned baselines do not support an unqualified all-metrics superiority claim"
+}

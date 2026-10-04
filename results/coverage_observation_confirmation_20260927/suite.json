@@ -1,0 +1,85 @@
+{
+  "plan": {
+    "protocol": "upper_uncovered_observation_independent_confirmation_v1",
+    "study_phase": "independent_confirmation",
+    "purpose": "pilot",
+    "purpose_note": "The frozen runner accepts only verification, pilot, and formal. This independent holdout uses its pilot execution mode because formal requires a committed source lock; the study phase and decision rule are specified here before launch.",
+    "source_hash": "6089feff948dd106e4e138c56d3f808f88aacaa6a6528786306dba7ef42717be",
+    "pilot_training_seeds_excluded": [
+      5341,
+      5573,
+      5801,
+      6043,
+      6299
+    ],
+    "pilot_workload_seeds_excluded": [
+      1709,
+      1753,
+      1801,
+      1847,
+      1901
+    ],
+    "training_seeds": [
+      7013,
+      7283,
+      7541,
+      7823,
+      8089,
+      8353,
+      8627,
+      8887,
+      9151,
+      9419
+    ],
+    "workload_seeds": [
+      2203,
+      2243,
+      2287,
+      2333,
+      2377
+    ],
+    "training_workload_seed": 2411,
+    "train_episodes": 200,
+    "eval_episodes": 6,
+    "steps": 1000,
+    "rollout": 1000,
+    "ppo_epochs": 8,
+    "batch_size": 256,
+    "checkpoint_every": 20,
+    "variants": [
+      {
+        "name": "main",
+        "ue_count": 100,
+        "compute_scale": 1.0,
+        "methods": [
+          "lower_no_attention",
+          "lower_mlp_upper_uncovered_obs"
+        ]
+      }
+    ],
+    "statistical_unit": "Training seed. Average the five paired workload-level DSR differences within each seed, then average the ten seed means. Evaluation episodes and requests are not independent training replicates.",
+    "primary_outcome": "Within each seed-workload unit, DSR is deadline-satisfied service requests divided by all generated service requests over six evaluation episodes. The primary effect is the equal-weight mean of the 50 paired unit differences.",
+    "primary_uncertainty": "Two-sided 95% Student-t interval on ten paired training-seed mean differences, with nine degrees of freedom.",
+    "sensitivity_analyses": [
+      "Paired crossed bootstrap over training and workload seeds, 20,000 draws with seed 20260920",
+      "Pooled request-weighted DSR difference across all evaluation requests",
+      "Per-training-seed paired differences and sign consistency"
+    ],
+    "secondary_outcomes": [
+      "Admission fraction",
+      "Deadline satisfaction among admitted",
+      "UAV Fleet Total Energy",
+      "Non-flight assignment energy",
+      "Latency per admitted service request",
+      "Fairness",
+      "Effective tasks per MJ"
+    ],
+    "decision_rule": "Call the effect independently confirmed only if the primary mean difference is positive and its two-sided 95% training-seed interval excludes zero; require the crossed-bootstrap sensitivity interval to agree in direction. Otherwise report the pilot improvement as unconfirmed or uncertain. Secondary outcomes describe mechanisms and tradeoffs, without selective significance claims.",
+    "information_assumption": "The upper actor can observe position, request signature, and battery state of currently unadmitted UEs within 460 m before trajectory action; physical service admission remains within 100 m.",
+    "execution_note": "Use the same frozen source as the G4 pilot in a separate output directory. Do not merge or pool the interrupted Linux pilot copy with this confirmation cohort."
+  },
+  "source_hash": "6089feff948dd106e4e138c56d3f808f88aacaa6a6528786306dba7ef42717be",
+  "threads": 4,
+  "git_sha": null,
+  "git_clean": false
+}

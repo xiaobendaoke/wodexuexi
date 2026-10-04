@@ -1,0 +1,51 @@
+{
+  "protocol": "whole_system_comparison_verification_20260928_v1",
+  "purpose": "verification",
+  "study_phase": "preregistered_full_comparison",
+  "candidate_method": "lower_mlp_upper_uncovered_obs",
+  "primary_comparators": [
+    "lower_no_attention",
+    "hierarchical",
+    "vanilla_hierarchical",
+    "ippo",
+    "joint"
+  ],
+  "training_seeds": [
+    10007
+  ],
+  "workload_seeds": [
+    3001
+  ],
+  "training_workload_seed": 3319,
+  "train_episodes": 2,
+  "eval_episodes": 1,
+  "steps": 100,
+  "rollout": 100,
+  "ppo_epochs": 1,
+  "batch_size": 32,
+  "checkpoint_every": 1,
+  "variants": [
+    {
+      "name": "main",
+      "ue_count": 100,
+      "compute_scale": 1.0,
+      "methods": [
+        "lower_mlp_upper_uncovered_obs",
+        "lower_no_attention",
+        "hierarchical",
+        "vanilla_hierarchical",
+        "ippo",
+        "joint",
+        "greedy",
+        "local",
+        "mbs",
+        "random",
+        "uniform"
+      ]
+    }
+  ],
+  "primary_metric": "DSR",
+  "statistical_unit": "training seed after averaging five paired workloads; evaluation episodes and requests are not independent training replicates",
+  "information_assumption": "Candidate alone observes pre-admission UE position, current request signature, and battery within 460m; physical admission remains 100m. Other methods retain existing definitions. This is a whole-system comparison, not architecture attribution.",
+  "decision_rule": "Candidate minus all five learned comparators has positive mean DSR and two-sided Holm-adjusted training-seed p<0.05; report paired t and crossed-bootstrap intervals. Secondary metrics describe tradeoffs, not unqualified superiority."
+}

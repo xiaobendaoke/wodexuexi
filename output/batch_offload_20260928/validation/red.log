@@ -1,0 +1,21 @@
+bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8)
+/bin/sh: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8)
+test_batch_offload (unittest.loader._FailedTest.test_batch_offload) ... ERROR
+
+======================================================================
+ERROR: test_batch_offload (unittest.loader._FailedTest.test_batch_offload)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_batch_offload
+Traceback (most recent call last):
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/unittest/loader.py", line 137, in loadTestsFromName
+    module = __import__(module_name)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/batch-offload-20260928/source/tests/test_batch_offload.py", line 7, in <module>
+    from marl_models.offload_mappo.offload_mappo import BatchOffloadActor, OffloadMAPPO
+ImportError: cannot import name 'BatchOffloadActor' from 'marl_models.offload_mappo.offload_mappo' (/home/PengYanghan/Lunwen/batch-offload-20260928/source/marl_models/offload_mappo/offload_mappo.py)
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

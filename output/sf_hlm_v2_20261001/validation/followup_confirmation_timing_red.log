@@ -1,0 +1,32 @@
+...........EE..E...
+======================================================================
+ERROR: test_shared_submissions_retain_full_calibrated_capacity (__main__.DispatchTests.test_shared_submissions_retain_full_calibrated_capacity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_v2_20261001/validation/test_sf_hlm_confirmation_dispatch_recovery.py", line 90, in test_shared_submissions_retain_full_calibrated_capacity
+    self.assertEqual(d.submissions(shared, [], 192, 8), shared[:192])
+                     ^^^^^^^^^^^^^
+AttributeError: module 'confirmation_dispatch' has no attribute 'submissions'
+
+======================================================================
+ERROR: test_submission_limits_still_enforce_global_capacity (__main__.DispatchTests.test_submission_limits_still_enforce_global_capacity)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_v2_20261001/validation/test_sf_hlm_confirmation_dispatch_recovery.py", line 95, in test_submission_limits_still_enforce_global_capacity
+    self.assertEqual(len(d.submissions(timing, [], 4, 8)), 4)
+                         ^^^^^^^^^^^^^
+AttributeError: module 'confirmation_dispatch' has no attribute 'submissions'
+
+======================================================================
+ERROR: test_timing_submissions_cannot_queue_beyond_isolated_slots (__main__.DispatchTests.test_timing_submissions_cannot_queue_beyond_isolated_slots)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_v2_20261001/validation/test_sf_hlm_confirmation_dispatch_recovery.py", line 84, in test_timing_submissions_cannot_queue_beyond_isolated_slots
+    selected = d.submissions(timing[6:], timing[:6], 192, 8)
+               ^^^^^^^^^^^^^
+AttributeError: module 'confirmation_dispatch' has no attribute 'submissions'
+
+----------------------------------------------------------------------
+Ran 19 tests in 0.018s
+
+FAILED (errors=3)

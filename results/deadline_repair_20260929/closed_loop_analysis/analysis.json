@@ -1,0 +1,3086 @@
+{
+  "status": "PASS",
+  "design": "existing 5 training seeds; new 5 workloads; development screening under ideal uncharged coordination",
+  "independent_n": 5,
+  "excluded_jobs": 0,
+  "excluded_episodes": 0,
+  "jobs": 150,
+  "episodes": 300,
+  "steps": 300000,
+  "statistics": "Each seed pools counts across ten episodes before ratios; paired t df4 intervals, exact sign-flip sensitivity. Holm on three A DSR contrasts; separate secondary families: three D contrasts and three architecture contrasts. Other endpoints descriptive/unadjusted.",
+  "groups": {
+    "lower_mlp_upper_uncovered_obs/baseline": {
+      "dsr": 0.27892676431663155,
+      "admission_rate": 0.60427376309481,
+      "conditional_success": 0.4630337086323598,
+      "potential_dsr": 0.27883811051594803,
+      "mean_uav_energy_per_episode": 50918897.03582452,
+      "mean_assignment_energy_per_episode": 49702828.259292506,
+      "mbs_share": 0.04102969780285965,
+      "fairness": 0.9167361199022085,
+      "successful_tasks_per_MJ": 178.83468273159218,
+      "policy_mean_seconds": 0.006621951535642147,
+      "policy_p95_seconds": 0.009854905307292938,
+      "policy_max_seconds": 0.4575776793062687,
+      "changed_actions": 0,
+      "actual_minus_predicted_misses_per_step": 0.00656,
+      "logical_upload_bytes_mean": 10538.23368,
+      "logical_download_bytes_mean": 120.21768
+    },
+    "lower_mlp_upper_uncovered_obs/ordinary": {
+      "dsr": 0.3201586907998187,
+      "admission_rate": 0.5986461525338459,
+      "conditional_success": 0.5357430033393982,
+      "potential_dsr": 0.3200819911432356,
+      "mean_uav_energy_per_episode": 33517599.08514543,
+      "mean_assignment_energy_per_episode": 32300293.325873986,
+      "mbs_share": 0.047964324425257714,
+      "fairness": 0.9180047950860113,
+      "successful_tasks_per_MJ": 311.1555925513283,
+      "policy_mean_seconds": 0.010808204453922807,
+      "policy_p95_seconds": 0.016632738523185253,
+      "policy_max_seconds": 0.4675113707780838,
+      "changed_actions": 128626,
+      "actual_minus_predicted_misses_per_step": 0.2005,
+      "logical_upload_bytes_mean": 10444.72926,
+      "logical_download_bytes_mean": 119.3408
+    },
+    "lower_mlp_upper_uncovered_obs/deadline": {
+      "dsr": 0.3196115576408948,
+      "admission_rate": 0.6029565407063527,
+      "conditional_success": 0.5311455523104649,
+      "potential_dsr": 0.3195435785384802,
+      "mean_uav_energy_per_episode": 33593215.60314782,
+      "mean_assignment_energy_per_episode": 32376087.859093938,
+      "mbs_share": 0.04805633585285505,
+      "fairness": 0.9183482002723962,
+      "successful_tasks_per_MJ": 309.88699817731435,
+      "policy_mean_seconds": 0.011036574972886593,
+      "policy_p95_seconds": 0.01700653973966837,
+      "policy_max_seconds": 0.44190500769764185,
+      "changed_actions": 128825,
+      "actual_minus_predicted_misses_per_step": 0.19504,
+      "logical_upload_bytes_mean": 10494.52878,
+      "logical_download_bytes_mean": 120.01156
+    },
+    "vanilla_lower_mlp_upper_uncovered_obs/baseline": {
+      "dsr": 0.2827827818599205,
+      "admission_rate": 0.5345201766435874,
+      "conditional_success": 0.52912355381658,
+      "potential_dsr": 0.2827827818599205,
+      "mean_uav_energy_per_episode": 54331288.374359205,
+      "mean_assignment_energy_per_episode": 52922013.72021018,
+      "mbs_share": 0.06104227212005347,
+      "fairness": 0.9196804032358527,
+      "successful_tasks_per_MJ": 169.95695078027217,
+      "policy_mean_seconds": 0.005660707078445703,
+      "policy_p95_seconds": 0.00904152262955904,
+      "policy_max_seconds": 0.27898764703422785,
+      "changed_actions": 0,
+      "actual_minus_predicted_misses_per_step": 0.09,
+      "logical_upload_bytes_mean": 9507.29842,
+      "logical_download_bytes_mean": 109.15858
+    },
+    "vanilla_lower_mlp_upper_uncovered_obs/ordinary": {
+      "dsr": 0.3173260069883006,
+      "admission_rate": 0.5359037003574052,
+      "conditional_success": 0.5926057098673575,
+      "potential_dsr": 0.3173260069883006,
+      "mean_uav_energy_per_episode": 34878538.854954444,
+      "mean_assignment_energy_per_episode": 33467938.49379887,
+      "mbs_share": 0.07273221396329899,
+      "fairness": 0.9183300790435076,
+      "successful_tasks_per_MJ": 296.36892562651707,
+      "policy_mean_seconds": 0.0094550118005462,
+      "policy_p95_seconds": 0.015622998587787151,
+      "policy_max_seconds": 0.29248210694640875,
+      "changed_actions": 127861,
+      "actual_minus_predicted_misses_per_step": 0.24962,
+      "logical_upload_bytes_mean": 9523.38352,
+      "logical_download_bytes_mean": 109.39362
+    },
+    "vanilla_lower_mlp_upper_uncovered_obs/deadline": {
+      "dsr": 0.3174950292101131,
+      "admission_rate": 0.5411212626881908,
+      "conditional_success": 0.5870408464550163,
+      "potential_dsr": 0.3174950292101131,
+      "mean_uav_energy_per_episode": 34984677.40835535,
+      "mean_assignment_energy_per_episode": 33574336.34514267,
+      "mbs_share": 0.07143331094672589,
+      "fairness": 0.9194054885023087,
+      "successful_tasks_per_MJ": 295.7918758757779,
+      "policy_mean_seconds": 0.009662483707070351,
+      "policy_p95_seconds": 0.01595444232225418,
+      "policy_max_seconds": 0.28831090312451124,
+      "changed_actions": 128038,
+      "actual_minus_predicted_misses_per_step": 0.25466,
+      "logical_upload_bytes_mean": 9602.94432,
+      "logical_download_bytes_mean": 110.20308
+    }
+  },
+  "seed_units": [
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "baseline",
+      "seed": 620001,
+      "generated": 325401.0,
+      "admitted": 185308.0,
+      "success": 92320.0,
+      "potential": 325401,
+      "total_uav_energy": 504682385.23323506,
+      "assignment_energy": 492609256.45207775,
+      "mbs_count": 7395.0,
+      "changed_actions": 0,
+      "dsr": 0.2837114821404974,
+      "admission_rate": 0.56947581599319,
+      "conditional_success": 0.4981975953547607,
+      "potential_dsr": 0.2837114821404974,
+      "mean_uav_energy_per_episode": 50468238.523323506,
+      "mean_assignment_energy_per_episode": 49260925.64520778,
+      "mbs_share": 0.039906533986660046,
+      "fairness": 0.9270026610091329,
+      "successful_tasks_per_MJ": 182.9269312764602
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "baseline",
+      "seed": 620002,
+      "generated": 325393.0,
+      "admitted": 180961.0,
+      "success": 89338.0,
+      "potential": 325401,
+      "total_uav_energy": 545764029.1391399,
+      "assignment_energy": 533832168.4996312,
+      "mbs_count": 4804.0,
+      "changed_actions": 0,
+      "dsr": 0.27455415451469456,
+      "admission_rate": 0.5561305867059217,
+      "conditional_success": 0.49368648493321765,
+      "potential_dsr": 0.2745474045869558,
+      "mean_uav_energy_per_episode": 54576402.91391399,
+      "mean_assignment_energy_per_episode": 53383216.84996312,
+      "mbs_share": 0.026547156569647602,
+      "fairness": 0.8921403015512973,
+      "successful_tasks_per_MJ": 163.6934558345979
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "baseline",
+      "seed": 620003,
+      "generated": 325354.0,
+      "admitted": 202466.0,
+      "success": 90486.0,
+      "potential": 325401,
+      "total_uav_energy": 526847123.30517817,
+      "assignment_energy": 514486648.4903884,
+      "mbs_count": 3773.0,
+      "changed_actions": 0,
+      "dsr": 0.27811552954627883,
+      "admission_rate": 0.6222944853912968,
+      "conditional_success": 0.4469194827773552,
+      "potential_dsr": 0.2780753593258779,
+      "mean_uav_energy_per_episode": 52684712.33051781,
+      "mean_assignment_energy_per_episode": 51448664.84903884,
+      "mbs_share": 0.01863522764315984,
+      "fairness": 0.9336489800093696,
+      "successful_tasks_per_MJ": 171.75001247484394
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "baseline",
+      "seed": 620004,
+      "generated": 324964.0,
+      "admitted": 208763.0,
+      "success": 95907.0,
+      "potential": 325401,
+      "total_uav_energy": 469531714.03795266,
+      "assignment_energy": 458140713.5725891,
+      "mbs_count": 8456.0,
+      "changed_actions": 0,
+      "dsr": 0.2951311529892542,
+      "admission_rate": 0.6424188525498209,
+      "conditional_success": 0.4594061208164282,
+      "potential_dsr": 0.29473480413397624,
+      "mean_uav_energy_per_episode": 46953171.403795265,
+      "mean_assignment_energy_per_episode": 45814071.35725891,
+      "mbs_share": 0.04050526194775894,
+      "fairness": 0.9216925592632964,
+      "successful_tasks_per_MJ": 204.26096285425302
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "baseline",
+      "seed": 620005,
+      "generated": 325401.0,
+      "admitted": 205344.0,
+      "success": 85620.0,
+      "potential": 325401,
+      "total_uav_energy": 499119600.07572055,
+      "assignment_energy": 486072625.94993895,
+      "mbs_count": 16336.0,
+      "changed_actions": 0,
+      "dsr": 0.2631215023924327,
+      "admission_rate": 0.6310490748338204,
+      "conditional_success": 0.4169588592800374,
+      "potential_dsr": 0.2631215023924327,
+      "mean_uav_energy_per_episode": 49911960.007572055,
+      "mean_assignment_energy_per_episode": 48607262.5949939,
+      "mbs_share": 0.07955430886707184,
+      "fairness": 0.9091960976779461,
+      "successful_tasks_per_MJ": 171.5420512178058
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "ordinary",
+      "seed": 620001,
+      "generated": 325401.0,
+      "admitted": 185151.0,
+      "success": 103742.0,
+      "potential": 325401,
+      "total_uav_energy": 336193748.15161264,
+      "assignment_energy": 324088535.19086546,
+      "mbs_count": 8696.0,
+      "changed_actions": 26719,
+      "dsr": 0.3188127879139892,
+      "admission_rate": 0.568993334378198,
+      "conditional_success": 0.5603102332690615,
+      "potential_dsr": 0.3188127879139892,
+      "mean_uav_energy_per_episode": 33619374.815161265,
+      "mean_assignment_energy_per_episode": 32408853.519086547,
+      "mbs_share": 0.046967070121144365,
+      "fairness": 0.9261350745458156,
+      "successful_tasks_per_MJ": 308.5780166061139
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "ordinary",
+      "seed": 620002,
+      "generated": 325373.0,
+      "admitted": 182520.0,
+      "success": 102611.0,
+      "potential": 325401,
+      "total_uav_energy": 344402106.21611434,
+      "assignment_energy": 332427456.8138079,
+      "mbs_count": 7553.0,
+      "changed_actions": 25028,
+      "dsr": 0.31536421276504195,
+      "admission_rate": 0.5609561948901722,
+      "conditional_success": 0.5621904448827526,
+      "potential_dsr": 0.31533707640726366,
+      "mean_uav_energy_per_episode": 34440210.62161143,
+      "mean_assignment_energy_per_episode": 33242745.68138079,
+      "mbs_share": 0.04138176638176638,
+      "fairness": 0.9026361271239817,
+      "successful_tasks_per_MJ": 297.93952518864967
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "ordinary",
+      "seed": 620003,
+      "generated": 325401.0,
+      "admitted": 198817.0,
+      "success": 106041.0,
+      "potential": 325401,
+      "total_uav_energy": 355209156.7671002,
+      "assignment_energy": 342870042.78469473,
+      "mbs_count": 4849.0,
+      "changed_actions": 25639,
+      "dsr": 0.3258779167857505,
+      "admission_rate": 0.6109907468016386,
+      "conditional_success": 0.5333598233551456,
+      "potential_dsr": 0.3258779167857505,
+      "mean_uav_energy_per_episode": 35520915.676710024,
+      "mean_assignment_energy_per_episode": 34287004.27846947,
+      "mbs_share": 0.02438926248761424,
+      "fairness": 0.9325281537482515,
+      "successful_tasks_per_MJ": 298.5311554609721
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "ordinary",
+      "seed": 620004,
+      "generated": 325056.0,
+      "admitted": 205941.0,
+      "success": 109257.0,
+      "potential": 325401,
+      "total_uav_energy": 327880957.24363124,
+      "assignment_energy": 316495632.6436185,
+      "mbs_count": 8695.0,
+      "changed_actions": 25182,
+      "dsr": 0.33611746898995865,
+      "admission_rate": 0.6335554489072652,
+      "conditional_success": 0.5305257330983145,
+      "potential_dsr": 0.33576110706482154,
+      "mean_uav_energy_per_episode": 32788095.724363126,
+      "mean_assignment_energy_per_episode": 31649563.26436185,
+      "mbs_share": 0.04222083023778655,
+      "fairness": 0.9191063539160416,
+      "successful_tasks_per_MJ": 333.2215475960588
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "ordinary",
+      "seed": 620005,
+      "generated": 325401.0,
+      "admitted": 201337.0,
+      "success": 99124.0,
+      "potential": 325401,
+      "total_uav_energy": 312193985.878813,
+      "assignment_energy": 299132998.86071277,
+      "mbs_count": 17086.0,
+      "changed_actions": 26058,
+      "dsr": 0.304621067544353,
+      "admission_rate": 0.6187350376919555,
+      "conditional_success": 0.4923287820917169,
+      "potential_dsr": 0.304621067544353,
+      "mean_uav_energy_per_episode": 31219398.587881304,
+      "mean_assignment_energy_per_episode": 29913299.886071276,
+      "mbs_share": 0.08486269289797703,
+      "fairness": 0.9096182660959661,
+      "successful_tasks_per_MJ": 317.50771790484714
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "deadline",
+      "seed": 620001,
+      "generated": 325401.0,
+      "admitted": 186211.0,
+      "success": 103901.0,
+      "potential": 325401,
+      "total_uav_energy": 334338528.48196644,
+      "assignment_energy": 322275559.72469276,
+      "mbs_count": 9170.0,
+      "changed_actions": 26872,
+      "dsr": 0.31930141579159255,
+      "admission_rate": 0.5722508535622202,
+      "conditional_success": 0.5579745557459012,
+      "potential_dsr": 0.31930141579159255,
+      "mean_uav_energy_per_episode": 33433852.848196644,
+      "mean_assignment_energy_per_episode": 32227555.972469278,
+      "mbs_share": 0.04924521107775588,
+      "fairness": 0.9241897669423371,
+      "successful_tasks_per_MJ": 310.76585899852165
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "deadline",
+      "seed": 620002,
+      "generated": 325391.0,
+      "admitted": 182664.0,
+      "success": 102361.0,
+      "potential": 325401,
+      "total_uav_energy": 345170282.0394536,
+      "assignment_energy": 333200514.11107844,
+      "mbs_count": 6807.0,
+      "changed_actions": 24827,
+      "dsr": 0.31457846099000897,
+      "admission_rate": 0.5613677083877551,
+      "conditional_success": 0.5603786186659659,
+      "potential_dsr": 0.31456879358084333,
+      "mean_uav_energy_per_episode": 34517028.20394536,
+      "mean_assignment_energy_per_episode": 33320051.411107846,
+      "mbs_share": 0.03726514255682565,
+      "fairness": 0.908019351330027,
+      "successful_tasks_per_MJ": 296.5521811298342
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "deadline",
+      "seed": 620003,
+      "generated": 325395.0,
+      "admitted": 201381.0,
+      "success": 105447.0,
+      "potential": 325401,
+      "total_uav_energy": 354799556.8582963,
+      "assignment_energy": 342457543.3981908,
+      "mbs_count": 5328.0,
+      "changed_actions": 25810,
+      "dsr": 0.3240584520352187,
+      "admission_rate": 0.6188816668971557,
+      "conditional_success": 0.5236194079878439,
+      "potential_dsr": 0.3240524767901758,
+      "mean_uav_energy_per_episode": 35479955.685829625,
+      "mean_assignment_energy_per_episode": 34245754.33981908,
+      "mbs_share": 0.026457312258852624,
+      "fairness": 0.928336583388038,
+      "successful_tasks_per_MJ": 297.20161133717136
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "deadline",
+      "seed": 620004,
+      "generated": 325101.0,
+      "admitted": 208525.0,
+      "success": 108708.0,
+      "potential": 325401,
+      "total_uav_energy": 332184998.80433,
+      "assignment_energy": 320747335.55475265,
+      "mbs_count": 8720.0,
+      "changed_actions": 25244,
+      "dsr": 0.33438223813522566,
+      "admission_rate": 0.6414160522422263,
+      "conditional_success": 0.5213187867162211,
+      "potential_dsr": 0.33407395797800254,
+      "mean_uav_energy_per_episode": 33218499.880433,
+      "mean_assignment_energy_per_episode": 32074733.555475265,
+      "mbs_share": 0.041817527874355595,
+      "fairness": 0.9212176450340077,
+      "successful_tasks_per_MJ": 327.25138218548295
+    },
+    {
+      "method": "lower_mlp_upper_uncovered_obs",
+      "mode": "deadline",
+      "seed": 620005,
+      "generated": 325384.0,
+      "admitted": 202020.0,
+      "success": 99482.0,
+      "potential": 325401,
+      "total_uav_energy": 313167413.97334486,
+      "assignment_energy": 300123440.1659822,
+      "mbs_count": 17272.0,
+      "changed_actions": 26072,
+      "dsr": 0.3057372212524279,
+      "admission_rate": 0.6208664224424065,
+      "conditional_success": 0.4924363924363924,
+      "potential_dsr": 0.3057212485517869,
+      "mean_uav_energy_per_episode": 31316741.397334486,
+      "mean_assignment_energy_per_episode": 30012344.016598217,
+      "mbs_share": 0.0854964854964855,
+      "fairness": 0.9099776546675712,
+      "successful_tasks_per_MJ": 317.6639572355615
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "baseline",
+      "seed": 620001,
+      "generated": 325401.0,
+      "admitted": 178779.0,
+      "success": 95946.0,
+      "potential": 325401,
+      "total_uav_energy": 505434266.4509702,
+      "assignment_energy": 491504603.50525767,
+      "mbs_count": 6505.0,
+      "changed_actions": 0,
+      "dsr": 0.2948546562548978,
+      "admission_rate": 0.5494113416983968,
+      "conditional_success": 0.5366737704092762,
+      "potential_dsr": 0.2948546562548978,
+      "mean_uav_energy_per_episode": 50543426.64509702,
+      "mean_assignment_energy_per_episode": 49150460.35052577,
+      "mbs_share": 0.03638570525621018,
+      "fairness": 0.9220286766339093,
+      "successful_tasks_per_MJ": 189.82883901740223
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "baseline",
+      "seed": 620002,
+      "generated": 325401.0,
+      "admitted": 173618.0,
+      "success": 91993.0,
+      "potential": 325401,
+      "total_uav_energy": 517470671.07690495,
+      "assignment_energy": 503294566.42983395,
+      "mbs_count": 6235.0,
+      "changed_actions": 0,
+      "dsr": 0.2827065682035396,
+      "admission_rate": 0.5335509110297756,
+      "conditional_success": 0.5298586552085613,
+      "potential_dsr": 0.2827065682035396,
+      "mean_uav_energy_per_episode": 51747067.1076905,
+      "mean_assignment_energy_per_episode": 50329456.64298339,
+      "mbs_share": 0.035912175004895804,
+      "fairness": 0.9128383292745799,
+      "successful_tasks_per_MJ": 177.77432643390966
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "baseline",
+      "seed": 620003,
+      "generated": 325401.0,
+      "admitted": 169219.0,
+      "success": 93435.0,
+      "potential": 325401,
+      "total_uav_energy": 574082406.075167,
+      "assignment_energy": 560160824.4537978,
+      "mbs_count": 8349.0,
+      "changed_actions": 0,
+      "dsr": 0.28713802354633206,
+      "admission_rate": 0.5200322064160835,
+      "conditional_success": 0.5521543089133018,
+      "potential_dsr": 0.28713802354633206,
+      "mean_uav_energy_per_episode": 57408240.60751669,
+      "mean_assignment_energy_per_episode": 56016082.44537978,
+      "mbs_share": 0.04933843126362879,
+      "fairness": 0.9187622452922165,
+      "successful_tasks_per_MJ": 162.7553797350936
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "baseline",
+      "seed": 620004,
+      "generated": 325401.0,
+      "admitted": 173869.0,
+      "success": 87713.0,
+      "potential": 325401,
+      "total_uav_energy": 540677027.9990216,
+      "assignment_energy": 526523558.82391554,
+      "mbs_count": 9704.0,
+      "changed_actions": 0,
+      "dsr": 0.2695535662152237,
+      "admission_rate": 0.5343222669875016,
+      "conditional_success": 0.5044775089291363,
+      "potential_dsr": 0.2695535662152237,
+      "mean_uav_energy_per_episode": 54067702.79990216,
+      "mean_assignment_energy_per_episode": 52652355.88239156,
+      "mbs_share": 0.055812134423042635,
+      "fairness": 0.9235045928578823,
+      "successful_tasks_per_MJ": 162.22808711628622
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "baseline",
+      "seed": 620005,
+      "generated": 325401.0,
+      "admitted": 174182.0,
+      "success": 91002.0,
+      "potential": 325401,
+      "total_uav_energy": 578900047.1158966,
+      "assignment_energy": 564617132.7977041,
+      "mbs_count": 22254.0,
+      "changed_actions": 0,
+      "dsr": 0.27966109507960946,
+      "admission_rate": 0.5352841570861798,
+      "conditional_success": 0.5224535256226246,
+      "potential_dsr": 0.27966109507960946,
+      "mean_uav_energy_per_episode": 57890004.71158966,
+      "mean_assignment_energy_per_episode": 56461713.27977041,
+      "mbs_share": 0.12776291465248993,
+      "fairness": 0.9212681721206755,
+      "successful_tasks_per_MJ": 157.19812159866913
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "ordinary",
+      "seed": 620001,
+      "generated": 325401.0,
+      "admitted": 175522.0,
+      "success": 107332.0,
+      "potential": 325401,
+      "total_uav_energy": 334300479.9462444,
+      "assignment_energy": 320359337.0525276,
+      "mbs_count": 7777.0,
+      "changed_actions": 24670,
+      "dsr": 0.32984532930138505,
+      "admission_rate": 0.5394021530357928,
+      "conditional_success": 0.6115016920955778,
+      "potential_dsr": 0.32984532930138505,
+      "mean_uav_energy_per_episode": 33430047.994624443,
+      "mean_assignment_energy_per_episode": 32035933.70525276,
+      "mbs_share": 0.04430783605473958,
+      "fairness": 0.919080064016208,
+      "successful_tasks_per_MJ": 321.06445081161417
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "ordinary",
+      "seed": 620002,
+      "generated": 325401.0,
+      "admitted": 167966.0,
+      "success": 100184.0,
+      "potential": 325401,
+      "total_uav_energy": 346904644.5601005,
+      "assignment_energy": 332718685.75560176,
+      "mbs_count": 8531.0,
+      "changed_actions": 24993,
+      "dsr": 0.30787858672837515,
+      "admission_rate": 0.5161815728900648,
+      "conditional_success": 0.5964540442708643,
+      "potential_dsr": 0.30787858672837515,
+      "mean_uav_energy_per_episode": 34690464.45601005,
+      "mean_assignment_energy_per_episode": 33271868.575560175,
+      "mbs_share": 0.050790040841598896,
+      "fairness": 0.9128118629392237,
+      "successful_tasks_per_MJ": 288.7940578802004
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "ordinary",
+      "seed": 620003,
+      "generated": 325401.0,
+      "admitted": 170216.0,
+      "success": 104483.0,
+      "potential": 325401,
+      "total_uav_energy": 366229879.5424988,
+      "assignment_energy": 352275021.58169705,
+      "mbs_count": 8980.0,
+      "changed_actions": 26686,
+      "dsr": 0.32108997821149904,
+      "admission_rate": 0.5230961183278477,
+      "conditional_success": 0.6138259623067162,
+      "potential_dsr": 0.32108997821149904,
+      "mean_uav_energy_per_episode": 36622987.95424988,
+      "mean_assignment_energy_per_episode": 35227502.1581697,
+      "mbs_share": 0.05275649762654509,
+      "fairness": 0.9192896587632596,
+      "successful_tasks_per_MJ": 285.29348869765107
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "ordinary",
+      "seed": 620004,
+      "generated": 325401.0,
+      "admitted": 173501.0,
+      "success": 100757.0,
+      "potential": 325401,
+      "total_uav_energy": 341603615.2741187,
+      "assignment_energy": 327476770.0386605,
+      "mbs_count": 10156.0,
+      "changed_actions": 25236,
+      "dsr": 0.30963949096653054,
+      "admission_rate": 0.5331913546670108,
+      "conditional_success": 0.5807286413334793,
+      "potential_dsr": 0.30963949096653054,
+      "mean_uav_energy_per_episode": 34160361.52741187,
+      "mean_assignment_energy_per_episode": 32747677.003866054,
+      "mbs_share": 0.05853568567328142,
+      "fairness": 0.9191446890987456,
+      "successful_tasks_per_MJ": 294.95296740096813
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "ordinary",
+      "seed": 620005,
+      "generated": 325401.0,
+      "admitted": 184713.0,
+      "success": 103535.0,
+      "potential": 325401,
+      "total_uav_energy": 354888323.4247597,
+      "assignment_energy": 340567110.2614566,
+      "mbs_count": 29050.0,
+      "changed_actions": 26276,
+      "dsr": 0.3181766497337132,
+      "admission_rate": 0.5676473028663096,
+      "conditional_success": 0.5605182093301501,
+      "potential_dsr": 0.3181766497337132,
+      "mean_uav_energy_per_episode": 35488832.342475966,
+      "mean_assignment_energy_per_episode": 34056711.02614566,
+      "mbs_share": 0.15727100962032992,
+      "fairness": 0.9213241204001009,
+      "successful_tasks_per_MJ": 291.7396633421516
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "deadline",
+      "seed": 620001,
+      "generated": 325401.0,
+      "admitted": 187123.0,
+      "success": 107125.0,
+      "potential": 325401,
+      "total_uav_energy": 330005756.47367096,
+      "assignment_energy": 316038722.6788256,
+      "mbs_count": 9518.0,
+      "changed_actions": 25043,
+      "dsr": 0.329209191121109,
+      "admission_rate": 0.5750535493130015,
+      "conditional_success": 0.5724844086509943,
+      "potential_dsr": 0.329209191121109,
+      "mean_uav_energy_per_episode": 33000575.647367097,
+      "mean_assignment_energy_per_episode": 31603872.267882563,
+      "mbs_share": 0.050864939104225564,
+      "fairness": 0.9217825509440154,
+      "successful_tasks_per_MJ": 324.6155495731385
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "deadline",
+      "seed": 620002,
+      "generated": 325401.0,
+      "admitted": 172221.0,
+      "success": 102189.0,
+      "potential": 325401,
+      "total_uav_energy": 348090141.8656604,
+      "assignment_energy": 333934141.8383037,
+      "mbs_count": 7758.0,
+      "changed_actions": 24962,
+      "dsr": 0.31404021499626616,
+      "admission_rate": 0.5292577465957388,
+      "conditional_success": 0.5933596948107374,
+      "potential_dsr": 0.31404021499626616,
+      "mean_uav_energy_per_episode": 34809014.18656604,
+      "mean_assignment_energy_per_episode": 33393414.18383037,
+      "mbs_share": 0.04504677129966729,
+      "fairness": 0.9176273777063936,
+      "successful_tasks_per_MJ": 293.57050863979407
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "deadline",
+      "seed": 620003,
+      "generated": 325401.0,
+      "admitted": 171319.0,
+      "success": 103939.0,
+      "potential": 325401,
+      "total_uav_energy": 366878406.8570666,
+      "assignment_energy": 352942990.93554896,
+      "mbs_count": 9773.0,
+      "changed_actions": 26681,
+      "dsr": 0.3194181947812084,
+      "admission_rate": 0.5264857821580142,
+      "conditional_success": 0.6066986148646677,
+      "potential_dsr": 0.3194181947812084,
+      "mean_uav_energy_per_episode": 36687840.68570666,
+      "mean_assignment_energy_per_episode": 35294299.0935549,
+      "mbs_share": 0.057045628330774756,
+      "fairness": 0.9120424079690128,
+      "successful_tasks_per_MJ": 283.3063981345022
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "deadline",
+      "seed": 620004,
+      "generated": 325401.0,
+      "admitted": 173113.0,
+      "success": 100830.0,
+      "potential": 325401,
+      "total_uav_energy": 346167948.90866894,
+      "assignment_energy": 332053429.4716882,
+      "mbs_count": 10367.0,
+      "changed_actions": 25277,
+      "dsr": 0.30986382955184527,
+      "admission_rate": 0.5319989797204066,
+      "conditional_success": 0.5824519244655225,
+      "potential_dsr": 0.30986382955184527,
+      "mean_uav_energy_per_episode": 34616794.89086689,
+      "mean_assignment_energy_per_episode": 33205342.94716882,
+      "mbs_share": 0.05988573937254857,
+      "fairness": 0.926294437070936,
+      "successful_tasks_per_MJ": 291.274799755082
+    },
+    {
+      "method": "vanilla_lower_mlp_upper_uncovered_obs",
+      "mode": "deadline",
+      "seed": 620005,
+      "generated": 325401.0,
+      "admitted": 176631.0,
+      "success": 102483.0,
+      "potential": 325401,
+      "total_uav_energy": 358091616.31270045,
+      "assignment_energy": 343747532.33276707,
+      "mbs_count": 25492.0,
+      "changed_actions": 26075,
+      "dsr": 0.31494371560013645,
+      "admission_rate": 0.5428102556537934,
+      "conditional_success": 0.5802095894831598,
+      "potential_dsr": 0.31494371560013645,
+      "mean_uav_energy_per_episode": 35809161.63127004,
+      "mean_assignment_energy_per_episode": 34374753.23327671,
+      "mbs_share": 0.14432347662641326,
+      "fairness": 0.9192806688211859,
+      "successful_tasks_per_MJ": 286.1921232763729
+    }
+  ],
+  "comparisons": {
+    "lower_mlp_upper_uncovered_obs/ordinary-baseline": {
+      "dsr": {
+        "seed_differences": [
+          0.0351013057734918,
+          0.04081005825034739,
+          0.04776238723947168,
+          0.04098631600070446,
+          0.04149956515192027
+        ],
+        "mean": 0.04123192648318712,
+        "ci95": [
+          0.0356602798937056,
+          0.046803573072668636
+        ],
+        "t": 20.546561707312687,
+        "df": 4,
+        "p_two_sided": 3.314112879276854e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0,
+        "holm_p": 6.628225758553707e-05
+      },
+      "admission_rate": {
+        "seed_differences": [
+          -0.00048248161499198083,
+          0.004825608184250485,
+          -0.011303738589658274,
+          -0.008863403642555667,
+          -0.012314037141864964
+        ],
+        "mean": -0.005627610560964081,
+        "ci95": [
+          -0.014901502889376786,
+          0.003646281767448625
+        ],
+        "t": -1.6848105674117149,
+        "df": 4,
+        "p_two_sided": 0.16730804140741032,
+        "exact_sign_flip_p": 0.1875,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      },
+      "conditional_success": {
+        "seed_differences": [
+          0.06211263791430077,
+          0.06850395994953495,
+          0.08644034057779043,
+          0.07111961228188635,
+          0.07536992281167948
+        ],
+        "mean": 0.0727092947070384,
+        "ci95": [
+          0.06146346449048279,
+          0.083955124923594
+        ],
+        "t": 17.950952620158894,
+        "df": 4,
+        "p_two_sided": 5.660688557623805e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "potential_dsr": {
+        "seed_differences": [
+          0.0351013057734918,
+          0.04078967182030785,
+          0.04780255745987261,
+          0.041026302930845304,
+          0.04149956515192027
+        ],
+        "mean": 0.041243880627287566,
+        "ci95": [
+          0.03565409989380002,
+          0.04683366136077511
+        ],
+        "t": 20.485842995768035,
+        "df": 4,
+        "p_two_sided": 3.3532676259162564e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "mean_uav_energy_per_episode": {
+        "seed_differences": [
+          -16848863.70816224,
+          -20136192.292302556,
+          -17163796.65380779,
+          -14165075.679432139,
+          -18692561.41969075
+        ],
+        "mean": -17401297.950679094,
+        "ci95": [
+          -20176474.864650708,
+          -14626121.036707478
+        ],
+        "t": -17.40924993863134,
+        "df": 4,
+        "p_two_sided": 6.390547313966932e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "mean_assignment_energy_per_episode": {
+        "seed_differences": [
+          -16852072.12612123,
+          -20140471.16858233,
+          -17161660.570569366,
+          -14164508.092897058,
+          -18693962.70892262
+        ],
+        "mean": -17402534.93341852,
+        "ci95": [
+          -20179669.074288145,
+          -14625400.792548895
+        ],
+        "t": -17.398217184710283,
+        "df": 4,
+        "p_two_sided": 6.406595972913154e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "mbs_share": {
+        "seed_differences": [
+          0.007060536134484319,
+          0.01483460981211878,
+          0.0057540348444544,
+          0.0017155682900276067,
+          0.005308384030905194
+        ],
+        "mean": 0.00693462662239806,
+        "ci95": [
+          0.0009249658356737184,
+          0.012944287409122401
+        ],
+        "t": 3.203776523404396,
+        "df": 4,
+        "p_two_sided": 0.03278261331185034,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "fairness": {
+        "seed_differences": [
+          -0.0008675864633173047,
+          0.010495825572684359,
+          -0.0011208262611180908,
+          -0.002586205347254844,
+          0.00042216841802000804
+        ],
+        "mean": 0.0012686751838028253,
+        "ci95": [
+          -0.005271910376242582,
+          0.0078092607438482314
+        ],
+        "t": 0.5385461243214467,
+        "df": 4,
+        "p_two_sided": 0.6187718442263573,
+        "exact_sign_flip_p": 0.9375,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "successful_tasks_per_MJ": {
+        "seed_differences": [
+          125.65108532965371,
+          134.24606935405177,
+          126.78114298612817,
+          128.9605847418058,
+          145.96566668704133
+        ],
+        "mean": 132.32090981973616,
+        "ci95": [
+          122.00028058198973,
+          142.6415390574826
+        ],
+        "t": 35.596835611599396,
+        "df": 4,
+        "p_two_sided": 3.7172708950983235e-06,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "energy_relative_pct": {
+        "seed_differences": [
+          -33.38508376981628,
+          -36.89541856407127,
+          -32.57832470666372,
+          -30.168517388555284,
+          -37.451066671905764
+        ],
+        "mean": -34.09568222020246,
+        "ci95": [
+          -37.888710484433695,
+          -30.30265395597123
+        ],
+        "t": -24.957575692583816,
+        "df": 4,
+        "p_two_sided": 1.5300572074106178e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      }
+    },
+    "lower_mlp_upper_uncovered_obs/deadline-baseline": {
+      "dsr": {
+        "seed_differences": [
+          0.03558993365109514,
+          0.04002430647531441,
+          0.045942922488939886,
+          0.039251085145971476,
+          0.04261571885999521
+        ],
+        "mean": 0.040684793324263224,
+        "ci95": [
+          0.03588283728821096,
+          0.045486749360315486
+        ],
+        "t": 23.52355882333308,
+        "df": 4,
+        "p_two_sided": 1.9360873747431562e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0,
+        "holm_p": 5.8082621242294685e-05
+      },
+      "admission_rate": {
+        "seed_differences": [
+          0.002775037569030192,
+          0.005237121681833323,
+          -0.003412818494141101,
+          -0.0010028003075945868,
+          -0.010182652391413916
+        ],
+        "mean": -0.0013172223884572176,
+        "ci95": [
+          -0.008735898546986125,
+          0.006101453770071689
+        ],
+        "t": -0.4929714648191629,
+        "df": 4,
+        "p_two_sided": 0.6478693595836233,
+        "exact_sign_flip_p": 0.6875,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "conditional_success": {
+        "seed_differences": [
+          0.05977696039114044,
+          0.0666921337327483,
+          0.07669992521048868,
+          0.06191266589979294,
+          0.07547753315635503
+        ],
+        "mean": 0.06811184367810508,
+        "ci95": [
+          0.058535639657348815,
+          0.07768804769886134
+        ],
+        "t": 19.74778258443349,
+        "df": 4,
+        "p_two_sided": 3.878732537537788e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "potential_dsr": {
+        "seed_differences": [
+          0.03558993365109514,
+          0.04002138899388752,
+          0.04597711746429789,
+          0.03933915384402631,
+          0.04259974615935419
+        ],
+        "mean": 0.04070546802253221,
+        "ci95": [
+          0.03590125323449026,
+          0.04550968281057415
+        ],
+        "t": 23.524447268105423,
+        "df": 4,
+        "p_two_sided": 1.9357966608846144e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "mean_uav_energy_per_episode": {
+        "seed_differences": [
+          -17034385.67512686,
+          -20059374.709968626,
+          -17204756.64468819,
+          -13734671.523362264,
+          -18595218.61023757
+        ],
+        "mean": -17325681.432676703,
+        "ci95": [
+          -20242906.968475867,
+          -14408455.89687754
+        ],
+        "t": -16.489572992440493,
+        "df": 4,
+        "p_two_sided": 7.920266686167743e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "mean_assignment_energy_per_episode": {
+        "seed_differences": [
+          -17033369.6727385,
+          -20063165.438855276,
+          -17202910.50921976,
+          -13739337.801783644,
+          -18594918.57839568
+        ],
+        "mean": -17326740.40019857,
+        "ci95": [
+          -20243141.61965449,
+          -14410339.18074265
+        ],
+        "t": -16.49524189341101,
+        "df": 4,
+        "p_two_sided": 7.909515919801713e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "mbs_share": {
+        "seed_differences": [
+          0.009338677091095836,
+          0.010717985987178047,
+          0.007822084615692785,
+          0.0013122659265966535,
+          0.005942176629413667
+        ],
+        "mean": 0.0070266380499953976,
+        "ci95": [
+          0.002488427702781908,
+          0.011564848397208886
+        ],
+        "t": 4.298847635364701,
+        "df": 4,
+        "p_two_sided": 0.012657155241399709,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "fairness": {
+        "seed_differences": [
+          -0.002812894066795746,
+          0.01587904977872967,
+          -0.005312396621331539,
+          -0.0004749142292886921,
+          0.0007815569896251207
+        ],
+        "mean": 0.001612080370187763,
+        "ci95": [
+          -0.008704206930023923,
+          0.011928367670399448
+        ],
+        "t": 0.4338627378961642,
+        "df": 4,
+        "p_two_sided": 0.686763453144202,
+        "exact_sign_flip_p": 0.875,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "successful_tasks_per_MJ": {
+        "seed_differences": [
+          127.83892772206144,
+          132.8587252952363,
+          125.45159886232742,
+          122.99041933122993,
+          146.1219060177557
+        ],
+        "mean": 131.05231544572214,
+        "ci95": [
+          119.6546154603921,
+          142.45001543105218
+        ],
+        "t": 31.923946077931152,
+        "df": 4,
+        "p_two_sided": 5.739173833729794e-06,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "energy_relative_pct": {
+        "seed_differences": [
+          -33.75268520072194,
+          -36.75466619082472,
+          -32.65607020259323,
+          -29.251850541137426,
+          -37.25603764591998
+        ],
+        "mean": -33.93426195623946,
+        "ci95": [
+          -37.98542716946107,
+          -29.883096743017855
+        ],
+        "t": -23.256670747322374,
+        "df": 4,
+        "p_two_sided": 2.025941690664279e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      }
+    },
+    "lower_mlp_upper_uncovered_obs/deadline-ordinary": {
+      "dsr": {
+        "seed_differences": [
+          0.0004886278776033426,
+          -0.0007857517750329834,
+          -0.0018194647505317962,
+          -0.001735230854732983,
+          0.0011161537080749406
+        ],
+        "mean": -0.000547133158923896,
+        "ci95": [
+          -0.002181073672717592,
+          0.0010868073548698
+        ],
+        "t": -0.9297065395964975,
+        "df": 4,
+        "p_two_sided": 0.4051495682427244,
+        "exact_sign_flip_p": 0.375,
+        "positive_seeds": 2,
+        "negative_seeds": 3,
+        "holm_p": 0.4051495682427244
+      },
+      "admission_rate": {
+        "seed_differences": [
+          0.003257519184022173,
+          0.0004115134975828383,
+          0.007890920095517173,
+          0.00786060333496108,
+          0.0021313847504510486
+        ],
+        "mean": 0.004310388172506863,
+        "ci95": [
+          7.76955925252884e-05,
+          0.008543080752488438
+        ],
+        "t": 2.8274097201529487,
+        "df": 4,
+        "p_two_sided": 0.04746963484456512,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "conditional_success": {
+        "seed_differences": [
+          -0.002335677523160329,
+          -0.0018118262167866606,
+          -0.009740415367301747,
+          -0.009206946382093406,
+          0.00010761034467554609
+        ],
+        "mean": -0.004597451028933319,
+        "ci95": [
+          -0.010243625627717183,
+          0.001048723569850544
+        ],
+        "t": -2.2607466670297223,
+        "df": 4,
+        "p_two_sided": 0.08660890905549154,
+        "exact_sign_flip_p": 0.125,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      },
+      "potential_dsr": {
+        "seed_differences": [
+          0.0004886278776033426,
+          -0.0007682828264203301,
+          -0.001825439995574718,
+          -0.0016871490868189953,
+          0.0011001810074339202
+        ],
+        "mean": -0.0005384126047553561,
+        "ci95": [
+          -0.0021536113650897793,
+          0.001076786155579067
+        ],
+        "t": -0.9255040789780545,
+        "df": 4,
+        "p_two_sided": 0.4070860946048043,
+        "exact_sign_flip_p": 0.375,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "mean_uav_energy_per_episode": {
+        "seed_differences": [
+          -185521.9669646211,
+          76817.58233392984,
+          -40959.99088039994,
+          430404.15606987476,
+          97342.80945318192
+        ],
+        "mean": 75616.5180023931,
+        "ci95": [
+          -207615.67678020123,
+          358848.7127849874
+        ],
+        "t": 0.7412473410411445,
+        "df": 4,
+        "p_two_sided": 0.49970078909734134,
+        "exact_sign_flip_p": 0.625,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "mean_assignment_energy_per_episode": {
+        "seed_differences": [
+          -181297.54661726952,
+          77305.72972705588,
+          -41249.938650391996,
+          425170.29111341387,
+          99044.13052694127
+        ],
+        "mean": 75794.5332199499,
+        "ci95": [
+          -203512.25207518516,
+          355101.3185150849
+        ],
+        "t": 0.7534344736269724,
+        "df": 4,
+        "p_two_sided": 0.49310824459560815,
+        "exact_sign_flip_p": 0.625,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "mbs_share": {
+        "seed_differences": [
+          0.002278140956611517,
+          -0.004116623824940734,
+          0.0020680497712383845,
+          -0.0004033023634309532,
+          0.000633792598508473
+        ],
+        "mean": 9.201142759733758e-05,
+        "ci95": [
+          -0.003130062574995689,
+          0.0033140854301903643
+        ],
+        "t": 0.07928578846087936,
+        "df": 4,
+        "p_two_sided": 0.9406134068007048,
+        "exact_sign_flip_p": 0.9375,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "fairness": {
+        "seed_differences": [
+          -0.0019453076034784411,
+          0.005383224206045312,
+          -0.004191570360213448,
+          0.002111291117966152,
+          0.0003593885716051126
+        ],
+        "mean": 0.00034340518638493746,
+        "ci95": [
+          -0.004232664108076202,
+          0.0049194744808460774
+        ],
+        "t": 0.20835472268569996,
+        "df": 4,
+        "p_two_sided": 0.8451313239632182,
+        "exact_sign_flip_p": 0.8125,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "successful_tasks_per_MJ": {
+        "seed_differences": [
+          2.187842392407731,
+          -1.3873440588154722,
+          -1.3295441238007584,
+          -5.9701654105758735,
+          0.15623933071435658
+        ],
+        "mean": -1.2685943740140033,
+        "ci95": [
+          -4.998740508373693,
+          2.461551760345687
+        ],
+        "t": -0.9442478962871133,
+        "df": 4,
+        "p_two_sided": 0.39850863520687696,
+        "exact_sign_flip_p": 0.5,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "energy_relative_pct": {
+        "seed_differences": [
+          -0.5518305084036168,
+          0.22304620368878147,
+          -0.11531231698300726,
+          1.3126842122461735,
+          0.3118023211727383
+        ],
+        "mean": 0.23607798234421384,
+        "ci95": [
+          -0.6217626636329175,
+          1.0939186283213451
+        ],
+        "t": 0.7640784586255642,
+        "df": 4,
+        "p_two_sided": 0.4874043870245173,
+        "exact_sign_flip_p": 0.625,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      }
+    },
+    "vanilla_lower_mlp_upper_uncovered_obs/ordinary-baseline": {
+      "dsr": {
+        "seed_differences": [
+          0.03499067304648723,
+          0.025172018524835527,
+          0.03395195466516698,
+          0.040085924751306845,
+          0.03851555465410372
+        ],
+        "mean": 0.03454322512838006,
+        "ci95": [
+          0.02733327657381531,
+          0.04175317368294481
+        ],
+        "t": 13.302087747174799,
+        "df": 4,
+        "p_two_sided": 0.00018462224882614953,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0,
+        "holm_p": 0.00036924449765229905
+      },
+      "admission_rate": {
+        "seed_differences": [
+          -0.01000918866260403,
+          -0.017369338139710755,
+          0.00306391191176425,
+          -0.0011309123204907845,
+          0.032363145780129776
+        ],
+        "mean": 0.0013835237138176914,
+        "ci95": [
+          -0.022259881409670824,
+          0.025026928837306204
+        ],
+        "t": 0.1624671921447599,
+        "df": 4,
+        "p_two_sided": 0.8788150608912702,
+        "exact_sign_flip_p": 0.875,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "conditional_success": {
+        "seed_differences": [
+          0.07482792168630159,
+          0.066595389062303,
+          0.061671653393414405,
+          0.076251132404343,
+          0.03806468370752547
+        ],
+        "mean": 0.06348215605077749,
+        "ci95": [
+          0.044338862063086085,
+          0.0826254500384689
+        ],
+        "t": 9.207126085401537,
+        "df": 4,
+        "p_two_sided": 0.0007731251884860457,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "potential_dsr": {
+        "seed_differences": [
+          0.03499067304648723,
+          0.025172018524835527,
+          0.03395195466516698,
+          0.040085924751306845,
+          0.03851555465410372
+        ],
+        "mean": 0.03454322512838006,
+        "ci95": [
+          0.02733327657381531,
+          0.04175317368294481
+        ],
+        "t": 13.302087747174799,
+        "df": 4,
+        "p_two_sided": 0.00018462224882614953,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "mean_uav_energy_per_episode": {
+        "seed_differences": [
+          -17113378.650472574,
+          -17056602.651680447,
+          -20785252.65326681,
+          -19907341.272490293,
+          -22401172.36911369
+        ],
+        "mean": -19452749.51940476,
+        "ci95": [
+          -22357393.58206621,
+          -16548105.456743311
+        ],
+        "t": -18.59418573176318,
+        "df": 4,
+        "p_two_sided": 4.923960438207864e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "mean_assignment_energy_per_episode": {
+        "seed_differences": [
+          -17114526.645273007,
+          -17057588.067423217,
+          -20788580.287210077,
+          -19904678.878525503,
+          -22405002.253624752
+        ],
+        "mean": -19454075.226411313,
+        "ci95": [
+          -22359977.26963552,
+          -16548173.183187107
+        ],
+        "t": -18.587402856357063,
+        "df": 4,
+        "p_two_sided": 4.931083091969102e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "mbs_share": {
+        "seed_differences": [
+          0.007922130798529395,
+          0.014877865836703093,
+          0.0034180663629163055,
+          0.0027235512502387857,
+          0.029508094967839987
+        ],
+        "mean": 0.011689941843245514,
+        "ci95": [
+          -0.002062095485297748,
+          0.025441979171788774
+        ],
+        "t": 2.3601217067205282,
+        "df": 4,
+        "p_two_sided": 0.07765260794646395,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "fairness": {
+        "seed_differences": [
+          -0.002948612617701296,
+          -2.646633535619003e-05,
+          0.0005274134710431255,
+          -0.004359903759136752,
+          5.5948279425455105e-05
+        ],
+        "mean": -0.0013503241923451315,
+        "ci95": [
+          -0.0040470654480824495,
+          0.0013464170633921864
+        ],
+        "t": -1.390233855877199,
+        "df": 4,
+        "p_two_sided": 0.23681900533235845,
+        "exact_sign_flip_p": 0.4375,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "successful_tasks_per_MJ": {
+        "seed_differences": [
+          131.23561179421193,
+          111.01973144629073,
+          122.53810896255746,
+          132.72488028468192,
+          134.54154174348244
+        ],
+        "mean": 126.4119748462449,
+        "ci95": [
+          114.29162164700392,
+          138.53232804548588
+        ],
+        "t": 28.9575644398072,
+        "df": 4,
+        "p_two_sided": 8.465609107832783e-06,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "energy_relative_pct": {
+        "seed_differences": [
+          -33.85876222963341,
+          -32.96148671804734,
+          -36.20604365036979,
+          -36.81928441858327,
+          -38.696096987238526
+        ],
+        "mean": -35.708334800774466,
+        "ci95": [
+          -38.57861638645567,
+          -32.83805321509326
+        ],
+        "t": -34.540942556632466,
+        "df": 4,
+        "p_two_sided": 4.19171410981356e-06,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      }
+    },
+    "vanilla_lower_mlp_upper_uncovered_obs/deadline-baseline": {
+      "dsr": {
+        "seed_differences": [
+          0.034354534866211206,
+          0.031333646792726544,
+          0.032280171234876365,
+          0.04031026333662158,
+          0.035282620520527
+        ],
+        "mean": 0.034712247350192536,
+        "ci95": [
+          0.03036106078233734,
+          0.03906343391804773
+        ],
+        "t": 22.149509735539493,
+        "df": 4,
+        "p_two_sided": 2.4593264466021836e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0,
+        "holm_p": 7.377979339806551e-05
+      },
+      "admission_rate": {
+        "seed_differences": [
+          0.025642207614604673,
+          -0.0042931644340368225,
+          0.006453575741930728,
+          -0.0023232872670950755,
+          0.007526098567613548
+        ],
+        "mean": 0.00660108604460341,
+        "ci95": [
+          -0.008113691254630427,
+          0.021315863343837248
+        ],
+        "t": 1.2455202457248813,
+        "df": 4,
+        "p_two_sided": 0.28091665275027056,
+        "exact_sign_flip_p": 0.3125,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "conditional_success": {
+        "seed_differences": [
+          0.03581063824171804,
+          0.06350103960217601,
+          0.054544305951365946,
+          0.07797441553638618,
+          0.05775606386053522
+        ],
+        "mean": 0.05791729263843628,
+        "ci95": [
+          0.03894812052331595,
+          0.07688646475355661
+        ],
+        "t": 8.477132406011428,
+        "df": 4,
+        "p_two_sided": 0.001061457472084415,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "potential_dsr": {
+        "seed_differences": [
+          0.034354534866211206,
+          0.031333646792726544,
+          0.032280171234876365,
+          0.04031026333662158,
+          0.035282620520527
+        ],
+        "mean": 0.034712247350192536,
+        "ci95": [
+          0.03036106078233734,
+          0.03906343391804773
+        ],
+        "t": 22.149509735539493,
+        "df": 4,
+        "p_two_sided": 2.4593264466021836e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "mean_uav_energy_per_episode": {
+        "seed_differences": [
+          -17542850.99772992,
+          -16938052.92112446,
+          -20720399.92181003,
+          -19450907.909035273,
+          -22080843.080319613
+        ],
+        "mean": -19346610.966003858,
+        "ci95": [
+          -22011774.195640996,
+          -16681447.736366719
+        ],
+        "t": -20.154414079185965,
+        "df": 4,
+        "p_two_sided": 3.5774716900749404e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "mean_assignment_energy_per_episode": {
+        "seed_differences": [
+          -17546588.082643203,
+          -16936042.459153023,
+          -20721783.35182488,
+          -19447012.935222737,
+          -22086960.0464937
+        ],
+        "mean": -19347677.37506751,
+        "ci95": [
+          -22015204.712778307,
+          -16680150.037356712
+        ],
+        "t": -20.137662090860356,
+        "df": 4,
+        "p_two_sided": 3.5892934348857874e-05,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "mbs_share": {
+        "seed_differences": [
+          0.014479233848015381,
+          0.009134596294771487,
+          0.007707197067145968,
+          0.004073604949505934,
+          0.016560561973923332
+        ],
+        "mean": 0.01039103882667242,
+        "ci95": [
+          0.004075984692537877,
+          0.01670609296080696
+        ],
+        "t": 4.568472142193083,
+        "df": 4,
+        "p_two_sided": 0.01027266874245003,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "fairness": {
+        "seed_differences": [
+          -0.0002461256898939057,
+          0.004789048431813714,
+          -0.006719837323203692,
+          0.002789844213053616,
+          -0.0019875032994896014
+        ],
+        "mean": -0.0002749147335439739,
+        "ci95": [
+          -0.0058106786137602125,
+          0.005260849146672264
+        ],
+        "t": -0.13788262700704423,
+        "df": 4,
+        "p_two_sided": 0.8969955853920039,
+        "exact_sign_flip_p": 0.9375,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "successful_tasks_per_MJ": {
+        "seed_differences": [
+          134.78671055573625,
+          115.7961822058844,
+          120.5510183994086,
+          129.04671263879575,
+          128.99400167770378
+        ],
+        "mean": 125.83492509550575,
+        "ci95": [
+          116.43745127716689,
+          135.23239891384463
+        ],
+        "t": 37.17741263216472,
+        "df": 4,
+        "p_two_sided": 3.125667238645935e-06,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "energy_relative_pct": {
+        "seed_differences": [
+          -34.70847182742738,
+          -32.73239212934479,
+          -36.09307601580988,
+          -35.975095855321726,
+          -38.14275571461302
+        ],
+        "mean": -35.53035830850336,
+        "ci95": [
+          -38.00148609172747,
+          -33.05923052527925
+        ],
+        "t": -39.9202704454485,
+        "df": 4,
+        "p_two_sided": 2.3526793299644133e-06,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      }
+    },
+    "vanilla_lower_mlp_upper_uncovered_obs/deadline-ordinary": {
+      "dsr": {
+        "seed_differences": [
+          -0.0006361381802760246,
+          0.006161628267891017,
+          -0.0016717834302906187,
+          0.00022433858531473172,
+          -0.003232934133576726
+        ],
+        "mean": 0.00016902222181247595,
+        "ci95": [
+          -0.004287347010665775,
+          0.004625391454290727
+        ],
+        "t": 0.10530566385764485,
+        "df": 4,
+        "p_two_sided": 0.9212026857115232,
+        "exact_sign_flip_p": 0.9375,
+        "positive_seeds": 2,
+        "negative_seeds": 3,
+        "holm_p": 0.9212026857115232
+      },
+      "admission_rate": {
+        "seed_differences": [
+          0.0356513962772087,
+          0.013076173705673932,
+          0.0033896638301664783,
+          -0.001192374946604291,
+          -0.024837047212516228
+        ],
+        "mean": 0.0052175623307857185,
+        "ci95": [
+          -0.02209681678751134,
+          0.03253194144908278
+        ],
+        "t": 0.5303534571163112,
+        "df": 4,
+        "p_two_sided": 0.6239431170307866,
+        "exact_sign_flip_p": 0.625,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "conditional_success": {
+        "seed_differences": [
+          -0.03901728344458355,
+          -0.0030943494601269883,
+          -0.0071273474420484595,
+          0.001723283132043174,
+          0.019691380153009752
+        ],
+        "mean": -0.005564863412341215,
+        "ci95": [
+          -0.03204030294264053,
+          0.020910576117958102
+        ],
+        "t": -0.5835800295064794,
+        "df": 4,
+        "p_two_sided": 0.5908251505125937,
+        "exact_sign_flip_p": 0.625,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "potential_dsr": {
+        "seed_differences": [
+          -0.0006361381802760246,
+          0.006161628267891017,
+          -0.0016717834302906187,
+          0.00022433858531473172,
+          -0.003232934133576726
+        ],
+        "mean": 0.00016902222181247595,
+        "ci95": [
+          -0.004287347010665775,
+          0.004625391454290727
+        ],
+        "t": 0.10530566385764485,
+        "df": 4,
+        "p_two_sided": 0.9212026857115232,
+        "exact_sign_flip_p": 0.9375,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "mean_uav_energy_per_episode": {
+        "seed_differences": [
+          -429472.3472573459,
+          118549.73055598885,
+          64852.73145677894,
+          456433.3634550199,
+          320329.28879407793
+        ],
+        "mean": 106138.55340090394,
+        "ci95": [
+          -313702.60022814234,
+          525979.7070299502
+        ],
+        "t": 0.7019032424893928,
+        "df": 4,
+        "p_two_sided": 0.5214316837006474,
+        "exact_sign_flip_p": 0.4375,
+        "positive_seeds": 4,
+        "negative_seeds": 1
+      },
+      "mean_assignment_energy_per_episode": {
+        "seed_differences": [
+          -432061.437370196,
+          121545.60827019438,
+          66796.9353851974,
+          457665.9433027655,
+          318042.2071310505
+        ],
+        "mean": 106397.85134380237,
+        "ci95": [
+          -314633.68484048266,
+          527429.3875280874
+        ],
+        "t": 0.7016286624139325,
+        "df": 4,
+        "p_two_sided": 0.5215857352177646,
+        "exact_sign_flip_p": 0.4375,
+        "positive_seeds": 4,
+        "negative_seeds": 1
+      },
+      "mbs_share": {
+        "seed_differences": [
+          0.006557103049485986,
+          -0.005743269541931606,
+          0.004289130704229663,
+          0.001350053699267148,
+          -0.012947532993916655
+        ],
+        "mean": -0.0012989030165730928,
+        "ci95": [
+          -0.011220623863842363,
+          0.008622817830696178
+        ],
+        "t": -0.36347857171204134,
+        "df": 4,
+        "p_two_sided": 0.734643115929623,
+        "exact_sign_flip_p": 0.75,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "fairness": {
+        "seed_differences": [
+          0.0027024869278073904,
+          0.004815514767169904,
+          -0.007247250794246818,
+          0.007149747972190368,
+          -0.0020434515789150565
+        ],
+        "mean": 0.0010754094588011575,
+        "ci95": [
+          -0.006071640361100899,
+          0.008222459278703213
+        ],
+        "t": 0.4177689260899549,
+        "df": 4,
+        "p_two_sided": 0.697567413212224,
+        "exact_sign_flip_p": 0.6875,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "successful_tasks_per_MJ": {
+        "seed_differences": [
+          3.5510987615243153,
+          4.776450759593672,
+          -1.987090563148854,
+          -3.6781676458861625,
+          -5.547540065778662
+        ],
+        "mean": -0.5770497507391383,
+        "ci95": [
+          -6.199351058518583,
+          5.045251557040307
+        ],
+        "t": -0.28496284140418404,
+        "df": 4,
+        "p_two_sided": 0.7898180749616466,
+        "exact_sign_flip_p": 0.75,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "energy_relative_pct": {
+        "seed_differences": [
+          -1.2846895922087986,
+          0.34173578363680956,
+          0.17708203256869837,
+          1.3361491010238868,
+          0.9026199726799078
+        ],
+        "mean": 0.2945794595401008,
+        "ci95": [
+          -0.9415936618475367,
+          1.5307525809277382
+        ],
+        "t": 0.6616255315548598,
+        "df": 4,
+        "p_two_sided": 0.5443805601148866,
+        "exact_sign_flip_p": 0.5,
+        "positive_seeds": 4,
+        "negative_seeds": 1
+      }
+    },
+    "attention-minus-vanilla/baseline": {
+      "dsr": {
+        "seed_differences": [
+          -0.011143174114400412,
+          -0.008152413688845062,
+          -0.009022494000053227,
+          0.025577586774030492,
+          -0.016539592687176752
+        ],
+        "mean": -0.003856017543288992,
+        "ci95": [
+          -0.024683652319576022,
+          0.016971617232998035
+        ],
+        "t": -0.5140296125132141,
+        "df": 4,
+        "p_two_sided": 0.6343250599306666,
+        "exact_sign_flip_p": 0.6875,
+        "positive_seeds": 1,
+        "negative_seeds": 4,
+        "holm_p": 1.0
+      },
+      "admission_rate": {
+        "seed_differences": [
+          0.02006447429479319,
+          0.02257967567614616,
+          0.10226227897521334,
+          0.10809658556231927,
+          0.09576491774764062
+        ],
+        "mean": 0.06975358645122251,
+        "ci95": [
+          0.014579901413352761,
+          0.12492727148909226
+        ],
+        "t": 3.5101335634833952,
+        "df": 4,
+        "p_two_sided": 0.02466892931483783,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "conditional_success": {
+        "seed_differences": [
+          -0.038476175054515505,
+          -0.036172170275343696,
+          -0.10523482613594654,
+          -0.045071388112708166,
+          -0.1054946663425872
+        ],
+        "mean": -0.06608984518422022,
+        "ci95": [
+          -0.11079159024466881,
+          -0.021388100123771632
+        ],
+        "t": -4.104869438919554,
+        "df": 4,
+        "p_two_sided": 0.01479402374250538,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "potential_dsr": {
+        "seed_differences": [
+          -0.011143174114400412,
+          -0.008159163616583809,
+          -0.009062664220454153,
+          0.02518123791875254,
+          -0.016539592687176752
+        ],
+        "mean": -0.0039446713439725166,
+        "ci95": [
+          -0.024560826713813752,
+          0.016671484025868717
+        ],
+        "t": -0.5312417979061272,
+        "df": 4,
+        "p_two_sided": 0.6233811141338196,
+        "exact_sign_flip_p": 0.625,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      },
+      "mean_uav_energy_per_episode": {
+        "seed_differences": [
+          -75188.12177351117,
+          2829335.8062234893,
+          -4723528.2769988775,
+          -7114531.396106899,
+          -7978044.704017602
+        ],
+        "mean": -3412391.33853468,
+        "ci95": [
+          -9181995.072049696,
+          2357212.3949803347
+        ],
+        "t": -1.642108828698005,
+        "df": 4,
+        "p_two_sided": 0.17591195437393595,
+        "exact_sign_flip_p": 0.1875,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      },
+      "mean_assignment_energy_per_episode": {
+        "seed_differences": [
+          110465.29468201101,
+          3053760.2069797292,
+          -4567417.596340939,
+          -6838284.525132649,
+          -7854450.684776515
+        ],
+        "mean": -3219185.4609176726,
+        "ci95": [
+          -9004517.402411949,
+          2566146.480576604
+        ],
+        "t": -1.5449228853375438,
+        "df": 4,
+        "p_two_sided": 0.19725282681327339,
+        "exact_sign_flip_p": 0.25,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "mbs_share": {
+        "seed_differences": [
+          0.003520828730449864,
+          -0.009365018435248201,
+          -0.03070320362046895,
+          -0.015306872475283693,
+          -0.04820860578541809
+        ],
+        "mean": -0.020012574317193815,
+        "ci95": [
+          -0.044835304729854614,
+          0.004810156095466988
+        ],
+        "t": -2.238424745451842,
+        "df": 4,
+        "p_two_sided": 0.08877691568778948,
+        "exact_sign_flip_p": 0.125,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      },
+      "fairness": {
+        "seed_differences": [
+          0.004973984375223561,
+          -0.020698027723282553,
+          0.014886734717153072,
+          -0.0018120335945859267,
+          -0.012072074442729397
+        ],
+        "mean": -0.0029442833336442487,
+        "ci95": [
+          -0.020288046870769585,
+          0.014399480203481087
+        ],
+        "t": -0.47133028725361353,
+        "df": 4,
+        "p_two_sided": 0.66196229244934,
+        "exact_sign_flip_p": 0.6875,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "successful_tasks_per_MJ": {
+        "seed_differences": [
+          -6.901907740942022,
+          -14.080870599311766,
+          8.99463273975033,
+          42.032875737966805,
+          14.343929619136674
+        ],
+        "mean": 8.877731951320005,
+        "ci95": [
+          -18.22107634932108,
+          35.97654025196109
+        ],
+        "t": 0.9095800504599094,
+        "df": 4,
+        "p_two_sided": 0.41449457935389733,
+        "exact_sign_flip_p": 0.4375,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "energy_relative_pct": {
+        "seed_differences": [
+          -0.14875944660709406,
+          5.467625441139257,
+          -8.22796209570723,
+          -13.158560522604212,
+          -13.781385480558416
+        ],
+        "mean": -5.9698084208675395,
+        "ci95": [
+          -16.404545656634284,
+          4.4649288148992055
+        ],
+        "t": -1.5884295880756178,
+        "df": 4,
+        "p_two_sided": 0.18738641376843598,
+        "exact_sign_flip_p": 0.1875,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      }
+    },
+    "attention-minus-vanilla/ordinary": {
+      "dsr": {
+        "seed_differences": [
+          -0.011032541387395844,
+          0.007485626036666804,
+          0.004787938574251471,
+          0.026477978023428106,
+          -0.013555582189360205
+        ],
+        "mean": 0.002832683811518066,
+        "ci95": [
+          -0.017240386068005886,
+          0.02290575369104202
+        ],
+        "t": 0.39180808666864947,
+        "df": 4,
+        "p_two_sided": 0.7151782786281261,
+        "exact_sign_flip_p": 0.75,
+        "positive_seeds": 3,
+        "negative_seeds": 2,
+        "holm_p": 1.0
+      },
+      "admission_rate": {
+        "seed_differences": [
+          0.029591181342405237,
+          0.0447746220001074,
+          0.08789462847379081,
+          0.10036409424025439,
+          0.05108773482564588
+        ],
+        "mean": 0.06274245217644074,
+        "ci95": [
+          0.0254630438295443,
+          0.10002186052333718
+        ],
+        "t": 4.672847074513411,
+        "df": 4,
+        "p_two_sided": 0.00949815045788338,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 5,
+        "negative_seeds": 0
+      },
+      "conditional_success": {
+        "seed_differences": [
+          -0.05119145882651632,
+          -0.03426359938811174,
+          -0.08046613895157051,
+          -0.05020290823516482,
+          -0.06818942723843319
+        ],
+        "mean": -0.056862706527959314,
+        "ci95": [
+          -0.07901042350283306,
+          -0.034714989553085565
+        ],
+        "t": -7.12832764600341,
+        "df": 4,
+        "p_two_sided": 0.0020476981150042706,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "potential_dsr": {
+        "seed_differences": [
+          -0.011032541387395844,
+          0.0074584896788885136,
+          0.004787938574251471,
+          0.026121616098291,
+          -0.013555582189360205
+        ],
+        "mean": 0.002755984154934987,
+        "ci95": [
+          -0.017153138679417514,
+          0.02266510698928749
+        ],
+        "t": 0.38433831468300317,
+        "df": 4,
+        "p_two_sided": 0.7202861536620356,
+        "exact_sign_flip_p": 0.75,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "mean_uav_energy_per_episode": {
+        "seed_differences": [
+          189326.82053682208,
+          -250253.83439861983,
+          -1102072.2775398567,
+          -1372265.8030487448,
+          -4269433.754594661
+        ],
+        "mean": -1360939.769809012,
+        "ci95": [
+          -3526160.027860716,
+          804280.4882426916
+        ],
+        "t": -1.7451224873331208,
+        "df": 4,
+        "p_two_sided": 0.1559019918154641,
+        "exact_sign_flip_p": 0.125,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      },
+      "mean_assignment_energy_per_episode": {
+        "seed_differences": [
+          372919.81383378804,
+          -29122.894179385155,
+          -940497.8797002286,
+          -1098113.7395042032,
+          -4143411.1400743835
+        ],
+        "mean": -1167645.1679248824,
+        "ci95": [
+          -3369734.3488259353,
+          1034444.0129761705
+        ],
+        "t": -1.4721941051299186,
+        "df": 4,
+        "p_two_sided": 0.2149486576050036,
+        "exact_sign_flip_p": 0.1875,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      },
+      "mbs_share": {
+        "seed_differences": [
+          0.002659234066404788,
+          -0.009408274459832514,
+          -0.028367235138930854,
+          -0.016314855435494872,
+          -0.07240831672235289
+        ],
+        "mean": -0.02476788953804127,
+        "ci95": [
+          -0.06065919774019668,
+          0.011123418664114138
+        ],
+        "t": -1.9159704429454247,
+        "df": 4,
+        "p_two_sided": 0.12786341366305692,
+        "exact_sign_flip_p": 0.125,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      },
+      "fairness": {
+        "seed_differences": [
+          0.007055010529607553,
+          -0.010175735815242004,
+          0.013238494984991855,
+          -3.833518270401903e-05,
+          -0.011705854304134844
+        ],
+        "mean": -0.0003252839574962918,
+        "ci95": [
+          -0.01371391097353082,
+          0.013063343058538237
+        ],
+        "t": -0.06745524022054951,
+        "df": 4,
+        "p_two_sided": 0.9494564712882959,
+        "exact_sign_flip_p": 0.9375,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "successful_tasks_per_MJ": {
+        "seed_differences": [
+          -12.486434205500245,
+          9.14546730844927,
+          13.237666763321045,
+          38.26858019509069,
+          25.768054562695568
+        ],
+        "mean": 14.786666924811266,
+        "ci95": [
+          -8.854202349250508,
+          38.42753619887304
+        ],
+        "t": 1.7365845785808878,
+        "df": 4,
+        "p_two_sided": 0.1574654567439009,
+        "exact_sign_flip_p": 0.1875,
+        "positive_seeds": 4,
+        "negative_seeds": 1
+      },
+      "energy_relative_pct": {
+        "seed_differences": [
+          0.5663372680986489,
+          -0.7213908442072148,
+          -3.0092363815770296,
+          -4.017129039889045,
+          -12.030358489661142
+        ],
+        "mean": -3.8423554974471563,
+        "ci95": [
+          -9.955108425187086,
+          2.2703974302927734
+        ],
+        "t": -1.7452184374907045,
+        "df": 4,
+        "p_two_sided": 0.15588451513673554,
+        "exact_sign_flip_p": 0.125,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      }
+    },
+    "attention-minus-vanilla/deadline": {
+      "dsr": {
+        "seed_differences": [
+          -0.009907775329516477,
+          0.000538245993742803,
+          0.004640257254010294,
+          0.02451840858338039,
+          -0.009206494347708538
+        ],
+        "mean": 0.0021165284307816945,
+        "ci95": [
+          -0.015261214010481416,
+          0.019494270872044805
+        ],
+        "t": 0.3381581365656771,
+        "df": 4,
+        "p_two_sided": 0.7522474086316266,
+        "exact_sign_flip_p": 0.8125,
+        "positive_seeds": 3,
+        "negative_seeds": 2,
+        "holm_p": 1.0
+      },
+      "admission_rate": {
+        "seed_differences": [
+          -0.002802695750781292,
+          0.032109961792016306,
+          0.09239588473914151,
+          0.10941707252181976,
+          0.07805616678861316
+        ],
+        "mean": 0.06183527801816189,
+        "ci95": [
+          0.004520825205985943,
+          0.11914973083033784
+        ],
+        "t": 2.995444369759354,
+        "df": 4,
+        "p_two_sided": 0.04012187317554172,
+        "exact_sign_flip_p": 0.125,
+        "positive_seeds": 4,
+        "negative_seeds": 1
+      },
+      "conditional_success": {
+        "seed_differences": [
+          -0.014509852905093101,
+          -0.032981076144771415,
+          -0.0830792068768238,
+          -0.0611331377493014,
+          -0.08777319704676739
+        ],
+        "mean": -0.055895294144551425,
+        "ci95": [
+          -0.0952602383897877,
+          -0.01653034989931515
+        ],
+        "t": -3.9423456277347895,
+        "df": 4,
+        "p_two_sided": 0.0169264047583233,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "potential_dsr": {
+        "seed_differences": [
+          -0.009907775329516477,
+          0.0005285785845771662,
+          0.004634282008967372,
+          0.024210128426157274,
+          -0.009222467048349559
+        ],
+        "mean": 0.0020485493283671553,
+        "ci95": [
+          -0.01518019774687151,
+          0.01927729640360582
+        ],
+        "t": 0.33012759028052746,
+        "df": 4,
+        "p_two_sided": 0.7578697142769756,
+        "exact_sign_flip_p": 0.8125,
+        "positive_seeds": 3,
+        "negative_seeds": 2
+      },
+      "mean_uav_energy_per_episode": {
+        "seed_differences": [
+          433277.2008295469,
+          -291985.98262067884,
+          -1207884.9998770356,
+          -1398295.01043389,
+          -4492420.233935557
+        ],
+        "mean": -1391461.805207523,
+        "ci95": [
+          -3729964.6081649875,
+          947040.9977499414
+        ],
+        "t": -1.6520473327003282,
+        "df": 4,
+        "p_two_sided": 0.17386897154981595,
+        "exact_sign_flip_p": 0.1875,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      },
+      "mean_assignment_energy_per_episode": {
+        "seed_differences": [
+          623683.7045867145,
+          -73362.77272252366,
+          -1048544.753735818,
+          -1130609.3916935548,
+          -4362409.216678493
+        ],
+        "mean": -1198248.486048735,
+        "ci95": [
+          -3572369.1587291537,
+          1175872.1866316835
+        ],
+        "t": -1.401306674165216,
+        "df": 4,
+        "p_two_sided": 0.23373927600175118,
+        "exact_sign_flip_p": 0.1875,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      },
+      "mbs_share": {
+        "seed_differences": [
+          -0.0016197280264696814,
+          -0.007781628742841641,
+          -0.030588316071922132,
+          -0.018068211498192974,
+          -0.05882699112992776
+        ],
+        "mean": -0.023376975093870836,
+        "ci95": [
+          -0.05151020626626487,
+          0.004756256078523195
+        ],
+        "t": -2.3070541622462835,
+        "df": 4,
+        "p_two_sided": 0.08229823658502924,
+        "exact_sign_flip_p": 0.0625,
+        "positive_seeds": 0,
+        "negative_seeds": 5
+      },
+      "fairness": {
+        "seed_differences": [
+          0.002407215998321721,
+          -0.009608026376366596,
+          0.016294175419025225,
+          -0.005076792036928235,
+          -0.009303014153614675
+        ],
+        "mean": -0.001057288229912512,
+        "ci95": [
+          -0.014521467043216128,
+          0.012406890583391103
+        ],
+        "t": -0.21802315398718133,
+        "df": 4,
+        "p_two_sided": 0.838081985477389,
+        "exact_sign_flip_p": 0.875,
+        "positive_seeds": 2,
+        "negative_seeds": 3
+      },
+      "successful_tasks_per_MJ": {
+        "seed_differences": [
+          -13.84969057461683,
+          2.9816724900401255,
+          13.89521320266914,
+          35.97658243040098,
+          31.471833959188587
+        ],
+        "mean": 14.095122301536401,
+        "ci95": [
+          -11.390841902906368,
+          39.58108650597917
+        ],
+        "t": 1.5355249268710458,
+        "df": 4,
+        "p_two_sided": 0.19945325906154576,
+        "exact_sign_flip_p": 0.1875,
+        "positive_seeds": 4,
+        "negative_seeds": 1
+      },
+      "energy_relative_pct": {
+        "seed_differences": [
+          1.3129383119234062,
+          -0.8388229010328208,
+          -3.2923305850148132,
+          -4.039354350517332,
+          -12.545449346718552
+        ],
+        "mean": -3.8806037742720223,
+        "ci95": [
+          -10.4413654758395,
+          2.680157927295456
+        ],
+        "t": -1.6422305586431374,
+        "df": 4,
+        "p_two_sided": 0.1758867803230863,
+        "exact_sign_flip_p": 0.1875,
+        "positive_seeds": 1,
+        "negative_seeds": 4
+      }
+    }
+  },
+  "audit": {
+    "all_episode_sha256_verified": true,
+    "all_metric_identities_verified": true,
+    "all_modes_seeds_same_workload_external_trace": true,
+    "checkpoint_contract_consistent": true,
+    "mask_scope": "archived runner checked quality masks; this audit verifies saved action ranges/counts, cannot reconstruct masks"
+  },
+  "provenance": {
+    "source_hash": "b5239f5877a82d72586271de84d428b4a8d5bb7aebddbb2c0e4c0616980eba58",
+    "analysis_script_sha256": "c834604508e2dce2e4d5747591da9c93ba1e875325a82f9e10e8ee9f941aeb28",
+    "python": "3.9.12 (main, Apr  5 2022, 06:56:58) \n[GCC 7.5.0]",
+    "raw_files": {
+      "protocol.json": "e82141c3be1e449965e08b777dca15ff2a176c988fefea091db8bce5be3809ce",
+      "status.json": "fd51a0dfb0a156d01f2fd2430bc34627228173cc5b913d44e62d3e6663d6272a",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740001/result.json": "de208cbfd5225386230e4b46fc2ad69fb54ab15adc158e8f508ec64973c162c4",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740001/episodes/00000.json": "c89c3f8967fd5a0698ac2bfe52618b89eac50c371dba770c535c4aeb4207d826",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740001/episodes/00001.json": "abe2d4c8c4bf69d1b558060ee84ea8b52d392915c57ff364316a2d55361225c8",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740002/result.json": "75da9e845a554120b7c925c196983a64720b71881a7ddebc9fd171a04a2179fc",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740002/episodes/00000.json": "90ae238b602d2e52595c1c4c62aff9a1eccb252c4edd3e9b706605de6aa42e46",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740002/episodes/00001.json": "ec89e2af3b8426afb4cc62450cbbcedffed3ba11ee1774c78f4d54e146df1dfc",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740003/result.json": "6244c455bd4a5147a36bb3d6db23ae252e486ed97919aeac085a609b90225b2b",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740003/episodes/00000.json": "d59a8059c8c2c71796ef6a2c02788f16cadbeb20cd9e6e82d1772d02db9e0118",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740003/episodes/00001.json": "e80a437da1379ba92eb7003186156b07a1063b3b2638d0565220e241413860f8",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740004/result.json": "a71441a034975cdc8a07a2c1aa9000d28cb61562c4ba608b5457704aaffcefec",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740004/episodes/00000.json": "b0bb7c8324f2ccbf732fdebdfab724ca85c618fb09178d3e89ae00ef5e01f4c6",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740004/episodes/00001.json": "10a2a43677b75ec563f18e3a7cc0adcbd00bf75437a2c17e0219eedc9083e77b",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740005/result.json": "bd032e16b7e4c1aede609fb6fcfdd99b0adbe985aae2af8c1b73b1cc621fb308",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740005/episodes/00000.json": "e0cd8d9103ced24e98ec3c43d38a75c0e0871a69f8b427815e6bdbfacd9a984b",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740005/episodes/00001.json": "537b21af889522ed05ee226a7beacbfb899be8f0383573bf41103a0644139ed2",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740001/result.json": "4fddaeaa1796cedc3dfdb92283742d8a2d0089f8fe5b3ecf3c0288deb29d388f",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740001/episodes/00000.json": "1a1b8c53b0454074d7b3570b0af4b35e1fe6ce7c512bc67448957c9501f730ae",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740001/episodes/00001.json": "54c7cefcbe0dfa9069e60fce2ca5c9953405a63734929b273d1a63b26bdebc88",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740002/result.json": "94acae6cb44ad536cbb7ebecb317bc5d458de1d0a9a7791f30a08490075f01d2",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740002/episodes/00000.json": "2fb63cf4e4ca256d3ae6e53aa970bb1c7dd94004a909b69712da77d8b0773f8e",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740002/episodes/00001.json": "4ce83ff3bd2407f44b7d2186dccb9a53e9f2703c64d8a364da61429007d233c0",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740003/result.json": "64359cda2e7501493fee07e91e03c789e997d431a44e48adfa0d4b7f3448008d",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740003/episodes/00000.json": "1ed4126ecdd4a18772bb94a470f06cb2745037031bf517b32faa6c3cf13c20b6",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740003/episodes/00001.json": "6d47328be2821e64e5440d53b19876824c89ac4272bd470e71169ef38477b9d5",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740004/result.json": "442e6572980edb9a8ef41d2de0c9b72e044cd124e41f43de4fffe32de85181e7",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740004/episodes/00000.json": "4cef026d5ec9ef6d81dece9e04fc909bb61dcb473c34d68578469cb3e98483ea",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740004/episodes/00001.json": "1fa066760057e1788c94b536ff62a55ed550e9c9a2559e200f3585b93aebf5b8",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740005/result.json": "b998487ee8d87d482b8c4d29b1c4d9b0bd5ef7ab01834f08306d53857eb75e45",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740005/episodes/00000.json": "18cafba94d071376692f8e216a08a963214cd6ac44a8e10163c9dd0018e90554",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740005/episodes/00001.json": "ed37d260d1afea323415607b510161710efeaf9a1c349fd7596d989ed6631476",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740001/result.json": "7b6e40d5ce210272ce3ea77d85e246b7922c27d8563693f7c078c1a90a52e86d",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740001/episodes/00000.json": "0fc2fa53b68471b055d1659032de55ed42d37e8f4572fae768bce0dc90bc014b",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740001/episodes/00001.json": "91deb7814130225a81c39f2f97fa202b1469dc901be9246ff1298cbcc5751fb0",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740002/result.json": "97af3177b0944e3904413fbc7a8063ad8c674a3c592d6e8658d02b73bb099340",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740002/episodes/00000.json": "6e611d491218ab4e25d2454695c77a52ac744d8f45e64d2b61049d2cb1796359",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740002/episodes/00001.json": "578ddadcdb48128ad59992be4972400504c7bd51c7f8ea0ebd8ef30bda3b174d",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740003/result.json": "581fed56b77d8653320aa9abb5ddc0e103bdcc073d3c4572ecf3cac27f193709",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740003/episodes/00000.json": "ddb5cc295a7273615c812df77b055fe1d739aa835825ba2d9888c7d0a81a0116",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740003/episodes/00001.json": "9810a22ec1a226b7a7a50932d018ef9052bf00d79b75bd11ff6dd941444ce762",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740004/result.json": "db9cf4d1ab01dbff18f5f68f121c5954ac17c8913f1e449cf8bc0c29a423bda0",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740004/episodes/00000.json": "896c33a39742cb257f39bf9257b21b0c649c5837d5969fa3ffbebf9583354843",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740004/episodes/00001.json": "d63d04687c057bbf3c6a75d49b521d82e9319549df689645bd0143ab1000ae38",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740005/result.json": "08fe1d367f9a756e02a68281c0db18f91de76819bb1da26dbf251783fa96a493",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740005/episodes/00000.json": "6f281eab32e8de885d97d7500159d6636b9f87f464bafd9a50b2fcc69b413202",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740005/episodes/00001.json": "65bf649ef7e0a12617f2cbf7816370b8f5909b3678d31ed921d9b3fcff7a2db9",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740001/result.json": "9978c7373bc23c37407770226d83a138e755daf240da5ae9e2e6f1b0e917bec2",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740001/episodes/00000.json": "f30127dda87a70dc777753ba871a3bb58736f177f192c49898724f04cd90e173",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740001/episodes/00001.json": "b1129f1de03ba93a38dbe2ab8b12b56059b4dee815fd69726d2d84ee37230484",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740002/result.json": "10ba7f8fb6ea1fd115d5ca8874ae6277b590bb37ddaf48cd68cacca59dd162be",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740002/episodes/00000.json": "8db5be3683f29f113d09eb53d52ffe385101e53cc797e42a8e6309cddce7e917",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740002/episodes/00001.json": "20d8b5fc233d45c4a30a0930fed249d56dff1c4c640c983213b2fd585591fee7",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740003/result.json": "d3d26d09cfb6ec17cad119f174c064c896893f638fbef5c6567e4f4b91c601df",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740003/episodes/00000.json": "416b44ff718f787793c5c15bceb6ab4d30c9b6e9cf68265d5bc6f045cf175841",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740003/episodes/00001.json": "a61e323760f35600f483070c40a01ebe4a4f82588dbae2ae56463a66e8c668a6",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740004/result.json": "c3518e36db8cbec7f544ded3d3422148eecfca9c4bd7a860a92d6a7d0a6d358c",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740004/episodes/00000.json": "38d6b6a57fc1b08651bdfa8a1212bd45d1d058d7676413106ed8ba10409fb346",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740004/episodes/00001.json": "50dc80f60ae8759909de6e41178aa6b76cf0de251ea72d9fe538eeb06882ed64",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740005/result.json": "7a43969a7b73bfbb7bd6d580e5e1dd267c67a0894a6ed24a06e90d948d96bd54",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740005/episodes/00000.json": "6790ced56714ae3bd20d8a75378a027dfc58780a00f492b55c86f73b72e4628e",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740005/episodes/00001.json": "04da9b8add08444e49e4ce83844895ab61ca2eb0dd70ad42b0e7642b9d2ec9de",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740001/result.json": "4eb08f8a81b82f5c68d5832d7be3a7c5b8d6fa133b796139a11a3ac5e7d4eeb7",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740001/episodes/00000.json": "eddcd802845d618ece6591ef592f64cde6dd2e839688e96e127face71fea0ca0",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740001/episodes/00001.json": "9ffb224daf5f76a71224166805147a03a6384c4303b2869a896b0b9a5438e8c0",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740002/result.json": "5fdfefa67c12a34cf61dcfc199536e47452bb7f733aa713806cb859fcb51fb5f",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740002/episodes/00000.json": "48f649f557a39972629d1914888b43c4f83cac58c6f46bb91d4a972785d2d3a2",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740002/episodes/00001.json": "5f5809bba62e372dfbd74a53f66ef6455789125c4e7a54f7cfb300cdff0b61fb",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740003/result.json": "b22a9d6f6b114203754e4deefee3847370695b81c1bddedb27bc3e67269aecd6",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740003/episodes/00000.json": "462e361ae648f1ebf300cb2c30c671d21c98406261bd371ed91af353af3db26e",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740003/episodes/00001.json": "08a8263bbf394552ab0b5e392536637acb27198d4f19abad2aafad9138f8f6ca",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740004/result.json": "c687ce826d57fd37afcf8e542bf3b9e0b89ff24f74c5b49b8290fd8388631c0b",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740004/episodes/00000.json": "c91d8d41d3221cbbb9faa0a528c994c3a7c8862345194aea6cc9da1739a476eb",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740004/episodes/00001.json": "276047f876055ad3b009045aa307b9e3e7c55ad57adea01597d1f88e19355a7f",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740005/result.json": "49520465f1c0aec1572f458d8ce057223da06c0870b41d10ed6285ff50f22683",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740005/episodes/00000.json": "fba590780580b3d10367773eebafbaf3215c4b225206fa46b626ddfa65411ad4",
+      "lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740005/episodes/00001.json": "a8dfa7b24578d43d5277f0159206df437765a093d310f776d6e9cdff95d5eedc",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740001/result.json": "745584e80834d4997551220f42ea71e0135fa2ca86de358ac26ef71e393a2c69",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740001/episodes/00000.json": "0fe58c1e96cf4ad84ef97f00d98f9891c82b3a963fdbba02459125070991900f",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740001/episodes/00001.json": "fd83baad33ce30d6c1f55aab26ba7dc269fe9be38e8724dfe4f9ab67ee0f523c",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740002/result.json": "45a5a46cdf13bf911c88fb9ab5a42cd793760d07b6f9911533b5b7f5aae406f4",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740002/episodes/00000.json": "e5e9b6914f8e624b970ebc26ee990ea4294a69eac695e413889d5e10132d7878",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740002/episodes/00001.json": "9a652cd521af32a45a17254222ce6032c5b1bbbcecdb5838c408f76e87769810",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740003/result.json": "5b2fad7c6a088e19be3b535672907be2006d35032edabb9a086ef7ea330b932a",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740003/episodes/00000.json": "ead644cf99453350503e7f814aeff3424d512f792f0677d7443b568d984917d7",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740003/episodes/00001.json": "0ec5f5a934c8d374973358fb63c8ef0cf84ac2bbd93ebc0c3350fe831383a1e8",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740004/result.json": "268f07c4074a4482b3f29f96871d2894b06b45d50dad2c07845be6238d80d5da",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740004/episodes/00000.json": "042ac036ea714ae2f05d56082d686983b2c70baa6ddc90c1d4d4edccccc9dfe7",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740004/episodes/00001.json": "4490f712f0e6bef2f7c5128e79f678a10e39c83e9a754b6561f524afdc9aa8db",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740005/result.json": "bd7fc477fad42156e78ab6c04532c55b68b72d0c9311a53c14bc68425e767123",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740005/episodes/00000.json": "fb702d3322cc2af722a17360fcf5c5e2939e235cd677dd0a61075fadf69316b4",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740005/episodes/00001.json": "dba8d4389d33c525933861290219d73286a4aa68afadb97fa7accb12bba43f6e",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740001/result.json": "af4bfe369c9f01be0596d1374a7317d8371ff07b35368d807ebd9488f4bb3c06",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740001/episodes/00000.json": "fad9a66b47ce841b1db5c867311ef560837555331739fc265d5c08888b6d823c",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740001/episodes/00001.json": "b534171c5737d00c7125d201985c110cc4d487473cee3b6796f6b8d9d0af2291",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740002/result.json": "ca0a5585a6cc6b51e55256c79ad752ca696fcaf0c44c8d393bad1d5797e9c070",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740002/episodes/00000.json": "14813b240aa3310bd2fd4c46ad1db4dc2e5baec7cee6db3dc699a99b3f7bbe53",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740002/episodes/00001.json": "b008dc197760afcf3068c3ea2ed20a6cc6d0d74611ae0032a639680d785b2334",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740003/result.json": "ee0a1de0973bafe24d8d5e1b7ad786c0c6db1cb7a9b321c600e62e371130d01c",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740003/episodes/00000.json": "df3cae1f04e6b82c54638987b6aaed83a09be09a260a41947915cd9411095283",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740003/episodes/00001.json": "d153980eee648919bf2a45dfd8673c9432a07c28628f8338d0077da5db9e5dd9",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740004/result.json": "d0750e277b2202c309585bd0cd48f9ec0261ed0c63b0ca9dd3f3f615d67a452e",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740004/episodes/00000.json": "f84f55828c6ec61276b558b330339ef217834fe80f75f1d7abbaa7b63efed990",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740004/episodes/00001.json": "5a6a122eb56d9eada708003df3b316ba66851c51632ebb5fe7771ea4e253bdb1",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740005/result.json": "89e2ff8abf4bcbb0db8cc4728376dac3a2f6671be3620fcbb8f6407047efa381",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740005/episodes/00000.json": "8216c49b1889390301275ae35828753f35f55a62b00033eafca73bb88129f4c6",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740005/episodes/00001.json": "d7680d2f363044efc589fd27d3174f72e4c5fee8b54311723f1d6fac6069da50",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740001/result.json": "50ea93896a619ae5cde36f2adbbb7e033ba05f33b9b6a8d1d93acd68cdfde67c",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740001/episodes/00000.json": "61ca824fc0ef4416671d853301c0b331e8e5b5cd8e8c0d4873c8d63ec95af951",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740001/episodes/00001.json": "7305520d37de834b3f46e00e160f9a1e7c61e3418a0636f37d9a1e2443d1f084",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740002/result.json": "56b784c14c92abb516ed6e6d3886bdc0f2bbac823e7f2478bfa3a0431e3f5110",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740002/episodes/00000.json": "374ea78b90fe8aa4515087261046cb5f8464b3fc896d1b3b162f52fdc4b1f2d0",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740002/episodes/00001.json": "6c280458ba92c40c0d6ee811cf2e375e984076d329b02da32260808338e5134b",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740003/result.json": "42537f6674782d3c7abbf3201ab903b6f723076577e40e0c39f4342e283b006f",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740003/episodes/00000.json": "ccd628995085f4dd69639b52b2793acea88dc021d517f5231592c1c73ed45f5d",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740003/episodes/00001.json": "058a53c53824df4afdcd9808052a6b76256074a5328fe413d817304194458fe0",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740004/result.json": "5bc3156acaec6f0ea712d46ddde970d4b87dd189e6329bc13433483b6c25ebd3",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740004/episodes/00000.json": "688150036df450a049295ef0d1665233a4d733427cd85e9290f4ca5fdf9e685a",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740004/episodes/00001.json": "29418722370388b697f9a97d8eb6dfd5f259af650da647c6c036df9181b3d9fc",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740005/result.json": "117bf36700bbf2afab4c1ad18e161a72843d6bcb204401f44349da7da131b1b8",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740005/episodes/00000.json": "fbacb75531c956f8c8e9bbd96c32ff497d496fa1649aa095c74b7ae0ee3dbe92",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740005/episodes/00001.json": "78bdd4c1b3e1d9d7cda791e479834c68070cd54ea8efd9ff426ff93c7233e9d6",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740001/result.json": "dd0c51f58be53b618d0795a75579c602651965eca1fdae8a20caf3ef98e187b9",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740001/episodes/00000.json": "afe3d989f250f42da80ec9acf7f8f2f87d91e2673ac6d754a74ab788a5e5a832",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740001/episodes/00001.json": "25dd6214d2439abe03f466fbdc5d62887aab3136dc138cdabe4f55c5834a2b17",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740002/result.json": "6909bd247abcceb9b8a2342b26efe788df67b9a4f2a9dc1abbd0273984324ef5",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740002/episodes/00000.json": "08e22faae1637cbf05a8e9f3c29e67133ecbb3e92684586b6dc3434ae558a576",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740002/episodes/00001.json": "67fd2ab5b28475d5f6f327676e105def593c762edc7ae45abb7962c68347e8ec",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740003/result.json": "82ed5666c5387502e7481c0b701bed776c8dd490b9d987849aad63a29e079110",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740003/episodes/00000.json": "96caf5c3590d451b19c0c7ad6727ca00d297a7e4c3a65378f728ab2c34f9f900",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740003/episodes/00001.json": "66e20cdd2b2c94ce1bf41e7c258bed8a7fc9eeca49abb08b19265895b937ba60",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740004/result.json": "6032beaf40c615ff39b1c7c2323b28190092c70889cbff18e8f291bd79d39769",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740004/episodes/00000.json": "6b4b8270db570e0bcfcc2071278109f684f6392e4ba4d6fa7eb7e23c8b1c489e",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740004/episodes/00001.json": "5149ba65211ea9549fc4d2cea1b3e78d268e7cefe55a9ee287c0a009ce67ac39",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740005/result.json": "e4d581789bf99e7d621cdb5e2a46b28a322214d5a391bf891e9dd2c51668295c",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740005/episodes/00000.json": "f262190662d9d95acdc7a905c93678e9a5c386b74855ff047ea154d52bd606fe",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740005/episodes/00001.json": "4897e3006518fe99f5851950dab4fef83dcfec07884aca97cda6bc2787f79d73",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740001/result.json": "10c61b54e89846b6cac7515bd244780c2531a7a9cf85e5e8cec90206dc6320da",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740001/episodes/00000.json": "731821d7765bbf2daf7f80352528e5b2caa7e39b55b71997bde99ad61bf774f0",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740001/episodes/00001.json": "16b964edcf444c442d54536cfb7524fcee24f7081181ebaf79d98eff6f3089b6",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740002/result.json": "560ff27911eaea5f499bb1804432029a47151833f0d8b4478e328ef316d5419f",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740002/episodes/00000.json": "8fa5d2523620b7ebf10eb9747ac0113e00cab59c2f5ec4cfd73192fa061651f5",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740002/episodes/00001.json": "0eef50b701584b28ea06608ca748c796b6835c1ccacdfdf6e5e602dc34757d00",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740003/result.json": "8e24e58be2f65a669a01666ebce68a7133edc62d33b530472393ee0cb56a1897",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740003/episodes/00000.json": "1991a839f6feb804dd9ef7c2bf2035dac63c8df01d58bb3d43786b82425da0b6",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740003/episodes/00001.json": "6eefab959b3c5d3bfc5de9d6029f91060c01f9e769a97d7fadc734843a750064",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740004/result.json": "351bfc5512ea41239aa6b7a7583f2ce9e266a8ba59e6c9c27f8bc64a9a333189",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740004/episodes/00000.json": "02c9c339d52d1626d705f25513e81b7f0d5d52c5b0879d9961134965dad95419",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740004/episodes/00001.json": "6647efbb82df56485566879253a2342d07d8422f7705fa6dbf17106657080a82",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740005/result.json": "ce17adb65e011a08531b48a2cd00bc705b0ad4b859399f45b0ae55ceb59cf666",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740005/episodes/00000.json": "b8b5bb5bd9e412345308619877411546b257671f8aac7dbf8ee90629652bb278",
+      "lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740005/episodes/00001.json": "09590602d21a96e778671c790256f69b5da08c3cee41d4b645567ef248f2d7b4",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740001/result.json": "7e7573db04884f4844c623668d54b119dfde2a8c61847e728b45591b6104d217",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740001/episodes/00000.json": "5b414a62a0429b24f7d44ca97c6ffff69e34ac8c7e0b03693cf95e0d84906737",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740001/episodes/00001.json": "28cdad53f859003fbaf9a99d980c1e064004b85923a2bea46b7c8e1be4001ca0",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740002/result.json": "864e3d343fb914fc336a1d0e6852770de8cceef880a4ee2bd73c5938950ebc33",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740002/episodes/00000.json": "b093323bb7aa06697fc43c941be9d69d2381b048c680dbe55b77822875584c58",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740002/episodes/00001.json": "1674523c854cae5f66450bee825c6713008de0393207208ab0453cacc1fe5b51",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740003/result.json": "bb00d2445af355750d33139ac91aa07c4b82d843259b3432380503a26c4ef02c",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740003/episodes/00000.json": "b92c033a05084ad8509d55d60611094a07a5541f0fc0b2cedf19c4e09413132c",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740003/episodes/00001.json": "41cdf70956b4a51d0a990f3859e30b097c7b3bcb073d078e73bea637b6917187",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740004/result.json": "7638fb426de0ab8b6a7a38b1270d712083362f2833fe49d6fc8c06255f88e768",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740004/episodes/00000.json": "e26d84b990416ac35884b316675c64635f511af6d7e0c5242d430df74abcf442",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740004/episodes/00001.json": "bc168e2bae6ff837a23801296d33ca3cdb42e1fda22c5527d6fb1dafbb08a85b",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740005/result.json": "8fbbc05b64074b397aba486262c6b938fbc7c5f09013fc7d6002253f8a23a218",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740005/episodes/00000.json": "9c07d7d0fc6382e29e77627c60ca1d6a6fcde7802674e6b694e09083ceac2f77",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740005/episodes/00001.json": "4bf2e8b1820581ee60c71bad940e05e22a677ffef370aa3c74a8ea0c2fa36956",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740001/result.json": "333302adadde1bd0df7879f588e9e7a42cfca8abf224abea2e4a3c3ce1dda49d",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740001/episodes/00000.json": "8b08bf6ac1635724393253dc11fe03300bfdeb2d9ad4544bc2590e7b29718940",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740001/episodes/00001.json": "3cec391239f1a3cdb2927deba0cf48a1217cc5fe61e1e620fd59296c1f3e86bf",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740002/result.json": "570e47f67fa81ded3c4bee3e9d204f1cf13aa9a7c45bb65cb32a80f224f266aa",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740002/episodes/00000.json": "2f256533d63f7c62fed77e9057a711a608d5f54f8861d6e5f40da043738b59ec",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740002/episodes/00001.json": "806f0399bc6179035fdf07a086ff93f3f7abfb9b2a35575856cd49badb459702",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740003/result.json": "f7ef5db985e430a6284f19b9084d2bb1412efcf092562e2ee5b197adaa52a86d",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740003/episodes/00000.json": "22fe437274eb0df38a4e9e1062de2d149ae10f9584da76a6a62eb618189fb31a",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740003/episodes/00001.json": "3552588469dbb278e19c7d2fd182dc5e26d9a93ecf328180b6681d9aa1213a38",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740004/result.json": "71a8570479df8f01a39b3382372a48b57b9103a8e30c4ac30f907429e3c3416c",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740004/episodes/00000.json": "fee72fd575ef8190b292319a7d2515c265aa7ee97113544cfd574cd6b6f9057a",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740004/episodes/00001.json": "c87a579483c1d8057a734108457249245587efacbcac1a50b0d34526be84c3fe",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740005/result.json": "0eb6f39040350abbf6f9ff5430e273f1166ffb793794dfe72e4ce6ff6bc57318",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740005/episodes/00000.json": "4bcd82d3be85284d85eb54e966a75f5d869df98f5af0ad9ef254f1c3ac2f9836",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740005/episodes/00001.json": "c7a0e60519289d8ae6bc14811116d3fc53ae5c310d30e1eceb8c15b15e6ffc70",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740001/result.json": "d52cf8f7da80d41455a9f218c532af06f0cba50d4855900cab83c4a57aae8102",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740001/episodes/00000.json": "adb8e7cac54e8a9d33797eb33aace8b7484fd199a6538940f7bbb435603fc10a",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740001/episodes/00001.json": "d07fa67802cbf2b5477d8401b9313305069ba635044b494174cb49d2e91ac92c",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740002/result.json": "98a02f5f9a42618a0e937c93058833fdbcade2b94145008d8fa63e625acc2250",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740002/episodes/00000.json": "6d16d84b45995e54fc02bc300d8f994343e73dbc780c5eb6d6209a20bb09b795",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740002/episodes/00001.json": "1d1d647830909cffac1958efcafe0a3d3884043f66464a445c2165641a395285",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740003/result.json": "22fecc4234739544f00d7ec40e8af3e310eaa1acfd73eed5972587bc4f982796",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740003/episodes/00000.json": "79c22a66bb58ed574dff23ec6d57f32b9fc9ee8cba8d3b8551feb55d47fba9a3",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740003/episodes/00001.json": "fcf4ae0b3bc1394eb37f63542a35a813479659162488f9907e3964e7a1b562ac",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740004/result.json": "a23c48af863828c50bc858046727fa7881e89cfa944fa885e70bacb2326971c8",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740004/episodes/00000.json": "435022e43f670b17283cb10e734da86dc56442796ce2eddc64258e6d9ea105de",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740004/episodes/00001.json": "9776943b0bda4c175e5cb12ba989c5695cf67cd12bfa34245e21232139ddaab6",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740005/result.json": "6453dfadadf34700f2ab52901d2b2065b15123366d0c69d8b8a04a943d18b478",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740005/episodes/00000.json": "f1b2fe2e4ed2315f5502b9eb00ad44a47e376640133ee4bd39b631f184b8d688",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740005/episodes/00001.json": "df8101a22dad26d09dede45962ca2851d6e0fa2fd73d2f58b6d02e1bcc881883",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740001/result.json": "41b671ac41e84faa95058b0d13dc5fd70c62fde9f9f5b89beb0b3bc603c53322",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740001/episodes/00000.json": "26da0ef2b353e2598c60910cd887006955879e53f90db19023674d0af8c196e1",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740001/episodes/00001.json": "89297ef8450cf41e00112c84a6b91672a578f650a7ac5c77691ff5f6967ef1bb",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740002/result.json": "e2ec7d2719d6aedf040369c26ad27277677796f030be5c56a6c70299fda18913",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740002/episodes/00000.json": "d2009f20ab1aa5c314aab08ca9fb7ed09b93b950c984e655ce8755f793b8401b",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740002/episodes/00001.json": "1455fcef1b710b4c06cf9c20ec77b822a95bb0e8b0119fa70d3fd40b0500104a",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740003/result.json": "d6488f27b31f5444e0a3258cba7abce57019346ae24104635773845f0a6a986e",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740003/episodes/00000.json": "58134ac4acd909c742d47ba118888ce5e570ae50f4a2f1cf679b2139166b37af",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740003/episodes/00001.json": "d6463a61c3e38823acd6a860404ecb42e23e084cc7b4836d13b541e409aab585",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740004/result.json": "e2f281097d3a879655a09381947e17a9782eaad8fcc69bc75b2d2d2b78d70495",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740004/episodes/00000.json": "ac5b261ccaf9995e42e8a213cc33251571bf3fa3ab180d63c45ec70e64a7cab4",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740004/episodes/00001.json": "ffdaaf2cd54f6553054b489cf3acb0db8df6c739c0c564683cda5b3a39b11fc4",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740005/result.json": "a14ea12da8b24383c09d407205dddbde1b414e718a0e17aeb2a7fa792b6ad137",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740005/episodes/00000.json": "ab81981eceef87eafbd13bd7a531222545e850847f5fcec98ce8e0f1e6e3afbf",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740005/episodes/00001.json": "7efc850bbe466d8cf3a5711c9fad269d2665f1c5299a2600900a434f8d03c35c",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740001/result.json": "b9f960593330134df45a722a652806108dad900bd18f4bc63505fd855871ff76",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740001/episodes/00000.json": "8c98e3adb8b6310ff26447d30fe65519de660c353bd84790712eff14bae37641",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740001/episodes/00001.json": "bb37d4281aaaca477a0bd0bd6bbba6c62371efa0a0e476c6f3bbeb33f4498cd1",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740002/result.json": "0e9a38f7756b1dfa0fe22221351a472b938abde84e353166386e744b28a29c7c",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740002/episodes/00000.json": "868d22ecaa232a796cc5bdc2f36e23f845fa848d00e0cb9daeb79edacd96cc99",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740002/episodes/00001.json": "d93c2e1b78c7f549ac386477e56fe26abbf56e7ce0ef1713894768497b29c94c",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740003/result.json": "f76dfd674c6a99646e83f92dff811d09a11a2d3cc41789996431ff98b1f5098b",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740003/episodes/00000.json": "f1066e28860d7d9eaec1f7e09a8350f6e0b5c4abbb43d606019b4daa2635d747",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740003/episodes/00001.json": "91104969c05fc31a24ad52388d32944b009efde51bcffde472b609106af25a86",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740004/result.json": "c828428b8df750d95744d69df65aa919b52ab8fccbb117a2a2a8b0412c1647ed",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740004/episodes/00000.json": "79c05a1baf65c07b56f1db8e49ce38a2e2d3ad9069b4313c00fe7032243ecf0b",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740004/episodes/00001.json": "b180ca6f95097fba8b7d3fc0eb805cb7f7546e2713be9a806f9ae441e5abadbc",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740005/result.json": "d698edae6ee59ce1230cc74a7f3434561644d2c53b55c858b791733553ccf6f3",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740005/episodes/00000.json": "b07dc66a83383f76aa906388f81e3cc47d5bb80cbffb2470cd144c03ca4d9269",
+      "lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740005/episodes/00001.json": "8f4e65243c54d4a5abb7f73dc4da2b348d4ef6e3ddaaaf5a9e24893aa3e1f02a",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740001/result.json": "99c02520726c8174e4acc66ca1178ff717fceb03c73f4fd6b272fd925f56fdd8",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740001/episodes/00000.json": "9ad7ef4e769e12f6bc1aa0436df433607fed58b11be950bf294783656cc3363d",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740001/episodes/00001.json": "a0295009ed026a19676ec32b0b252afe5523ae52fcee7b425b543e2c428e2c0c",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740002/result.json": "24c451de08903217e7c67846399f9793c1d475ffeeffd848268eacd7d3f07644",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740002/episodes/00000.json": "6089494d324fe3156eddcf0e4e09afc462979119bb8675f7df008f71bcbb040c",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740002/episodes/00001.json": "f065cc51b3ddba99693e868a4deb28521b38f1baaf66c74a5584a0059cbefd85",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740003/result.json": "80883c586e1f5917468f518d2dd7aabf28a815ced9b60b6e57828b66219ac8ba",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740003/episodes/00000.json": "1af165fef1a5371e6da26b0fd4f90c736f3f31104c313f7645ffe28d7273ab3c",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740003/episodes/00001.json": "1cdbbc61e8c24431d34c83893e1b80cbaf0a8566458baf2b284075dfd8b52c03",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740004/result.json": "aebece95e8ff7c90c273ae732a010ba65fcd9ee8292ca6b2b8b14e99b3edaa12",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740004/episodes/00000.json": "e455b10bdba3606ced46528185cdc98578c517342c79b2439a694ce0bf118bae",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740004/episodes/00001.json": "ff1eca7e6d2939837ee3ad5499a1965f8844aff3fe4c2aebfd310cf88213ea3e",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740005/result.json": "8b3de821359a79a2f957ec448435201ffcc2d1e3feb85c4394a3f6eddc29d6a4",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740005/episodes/00000.json": "a2a960b0aa9756a2eb0649c4ed424d19e6512ebdda94065aa7b18a2c7b0b1ef0",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620001_workload_740005/episodes/00001.json": "19e3135547e8fcd6afc8f2ee14da8135afdb731bcaf6a20f35ff88f550056312",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740001/result.json": "008f9648d425a75469936d78106817da52ddebc1b789a2e8a49268cb72c0250d",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740001/episodes/00000.json": "600cfd36667befc8d5110512475047331649044ef61f49f6f0e240d760206814",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740001/episodes/00001.json": "d3df8f630a3506852d6824c8a87d6eb242a8c74a2f0b0ba885d4abfcb6c1bc51",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740002/result.json": "e93129015f7c0f56658953690d91a60c7a99d7b5ab5347937e357dc51ea30507",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740002/episodes/00000.json": "8d9f63e5897c878c30c3abaf2f9fd156d6e0b7ec04407e3ec4aae20e3e38e6d5",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740002/episodes/00001.json": "c2adc6fc0eecd224b95462e3d381c4e0a45faafc298a0d807ddb622e65502213",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740003/result.json": "beea826bea96bac84d81133502413fba07a06f73ea2f40f79cee33840fa1f8b9",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740003/episodes/00000.json": "bb615f3f0651e1c0f01e02ec6f4956c045be2fbcc9323c763f32b2a31ee79e99",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740003/episodes/00001.json": "3045292f4c73d42946e630a0633251011791d0587c0e9073275a982fa2b990c9",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740004/result.json": "aeefcd3865b734d658d62204e7dec96300dd532b6a4e8c4a4be291c3ccb26976",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740004/episodes/00000.json": "092a795b11df38abb55dc0c401e228894ca586236b25c3d3a904c056d4930bcb",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740004/episodes/00001.json": "fe5c1b9d5fc7c3d43987cab1ab3a727aaa3dca24f89289abd851a714a7b01e3f",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740005/result.json": "e7751eb1517328ade055a0b803250e817892452270cc9fa1b779a6b74f49bfcb",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740005/episodes/00000.json": "e8cd19f507e4505ce081a4a7deeae7f15a745ade8d0e8ce9955e3c1fd872a3cd",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620002_workload_740005/episodes/00001.json": "2ea611ed8a3d4a16a26537d671470f74544b6def587e8f366a5f608f622b9d50",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740001/result.json": "97a3e8b57a23ae93b2b26df9d420b62dc8aca831fb81bca51824b93016519e6e",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740001/episodes/00000.json": "62411d89a9d53a57062e2c5c75e889ea4113f86508f3058da3f1d088bce687fd",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740001/episodes/00001.json": "5d8dc72376a1587f26f120f5e9716c5146880a67cabbd662fa72284ba7cb5f2d",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740002/result.json": "748db68eba9bceac39fcc2b2769b54f9160fc7005aa9800bc08fa465736d55aa",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740002/episodes/00000.json": "4f2a0562109af6a996fb73e7190eb4a3ec2be5186cb3c25dcaa9eea8b939866b",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740002/episodes/00001.json": "603f0f3fdc9b88a95d22c8672b20409292088b4841169f20895ad7439ee82cf4",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740003/result.json": "824974513b556097ebc05bae2d1f82333f7a867a1b4e15c1c5f4b8bb8510ba53",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740003/episodes/00000.json": "abaa5d3d1ea21d171cc62551583263fbbb3e4e222e32ffaae6800f0aae4c72a2",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740003/episodes/00001.json": "ba36806cca9eb3da72e2eee81066f3304624813ec947f7918670a5f3a8f6f299",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740004/result.json": "2fd1b2c3053477b68af738f7806a045a6617ab1f99de8bba22d3caa7b545a469",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740004/episodes/00000.json": "4240e7a825e4dff6f5b08c3b2c97930dcc863c276e100a12783fc5e584138230",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740004/episodes/00001.json": "c18976139622c5b0d86eed80d7bdc8b52581a2bca55356ca3385b8bb65157ff5",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740005/result.json": "f7d29cf354f8e84ca5e65ca37d2a8c625d00b6aff7e9fe782f2b6173b009c79f",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740005/episodes/00000.json": "9f7a60a71cbabd1d3f1d368ea217e70fb03b2c13c8ad34b971094f6ce54b808a",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620003_workload_740005/episodes/00001.json": "0c765185a3997dabfbc2e5dcbdb75d0f859c422ffcbbaefb754671d71756f8b8",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740001/result.json": "57ab23a7c19067c856064c34bc4f96a882ed56af2a4490e4d78e9b76286c0724",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740001/episodes/00000.json": "8ff9080f0bc05ccd735c283bafc87e3fb75ab6cc686d756e53e93e583d3f93f1",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740001/episodes/00001.json": "ea3ac191f49338c72e4dee00d1db88953be2a0f28ceb4e9d7516b6b6dffcc862",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740002/result.json": "791b9f95a16a5f395d1b8dc93d1c06dd758208ef0c720b89a89bb970912696f1",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740002/episodes/00000.json": "1ba1d954057ae67fe9dead28df88f1ab355f1d1c92b7289cd07a3bbfe8136846",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740002/episodes/00001.json": "1b85c6140b6845ca5299e068242137fb1117a3bd91f54f004252dc666d9090f5",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740003/result.json": "4cc9006c61b0f2044f101c632b29ff3dea072456336494d28b4e17d4cbf4e6a6",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740003/episodes/00000.json": "e0d82cdd9daaad49f6e2b4c7129d9166f77756860e887af1366762f6a835d44e",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740003/episodes/00001.json": "f98e1df10731e559b22833c3312d566db13a87fff47c1e73310bc6d543078de1",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740004/result.json": "5013b949766a6cb8045b122632c6b5652337c1528ef767de95d2bc232fd1eb86",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740004/episodes/00000.json": "8420aed978527539b5dd43789719aea846f0bfa4c2a3e40d17dbfc4b546d20c3",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740004/episodes/00001.json": "54cbff65f3fc6ed44ef3b230351bb8658bf886b2805834e6c463e3a33c51f0cc",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740005/result.json": "04aed58a1f874d8a5702c878f51568ab928f851af2e94c562f6b7721106fa7c9",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740005/episodes/00000.json": "ac4115efb7a82abfca63053297a58ed0894aecb41725fdf510e6fbc5e2feb2ba",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620004_workload_740005/episodes/00001.json": "1f29ca62f9f19fdc6935fa3e60bc55bad291b6d15d96364c101f82a659cafa1d",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740001/result.json": "c0dd1d978a83f095bcbff56e373972d338cce8a8710f691a5701440fd2cea623",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740001/episodes/00000.json": "0a7abe0e5c41a22f3becc86d0ac83237580d8f9fb6a10fde3cceebf067282b6a",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740001/episodes/00001.json": "4b477dfc8c02fa6bbf72b16d77d3628a445de927f290b338389a43cfa17a98af",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740002/result.json": "2fb7c1928d0bda8da1e0d43d289f72e6676625788335afb74811ed14bf3864b5",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740002/episodes/00000.json": "fd6894360d7339f5ff8c78113db889b7db4eea8d2647d39a8010a98d5fbc0db5",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740002/episodes/00001.json": "df80b344ed68e7ff13c1490d1a54f038f8b0b490506fc5e04f94cff1d5acbb76",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740003/result.json": "359c3fb4e8c431cd4e836b96351d66893a8f70e355cd311e93c2444c9b11a3e1",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740003/episodes/00000.json": "0db17e556e2bc3241227b41ca3362529e4134c70b66da7c46070203b58ae547e",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740003/episodes/00001.json": "bda493680a58582da9c0c58f2a457ca5373568d02312321962b203c0b6bae094",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740004/result.json": "0ff1a7f500accadd888f3190662ce4887bd49cf13bb4472d1ba6273fd275d678",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740004/episodes/00000.json": "cb307552e90c36bb50c34e69bb4ac623bade5b72057f6158f540626f2096344b",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740004/episodes/00001.json": "23c9f9dd9fd541e09c6f5c933314276a45ddb775a7a612033ea83da32eab689c",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740005/result.json": "0b3ee9961d7f98f505fa2367a9f17b3cfef04500d1d6483080e0464ad05111e3",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740005/episodes/00000.json": "d5d16f445d290c600deece859adf4091de11d081252b6fba557f4d539dfd733f",
+      "vanilla_lower_mlp_upper_uncovered_obs/baseline/seed_620005_workload_740005/episodes/00001.json": "c11dffc43746b5873bd39252ad0444926a950c1b68e61e63c10bfbf32b7f1d88",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740001/result.json": "a6e8b7bab4732f6491648ccc496310405969c376ee1cef03689b523acf59b64a",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740001/episodes/00000.json": "ede4328158314c69481f224bf38a6bde979713eddfd96c102b0c71af743de8ec",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740001/episodes/00001.json": "494878167428f5523e76d51437ec9c8b4d8dc964031449e4feb782bbdd43ddfd",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740002/result.json": "606933ef1f09aed715bba0df9ed6da9631b0eff1ec32d27698acf127ee93e436",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740002/episodes/00000.json": "27c36482d2698d79743ba25368fb9cc714cecab0bd7ca0e8af6066d2958b344e",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740002/episodes/00001.json": "f02ea66efa3127a1ee62d470becf86a6f32284f7df5051d4557db7d9a584fad3",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740003/result.json": "3499b0452196e7707e859945051c116c36e481398c6cafcf852261e8e19a0e66",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740003/episodes/00000.json": "9f6b7df8390a6f6505196ca7db20b7a836db6d2082dda1e2ef9822d71005c8dc",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740003/episodes/00001.json": "099f8acc446ccb35532d1a5340d5af5224cb74b189805d573a8a0f9c5664ba53",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740004/result.json": "c71bff17cef6645817c59eb18366f3a6a5d18984ee3b8dfe9ed11f8c7b846cec",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740004/episodes/00000.json": "09857f33b24235a48cc775f40edade1eac216cf05211198f400c560495f7302c",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740004/episodes/00001.json": "fbeb64fee21d97da1ab660d89327ad0a2426bb2690966a28c47434e251d886b3",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740005/result.json": "84f9cb0bc4e4dd1fb5940f7830ca4755c2bc8d2197d06a9d18b4bd8597d0e855",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740005/episodes/00000.json": "c818f7f6eb8d9a0b29b13201eec53e8673564512cf3fcf2567078cea301edeec",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620001_workload_740005/episodes/00001.json": "f3dc713df4b5433b9229ae6e510e469fffc51ffc5676ff383c35b08ea9870230",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740001/result.json": "65059e79e466f7bf424d235b54fa5957e2d9ce07394b26eaf6cb7c770cb0e416",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740001/episodes/00000.json": "be3059d7aaa66cefa276039ea745e3f196c65515fb66baf08a16e83d28a5e0f6",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740001/episodes/00001.json": "9756cc5f5e3d66144e723ec6fd7912ac0513588bbf24a1fb0ef334a04c142646",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740002/result.json": "1578daffbd87d83142f2abcc8a8d57c03a212506110239a46e0268b17cb21990",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740002/episodes/00000.json": "aaef29dfc41b46ca7c81c1841abdca67fbe105b5a34c405120088ac2cf5f76ca",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740002/episodes/00001.json": "cbd4ecee365de5f3d44af8fa6a5e7d7ef5657b06c45964022b27cdd05a14d49f",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740003/result.json": "f18dddb2c38fe8028535ae924cdac8ee4491c54c7162ea8818e7f96e0b9134c7",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740003/episodes/00000.json": "0c1353789aa64d5981212433dc4513968166020a92f568c77a5eba5dc9079078",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740003/episodes/00001.json": "eabd6ff124083d6abae623addb20bd4374fb75616f546086c7850dc598fb7385",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740004/result.json": "713f86a0b3229fb7e53bacedf9be9580ef0713d8fdd3f1df026e61f7643d3902",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740004/episodes/00000.json": "7b427330b0dd162a101ae50cee237cccd4459c8633e94dcd3d0bd8a48f0a489b",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740004/episodes/00001.json": "dd82051f3ade7777e23b977e19780c00bad83329805aabd1b605aa95a1e7405e",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740005/result.json": "f09a1b212558d2f033ad5fd84fb905e6c2a3cdae96f78ad3d71deb0470cd4a7b",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740005/episodes/00000.json": "a67e24aed6cb0002b7d6134fb0540595e0aebd7d8c77c36cfa2720db49c97d77",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620002_workload_740005/episodes/00001.json": "9a16e4d486b2eed24bdb070e1cd2bc0cee128da7476775a95e6ab2a84d5670e6",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740001/result.json": "61b62d9a0c5ae6bbc41249ff93a0e0a0555121485ef8639762ea979be9cb36c0",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740001/episodes/00000.json": "a0882db338fb845c04445f72e354da8d3884135e65d53a205d2b6134359bf2c5",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740001/episodes/00001.json": "c620ad3232dbe06a5e89a93b4de3a38429885ac3f50b219245d02d2141c647fd",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740002/result.json": "d7ddb88711daf8c1d0df0efa2f821d8c2fc11ce6e05f47f4f46aa0f76942f8a0",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740002/episodes/00000.json": "a6316cdb717443526134bdf7767fb98e7297eedece829f18c9a32a94be1f35de",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740002/episodes/00001.json": "55e1531b91465b6bd66d5d177ad669655f683c52bc115d9e613f294479a46fab",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740003/result.json": "5ae6ebf1d799a3e1a0cc7a67fb67e1b64a90dad8ae0f6871cc37def59ced0eb7",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740003/episodes/00000.json": "5ec390b5b8ec99f55271b815c101a5dc010311db676ec0ab80e8e53c888c75b6",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740003/episodes/00001.json": "fd8f83d838997d21be95fcfadd314aa00ea7424a4c0c59eb1b73a37ce20a845e",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740004/result.json": "85c04c74dd0a38b1ae8f56f021480b615e42246d81c9432031e647b1881bbc4a",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740004/episodes/00000.json": "610becd406a446b24b402cca52c0cabc2867e9eaea12192595e788e45fa48020",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740004/episodes/00001.json": "5e154d8a6f71c9c3b9a71b9d9b3d63d6f737eedccc99b28df51b2e8e7485c966",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740005/result.json": "88ece8390af4112de479205cd5defab082476cc8506b72234947aa7128728765",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740005/episodes/00000.json": "47ade5861822d4997b0c851094118597799680fcec77179be06d921e371a92be",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620003_workload_740005/episodes/00001.json": "5e9e2e2c4f1f0969b1548de49a68dafd56000297aa5e2be079eff65aa2244ce1",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740001/result.json": "adcf802c6de73f664d27ab8cb63bb86fdd0db29bf526fccb8f933c405fd7bac5",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740001/episodes/00000.json": "b16c52818ccaa192df6ae265a4a38024f34481eb7eb47179372716479632a8dd",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740001/episodes/00001.json": "a7f8b1038773fb400031190cfcb7ff11786c0689bc6cdb9373ec2d1ca3f1f5ac",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740002/result.json": "7ea7b83be94306f2e79773513ebc559201553a8db9ea1b66100d2355dc695ec3",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740002/episodes/00000.json": "299ca40a53cbca84dd6674e2445c45b73a723e5858d86f155ef88370e2ae2f04",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740002/episodes/00001.json": "7ebe46e3bdb98653b0a234d12c84fff9b6f018cf68003376472f20e58920ac7b",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740003/result.json": "b19ab43ec5cd3352022b8b28318aaf2045f45358808fde79d3282675d1c8ecea",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740003/episodes/00000.json": "1da5882cff476f8fad993b8a8f8d38a0e771abb599c6f6b88c33e927ee47179f",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740003/episodes/00001.json": "5dd421697da4ce1b0723d85f5e6fd6e5e9bd8d23e132d44638d3c4d06530725c",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740004/result.json": "ca7aa4f5cbda24e7db652c7d3e4957b782ddb209e13396a7bbf11cd44192c851",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740004/episodes/00000.json": "27008aac1c05c94bb9e9dd5cb64f83600cdd08d0a345bb02976baa16d09e1971",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740004/episodes/00001.json": "e0ada2f7f81ca5a11dc87cb22d3f239b3f29324922da7f6a13cf6846961b44df",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740005/result.json": "a131f317cd052e3c2baf4177a18b1a4729ffd9d73cfb67377852f87e543aba6f",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740005/episodes/00000.json": "3bdb6103cde18721523ee4a0a4f457651804d110d65d161ac340d928d8f20f7f",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620004_workload_740005/episodes/00001.json": "cdb95b3086eb91347aca01ea6f14ca0558ce9f290354b501868e18679425c9ff",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740001/result.json": "247bff204140ce0f6370d9edd61596cba250c85c2005c47383030fa47de4e1cf",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740001/episodes/00000.json": "b6a6134097cd0e7f7b813862a046a1801e5d627a8ca4737dfccbd70c72d85e7d",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740001/episodes/00001.json": "9c5adc4dce8fb4cee2db88ae0c1e3439c0cf9c1cdf47d74c3745083b57730139",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740002/result.json": "65b8789fa777ffb1aa95c19abdc9d01a1acfabd78e4ebb57d0a60dbe546036ee",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740002/episodes/00000.json": "aa844b25942b65b6306f0d534d6bd54e9c41c84feb88931e3e68713248af2511",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740002/episodes/00001.json": "07f5415f647b56a45762498af4deed619d465b5bc0d5f6a0cfeec97575b2456d",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740003/result.json": "5756e21ec7f19ed5ed716f0b3d60db8f5efa47d862e80f1470737aad737c2bb3",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740003/episodes/00000.json": "e0cdafc005f50436e0c065d4e752db8a7dd5f8b8962e673fdb9122540d584fb0",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740003/episodes/00001.json": "267516b6fdcb200a1208fad4f104a1912f7eaa143b191128bbe4ac4af9d0b95e",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740004/result.json": "1cbb589c84e1fc6ada3b38609ed6e14468d7869d69a24b327ea889fd5a89fa55",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740004/episodes/00000.json": "91a2a914e1544bdf815f43cfd62d42b9b464cfe8a3523b6e28692db8eba841e0",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740004/episodes/00001.json": "f99fc0fd991c15011d5c5e3f5207ea9d58c136b3b252ae865f21b410da6231e7",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740005/result.json": "e8e97db423812f86e925e689b5964049e79a8adffb1396602c63fc2c4ea1186d",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740005/episodes/00000.json": "8dc102b5da9d27fd5761e769a8cbd23949e885370d4a201dac23a0352f0a4cc9",
+      "vanilla_lower_mlp_upper_uncovered_obs/deadline/seed_620005_workload_740005/episodes/00001.json": "234efbe9a72124179c9f7db477ecdc15b697300f904c681c13f158dd401ba586",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740001/result.json": "c67bd25336ff1361c95941e8c8c543a26dcb240286d18aeb9c3c41b2436d6cbb",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740001/episodes/00000.json": "b2c6bf8c4bd3fd1605649ff815c05e051a750a308e2e580fd85025eb6525c340",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740001/episodes/00001.json": "0944f8985c2681262e9002344e8cd9e112e35e64ca0b48a42877c2f86f8befa9",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740002/result.json": "183766335e5fa09ff1570cd526f4f5da6cf0e580e16013eb153546f756b2b34b",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740002/episodes/00000.json": "bae4777973c89bb9d2419e0a69abfd53c0fe8764bbc7ddf3df865ca10a09f1fd",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740002/episodes/00001.json": "4de0e02cb4b09b8aea1cb87a0ce2a8f1a07005ef52967a18b1f1c80519fcf01f",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740003/result.json": "cdd58f84a423ea9cb59d5d6af07cb02ea6275552479d407d360efb650a5bbfc7",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740003/episodes/00000.json": "70ccd7c4c1e62a240a0e53f457fa0f7739edc3f3a840d79f7d94855f7e310bd0",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740003/episodes/00001.json": "123b7af088fc84dd12ac9f32ad18ab81f5c57a2fc2dacd76c86b049c0450b7fd",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740004/result.json": "22300c5261e4a35f6c82fd6e91328f7a8d7d1aff8574ca67dd6bd501b13c5ed5",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740004/episodes/00000.json": "a7f62dad7f9622a50d0e60d3529970f92e725b8d0b92142049160ad080de1e84",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740004/episodes/00001.json": "5e7ebf0cba15137b9990d6f1ccf74947117a847464e1700c3da47cf2fdca0ef3",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740005/result.json": "790e1a3fe41613c9fc1696b5558ceda80a534b3a64ff60ab8773f35b19a66215",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740005/episodes/00000.json": "e7859a0b99889c9a8cc4cc8bfd5d8cac0ff4b80ae7b1b350b435ede380161bd7",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620001_workload_740005/episodes/00001.json": "5ffd4ec6b3ce6bf306a0ecf93824dd2876b741a24939aa138bb437e000399212",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740001/result.json": "e78ce659ea144179ad4856fdf4f337e584cfe42091fa0de7149837ebe8852d97",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740001/episodes/00000.json": "d1b580bbbfef0cb4efee8721d6f13806d3acb1d75e0751d472d6a5e6f4bdccc3",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740001/episodes/00001.json": "3e561cf94fb7636ba153df3d5be8500035d502d81cd20953517dac4ed2483835",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740002/result.json": "2c09023f824b1e01980f7e5da62dfce6d44fac4d6146e606abe26bfc133dac0f",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740002/episodes/00000.json": "cd099311efdc9539bf556b7bd237a5ab9412982bc888a678c0844a0e40e426f7",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740002/episodes/00001.json": "b012d7a03ca90afdfda9745cdd2722277b49b3ce64f99d75951214d21fd39042",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740003/result.json": "4e061d31eb599e650eff1c5ae1eedf29f1c4524c8f5afa2a1386d77190f5fca6",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740003/episodes/00000.json": "dfe64cec7a3824755fe9acdd5cd3465205966aaa42696abacbdae63cf121bec2",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740003/episodes/00001.json": "707c86589ab69be36fa0ad379e32b9dbbcb743e833b9e2e67355d30f03749b67",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740004/result.json": "c40b6fdb4a087220676cd598758d7bb5b2260b3090893e4d5fff27392bc3cb20",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740004/episodes/00000.json": "82ca2cfec881d2ae17afa32e3e5f839f5fe8bbeed8444337275f4a9a0921d828",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740004/episodes/00001.json": "180ca4e110681395441604d815b5254d2de715716631be92d4ea388b29516e7e",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740005/result.json": "b37b7a856ee99564687ef8fda999372d9efdf5361c9006c3fcaecb25ddbbc58f",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740005/episodes/00000.json": "3f1aa353ef10d2f269737302bce046b554cd2ce33e2a21f1d324d1b9923f8c56",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620002_workload_740005/episodes/00001.json": "290b69030ee8625058aa63f5fc537eafa33f383846fdcea90a7509d7fe039ce4",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740001/result.json": "8ecb70ae8cd5fd269981587c6ae43eaf772fa875489eb0382b932fa5dfc945c8",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740001/episodes/00000.json": "95a4ee020794ce48f342519019d00ff3e7b7e1d0bf908dde4fc5675aa685c49b",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740001/episodes/00001.json": "93e7bfbcb0e72862e192b1984552d614ccfb32e4a8b5fff91df942dc87f744f2",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740002/result.json": "1e9ceb96a8e022810b76110083a2a06ebf8f975e092bc1d3825f3efdaeea5486",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740002/episodes/00000.json": "7d15899cfee6055e513066fb168e728dac5a0bff4e589293184f790c66c86265",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740002/episodes/00001.json": "125988055ad4b248d4ad219f04cc9dab7a12ecb6f3f0ceac5dea8e881ecc15fc",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740003/result.json": "52d5f80e7a8ad0934dbd0e966f39b30bbb00e671893e6b9233f7bbac91a5262e",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740003/episodes/00000.json": "462839ba76f42418ba56bb14e6aa21c2452941ce7ba9bf673404658f93ae5b35",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740003/episodes/00001.json": "3b2a31c5aec73b5b1baffd65bd252e68f30d516cef7df7cab3a42d4879f9c911",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740004/result.json": "260a11bd48dd765335e545ec380a312eccfe84395476861fc1756a0bcda93857",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740004/episodes/00000.json": "5ec31cced2939b841d66cd1d9feff19472f0a6b1ebcb43ac44559a22c0366d47",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740004/episodes/00001.json": "ededa26f9ce7d16d601a0e600032d7cd74bebbe02e494d5ade7b01d7046e476d",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740005/result.json": "a33df340edce96bd8747132f9f1aa7c27f8cba738c196f393d25344c88c8df2d",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740005/episodes/00000.json": "b39fd768335d11e5261fb645a98aeb2cc7634cacac97c413cb5146446489e6bd",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620003_workload_740005/episodes/00001.json": "5f92cb3deb6f14da3b3dc950c4ee678403fad29b87319c52800f3262e234d4b8",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740001/result.json": "f9370c1281135bcaed9d961c36ba870d7e8f655bcff1f67a8074329623ecd80e",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740001/episodes/00000.json": "03d0b9b64cd4c1ef0d34c4882500c38451de63cb0c0621be1348a0e64b0588d3",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740001/episodes/00001.json": "4613e954d4a9f148bbf468d5c2acc3f02e39b760f453732afd722c149041f99b",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740002/result.json": "4363128087c5cde7c9b05ac0fe98def14fa398d8c2883cb797e44436abd25140",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740002/episodes/00000.json": "8515537e1f24dc5f0477b2f1160dad8b9c1820243cdf5dcb62458579600c9165",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740002/episodes/00001.json": "9a1623326cd4a686b76b942f8001ec84ae13289b13bf78266f4fb062e9ff9677",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740003/result.json": "f7c8d7c64c946bfd392e6dcb03668faad26b7982f655dd3139427dc488252cf8",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740003/episodes/00000.json": "0bc4687853ac04ae5c01e94d808db41e82b5657f38eabde80eea656415a293dc",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740003/episodes/00001.json": "cc33e47e22ffa98787dd087c9dd413381e31d2808a767125732df8b93ccd9412",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740004/result.json": "a83690c6455a4522e632c4c41e89c0c047d263c150d498c61f490c5417a62eb5",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740004/episodes/00000.json": "cf658e336dfb588326f77c40ac2a98a169bb69c80cdda25a60d48325ab5c2c91",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740004/episodes/00001.json": "5ea80a48d9c58f6091788069fc342b3b6ca419f7639d5ab5a9eb52cd89a4f27f",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740005/result.json": "7bbb4cc2ef00459dfaed0a6cc289ac25b1de264359a8f743a3e0371ab8caff07",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740005/episodes/00000.json": "fff61f3ab4c7d54a8aa05ecb5c2aa0c6c03a2649564fe401f037352a88e2d7cf",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620004_workload_740005/episodes/00001.json": "a9f8fafe62fe07279c5efb765f0709e36a19f3084b50453dda7816e13f383551",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740001/result.json": "fc0c69f139fa039e578f71af428d8ab1ea9ae43f918c4ecdd10d6c92cfe0bf28",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740001/episodes/00000.json": "9a5899292b5e28026b12fe758201adba2e304ccfc1f0122cf9942a1aa790c049",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740001/episodes/00001.json": "867ec2e7a9eb801dbda5990b553be77d7bd001077141914ede27c69d66ae2794",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740002/result.json": "1b0646fcbe32b052947451b038b11315777dfaaf902b3bf7f1089fe631082ecc",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740002/episodes/00000.json": "690010f3eabf0a42b8b28bd6bcdae33731228d64052c6851b6522804997ba2b1",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740002/episodes/00001.json": "8800ca8bee0dd313c51aac0b71548157008de85656538b15f00a1044ca3d0b7b",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740003/result.json": "2f5048a6a825bc181916837c7cf98dbb33964341553e860763e21df19064ff74",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740003/episodes/00000.json": "59481714d50e7e8480ef5ee2b818697eb84f8341a91a9a404c379bb58ba3d0b3",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740003/episodes/00001.json": "3f3ccb11fcfa81dfadbc0f514d07db511bb277f1f5a37bd2b0560f7f656abc75",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740004/result.json": "f84a11b6bcc69a7eb680c36b76aeb2ca0649ee5d9eb0b0f32e97298d42e1f60d",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740004/episodes/00000.json": "d87d776e2c2208fe5a673249a3ba961a0841cb2101be013ba9b3be71c45539e8",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740004/episodes/00001.json": "9024b4580c9613e2354f8caaa6022cec9c601d872ee88b5e3d5be35838412c92",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740005/result.json": "a7ce01736b769a9bd9200f6f5fff9bcc5fa339245c45f273bb9111325bc8adb7",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740005/episodes/00000.json": "5e0af4543f41462e9b406f15cf8a032804769c27644de8ddccdad6bb02572cd7",
+      "vanilla_lower_mlp_upper_uncovered_obs/ordinary/seed_620005_workload_740005/episodes/00001.json": "53e4a0bd846f8044125b34fa74abc014de8a73e7a704e827bd6603ac48f535c9"
+    }
+  },
+  "limitations": [
+    "No new independent training; no confirmation claim.",
+    "Coordination latency/energy/loss not modeled.",
+    "Five parallel CPU workers, no isolated realtime guarantee.",
+    "Baseline timing includes the shared ideal-coordination adapter.",
+    "Seed-average DSR decomposition must not multiply group mean ratios.",
+    "Only original configuration; no cross-scenario superiority inference."
+  ]
+}

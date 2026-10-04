@@ -1,0 +1,21 @@
+{
+  "protocol": "upper_uncovered_observation_smoke_v1",
+  "purpose": "pilot",
+  "training_seeds": [5341],
+  "workload_seeds": [1709],
+  "training_workload_seed": 1973,
+  "train_episodes": 2,
+  "eval_episodes": 1,
+  "steps": 100,
+  "rollout": 100,
+  "ppo_epochs": 2,
+  "batch_size": 64,
+  "checkpoint_every": 1,
+  "variants": [{
+    "name": "main",
+    "ue_count": 100,
+    "compute_scale": 1.0,
+    "methods": ["lower_no_attention", "lower_mlp_upper_uncovered_obs"]
+  }],
+  "statistical_unit": "smoke only; no performance inference"
+}

@@ -1,0 +1,15 @@
+bash: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8)
+/bin/sh: warning: setlocale: LC_ALL: cannot change locale (C.UTF-8)
+142 /home/PengYanghan/Lunwen/batch-offload-20260928/source/scripts/analysis/batch_offload_diagnostic.py
+    print(json.dumps({'status':'PASS','output':str(args.output),'snapshots':len(snapshots)}))
+
+
+if __name__ == '__main__':
+    main()
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/batch-offload-20260928/source/scripts/analysis/batch_offload_diagnostic.py", line 142, in <module>
+    main()
+  File "/home/PengYanghan/Lunwen/batch-offload-20260928/source/scripts/analysis/batch_offload_diagnostic.py", line 52, in main
+    config.NUM_UES = variant['ue_count']; config.UAV_COMPUTING_CAPACITY *= variant['compute_scale']
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+numpy._core._exceptions._UFuncOutputCastingError: Cannot cast ufunc 'multiply' output from dtype('float64') to dtype('int64') with casting rule 'same_kind'

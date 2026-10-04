@@ -1,0 +1,27 @@
+{
+  "protocol": "chapter5_observation_refinement_smoke_20260928_v1",
+  "purpose": "verification",
+  "training_seeds": [11003],
+  "workload_seeds": [4103],
+  "training_workload_seed": 4517,
+  "train_episodes": 2,
+  "eval_episodes": 1,
+  "steps": 100,
+  "rollout": 100,
+  "ppo_epochs": 1,
+  "batch_size": 32,
+  "checkpoint_every": 1,
+  "statistical_unit": "verification only; no inferential claim",
+  "variants": [
+    {
+      "name": "main",
+      "ue_count": 100,
+      "compute_scale": 1.0,
+      "methods": [
+        "lower_mlp_upper_uncovered_obs",
+        "lower_mlp_upper_uncovered_service_first",
+        "lower_mlp_upper_uncovered_position_only"
+      ]
+    }
+  ]
+}

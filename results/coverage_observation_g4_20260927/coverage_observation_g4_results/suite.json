@@ -1,0 +1,56 @@
+{
+  "plan": {
+    "protocol": "upper_uncovered_observation_pilot_v1",
+    "purpose": "pilot",
+    "training_seeds": [
+      5341,
+      5573,
+      5801,
+      6043,
+      6299
+    ],
+    "workload_seeds": [
+      1709,
+      1753,
+      1801,
+      1847,
+      1901
+    ],
+    "training_workload_seed": 1973,
+    "train_episodes": 200,
+    "eval_episodes": 6,
+    "steps": 1000,
+    "rollout": 1000,
+    "ppo_epochs": 8,
+    "batch_size": 256,
+    "checkpoint_every": 20,
+    "variants": [
+      {
+        "name": "main",
+        "ue_count": 100,
+        "compute_scale": 1.0,
+        "methods": [
+          "lower_no_attention",
+          "lower_mlp_upper_uncovered_obs"
+        ]
+      }
+    ],
+    "statistical_unit": "training seed after averaging paired workloads; evaluation episodes are not independent training replicates",
+    "primary_outcome": "request-weighted DSR over all generated service requests",
+    "secondary_outcomes": [
+      "Admission fraction",
+      "Deadline satisfaction among admitted",
+      "UAV Fleet Total Energy",
+      "Non-flight assignment energy",
+      "Latency per admitted service request",
+      "Fairness",
+      "Effective tasks per MJ"
+    ],
+    "design_note": "The only intended difference is that the upper actor additionally observes currently unadmitted UEs within the pre-existing 460 m sensing radius. The actor tensor size, lower MLP architecture, reward, physical 100 m admission rule, training budget, and paired exogenous scenarios remain the same. This assumes pre-admission UE beacon/request information is available to the UAV controller; it is exploratory, not part of the frozen canonical method.",
+    "decision_rule": "Compare paired seed/workload DSR with 95% crossed-bootstrap interval. Inspect admission, conditional deadline success, energy, and fairness before deciding whether to run a separate untouched confirmation cohort."
+  },
+  "source_hash": "6089feff948dd106e4e138c56d3f808f88aacaa6a6528786306dba7ef42717be",
+  "threads": 4,
+  "git_sha": null,
+  "git_clean": false
+}

@@ -1,0 +1,60 @@
+{
+  "status": "PASS",
+  "study": "chapter4_chapter5_bridge",
+  "source_hash": "bebd4640bbf871bb75792b067a21e9a55f2c04db7e220e6bb40f433812e3733e",
+  "statistical_unit": "training seed after averaging paired workload means",
+  "training_seeds": [
+    10007
+  ],
+  "workload_seeds": [
+    3001
+  ],
+  "evaluation_jobs": 1,
+  "snapshots": 2,
+  "units": [
+    {
+      "training_seed": 10007,
+      "workload_seed": 3001,
+      "snapshots": 2,
+      "online_lower": {
+        "deadline_misses": 15.0,
+        "mean_normalized_latency": 2.333555871692742,
+        "normalized_assignment_energy": 2.548433369457413,
+        "wall_seconds": 0.1493315282277763
+      },
+      "heuristic_control": {
+        "deadline_misses": 16.5,
+        "mean_normalized_latency": 2.82617290309966,
+        "normalized_assignment_energy": 1.8416102638375496,
+        "wall_seconds": 0.10130672669038177
+      },
+      "greedy_single_pass": {
+        "deadline_misses": 14.5,
+        "mean_normalized_latency": 1.8983910582011192,
+        "normalized_assignment_energy": 3.602644705468222,
+        "wall_seconds": 3.9793937536887825
+      },
+      "iterative_base": {
+        "deadline_misses": 14.5,
+        "mean_normalized_latency": 1.8975033078172916,
+        "normalized_assignment_energy": 3.6005359649411504,
+        "wall_seconds": 9.182692016474903
+      },
+      "mc_itr": {
+        "deadline_misses": 14.5,
+        "mean_normalized_latency": 1.8917678977842591,
+        "normalized_assignment_energy": 3.6157591981142057,
+        "wall_seconds": 9.350669188424945,
+        "full_path_wall_seconds": 13.431369668804109
+      }
+    }
+  ],
+  "mc_itr_minus_online_lower_deadline_misses": {
+    "mean_difference": -0.5,
+    "training_seed_t_ci95": null,
+    "seed_mean_differences": [
+      -0.5
+    ]
+  },
+  "interpretation_boundary": "Frozen counterfactuals on candidate-policy trajectories, not online integration or long-run DSR."
+}

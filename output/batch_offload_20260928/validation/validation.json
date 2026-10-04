@@ -1,0 +1,65 @@
+{
+  "status": "IMPLEMENTED_AND_VALIDATED_WITH_PRE_EXISTING_LAYOUT_FAILURES",
+  "source_hash": "5f2ed5f7009672d67528447e2f2bd40a132c5fce176be28553d5e848889e749f",
+  "working_tree": "/Users/wangpengfei/.codex/worktrees/coverage-optimization/wodexuexi",
+  "remote_test_root": "/home/PengYanghan/Lunwen/batch-offload-20260928/source_final",
+  "remote_tests": {
+    "passed": 20,
+    "log": "final_regression.log"
+  },
+  "syntax_files": [
+    "marl_models/offload_mappo/offload_mappo.py",
+    "marl_models/utils.py",
+    "run_canonical_experiment.py",
+    "run_formal_suite.py",
+    "scripts/analysis/batch_offload_analysis.py",
+    "scripts/analysis/batch_offload_diagnostic_suite.py",
+    "scripts/analysis/batch_offload_protocol.py",
+    "scripts/analysis/batch_offload_diagnostic.py",
+    "tests/test_batch_offload_analysis.py",
+    "tests/test_batch_offload_protocol.py",
+    "tests/test_batch_offload.py"
+  ],
+  "git_diff_check": "PASS",
+  "smoke": {
+    "status": "PASS",
+    "groups": 4,
+    "training_episodes_per_group": 2,
+    "evaluation_steps_per_group": 8,
+    "source_matches_local": true
+  },
+  "bridge_smoke": {
+    "status": "PASS",
+    "snapshots": 1,
+    "methods": [
+      "lower_mlp_upper_uncovered_obs",
+      "lower_batch_upper_uncovered_obs",
+      "mc_itr"
+    ],
+    "scientific_evidence": false
+  },
+  "historical_diagnostic": {
+    "status": "PASS",
+    "paired_jobs": 50,
+    "snapshots": 400,
+    "requests_in_snapshots": 6938,
+    "local_reaggregation_matches": true,
+    "historical_source_hash": "bebd4640bbf871bb75792b067a21e9a55f2c04db7e220e6bb40f433812e3733e"
+  },
+  "layout": {
+    "status": "PRE_EXISTING_FAILURES",
+    "details": "layout.json",
+    "new_root_entries": []
+  },
+  "review": "Explicit self-review; not independent review.",
+  "pilot": "NOT_STARTED",
+  "confirmation": "NOT_STARTED",
+  "paper_performance_claims": "UNCHANGED",
+  "git_commit_push": "NOT_PERFORMED",
+  "limitations": [
+    "Smoke runs are implementation checks, not evidence of performance gains.",
+    "Historical diagnostics are descriptive and cannot identify causal effects.",
+    "Full promoted-method snapshot comparison awaits trained candidates.",
+    "Frozen content hash only; not a clean committed formal release."
+  ]
+}
