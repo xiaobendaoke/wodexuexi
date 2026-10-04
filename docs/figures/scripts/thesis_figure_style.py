@@ -21,6 +21,7 @@ from matplotlib.text import Text
 FONT_CANDIDATES = [
     "SimSun",
     "宋体",
+    "Songti SC",
     "AR PL UMing CN",
     "Noto Serif CJK SC",
     "Source Han Serif SC",

@@ -1,0 +1,189 @@
+{
+  "task": "chapter3_chapter4_writing_20261002",
+  "scope": "硕士论文第三章、第四章研究长稿（latex/docs/chap03.tex、chap04.tex）重写与配图；仅最小编译必需改动涉及 notation.tex 与 main.tex 注释",
+  "date": "2026-10-02",
+  "compile": {
+    "command": "cd latex && make main",
+    "result": "pass",
+    "pages_pdf": 71,
+    "undefined_references": 0,
+    "overfull_hboxes": [
+      {
+        "size_pt": 12.516,
+        "location": "main.tex:21 模板版权页",
+        "disposition": "任务范围外既有问题，未改动"
+      },
+      {
+        "size_pt": 6.382,
+        "location": "chap05.tex:47-67",
+        "disposition": "低于 10pt 阈值且属第五章，未改动"
+      }
+    ]
+  },
+  "figures": {
+    "total": 17,
+    "chapter3": [
+      "图3-1_系统与自然覆盖示意图",
+      "图3-2_覆盖与感知几何示意图",
+      "图3-3_单时隙决策时序图",
+      "图3-4_Attention-MAPPO网络与训练结构",
+      "图3-5_原观测与扩展观测对照示意",
+      "图3-6_主场景服务请求结果构成",
+      "图3-7_确认实验训练曲线",
+      "图3-8_确认实验逐种子配对差值",
+      "图3-9_接纳率与接纳后质量配对比较"
+    ],
+    "chapter4": [
+      "图4-1_批量算力共享与迁移外部影响示意",
+      "图4-2_MC-ITR算法流程图",
+      "图4-3_主配置质量能耗耗时对比",
+      "图4-4_相对Iterative-Base配对差值",
+      "图4-5_UE负载敏感性",
+      "图4-6_算力敏感性",
+      "图4-7_Exact-Small验证与快照构成",
+      "图4-8_候选轨迹快照桥接对比"
+    ],
+    "formats": ["PDF 矢量", "PNG 450dpi"],
+    "dual_write": ["docs/figures/", "latex/docs/figures/"],
+    "scripts": [
+      "docs/figures/scripts/generate_chapter34_figures_20261002.py",
+      "docs/figures/scripts/generate_2026_revision_figures.py（图3-2/3-6/3-7 输出名更新为新编号）"
+    ],
+    "panel_alignment_gate": "9 pass, 0 fail（figure_panel_alignment.json）",
+    "text_collision_qa": "全部 ok（figure_text_qa.json；overflow 项均为坐标轴刻度标签，非正文碰撞）",
+    "orphan_note": "docs/figures/图3-3_主配置性能工作点.* 为其他任务产物，未被引用，按要求未删除"
+  },
+  "visual_acceptance": {
+    "method": "ghostscript 渲染 main.pdf 印刷页 14-41 为 PNG（.tmp/chapter34_pdfpages_20261002/pdfpage_01-28.png），逐页人工检查",
+    "visual_judge_status": "本任务的 presentations/documents/pdf 等 visual-judge 子代理本次会话不可用（account-connection-unavailable），按系统提示的回退条款改为人工逐页检查",
+    "pages_checked": 28,
+    "pages_pass": 28,
+    "issues_found_and_fixed": [
+      {
+        "page_printed": 32,
+        "figure": "图4-2_MC-ITR算法流程图",
+        "issue": "预算检查框误写为“评估数≥10^4 或 轮次≥10^3”；10^4 穷举预算仅属 Exact-Small，MC-ITR 只有 max_rounds=1000 轮次上限（utils/assignment_search.py best_improvement 无评估数预算）",
+        "fix": "改为“预算检查：轮次达到 R_max=10^3？”，重生成图、重编译、重渲染该页复核通过"
+      }
+    ],
+    "known_cosmetic": "印刷页 26 图3.7 与图3.8 之间有浮动留白；印刷页 40 为章末短页；长稿阶段可接受"
+  },
+  "number_traceability": [
+    {
+      "claim": "瓶颈诊断 DSR 0.2459、未覆盖率 48.14%、占失败 63.84%；快照 362→441（+5.13pp）、能耗 +22.86%",
+      "source": "output/bottleneck_diagnostic_20260927/validation/bottleneck_review.json",
+      "unit": "25 个完整评估单元；50 个冻结快照",
+      "boundary": "描述性失败归因；局部搜索非可部署策略"
+    },
+    {
+      "claim": "修正版全量 hierarchical 0.2428 vs lower_no_attention 0.2609，差 -1.81pp CI [-2.40,-1.17]",
+      "source": "results/canonical_all_20260923_fixed/marl/analysis.json",
+      "unit": "5 训练种子 × 10 工作负载",
+      "boundary": "不能声称双注意力最优"
+    },
+    {
+      "claim": "确认实验 DSR 0.2444→0.2793（+3.49pp，t CI [+2.44,+4.54]，10/10 种子）；接纳率 0.4996→0.6189；接纳后满足率 0.4919→0.4537",
+      "source": "coverage 工作树 results/coverage_observation_confirmation_20260927/confirmation_paired_comparison.json 与 evaluation_units.csv",
+      "unit": "10 新训练种子 × 5 新工作负载，20 次训练/100 评估任务/600 episode",
+      "boundary": "仅 100 UE 主场景；460m 预接纳观测的部署可得性未验证"
+    },
+    {
+      "claim": "pilot +3.30pp CI [+1.29,+5.33]",
+      "source": "coverage 工作树 results/coverage_observation_g4_20260927/pilot_paired_comparison.json",
+      "unit": "5×5 配对",
+      "boundary": "探索性，不独立支撑结论"
+    },
+    {
+      "claim": "同信息 Vanilla 对照 +0.35pp、CI 跨零",
+      "source": "coverage 工作树 results/batch_offload_20260928/pilot/",
+      "unit": "5 训练种子 × 5 工作负载",
+      "boundary": "既不主张注意力优势，也不声称缺少同信息对照"
+    },
+    {
+      "claim": "上层观测维度 325=77+8+240；PPO γ0.99/λ_GAE0.95/clip0.2/熵0.005/lr3e-4/rollout1000/8轮/batch256；注意力 8 头 64 维",
+      "source": "config.py、marl_models/attention.py",
+      "unit": "源码常量",
+      "boundary": "执行时配置，非实验结果"
+    },
+    {
+      "claim": "上层奖励权重 1.0/1.0/0.5/5.0/1.0/0.5（JFI/时延/能耗/离线率/DSR/MBS 负载）",
+      "source": "environment/env.py:708-717",
+      "unit": "源码",
+      "boundary": "r_mbs 以减项进入（系数 0.5）"
+    },
+    {
+      "claim": "下层约束为违例驱动自适应惩罚：DSR 目标 0.18、MBS 上限 0.03、η=0.1、ρ_max=10",
+      "source": "config.py、run_hierarchical_mappo_experiment.py:373-374",
+      "unit": "源码",
+      "boundary": "论文正文禁称拉格朗日（代码变量名除外）"
+    },
+    {
+      "claim": "主配置每快照超时 2.908/2.243/2.228/2.055；能耗 1.278/1.814/1.872/2.128；耗时 0.103/0.941/1.970/2.574s",
+      "source": "results/canonical_all_20260920/chapter4/analysis.json 与 evaluation_units.csv",
+      "unit": "10 工作负载种子 × 60 快照，600 快照/方法",
+      "boundary": "固定快照口径；耗时不含共享贪心初值；2.574s 超过 1s 时隙，不支持实时部署"
+    },
+    {
+      "claim": "MC-ITR−Iterative-Base 超时差 -0.173 [-0.217,-0.127]；-Greedy -0.188 [-0.233,-0.137]；-Heuristic -0.853 [-1.068,-0.643]；时延差 +0.0004 [-0.0019,+0.0031]；能耗差 +0.256 [+0.214,+0.298]",
+      "source": "results/canonical_all_20260920/chapter4/analysis.json（bootstrap 5000 次、rng 2026、工作负载种子配对）",
+      "unit": "10 工作负载种子配对",
+      "boundary": "图4-4 以同一 bootstrap 程序复算并与归档断言一致（mc_itr 面板 1e-9 容差内）"
+    },
+    {
+      "claim": "九个敏感性变体配对区间均为负；耗时 0.747s(UE60)→5.793s(UE140)",
+      "source": "results/canonical_all_20260920/chapter4/analysis.json",
+      "unit": "每变体 10 工作负载种子",
+      "boundary": "各设置独立重估，非泛化证据；逐项区间非同时覆盖"
+    },
+    {
+      "claim": "Exact-Small 600 快照=513 空+83 单+4 双；三分量 0.025/0.0608/0.1542 与穷举一致；8.2ms vs 5.2ms；85.5% 空",
+      "source": "results/canonical_all_20260920/chapter4/evaluation_units.csv、analysis.json",
+      "unit": "独立三 UE 配置 600 快照",
+      "boundary": "实现一致性检查，非主配置全局最优性证据"
+    },
+    {
+      "claim": "全部十个配置 MC-ITR 局部最优验证比例 100%，预算退出未实际发生",
+      "source": "results/canonical_all_20260920/chapter4/evaluation_units.csv（local_optimality_verified_fraction=1.000）",
+      "unit": "10 配置全部评估单元",
+      "boundary": "描述本次批次搜索行为，非终止性之外的新性质"
+    },
+    {
+      "claim": "桥接：MC-ITR 8.235 vs 在线下层 10.695（-2.460，t CI [-2.707,-2.213]，10/10 种子）；能耗 2.519 vs 2.035；20.751s（含贪心初值）vs 0.012s",
+      "source": "results/bridge_20260928/full/analysis.json",
+      "unit": "10 训练种子 × 5 工作负载，400 冻结快照",
+      "boundary": "反事实分配不回写；计时口径与主表不同，不混排"
+    },
+    {
+      "claim": "MC-ITR max_rounds=1000、Exact-Small 预算 10^4、tau=0 严格字典序、E_assign 归一化 25000J、MBS 不参与均分",
+      "source": "run_chapter4_suite.py:43、utils/assignment_search.py、utils/chapter4.py PROTOCOL",
+      "unit": "源码",
+      "boundary": "协议常量"
+    }
+  ],
+  "claim_boundaries_enforced": [
+    "第三章未主张同信息预算下的注意力结构优势（D-A 区间跨零），也未声称缺少同信息对照",
+    "第四章未主张全局最优、长时序 DSR 增益或实时可部署；主实验与桥接口径分列",
+    "全文统一 G/A/S 计数口径并注明分母轻微策略依赖与跨单元平均不可拆乘",
+    "下层约束写作违例驱动自适应惩罚，未使用“拉格朗日”表述",
+    "无凭空构造的轨迹、注意力权重、损失/奖励曲线或搜索 trace 数据"
+  ],
+  "missing_data_not_produced": [
+    {
+      "item": "真实 UAV 轨迹图",
+      "reason": "实验未记录逐时隙位置序列（C 类，需远程冻结模型重放）",
+      "impact": "第三章无轨迹可视化；图3-1/3-2 为标注“示意”的几何图"
+    },
+    {
+      "item": "注意力权重热图",
+      "reason": "训练与评估未导出注意力权重；需远程加载 checkpoint 前向（C 类）",
+      "impact": "第三章仅以结构与观测槽位图说明注意力机制，无权重证据"
+    },
+    {
+      "item": "MC-ITR 逐轮搜索 trace 图",
+      "reason": "逐轮目标值序列保存在远程逐快照 JSON，本次未同步分析（C 类）",
+      "impact": "第 4.7 节只报告终止原因、验证比例与耗时分布，无收敛曲线"
+    }
+  ],
+  "layout_check": "python3 scripts/maintenance/check_layout.py: Root layout OK",
+  "git": "未提交、未推送"
+}

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Generate the 2026-09-28 revision figures for chapters 3-5.
 
+2026-10-02: 图3-3/图3-4 renamed to 图3-6/图3-7 (训练曲线增加奖励面板);
+图4-1 moved to generate_chapter34_figures_20261002.py as the enhanced 图4-3.
+
 Data sources are archived result files only; no experiment is rerun:
   - output/bottleneck_diagnostic_20260927/validation/bottleneck_review.json (main worktree)
   - results/canonical_all_20260920/chapter4/analysis.json (main worktree)
@@ -140,77 +143,41 @@ def fig_failure_decomposition() -> None:
     ax.set_xlabel("占全部实际生成服务请求的比例")
     ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.32), ncol=3, fontsize=8, frameon=False)
     ax.set_title(f"未覆盖请求占全部失败请求的 {share*100:.1f}%", fontsize=9)
-    save(fig, "图3-3_主场景失败构成")
+    save(fig, "图3-6_主场景服务请求结果构成")
 
 
 def fig_confirmation_curves(coverage_root: Path) -> None:
-    """Chap3: confirmation training DSR curves, candidate vs strong baseline."""
+    """Chap3: confirmation training curves (DSR and mean reward), candidate vs strong baseline."""
     path = coverage_root / "results" / "coverage_observation_confirmation_20260927" / "training_curves.csv"
     series: dict[str, dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
+    rewards: dict[str, dict[int, list[float]]] = defaultdict(lambda: defaultdict(list))
     with path.open() as f:
         for row in csv.DictReader(f):
             series[row["method"]][int(row["training_seed"])].append(float(row["training_DSR"]))
+            rewards[row["method"]][int(row["training_seed"])].append(float(row["mean_training_reward"]))
 
-    fig, ax = plt.subplots(figsize=(5.2, 3.2))
+    fig, axes = plt.subplots(1, 2, figsize=(8.2, 3.0))
     styles = {CANDIDATE: ("#3D6FB6", "候选（扩展观测）"), STRONG_BASELINE: ("#717784", "下层无注意力基线")}
-    for method, (color, label) in styles.items():
-        arr = np.array([series[method][s] for s in sorted(series[method])])
-        x = np.arange(arr.shape[1])
-        mean = arr.mean(axis=0)
-        std = arr.std(axis=0)
-        ax.plot(x, mean, color=color, lw=1.4, label=label)
-        ax.fill_between(x, mean - std, mean + std, color=color, alpha=0.18)
-        ax.text(x[-1] + 3, mean[-1], f"{mean[-1]:.3f}", color=color, fontsize=8, va="center")
-    ax.set_xlim(0, 235)
-    ax.set_xlabel("训练 episode")
-    ax.set_ylabel("训练 DSR（每 episode）")
-    ax.grid(True, alpha=0.6)
-    ax.legend(fontsize=8, loc="lower right")
-    save(fig, "图3-4_确认实验训练收敛曲线")
-
-
-def fig_chapter4_comparison() -> None:
-    """Chap4: fixed-snapshot method comparison (misses / energy / solver time)."""
-    analysis = json.loads(
-        (REPO_ROOT / "results" / "canonical_all_20260920" / "chapter4" / "analysis.json").read_text()
-    )
-    metrics = analysis["metrics"]
-    idx_miss = metrics.index("deadline_misses")
-    idx_energy = metrics.index("normalized_assignment_energy")
-    idx_time = metrics.index("solver_wall_seconds")
-
-    sums: dict[str, list[list[float]]] = defaultdict(list)
-    for unit in analysis["units"]:
-        if unit["variant"] == "main":
-            sums[unit["method"]].append(unit["mean"])
-    means = {m: np.mean(np.array(v), axis=0) for m, v in sums.items()}
-
-    order = [
-        ("heuristic_control", "Heuristic-Control"),
-        ("greedy_single_pass", "Greedy-Single-Pass"),
-        ("iterative_base", "Iterative-Base"),
-        ("mc_itr", "MC-ITR"),
-    ]
-    panels = [
-        (idx_miss, "每快照平均超时数", "%.3f"),
-        (idx_energy, "归一化分配能耗", "%.3f"),
-        (idx_time, "搜索耗时 / s", "%.2f"),
-    ]
-
-    fig, axes = plt.subplots(1, 3, figsize=(8.6, 2.9))
-    colors = {"Heuristic-Control": "#9AA0A6", "Greedy-Single-Pass": "#D8A448",
-              "Iterative-Base": "#53A6A6", "MC-ITR": "#3D6FB6"}
-    for ax, (idx, title, fmt) in zip(axes, panels):
-        names = [label for _, label in order]
-        vals = [means[key][idx] for key, _ in order]
-        bars = ax.bar(names, vals, color=[colors[n] for n in names], width=0.62)
-        for b, v in zip(bars, vals):
-            ax.text(b.get_x() + b.get_width() / 2, v, fmt % v, ha="center", va="bottom", fontsize=7.5)
+    for ax, src, ylabel, title in [
+            (axes[0], series, "训练 DSR（每 episode）", "(a) 训练 DSR"),
+            (axes[1], rewards, "平均训练奖励（每 episode）", "(b) 平均训练奖励")]:
+        for method, (color, label) in styles.items():
+            arr = np.array([src[method][s] for s in sorted(src[method])])
+            x = np.arange(arr.shape[1])
+            mean = arr.mean(axis=0)
+            std = arr.std(axis=0)
+            ax.plot(x, mean, color=color, lw=1.4, label=label)
+            ax.fill_between(x, mean - std, mean + std, color=color, alpha=0.18)
+            ax.text(x[-1] + 3, mean[-1], f"{mean[-1]:.3f}", color=color, fontsize=8, va="center")
+        ax.set_xlim(0, 235)
+        ax.set_xlabel("训练 episode")
+        ax.set_ylabel(ylabel)
         ax.set_title(title, fontsize=9)
-        ax.tick_params(axis="x", labelsize=6.8, rotation=18)
-        ax.margins(y=0.18)
-        ax.grid(True, axis="y", alpha=0.6)
-    save(fig, "图4-1_固定快照卸载方法对比")
+        ax.grid(True, alpha=0.6)
+    axes[0].legend(fontsize=8, loc="lower right")
+    axes[0].text(0.0, -0.30, "实线：10 个训练种子的均值；阴影：种子间 ±1 SD（描述训练动态，不构成收敛性证明）",
+                 transform=axes[0].transAxes, fontsize=7, color="#717784")
+    save(fig, "图3-7_确认实验训练曲线")
 
 
 def fig_per_seed_dsr_diff(coverage_root: Path) -> None:
@@ -293,7 +260,6 @@ def main() -> None:
     fig_coverage_geometry()
     fig_failure_decomposition()
     fig_confirmation_curves(args.coverage_root)
-    fig_chapter4_comparison()
     fig_per_seed_dsr_diff(args.coverage_root)
     fig_dsr_decomposition(args.coverage_root)
 

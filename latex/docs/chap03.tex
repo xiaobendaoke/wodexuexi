@@ -1,32 +1,52 @@
 % !TeX root = ../main.tex
-\chapter{自然覆盖约束下的上层轨迹控制与需求观测}
+\chapter{自然覆盖约束下的需求感知轨迹控制}
 \label{cha:upper-trajectory}
 
-\section{研究问题与系统口径}
+\section{研究动机与评价口径}
 \label{sec:upper-problem}
 
-本文考虑 $700\,\mathrm{m}\times700\,\mathrm{m}$ 区域内的五架无人机（UAV）、一百个用户设备（UE）和一个宏基站（MBS）。仿真以 $1\,\mathrm{s}$ 为一个时隙，UAV 在固定高度上进行二维水平运动，最大速度为 $15\,\mathrm{m/s}$，两机间保持不小于 $200\,\mathrm{m}$ 的安全距离。UAV 的服务覆盖半径为 $100\,\mathrm{m}$，感知半径为 $460\,\mathrm{m}$。本章讨论的轨迹策略只改变 UAV 的位置和可用观测；除特别说明外，不改变无线链路、计算执行、缓存及电池模型。
+\subsection{研究问题的提出}
+\label{sec:upper-motivation}
 
-每个时隙，UE 先形成当前请求，再根据 UAV 的当前位置确定接纳关系。一个服务请求只有在 UE 位于至少一架 UAV 的 $100\,\mathrm{m}$ 覆盖圆内时，才由最近的覆盖 UAV 接纳；否则记为未接纳，本时隙不进入后续卸载处理。环境先处理本时隙的已接纳请求，再执行上层轨迹动作并生成下一时隙观测。因此，当前上层动作通过改变后续时隙的覆盖几何发挥作用，而不追溯改变本时隙的接纳资格。未接纳请求仍计入端到端服务指标的分母。设评估单元内实际生成的服务请求数为 $G$，自然接纳数为 $A$，在截止时间前完成的请求数为 $S$，则
+多无人机辅助的移动边缘计算（MEC）系统中，任务卸载决策的有效性以一个容易被忽视的前置条件为前提：用户设备（UE）的请求必须先被某架无人机（UAV）的服务覆盖所接纳，才存在“卸载到何处执行”的问题。早期同类研究与本文的旧版协议曾采用\emph{强制接纳}口径，即把未被任何 UAV 覆盖的请求强行关联到最近的 UAV 处理。该口径下系统处理率恒为 $100\%$，掩盖了覆盖不足造成的失败，也使轨迹优化的真实作用无法显现。本文改用\emph{自然覆盖接纳}口径：只有位于至少一架 UAV 服务半径内的 UE 请求才被接纳，未覆盖请求不被强制处理，但仍计入服务指标的分母。在这一口径下，轨迹控制不再只是影响链路质量的“优化项”，而是决定多少请求能够进入服务流程的“准入门”，这构成本章的研究动机。
+
+本章研究的问题是：在固定物理覆盖半径与既有卸载机制下，上层轨迹策略能否通过改善覆盖几何提高端到端截止期满足率；更具体地，轨迹策略能否“看见”尚未被接纳的服务需求，并据此主动移动。研究困难在于三点：其一，覆盖改善的效果要经过请求接纳、卸载执行两个环节才体现为端到端指标，因果链条长；其二，传统的 UAV 观测只包含已关联（已覆盖）UE 的信息，策略在结构上无法感知未覆盖需求，覆盖不足时缺乏改进依据；其三，任何观测扩展都引入额外信息假设，其收益必须与信息可得性代价分开陈述。
+
+\subsection{统一计数口径与 DSR 分解}
+\label{sec:dsr-decomposition}
+
+本文考虑的仿真场景为 $700\,\mathrm{m}\times700\,\mathrm{m}$ 区域内的 $5$ 架 UAV、$100$ 个 UE 和 $1$ 个宏基站（MBS）。每个时隙，UE 形成当前请求后，环境按 UAV 当前位置确定接纳关系：一个服务请求只有在 UE 位于至少一架 UAV 的覆盖圆内时，才由最近的覆盖 UAV 接纳；否则记为未接纳，本时隙不进入后续卸载处理。设一个评估单元内\emph{实际生成}的服务请求数为 $G$，自然接纳数为 $A$，在截止时间前完成的请求数为 $S$，则截止期满足率（DSR）定义为
 \begin{equation}
     \mathrm{DSR}=\frac{S}{G}
-    =\frac{A}{G}\frac{S}{A},
+    =\frac{A}{G}\cdot\frac{S}{A},
     \qquad G>0,\ A>0 .
     \label{eq:current-dsr-decomp}
 \end{equation}
-其中 $A/G$ 是服务请求接纳率，$S/A$ 是已接纳请求的截止期满足率。统计时先在同一评估单元内累加请求计数，再计算比例；零分母按实验实现记为零。跨评估单元的平均 DSR 不应直接写成两个平均比率之积。这个分解揭示了轨迹控制与卸载决策的不同作用：上层首先影响请求能否被接纳，下层进一步影响已接纳请求能否按时完成。
+其中 $A/G$ 为服务请求接纳率，$S/A$ 为已接纳请求的截止期满足率。统计时先在同一评估单元内累加请求计数、再计算比例；分母为零时按实验实现记为零。需要强调的是，由于比例运算不可交换平均次序，跨评估单元的平均 DSR 不等于“平均接纳率”与“平均接纳后满足率”之积，本文所有 DSR 数值均按请求计数汇总后直接计算，分解中的两个因子仅用于机制解释。
 
-需要指出，$G$ 是\emph{实际生成}的服务请求数，并非与策略完全无关的固定潜在需求。仿真会先抽取潜在请求；当 UE 电池低于阈值时，当前请求转为能量请求。因此，策略引起的电池演化可能使各方法的实际服务请求分母略有不同。现有主比较使用预先规定的 $S/G$ 口径，且配对方法共享潜在随机抽样流；第五章另以潜在服务请求为共同固定分母做稳健性复核。该复核不改变原主指标，也不能使原指标的分母成为完全外生变量。
+式~\eqref{eq:current-dsr-decomp} 的分解揭示了上下两层决策的不同作用：上层轨迹控制首先影响 $A/G$，即请求能否被接纳；下层卸载决策进一步影响 $S/A$，即已接纳请求能否按时完成。端到端 DSR 是两者之积，任一层级的短板都会成为瓶颈。
 
-\section{系统模型}
+\subsection{分母的策略依赖性边界}
+\label{sec:denominator-boundary}
+
+$G$ 是\emph{实际生成}的服务请求数，并非与策略完全无关的固定潜在需求。仿真先抽取潜在请求，再按 UE 电池状态定型：当 UE 电池低于临界阈值时，当前潜在请求转为能量请求而非服务请求。因此，轨迹与卸载策略通过影响 UE 的能量补给的消耗，间接影响后续时隙的服务请求生成数量，使各方法的实际分母略有差异。现有主比较使用预先规定的 $S/G$ 口径，且配对方法共享同一潜在随机抽样流，保证差异来源仅为策略对电池演化的影响；第五章另以各方法共同的潜在服务请求数为固定分母作稳健性复核，该复核不改变本章与第五章的原定主指标结论，也不意味着原分母是完全外生变量。
+
+\section{系统模型与时序}
 \label{sec:system-model}
 
 \subsection{网络与轨迹模型}
 \label{sec:network-trajectory-model}
 
-$N=5$ 架 UAV 在高度 $H=100\,\mathrm{m}$ 的平面上飞行，服务 $M=100$ 个地面 UE；MBS 固定于区域中心 $(350,350,30)\,\mathrm{m}$。第 $t$ 个时隙（时长 $\tau=1\,\mathrm{s}$）内，UAV $u$ 的位置为 $\mathbf{q}_u(t)\in[0,700]^2$。上层策略输出二维方向动作，环境将其映射为位移并将速度限制在 $v_{\max}=15\,\mathrm{m/s}$ 以内；任意两架 UAV 的水平距离不得小于 $d_{\min}=200\,\mathrm{m}$，违反时由环境执行冲突消解。UE 在地面随机游走，每个时隙位移不超过 $15\,\mathrm{m}$；为产生非均匀业务分布，$85\%$ 的 UE 围绕两个半径 $100\,\mathrm{m}$、间距不小于 $400\,\mathrm{m}$ 的热点分布。
+$N=5$ 架 UAV 在高度 $H=100\,\mathrm{m}$ 的平面上飞行，服务 $M=100$ 个地面 UE；MBS 固定于区域中心 $(350,350,30)\,\mathrm{m}$。系统总体布局与自然覆盖关系如图~\ref{fig:ch3-overview} 所示。第 $t$ 个时隙（时长 $\tau=1\,\mathrm{s}$）内，UAV $u$ 的水平位置为 $\mathbf{q}_u(t)\in[0,700]^2$。上层策略输出二维归一化方向动作，环境将其映射为位移并将速度限制在 $v_{\max}=15\,\mathrm{m/s}$ 以内；任意两架 UAV 的水平距离不得小于 $d_{\min}=200\,\mathrm{m}$，违反时由环境执行冲突消解，策略网络本身不保证可行性。UE 在地面随机游走，每个时隙位移不超过 $15\,\mathrm{m}$；为产生非均匀业务分布，$85\%$ 的 UE 围绕两个半径 $100\,\mathrm{m}$、间距不小于 $400\,\mathrm{m}$ 的热点分布。
 
-UAV $u$ 的水平覆盖圆半径为 $R_c=100\,\mathrm{m}$，只有落入该圆的 UE 才会被接纳；其感知半径 $R_s=460\,\mathrm{m}$ 决定邻居与 UE 观测的可见范围，两者的几何关系如图~\ref{fig:ch3-geometry} 所示。每架 UAV 的计算能力在 $40\sim90\,\mathrm{GHz}$ 内抽样，缓存在 $120\sim180\,\mathrm{MB}$ 内抽样；MBS 计算能力为 $200\,\mathrm{GHz}$。UAV 飞行功率 $P_{\mathrm{move}}=300\,\mathrm{W}$、悬停功率 $P_{\mathrm{hover}}=150\,\mathrm{W}$，飞行能耗由轨迹决定；与卸载决策相关的通信与计算能耗在第四章给出。
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.72\textwidth]{docs/figures/图3-1_系统与自然覆盖示意图}
+    \bicaption{系统总体布局与自然覆盖接纳示意。三角形为 UAV，实线圆为 $100\,\mathrm{m}$ 服务覆盖范围，虚线圆为其中一架 UAV 的 $460\,\mathrm{m}$ 感知范围；绿色圆点为被覆盖 UE，红色叉为未被覆盖 UE，其请求本时隙不被接纳。图中位置为示意性布局，非真实轨迹快照}{Schematic of the system layout and natural-coverage admission (illustrative positions, not a recorded trajectory snapshot)}
+    \label{fig:ch3-overview}
+\end{figure}
+
+UAV $u$ 的水平覆盖圆半径为 $R_c=100\,\mathrm{m}$，只有落入该圆的 UE 才会被接纳；其感知半径 $R_s=460\,\mathrm{m}$ 决定邻居与 UE 观测的可见范围。两者的几何关系如图~\ref{fig:ch3-geometry} 所示：感知范围明显大于覆盖范围，这一差距正是第~\ref{sec:coverage-observation}~节预接纳观测设计的物理基础——UAV 可以“看到”尚不在服务半径内的 UE，但只有移动后才能将其纳入服务。每架 UAV 的计算能力在 $40\sim90\,\mathrm{GHz}$ 内抽样，缓存容量在 $120\sim180\,\mathrm{MB}$ 内抽样；MBS 计算能力为 $200\,\mathrm{GHz}$。UAV 飞行功率 $P_{\mathrm{move}}=300\,\mathrm{W}$、悬停功率 $P_{\mathrm{hover}}=150\,\mathrm{W}$；与卸载决策相关的通信与计算能耗模型在第四章给出。
 
 \begin{figure}[!htbp]
     \centering
@@ -38,7 +58,7 @@ UAV $u$ 的水平覆盖圆半径为 $R_c=100\,\mathrm{m}$，只有落入该圆�
 \subsection{请求与电池模型}
 \label{sec:request-battery-model}
 
-每个时隙，每个 UE 先从共享的潜在随机流中抽取一次请求：按 Zipf 指数 $\beta=0.8$ 的流行度分布在 $25$ 类服务与 $50$ 个内容中抽取请求标识；服务请求的输入大小在 $1\sim5\,\mathrm{MB}$ 内均匀抽取，截止时间在 $0.65\sim2.10\,\mathrm{s}$ 内均匀抽取，优先级在 $\{1,2,3\}$ 内均匀抽取，每字节所需 CPU 周期数在 $1200\sim2800$ 内按服务类型固定。抽取结果先记为\emph{潜在请求}；随后按 UE 当前电池状态定型：若电池电量低于临界阈值 $B_{\mathrm{low}}=50\,\mathrm{J}$（容量 $B_{\max}=500\,\mathrm{J}$），当前请求转为能量请求，否则按标识定型为服务请求或内容请求。UE 静态功耗为 $0.01\,\mathrm{W}$；UAV 以 $50\,\mathrm{W}$ 的无线能量传输功率向关联 UE 补能，能量采集效率为 $0.8$。这一定型规则意味着实际生成的服务请求数 $G$ 轻微依赖于策略对 UE 电池的间接影响，第~\ref{sec:upper-problem}~节已说明相应的统计处理方式。
+每个时隙，每个 UE 先从共享的潜在随机流中抽取一次请求：按 Zipf 指数 $\beta=0.8$ 的流行度分布在 $25$ 类服务与 $50$ 个内容中抽取请求标识；服务请求的输入大小在 $1\sim5\,\mathrm{MB}$ 内均匀抽取，截止时间在 $0.65\sim2.10\,\mathrm{s}$ 内均匀抽取，优先级在 $\{1,2,3\}$ 内均匀抽取，每字节所需 CPU 周期数按服务类型在 $1200\sim2800$ 内固定。抽取结果先记为\emph{潜在请求}；随后按 UE 当前电池状态定型：若电池电量低于临界阈值 $B_{\mathrm{low}}=50\,\mathrm{J}$（容量 $B_{\max}=500\,\mathrm{J}$），当前请求转为能量请求，否则按标识定型为服务请求或内容请求。UE 静态功耗为 $0.01\,\mathrm{W}$；UAV 以 $50\,\mathrm{W}$ 的无线能量传输（WPT）功率向关联 UE 补能，能量采集效率为 $0.8$。这一定型规则意味着实际生成的服务请求数 $G$ 轻微依赖于策略对 UE 电池的间接影响，第~\ref{sec:denominator-boundary}~小节已说明相应的统计处理方式。
 
 \subsection{信道与速率模型}
 \label{sec:channel-model}
@@ -54,6 +74,18 @@ UAV $u$ 的水平覆盖圆半径为 $R_c=100\,\mathrm{m}$，只有落入该圆�
     \label{eq:edge-rate}
 \end{equation}
 其中 $n_u$ 为关联到 UAV $u$ 的 UE 数。UAV-UAV 协作链路与 UAV-MBS 回传链路分别占用带宽 $B^{\mathrm{inter}}=20\,\mathrm{MHz}$ 与 $B^{\mathrm{backhaul}}=0.75\,\mathrm{MHz}$，速率按同一香农形式计算。受限的回传带宽使“全部回传 MBS”策略在主场景中天然受限，这一点将在第五章的非学习参照结果中体现。
+
+\subsection{单时隙决策时序}
+\label{sec:slot-timeline}
+
+为避免对“观测—决策—执行”次序的歧义，图~\ref{fig:ch3-timeline} 按仿真实现的实际执行顺序给出单个时隙内的七个阶段。时隙 $t$ 开始时，环境已在上一个时隙末尾生成各 UE 的当前请求并完成基于当前位置的接纳判定（S0）；随后下层卸载策略对每架 UAV 接纳的请求逐请求选择执行位置（S1），环境按批量执行模型完成传输与计算（S2，模型细节见第四章）；上层轨迹策略随后输出飞行动作（S3），环境执行位移、边界与最小机间距冲突消解（S4）；能耗结算与奖励、指标计算在 S5 完成；最后在 S6 更新缓存、移动 UE、生成下一时隙请求与观测。这一次序意味着：上层动作不改变本时隙的接纳资格，而是通过改变后续时隙的覆盖几何发挥作用；上层观测中的 UE 请求信息来自上一时隙末生成的当前请求。本章讨论的“本地执行”均指由接纳该请求的 UAV 本地计算，而非 UE 端计算。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{docs/figures/图3-3_单时隙决策时序图}
+    \bicaption{单时隙内的决策与执行时序（按仿真实现顺序）。S0 的请求生成与接纳发生在上一时隙末尾；上层轨迹动作只影响后续时隙的覆盖几何}{Decision and execution timeline within one slot, following the simulator implementation order}
+    \label{fig:ch3-timeline}
+\end{figure}
 
 \subsection{公平性指标}
 \label{sec:fairness-model}
@@ -98,52 +130,253 @@ $J\in(0,1]$，越接近 $1$ 表示各 UE 获得的服务越均衡。该指标同
     \end{tabular}
 \end{table}
 
-\section{上层决策建模}
-\label{sec:upper-observation}
+\section{上层轨迹控制的 Dec-POMDP 建模}
+\label{sec:upper-dec-pomdp}
 
-上层轨迹控制被建模为分散式部分可观测马尔可夫决策过程：每架 UAV 是一个智能体，基于局部观测独立决策，训练阶段采用集中式评价。每个时隙，UAV $u$ 的观测由三部分组成：（i）自身状态，包括二维位置与 $75$ 维缓存向量；（ii）至多 $4$ 架邻居 UAV 的相对位置（以感知半径归一化）；（iii）至多 $30$ 个 UE 槽位，每个槽位包含相对位置、当前请求五元特征（类型、大小、标识、截止时间、优先级）与电量，共 $8$ 维。智能体输出 $[-1,1]^2$ 内的二维连续动作，经环境映射为受速度、边界与最小机间距约束的位移。
+\subsection{建模动机}
+\label{sec:dec-pomdp-motivation}
 
-策略与价值网络采用交叉注意力结构：以自身状态为查询，分别对邻居 UAV 状态与 UE 状态做 $8$ 头注意力聚合，嵌入维度为 $64$，聚合结果接入全连接策略头与价值头。训练使用 MAPPO：广义优势估计系数 $0.95$，裁剪系数 $0.2$，熵系数 $0.005$，折扣因子 $0.99$，演员与评论家学习率均为 $3\times10^{-4}$。下层请求级卸载在第五章的端到端实验中另行实现。
+五架 UAV 的轨迹决策相互耦合：一架 UAV 的移动同时改变自身的覆盖集合、邻居的接入负载与全局干扰结构，且单机只能观测感知半径内的局部信息。将上层控制建模为分散式部分可观测马尔可夫决策过程（Dec-POMDP）是自然的：每架 UAV 是一个智能体，基于局部观测独立决策，训练阶段再利用全局信息进行集中式评价（CTDE），兼顾训练稳定性与分布式执行的可部署性。需要说明的是，本文采用标准的 MAPPO 框架与已有的交叉注意力结构，不声称提出新的强化学习理论；本章的方法贡献在于观测与评价口径的设计，算法本身为成熟组件的组合。
 
-覆盖观测候选方法保持网络输入维度、训练算法和 $100\,\mathrm{m}$ 物理接纳规则不变，仅扩展上层预动作观测：先按距离放入已覆盖 UE，再以距离顺序补入 $460\,\mathrm{m}$ 感知范围内尚未被任何 UAV 接纳的 UE，直到 $30$ 个固定槽位用满。候选方法因此能够看到尚未服务、但可能通过未来移动覆盖的需求。该改动是\emph{额外信息假设}，不是扩大通信或服务半径。当前仿真假定预动作时可得到这些 UE 的位置、当前请求特征及电量，尚未模拟上报时延、丢失和能耗；其现实可获取性属于后续验证问题。
+\subsection{观测、动作与状态转移}
+\label{sec:obs-action}
 
-\section{上层瓶颈诊断与观测实验}
-\label{sec:upper-evidence}
-
-自然覆盖修正版全量实验先暴露了原始双注意力设计的局限：在一百 UE 主配置下，完整分层方法的 DSR 为 $0.2428$，下层改用无注意力模型后为 $0.2609$。两者按配对交叉重采样得到的完整方法减强基线的差值为 $-1.81$ 个百分点，$95\%$ 区间为 $[-2.40,-1.17]$ 个百分点。因此，不能把下层注意力视为已验证的 DSR 增益来源。后续实验将下层无注意力方法作为强基线，并寻找更直接的端到端瓶颈。
-
-对完整评估单元的失败分解如图~\ref{fig:ch3-failure} 所示：在强基线的完整评估中，未覆盖请求占全部实际生成服务请求的 $48.1\%$，占全部失败请求的 $63.84\%$。这是描述性诊断，不单独证明改变观测一定提高 DSR；它给出了优先检验上层需求感知的理由。随后进行的五训练种子探索性 pilot 中，仅扩大上层未接纳 UE 观测，DSR 相对强基线提高约 $3.30$ 个百分点。由于 pilot 用于发现候选，结论以新的训练和工作负载种子进行独立确认。
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.8\textwidth]{docs/figures/图3-3_主场景失败构成}
-    \bicaption{主场景实际生成服务请求的结果构成（强基线，瓶颈诊断批次）}{Outcome composition of generated service requests in the main setting (strong baseline, diagnostic batch)}
-    \label{fig:ch3-failure}
-\end{figure}
+每个时隙，UAV $u$ 的局部观测 $o_u$ 由三组特征构成，维度汇总于表~\ref{tab:ch3-observation}：（i）\textbf{自身状态}，包括二维位置与 $75$ 维缓存占用向量，共 $77$ 维；（ii）\textbf{邻居 UAV}，至多 $4$ 架邻居的相对位置（以感知半径归一化），共 $4\times2=8$ 维；（iii）\textbf{UE 槽位}，至多 $30$ 个槽位，每个槽位包含 UE 相对位置、当前请求五元特征（类型、大小、标识、截止时间、优先级）与电量，共 $8$ 维；三组拼接后单智能体观测维度为 $325$。空槽位以零填充并配合掩码屏蔽。智能体动作 $a_u$ 为 $[-1,1]^2$ 内的二维连续向量，经环境映射为受最大速度、区域边界与最小机间距约束的位移；约束违反由环境在执行阶段消解，策略输出本身不做可行性保证。状态转移由 UE 随机游走、请求生成、批量卸载执行与 UAV 动力学共同决定，对单个智能体而言是部分可观测且非平稳的。
 
 \begin{table}[!htbp]
     \centering
-    \bicaption{独立确认实验的主场景结果}{Main-setting results of the independent confirmation}
-    \label{tab:upper-confirmation}
-    \begin{tabular}{lccc}
+    \bicaption{上层单智能体观测构成（原观测；扩展观测见第~\ref{sec:coverage-observation}~节）}{Composition of the upper-layer single-agent observation}
+    \label{tab:ch3-observation}
+    \footnotesize
+    \begin{tabular}{llcl}
         \toprule
-        方法 & DSR & 接纳率 & 接纳后按时完成率 \\
+        观测组 & 内容 & 维度 & 说明 \\
         \midrule
-        下层无注意力强基线 & 0.2444 & 0.4996 & 0.4919 \\
-        扩展上层观测候选 & 0.2793 & 0.6189 & 0.4537 \\
+        自身状态 & 二维位置、缓存向量 & $77$ & $2+75$ 维 \\
+        邻居 UAV & 相对位置 & $4\times2=8$ & 感知范围内至多 4 架 \\
+        UE 槽位 & 相对位置、请求特征、电量 & $30\times8=240$ & 固定槽位、零填充加掩码 \\
+        \midrule
+        合计 &  & $325$ &  \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-独立确认使用十个新的训练种子、五个新的工作负载种子；每个已训练检查点在每个工作负载上评估六个 episode。表~\ref{tab:upper-confirmation} 中候选方法的 DSR 高出 $3.49$ 个百分点，以训练种子为独立重复的配对 $t$ 区间为 $[2.44,4.54]$ 个百分点，十个训练种子的平均差值均为正。图~\ref{fig:ch3-training} 给出该批次两种方法的训练 DSR 曲线：候选从训练早期起稳定高于基线，差距在约一百个 episode 后基本保持，说明增益并非来自训练末段的偶然波动。接纳率提高约 $11.93$ 个百分点；与此同时，接纳后按时完成率下降约 $3.82$ 个百分点，其训练种子配对 $95\%$ 区间为 $[-7.52,-0.12]$ 个百分点。后一个指标属于机制与权衡分析，未作为经过多重比较校正的独立主结论。结果说明，在该仿真设置中，更多请求被纳入服务足以提高总体 DSR，但新增接纳的请求也加重了后续服务压力。
+\subsection{奖励设计}
+\label{sec:upper-reward}
+
+上层奖励采用线性组合形式，引导策略在服务质量、能耗与公平性之间折中：
+\begin{equation}
+    r = W_{\mathrm{fair}}\,J - W_{\mathrm{lat}}\,\bar{T} - W_{\mathrm{energy}}\,\bar{E}
+        - W_{\mathrm{off}}\,\rho_{\mathrm{off}} + W_{\mathrm{dsr}}\,\mathrm{dsr}
+        - 0.5\,\rho_{\mathrm{mbs}},
+    \label{eq:upper-reward}
+\end{equation}
+其中 $J$ 为式~\eqref{eq:jfi} 的公平性指数，$\bar{T}$、$\bar{E}$ 分别为归一化平均时延与能耗，$\rho_{\mathrm{off}}$ 为 UE 离线比例，$\mathrm{dsr}$ 为当前时隙的截止期满足情况，$\rho_{\mathrm{mbs}}$ 为 MBS 负载比例；各权重为 $W_{\mathrm{fair}}=1.0$、$W_{\mathrm{lat}}=1.0$、$W_{\mathrm{energy}}=0.5$、$W_{\mathrm{off}}=5.0$、$W_{\mathrm{dsr}}=1.0$，MBS 负载项系数为 $0.5$（减项）。该奖励是工程化的多目标整形信号，各项权重经调试确定；第~\ref{sec:upper-evidence}~节的实验将表明，奖励整形本身不是本文性能增益的来源，候选方法与对照使用完全相同的奖励。
+
+\section{Attention-MAPPO 上层实现}
+\label{sec:attention-mappo}
+
+\subsection{网络结构}
+\label{sec:attention-structure}
+
+策略与价值网络的结构如图~\ref{fig:ch3-architecture} 所示。观测先按表~\ref{tab:ch3-observation} 的三组分别做线性嵌入，映射到 $64$ 维向量；随后交叉注意力提取器以自身状态为查询（query），分别对邻居 UAV 嵌入与 UE 嵌入做 $8$ 头注意力聚合，刻画 UAV-UAV 关系（避让与负载互补）与 UAV-UE 关系（覆盖与服务需求），输出定长特征。策略头（Actor）输出二维动作分布的均值，$5$ 架 UAV 共享同一组策略参数，使训练样本按智能体数扩充并保证行为一致性；价值头（Critic）为集中式，输入全局状态，仅训练时使用。该结构使网络输入维度与 UAV、UE 的具体数量解耦（固定槽位加注意力聚合），但本文实验均在固定规模主场景进行，不主张跨规模泛化能力。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.85\textwidth]{docs/figures/图3-4_确认实验训练收敛曲线}
-    \bicaption{独立确认实验的训练 DSR 曲线（十个训练种子的均值与标准差）}{Training DSR curves of the independent confirmation (mean and std over ten training seeds)}
+    \includegraphics[width=0.95\textwidth]{docs/figures/图3-4_Attention-MAPPO网络与训练结构}
+    \bicaption{上层 Attention-MAPPO 的网络与训练结构。实线为前向信息流，虚线为仅训练时使用的集中式评价与参数更新；执行阶段每架 UAV 仅用自身局部观测}{Network and training structure of the upper-layer Attention-MAPPO}
+    \label{fig:ch3-architecture}
+\end{figure}
+
+\subsection{训练算法}
+\label{sec:ppo-training}
+
+训练采用集中式训练、分布式执行（CTDE）的 MAPPO。每个 rollout 收集 $1000$ 步（一个完整 episode）经验后，以广义优势估计（GAE）计算优势
+\begin{equation}
+    \hat{A}_t=\sum_{l=0}^{T-t-1}(\gamma\lambda_{\mathrm{GAE}})^l\,\delta_{t+l},
+    \qquad
+    \delta_t=r_t+\gamma V_\phi(s_{t+1})-V_\phi(s_t),
+    \label{eq:gae}
+\end{equation}
+其中 $\gamma=0.99$ 为折扣因子，$\lambda_{\mathrm{GAE}}=0.95$。策略参数 $\theta$ 按裁剪替代目标更新：
+\begin{equation}
+    L^{\mathrm{CLIP}}(\theta)=\hat{\mathbb{E}}_t\!\left[
+      \min\!\big(\rho_t(\theta)\hat{A}_t,\,
+      \mathrm{clip}(\rho_t(\theta),1-\varepsilon,1+\varepsilon)\hat{A}_t\big)\right],
+    \label{eq:ppo-clip}
+\end{equation}
+其中 $\rho_t(\theta)=\pi_\theta(a_t|o_t)/\pi_{\theta_{\mathrm{old}}}(a_t|o_t)$ 为重要性比率，$\varepsilon=0.2$；另加系数 $0.005$ 的熵正则项维持探索。价值网络按裁剪的均方误差更新，演员与评论家学习率均为 $3\times10^{-4}$，梯度范数截断为 $0.5$。主要超参数列于表~\ref{tab:ch3-ppo}，训练流程如算法~\ref{alg:upper-mappo} 所示。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{上层 MAPPO 主要超参数}{Main hyperparameters of the upper-layer MAPPO}
+    \label{tab:ch3-ppo}
+    \footnotesize
+    \begin{tabular}{llll}
+        \toprule
+        超参数 & 取值 & 超参数 & 取值 \\
+        \midrule
+        折扣因子 $\gamma$ & $0.99$ & GAE 系数 $\lambda_{\mathrm{GAE}}$ & $0.95$ \\
+        裁剪系数 $\varepsilon$ & $0.2$ & 熵系数 & $0.005$ \\
+        演员/评论家学习率 & $3\times10^{-4}$ & 梯度范数截断 & $0.5$ \\
+        rollout 长度 & $1000$ 步 & 更新轮数 & $8$ \\
+        小批量大小 & $256$ & 注意力头数 / 嵌入维 & $8$ / $64$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{algorithm}[!htbp]
+    \caption{上层 Attention-MAPPO 训练流程}
+    \label{alg:upper-mappo}
+    \KwIn{环境实例、训练种子、episode 数 $E$}
+    \KwOut{共享策略参数 $\theta$ 与价值参数 $\phi$}
+    初始化 $\theta,\phi$\;
+    \For{$e\leftarrow 1$ \KwTo $E$}{
+        重置环境，获取各 UAV 初始观测 $\{o_u\}$\;
+        \For{$t\leftarrow 1$ \KwTo $1000$}{
+            各 UAV 以共享策略 $\pi_\theta$ 采样动作 $a_u\sim\pi_\theta(\cdot|o_u)$\;
+            环境执行下层卸载、位移与冲突消解，返回奖励 $r_t$ 与下一观测\;
+            将 $(o_u,a_u,r_t)$ 与集中式价值 $V_\phi(s_t)$ 写入缓冲区\;
+        }
+        按式~\eqref{eq:gae} 计算优势 $\hat{A}_t$ 与回报\;
+        \For{$k\leftarrow 1$ \KwTo $8$}{
+            按小批量 $256$ 以式~\eqref{eq:ppo-clip} 更新 $\theta$，以裁剪均方误差更新 $\phi$\;
+        }
+    }
+\end{algorithm}
+
+下层请求级卸载策略与上层同时存在但结构独立：本章及第五章的候选与强基线均采用\emph{无注意力}的请求级 MAPPO 下层，两层使用相同配置、分别训练（参数不共享、不互相冻结）。下层的质量感知动作掩码与违例驱动自适应惩罚机制服务于 DSR 目标与 MBS 负载上限的权衡，其细节与端到端评价在第五章给出。
+
+\section{预接纳需求观测设计}
+\label{sec:coverage-observation}
+
+\subsection{设计动机与依据}
+\label{sec:obs-motivation}
+
+第~\ref{sec:upper-evidence}~节将给出的瓶颈诊断表明，主场景中未覆盖是失败的主要来源。原始上层观测的 UE 槽位只填充\emph{已关联（已覆盖）}UE：当某区域长期未被覆盖时，其 UE 根本不进入任何 UAV 的观测，策略在结构上缺乏“向未服务需求移动”的依据，只能依赖奖励中的离线惩罚间接纠偏。观测设计的思路由此产生：既然感知半径（$460\,\mathrm{m}$）远大于覆盖半径（$100\,\mathrm{m}$），UAV 在物理上具备感知尚未覆盖 UE 的条件，则可将这部分“可见但未服务”的需求显式提供给上层策略。
+
+\subsection{槽位填充规则}
+\label{sec:slot-filling}
+
+候选方法保持网络结构、输入维度、训练算法与 $100\,\mathrm{m}$ 物理接纳规则完全不变，仅修改上层预动作观测的槽位填充规则，如图~\ref{fig:ch3-obs-compare} 所示：先按距离升序放入已覆盖 UE，再以距离升序补入 $460\,\mathrm{m}$ 感知范围内\emph{尚未被任何 UAV 接纳}的 UE，直至 $30$ 个固定槽位用满；超出槽位的 UE 仍不可见，槽位特征维度与掩码规则不变。这一规则的实现对应配置项 \texttt{UPPER\_UE\_OBSERVATION\_MODE} 的扩展模式，只改动观测组装代码，不改动环境与网络。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{docs/figures/图3-5_原观测与扩展观测对照示意}
+    \bicaption{原观测与扩展观测的槽位填充规则对照（同一几何示意）。原观测仅含已覆盖 UE，扩展观测以距离顺序补入感知范围内尚未接纳的 UE；图为规则示意，非注意力权重或真实记录}{Slot-filling rules of the original and the extended observation under the same illustrative geometry}
+    \label{fig:ch3-obs-compare}
+\end{figure}
+
+\subsection{额外信息假设与边界}
+\label{sec:obs-assumption}
+
+该改动是\emph{额外信息假设}，不是扩大通信或服务半径。当前仿真假定上层决策前可无损获得感知范围内未接纳 UE 的位置、当前请求特征与电量，尚未模拟这些信息的上报时延、丢包与能耗；其现实可获取性（例如 UE 周期性信标的监听成本）属于后续验证问题。相应地，本章结论的适用范围限定为“在该信息可得的仿真假设下”轨迹策略的 DSR 表现，第~\ref{sec:upper-results}~节将配套给出同信息预算对照的结果，以分离“信息增加”与“结构变化”两种解释。
+
+\section{上层瓶颈诊断与实验协议}
+\label{sec:upper-evidence}
+
+\subsection{从全量对比到瓶颈诊断}
+\label{sec:bottleneck}
+
+自然覆盖修正版全量实验（$5$ 训练种子 $\times$ $10$ 工作负载）先暴露了原始双注意力设计的局限：在 $100$ UE 主配置下，完整分层方法（上层注意力＋下层注意力）的 DSR 为 $0.2428$，而下层改用无注意力模型的变体为 $0.2609$，配对交叉重采样的差值为 $-1.81$ 个百分点、$95\%$ 区间 $[-2.40,-1.17]$。因此不能把下层注意力视为已验证的增益来源，后续实验一律以下层无注意力配置为强基线。进一步的失败分解如图~\ref{fig:ch3-failure} 所示：在强基线的 $25$ 个完整评估单元中，DSR 为 $0.2459$，未覆盖请求占全部实际生成服务请求的 $48.14\%$，占全部失败请求的 $63.84\%$——失败的第一来源不是卸载执行质量，而是请求根本未被接纳。同一诊断还在 $50$ 个冻结快照上用双步质量掩码局部搜索复核卸载层余量：成功请求数由 $362$ 增至 $441$（$+5.13$ 个百分点），但分配能耗上升 $22.86\%$，说明卸载层仍有空间但非主要矛盾。该诊断是描述性的，不单独证明改变观测必然提高 DSR；它给出的是优先检验“上层需求感知”这一假设的理由。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{docs/figures/图3-6_主场景服务请求结果构成}
+    \bicaption{主场景实际生成服务请求的结果构成（下层无注意力强基线，瓶颈诊断批次，25 个评估单元的计数汇总）}{Outcome composition of generated service requests in the main setting (strong baseline, diagnostic batch)}
+    \label{fig:ch3-failure}
+\end{figure}
+
+\subsection{两阶段实验协议}
+\label{sec:ch3-protocol}
+
+为控制“探索数据复用为确认证据”的风险，观测扩展实验分两个阶段，协议对照见表~\ref{tab:ch3-protocol}。第一阶段为探索性 pilot：$5$ 个训练种子 $\times$ $5$ 个工作负载种子，候选与强基线在相同工作负载上配对训练与评估，用于判断该方向是否值得确认。第二阶段为独立确认：使用\emph{全新的} $10$ 个训练种子与\emph{全新的} $5$ 个工作负载种子，每个训练出的检查点在每个工作负载上评估 $6$ 个 episode，共 $20$ 次训练、$100$ 个评估任务、$600$ 个评估 episode。两阶段中候选与强基线的下层配置相同且分别训练，唯一差异是上层观测的槽位填充规则；统计上以训练种子为独立重复单位，同一检查点上的工作负载与 episode 只用于构成任务指标，不充作独立训练重复。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{覆盖观测两阶段实验协议}{Two-stage protocol of the coverage-observation experiments}
+    \label{tab:ch3-protocol}
+    \footnotesize
+    \begin{tabular}{lcc}
+        \toprule
+        协议要素 & 探索性 pilot & 独立确认 \\
+        \midrule
+        训练种子 & 5 个（与历史批次共用） & 10 个（全新） \\
+        工作负载种子 & 5 个 & 5 个（全新） \\
+        每检查点评估 & 5 工作负载 $\times$ 6 episode & 5 工作负载 $\times$ 6 episode \\
+        训练/评估规模 & 10 次训练 / 50 任务 & 20 次训练 / 100 任务 / 600 episode \\
+        方法差异 & \multicolumn{2}{c}{仅上层观测槽位填充规则；下层配置相同、分别训练} \\
+        统计单位 & \multicolumn{2}{c}{训练种子；工作负载配对} \\
+        结论用途 & 方向筛选，不独立支撑结论 & 本章主证据 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{结果与机制分析}
+\label{sec:upper-results}
+
+\subsection{主结果}
+\label{sec:ch3-main-results}
+
+pilot 阶段，候选相对强基线的 DSR 差值为 $+3.30$ 个百分点（交叉重采样 $95\%$ 区间 $[+1.29,+5.33]$），方向为正，触发独立确认。确认阶段结果列于表~\ref{tab:upper-confirmation}：候选 DSR 由 $0.2444$ 提高到 $0.2793$，差值 $+3.49$ 个百分点，以训练种子为独立单位的配对 $t$ 检验 $95\%$ 区间为 $[+2.44,+4.54]$ 个百分点；$10$ 个训练种子的平均差值全部为正（图~\ref{fig:ch3-seed-diff}），$100$ 个配对评估任务中 $49$ 个为正。图~\ref{fig:ch3-training} 给出两方法的训练曲线：候选从训练早期起稳定高于基线，差距在约一百个 episode 后保持，说明增益并非来自训练末段的偶然波动。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{独立确认实验的主场景结果（10 个新训练种子 $\times$ 5 个新工作负载）}{Main-setting results of the independent confirmation}
+    \label{tab:upper-confirmation}
+    \footnotesize
+    \begin{tabular}{lccc}
+        \toprule
+        指标 & 强基线（原观测） & 候选（扩展观测） & 配对差值 [95\% 区间] \\
+        \midrule
+        DSR $S/G$ & $0.2444$ & $0.2793$ & $+0.0349$ [$+0.0244$,$+0.0454$]$^{\mathrm{a}}$ \\
+        接纳率 $A/G$ & $0.4996$ & $0.6189$ & $+0.1193$ \\
+        接纳后按时完成率 $S/A$ & $0.4919$ & $0.4537$ & $-0.0382$ [$-0.0752$,$-0.0012$]$^{\mathrm{a}}$ \\
+        每任务 UAV 机队能耗差 & \multicolumn{2}{c}{候选相对基线} & $-3.50\times10^{6}\,\mathrm{J}$ \\
+        Jain 公平性差 & \multicolumn{2}{c}{候选相对基线} & $+0.0786$ \\
+        \bottomrule
+    \end{tabular}
+    \begin{minipage}{0.9\textwidth}
+        \footnotesize $^{\mathrm{a}}$ 以训练种子为独立单位的配对 $t$ 区间。DSR 差值为本章主结论；接纳后完成率下降为机制分析指标，未单独作多重比较校正。各列均值由请求计数汇总得到，平均 DSR 不等于平均接纳率与平均完成率之积。
+    \end{minipage}
+\end{table}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{docs/figures/图3-7_确认实验训练曲线}
+    \bicaption{独立确认实验的训练曲线（10 个训练种子的均值 $\pm$ 标准差）：(a) 训练 DSR；(b) 平均训练奖励}{Training curves of the independent confirmation (mean $\pm$ std over ten training seeds)}
     \label{fig:ch3-training}
 \end{figure}
 
-\section{本章结论与证据边界}
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.75\textwidth]{docs/figures/图3-8_确认实验逐种子配对差值}
+    \bicaption{独立确认实验中候选相对强基线的逐训练种子 DSR 差值（每个种子为 5 个工作负载差值的平均；区间为配对 $t$ 95\% 区间）}{Per-training-seed paired DSR differences of the candidate against the strong baseline}
+    \label{fig:ch3-seed-diff}
+\end{figure}
 
-本章确立了自然覆盖接纳下的端到端评价口径，并在一百 UE 仿真主场景中验证：给上层策略提供预接纳需求信息，可在下层架构、配置与训练规则相同的对照中提高 DSR。候选与基线的上下层策略分别训练，下层参数并未冻结或共享。该结果支持继续检验完整方法，却不能证明注意力结构相对同信息预算替代方法的独立优势，也不能证明 $460\,\mathrm{m}$ 预接纳请求信息无需代价即可取得。第四章在固定轨迹与历史快照上研究卸载决策；第五章则检验完整在线策略的端到端表现。
+\subsection{机制分解：接纳增加与质量稀释}
+\label{sec:ch3-mechanism}
+
+图~\ref{fig:ch3-admission-quality} 将 DSR 增益按式~\eqref{eq:current-dsr-decomp} 分解到两个因子。候选的接纳率由 $0.4996$ 升至 $0.6189$（$+11.93$ 个百分点），与“上层看见未覆盖需求后主动向需求移动”的设计预期一致；与此同时，接纳后按时完成率由 $0.4919$ 降至 $0.4537$（$-3.82$ 个百分点，配对 $t$ 区间 $[-7.52,-0.12]$）。两者方向相反：DSR 的提高完全来自接纳因子的扩大，且新纳入的请求中相当部分未能按时完成——接纳扩展稀释了已接纳请求的平均服务质量。这一权衡与第~\ref{sec:bottleneck}~小节快照诊断中“卸载层改善伴随能耗上升”的现象相互印证：覆盖扩大后，系统瓶颈从“请求进不来”部分转移为“进来的请求服务压力变大”。能耗与公平性方面，候选的每任务 UAV 机队能耗平均降低约 $3.50\times10^{6}\,\mathrm{J}$，Jain 指数提高约 $0.0786$，即增益未以能耗或公平性恶化为代价；但这两项为描述性指标，未设独立假设检验。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.92\textwidth]{docs/figures/图3-9_接纳率与接纳后质量配对比较}
+    \bicaption{确认实验中接纳率与接纳后按时完成率的配对比较（每点为一对同工作负载的评估任务均值）。两因子反向变化，DSR 增益来自接纳因子}{Paired comparison of the admission fraction and the deadline satisfaction among admitted requests}
+    \label{fig:ch3-admission-quality}
+\end{figure}
+
+\subsection{两个不能下的结论}
+\label{sec:ch3-non-claims}
+
+\textbf{其一，不能声称注意力结构本身带来增益。} 候选与强基线的差异是“上层观测内容”，两者都使用注意力上层。为分离“信息增加”与“注意力结构”的作用，另设同信息 Vanilla 对照（扩展观测＋无注意力上层，探索性批次）：其相对原观测注意力候选的 DSR 差值为 $+0.35$ 个百分点，训练种子配对区间跨越零。因此现有证据支持的是“预接纳需求信息”的价值，而非“注意力架构在同信息预算下更优”。\textbf{其二，不能声称缺乏对照。} 同信息 Vanilla 对照已存在，只是其结果不支持注意力优势的独立主张；pilot 与确认两阶段的机制细节（如接纳后质量下降幅度）也不完全相同，本文以独立确认批次为主证据。
+
+此外，第~\ref{sec:obs-assumption}~小节的信息可得性问题依然开放：实验假定 $460\,\mathrm{m}$ 内未接纳 UE 信息可无代价获得，现实部署中的信令开销与时延尚未建模，相关结论不能外推为部署有效性。
+
+\section{本章小结}
+\label{sec:ch3-summary}
+
+本章在自然覆盖接纳口径下研究了上层轨迹控制。主要工作与结论包括：（i）建立了 $G/A/S$ 统一计数与 DSR 双因子分解口径，并明确了分母轻微策略依赖的处理方式；（ii）给出了上层 Dec-POMDP 建模与 Attention-MAPPO 实现，算法本身为标准组件组合；（iii）由失败分解诊断出“未覆盖”是主场景失败的主要来源（占失败请求的 $63.84\%$），据此设计了只改观测、不改物理规则的预接纳需求观测；（iv）经 pilot 与独立确认两阶段验证，扩展观测使 DSR 提高 $3.49$ 个百分点（$95\%$ 区间 $[+2.44,+4.54]$，$10/10$ 种子为正），增益来自接纳率提高，同时伴随接纳后服务质量的稀释。结论的边界同样明确：不支持注意力结构在同信息预算下的独立优势，不证明预接纳信息的现实无代价可得，结果限于该 $100$ UE 仿真主场景。
+
+本章解决了“请求能否进入服务”的问题；对于已接纳的请求，“在何处执行、以什么代价执行”仍有独立于轨迹的优化空间。第四章把轨迹与请求固定为历史快照，在这一受控条件下研究请求级卸载决策的质量余量与计算代价，其结论再以快照桥接方式与第五章的在线学习下层对照。
