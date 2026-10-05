@@ -1,79 +1,229 @@
 % !TeX root = ../main.tex
-\chapter{考虑批量资源竞争的截止期优先任务卸载优化}
+\chapter{考虑跨机资源竞争的截止期优先计算任务分配}
 \label{cha:fixed-offload}
 
-\section{问题定义与适用范围}
+\section{固定快照问题与受控比较范围}
 \label{sec:fixed-snapshot-problem}
 
-第三章表明，覆盖与接纳是端到端服务的前置条件；而即使 UAV 位置与请求集合给定，已接纳请求的\emph{执行位置}仍显著影响其能否按时完成。本章研究固定轨迹与历史状态下的请求级卸载决策：在每个被采集的\emph{请求快照}上，UAV 位置、缓存状态、信道条件与已接纳请求集合全部冻结，各卸载方法对同一批请求独立给出分配，由统一的生产仿真执行模型评估其完成时延与能耗。本章不改变 UAV 运动策略，也不将任何候选分配的反事实执行结果回写环境——快照上的分配不影响下一时隙的状态。
+第三章研究无人机集群如何通过空间部署接纳地面需求，本章进一步研究集群如何分担已经接纳的计算任务。请求接入某架无人机后，其执行节点仍可选择来源本机、允许的协作无人机或地面 MBS。执行位置会改变回源、机间转发、机载计算负载和能耗。该问题不仅涉及为单个请求选择最快节点，还涉及选择后整批请求如何分享各机算力。一项迁移可能使目标请求提前完成，也可能同时使迁入节点上多个原有请求超时。因此，跨机任务分配需要在同一执行模型中考虑全批次影响。
 
-这一设定划定了本章结论的边界：（i）快照采集的参考历史由既定启发式驱动，是“合理但不针对任何候选方法优化”的历史，不等于第三章或第五章任一学习策略实际产生的轨迹；（ii）由于反事实分配不回写，本章结果衡量的是\emph{给定状态下的单步决策质量}，不能直接解释为不同卸载方法长期闭环运行的 DSR 差异；（iii）也正因为冻结了状态，本章可以在完全相同的问题上比较四种方法并引入穷举精确解，这种受控比较在闭环学习中难以做到。本章要回答的问题是：在批量资源竞争的真实执行模型下，以截止期满足为第一优先级的字典序搜索，相对现有启发式能取得多大的单步质量余量，代价是什么。
+这里的任务分配以不可拆分的计算请求为对象，关联无人机承担接纳与上传职责，执行节点承担计算职责。二者可以不同，因而集群具有在空间接入后继续协作分工的机会。不同无人机的算力、缓存与链路条件不同，地面 MBS 则作为六节点服务系统中的计算支撑。本章保持这些既有资源规则，研究任务从一个执行节点转移到另一个节点时的系统后果；这与为飞行器分配巡检航点、侦察目标或编队位置具有不同的任务语义。
 
-设快照中自然覆盖接纳的服务请求集合为 $\mathcal{M}$，请求 $m$ 的完成时延与截止时间分别为 $T_m$ 与 $D_m$。卸载决策用分配向量 $\mathbf{a}$ 表示：每个请求从本地 UAV（即接纳该请求的 UAV 本地计算）、MBS 或硬可行的协作 UAV 中选择执行节点；不可行目标（如无所需缓存且不满足协作条件的邻居）不进入候选域。共享的通信、计算、缓存及批量执行规则由生产仿真环境统一执行，不为某一对比方法另写物理模型。
+本章固定 UAV 和 UE 的历史几何、当前缓存、电量、请求集合以及配置，对同一快照上的候选分配作独立反事实评价。每次评价从完全相同的状态开始，用生产环境执行整批请求，得到完成时延和 UAV 分配能耗。候选执行结果不回写用于采样的参考历史，下一快照仍来自同一参考控制轨迹。通过这一受控设计，可以把“选择了不同执行目标”与“经过不同历史已产生不同状态”区分开来。
 
-\section{批量卸载执行模型}
+固定快照的研究问题是：在自然接纳、最终批量负载均分的条件下，以减少超时请求为第一优先级的跨节点迁移搜索，能否比自身代价启发式给出更好的集群当步分工，以及这种质量余量需要多少能耗和求解时间。该问题与在线强化学习不同。在线下层必须在很短时间内从观测产生动作，且动作会通过缓存和 UE 电池影响后续运行；快照求解器可以对大量候选逐一重评估，却不会改变后续状态。本章方法据此定位为集群任务分配的受控分析与离线质量参照。
+
+本章主实验的快照沿 Heuristic-Control 参考历史采集，不能视为第三章学习候选或最新 SF-HLM 的轨迹分布。第五章关注完整在线方法，第四章末另以历史学习轨迹快照进行桥接。两类快照保留各自来源，不把相同名称的指标直接拼接为同一批次结论。第四章实现采用 MC-ITR 单请求迁移搜索，没有拍卖、竞价或任务出价机制，也没有被接入最新在线策略作为每步下层。
+
+\subsection{变量、候选域与实际节点映射}
+\label{sec:ch4-variables}
+
+设快照接纳服务集合为 $\mathcal M$，大小为 $K=|\mathcal M|$，请求按 UE 编号升序排列。全系统 UE 数仍记为 $M$，避免把快照活跃请求数与总人口混淆。请求 $m$ 具有来源 UAV $u_m$、输入字节 $L_m$、服务文件字节 $B_{s_m}$、总 CPU 周期 $C_m=\omega_{s_m}L_m$、截止时间 $D_m$ 和优先级字段 $p_m$。任务优先级提供给部分学习观测，但本章目标不按 $p_m$ 加权；“截止期优先”指超时数在目标层级中优先，不能解释为优先级字段决定奖励权重。
+
+每请求的候选集合记为 $\mathcal C_m$，包含来源本地、MBS 与硬可行邻机。分配向量 $\mathbf a=(a_1,\ldots,a_K)$ 属于
+\begin{equation}
+ \mathcal A=\prod_{m\in\mathcal M}\mathcal C_m,\qquad
+ |\mathcal A|=\prod_{m\in\mathcal M}|\mathcal C_m|.
+ \label{eq:ch4-assignment-space}
+\end{equation}
+使用花体 $\mathcal C_m$ 表示候选集，以区别总周期 $C_m$。实现动作编号为 $0$ 本地、$1$ MBS、$2+j$ 协作 UAV $j$；来源 UAV 自身的协作编号被排除，本地编号则映射到请求的来源。记 $d_m(a_m)$ 为动作对应的实际计算节点，则不同来源请求选择本地时可能到达不同 UAV，不能把动作编号零当作全系统同一个计算节点。
+
+硬可行集合与学习策略的质量掩码不同。硬集合检查邻机可达、目标非自身、链路与算力等物理字段有效，本地和 MBS 保留为有效来源路径；邻机没有缓存也可通过回源取文件执行。本章枚举硬可行节点，不要求每条路径都预计满足截止期。若预先删除所有预计超时动作，会改变优化空间，并可能把估计误差当成严格物理约束；本章不采用这样的候选域。
+
+\section{全批次执行、缓存与分配代价}
 \label{sec:offload-execution-model}
 
-\subsection{传输与计算模型}
+\subsection{通信与真实缓存路径}
 \label{sec:tx-cmp-model}
 
-字节数为 $L_m$ 的请求在速率 $R$ 的链路上的传输时延为
+第三章给出了移动前几何、信道和缓存模型，本章在同一规则下具体化分配评价。字节数据 $L_m$ 在比特每秒速率 $R$ 上传输的时间为
 \begin{equation}
-    T_{\mathrm{tx}}=\frac{8L_m}{R},
-    \label{eq:tx-latency}
+ T_{\mathrm{tx}}=8L_m/R.
+ \label{eq:tx-latency}
 \end{equation}
-相应通信能耗为链路功率与传输时长之积。三类执行位置的完成时延构成为：\textbf{本地执行}（接纳 UAV 本地计算）包含 UE$\to$UAV 上传、期望缓存缺失时的回源取文件与本地计算三部分；\textbf{协作执行}另加 UAV$\to$UAV 转发与期望的邻机回源；\textbf{MBS 执行}由 UE$\to$UAV 上传、UAV$\to$MBS 回传与 MBS 计算组成。缓存命中时省去相应回源环节。
+输入上传以来源 UAV 的全部关联 UE 数分配接入带宽，分配目标不会更换上传来源或该分母。文件回源用 $B_{s_m}$，而非服务输入 $L_m$。因此，两个请求即使输入相同，服务文件大小、缓存位置和截止时间不同，也可能需要不同执行节点。
 
-计算时延采用\emph{全批次最终负载均分}规则：同一时隙内卸载到 UAV $u$ 的全部请求构成一个批次，若该批次最终含 $n_u$ 个请求，则每个请求分得的算力为 $F_u/n_u$，计算时延与能耗为
+记 $U_m=8L_m/R^{\mathrm{edge}}_{m,u_m}$，$V_{j,s}=8B_s/R^{\mathrm{bh}}_{j,\mathrm M}$，$I_{m,u,v}=8L_m/R^{\mathrm{inter}}_{u,v}$。缓存指示 $h_{j,s}$ 来自快照起点真实状态，非命中概率。给定分配后，三类路径为
 \begin{equation}
-    T^{\mathrm{cmp}}_{m}=\frac{\omega_m L_m}{F_u/n_u},
-    \qquad
-    E^{\mathrm{cmp}}_{m}=\kappa\,\omega_m L_m\left(\frac{F_u}{n_u}\right)^2,
-    \label{eq:compute-latency-energy}
+ \begin{aligned}
+ T_m(\mathrm{local};\mathbf a)&=U_m+(1-h_{u_m,s_m})V_{u_m,s_m}
+                    +C_mN_{u_m}(\mathbf a)/F_{u_m},\\
+ T_m(\mathrm{coop}\ v;\mathbf a)&=U_m+I_{m,u_m,v}
+                +(1-h_{v,s_m})V_{v,s_m}+C_mN_v(\mathbf a)/F_v,\\
+ T_m(\mathrm{MBS};\mathbf a)&=U_m+8L_m/R^{\mathrm{bh}}_{u_m,\mathrm M}
+                    +C_m/F_{\mathrm M}.
+ \end{aligned}
+ \label{eq:ch4-actual-service-paths}
 \end{equation}
-其中 $\omega_m$ 为每字节所需 CPU 周期数，$\kappa=10^{-27}$ 为芯片电容系数。MBS 不参与该均分：其算力恒为 $200\,\mathrm{GHz}$，不因批量大小变化。该均分规则是对“同一时隙到达的请求并发共享边缘算力”的简化建模，不是持续排队模型；其关键后果是：\emph{一个请求的迁移会改变同批次其他所有请求分得的算力}，从而改变它们的完成时延。
+该式重申实际缓存与估计缓存的差别：Heuristic-Control 可以依据邻机命中概率预测路径，评价所有方法时则使用同一冻结真实缓存。不能把“期望缺失回源”写入本章实际生产执行时延。
 
-\subsection{迁移的外部影响}
+各分配评价均冻结快照初始缓存，因此同批次较早发生的取文件不会立即改变后续请求的命中状态。若两项任务都需要某个起点未缓存的服务文件，它们在当前评价中各自支付回源项；待提交缓存只影响该私有副本步进后的状态，不影响其他候选评价。这一处理保证分配目标与请求遍历顺序不会偷偷改写待比较问题，也防止一项候选因先被评价而享有缓存优势。
+
+\subsection{节点最终负载与计算推导}
+\label{sec:ch4-final-load}
+
+生产执行先解析整批目标，再冻结 UAV 最终负载：
+\begin{equation}
+ N_j(\mathbf a)=\sum_{m\in\mathcal M}\mathbf1[d_m(a_m)=j],\qquad
+ \mathcal M_j(\mathbf a)=\{m:d_m(a_m)=j\}.
+ \label{eq:ch4-node-load}
+\end{equation}
+本地留存与协作迁入共同计入 $N_j$，协作迁出和 MBS 任务不计入。只要 $m\in\mathcal M_j$，便有 $N_j\geq1$，每请求获得 $f_{m,j}=F_j/N_j$。由周期除以处理频率与动态功率积分得到
+\begin{equation}
+ T_m^{\mathrm{cmp}}=C_mN_j/F_j,\qquad
+ E_m^{\mathrm{cmp}}=\kappa C_m(F_j/N_j)^2,
+ \qquad\kappa=10^{-27}.
+ \label{eq:compute-latency-energy}
+\end{equation}
+在 MBS 上，计算频率固定为 $F_{\mathrm M}=200\,\mathrm{GHz}$，不随其任务数均分。UAV 与 MBS 的处理规则是仿真合同的一部分，本章没有另加 MBS 排队容量或 CPU 能耗目标。
+
+算力均分是频率资源的简化分享，而非持续排队。每个请求具有不同计算周期，但均分份额不按输入大小加权；它们的计算时延因此可不同。时间超过时隙或截止期的请求仍会被本次评价计算完整路径，不保留到后续时隙排队。依据初始来源服务数预估的份额只用于启发式上下文，实际 $N_j(\mathbf a)$ 必须在所有目标确定后重新计算。忽略这一步会令请求的结果依赖先后执行顺序，破坏公平比较。
+
+\subsection{迁移对未移动请求的外部影响}
 \label{sec:sharing-externality}
 
-式~\eqref{eq:compute-latency-energy} 意味着卸载决策存在批量内的外部影响。图~\ref{fig:ch4-sharing} 用一个构造示例说明：设 UAV 算力 $F_u=60\,\mathrm{GHz}$，请求输入 $L_m=2\times10^{6}$ 字节、$\omega_m=2000$ 周期/字节，则单请求独占时 $T^{\mathrm{cmp}}=0.133\,\mathrm{s}$、$E^{\mathrm{cmp}}=3600\,\mathrm{J}$；两个相同请求共享时各为 $0.267\,\mathrm{s}$ 与 $900\,\mathrm{J}$——时延翻倍而单请求能耗降至四分之一（算力减半的平方效应）。因此“把一个请求迁往负载更低的 UAV”在降低该请求自身时延的同时，会抬高迁入节点既有请求的时延、摊薄其能耗。只跟踪被迁移请求自身代价的方法（如下文的 Iterative-Base）在结构上无法感知这种外部影响，这正是需要整体重评估目标的搜索方法的原因。
+考虑把请求 $m$ 从 UAV $i$ 迁往 UAV $j$，迁移前负载为 $N_i=n_i\geq1,N_j=n_j\geq0$。对仍留在来源的请求 $k\ne m$，计算时延减少 $C_k/F_i$；对目标既有请求 $\ell$，计算时延增加 $C_\ell/F_j$：
+\begin{equation}
+ \Delta T_k^{\mathrm{cmp}}=-C_k/F_i,\quad k\in\mathcal M_i\setminus\{m\};\qquad
+ \Delta T_\ell^{\mathrm{cmp}}=C_\ell/F_j,\quad\ell\in\mathcal M_j.
+ \label{eq:ch4-migration-latency-externality}
+\end{equation}
+这些请求的通信起点、执行节点与缓存不变，所以它们的完整时延变化也等于上述计算变化。被迁移请求则同时更换计算节点、通信路径和可能的回源项，不能只用 $C_m/F_j$ 估计其收益。
+
+对目标原有请求的计算能耗，在 $n_j>0$ 时有
+\begin{equation}
+ \frac{E_\ell^{\mathrm{cmp,new}}}{E_\ell^{\mathrm{cmp,old}}}
+ =\left(\frac{n_j}{n_j+1}\right)^2.
+ \label{eq:ch4-migration-energy-ratio}
+\end{equation}
+迁入增加它们的完成时间，却降低其计算能耗；来源剩余请求则因获得更高频率而更快、但每请求计算能耗上升。这不是矛盾，而是式~\eqref{eq:compute-latency-energy} 中时延与频率倒数、能耗与频率平方的直接结果。是否降低整个系统能耗，要把两节点和通信变化一起计算。
+
+图~\ref{fig:ch4-sharing} 给出算力 $F_u=60\,\mathrm{GHz}$、输入 $L_m=2\times10^6$ 字节、每字节 $2000$ 周期的构造示例，总周期 $C_m=4\times10^9$。当节点负载为二时，每请求获得 $30\,\mathrm{GHz}$，计算时间 $0.133\,\mathrm{s}$、能耗 $3600\,\mathrm{J}$；负载为四时，份额 $15\,\mathrm{GHz}$，计算时间 $0.267\,\mathrm{s}$、能耗 $900\,\mathrm{J}$。这里比较的是二请求与四请求批次，不能写成独占与二请求批次。两组值都由同一公式计算，不是额外实验测量。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{docs/figures/图4-1_批量算力共享与迁移外部影响示意}
+    \includegraphics[width=0.98\textwidth]{../docs/figures/图4-1_批量算力共享与迁移外部影响示意}
     \bicaption{批量算力共享与迁移外部影响的机制示例（构造参数：$F_u=60\,\mathrm{GHz}$，$L_m=2\times10^{6}$ 字节，$\omega_m=2000$ 周期/字节，$\kappa=10^{-27}$；数值按式~\eqref{eq:compute-latency-energy} 计算，非实验测量）}{Mechanism example of batch compute sharing and migration externality (constructed parameters, computed from Eq.~\eqref{eq:compute-latency-energy})}
     \label{fig:ch4-sharing}
 \end{figure}
 
-\subsection{分配能耗的口径}
+若以 $Q_j=\sum_{m\in\mathcal M_j}C_m$ 表示节点周期总量，则 UAV 计算总能耗可写为
+\begin{equation}
+ E_j^{\mathrm{cmp}}=\psi(F_j,Q_j,N_j),\qquad
+ \psi(F,Q,n)=\begin{cases}\kappa F^2Q/n^2,&n>0,\\0,&n=0,\ Q=0.\end{cases}
+ \label{eq:ch4-node-compute-energy}
+\end{equation}
+因此，$i\to j$ 迁移的计算能耗变化为
+\begin{equation}
+ \Delta E^{\mathrm{cmp}}=
+ \psi(F_i,Q_i-C_m,n_i-1)-\psi(F_i,Q_i,n_i)
+ +\psi(F_j,Q_j+C_m,n_j+1)-\psi(F_j,Q_j,n_j).
+ \label{eq:ch4-migration-total-energy}
+\end{equation}
+来源只含该请求时，其迁移后节点能耗按零定义；目标原为空时也使用零初值。该写法避免在空节点套用零分母公式，并把迁移导致的所有计算项一次计算清楚。
+
+一个更细的结论是，增加请求不一定增加该节点总计算能耗。对非空目标，新增周期为 $C_m$ 时，计算总能耗下降当且仅当
+\begin{equation}
+ C_m<Q_j(2n_j+1)/n_j^2.
+ \label{eq:ch4-node-energy-add-condition}
+\end{equation}
+该条件由 $(Q_j+C_m)/(n_j+1)^2<Q_j/n_j^2$ 展开得到。若全部请求周期相同，计算能耗按 $1/n_j$ 变化，新增并发请求会让理想均分模型中的节点计算能耗降低；但它们的时延同时增加，且还需通信。本文保留这一模型后果，不将其误写成真实硬件中任意增载都能节能的物理定律。
+
+\subsection{自身改善不等于系统改善的构造例}
+\label{sec:ch4-externality-example}
+
+为说明截止期外部性，构造两个缓存均命中的 UAV，算力均为 $40\,\mathrm{GHz}$，每请求输入为 $4\times10^6$ 字节、每字节 $2000$ 周期，故 $C_m=8\times10^9$。把每请求的共同上传时间设为 $0.30\,\mathrm{s}$，一次协作输入转发设为 $0.12\,\mathrm{s}$。这些是用于推导的指定路径常数，不是主实验快照记录。迁移前来源有五请求、目标有三请求；其中待迁请求截止时间为 $1.25\,\mathrm{s}$，来源其余四请求为 $1.70\,\mathrm{s}$，目标三请求为 $1.00\,\mathrm{s}$，均处于现行截止时间范围。
+
+迁移前来源任务时延为 $0.30+5\times0.20=1.30\,\mathrm{s}$，目标任务为 $0.30+3\times0.20=0.90\,\mathrm{s}$。待迁请求超时，其他七项均成功。迁移后两节点均为四请求：待迁请求多付转发，其时延为 $0.30+0.12+4\times0.20=1.22\,\mathrm{s}$，从超时变成功；来源其他任务变为 $1.10\,\mathrm{s}$，仍成功；目标三任务也变为 $1.10\,\mathrm{s}$，全部越过自身截止时间。表~\ref{tab:ch4-externality-example} 汇总该反例。
+
+\begin{table}[!htbp]
+ \centering
+ \bicaption{自身改善与系统超时变化的构造例（非实验数据）}{Constructed example of own-request improvement and system deadline misses}
+ \label{tab:ch4-externality-example}
+ \begin{tabular}{lcccc}
+ \toprule
+ 请求组 & 数量 & 截止时间/s & 迁移前时延/s & 迁移后时延/s\\
+ \midrule
+ 待迁请求 & 1 & 1.25 & 1.30（超时） & 1.22（成功）\\
+ 来源其余请求 & 4 & 1.70 & 1.30 & 1.10\\
+ 目标既有请求 & 3 & 1.00 & 0.90 & 1.10（超时）\\
+ \bottomrule
+ \end{tabular}
+\end{table}
+
+该迁移使自身超时指示从一变零，却使系统超时数从一增至三。只依据自身字典序代价的迭代会把它视为优先改善，整体评价则应拒绝。这一构造证明的是判据之间存在逻辑差异，不表示每次自身迁移都产生负效应，也不直接量化主实验中有多少改善来自某种具体外部性。主实验的对照用于检验完整方法结果，构造例用于说明为何整体重评估是必要的算法设计。
+
+\subsection{分配因果能耗与共同项排除}
 \label{sec:assign-energy}
 
-分配能耗 $E_{\mathrm{assign}}$ 汇总上述通信与计算能耗，仅含与卸载决策相关的非飞行 UAV 能耗，不含固定轨迹下的飞行、悬停与无线能量传输能耗——这些项在快照内与分配无关，纳入只会稀释方法间差异。这一口径意味着 $E_{\mathrm{assign}}$ 的改善不能等同于系统总能耗的改善，报告时须与第五章的机队总能耗区分。
+本章能耗项定义为随卸载目标变化的 UAV 通信和计算代价：
+\begin{equation}
+ \begin{aligned}
+ E_m^{\mathrm{local}}&=(1-h_{u,s})P^{\mathrm{bh,rx}}V_{u,s}+\kappa C_m(F_u/N_u)^2,\\
+ E_m^{\mathrm{coop}}&=(P^{\mathrm{tx}}+P^{\mathrm{rx}})I_{m,u,v}
+ +(1-h_{v,s})P^{\mathrm{bh,rx}}V_{v,s}+\kappa C_m(F_v/N_v)^2,\\
+ E_m^{\mathrm{MBS}}&=P^{\mathrm{bh,tx}}8L_m/R^{\mathrm{bh}}_{u,\mathrm M},\qquad
+ E_{\mathrm{assign}}=\sum_{m\in\mathcal M}E_m^{a_m}.
+ \end{aligned}
+ \label{eq:ch4-assignment-causal-energy}
+\end{equation}
+其中 $u=u_m,s=s_m$，功率沿用第三章。协作能耗计入发送 UAV 和接收 UAV 两端；MBS 网格供电计算不计入机队。每个服务路径共有的来源 UAV 输入接收 $P^{\mathrm{rx}}U_m$ 被排除，不能把所有非飞行 UAV 能耗都统称为分配能耗。
 
-\section{字典序目标与求解方法}
+固定轨迹下飞行、悬停和 WPT 不随服务分配变化，内容处理也不属于服务目标优化项。将这些共同项加入每个候选只会改变显示尺度，不改变同快照分配之间的能耗差，因此本章把它们与分配目标分开。UE 电池的上传消耗在快照中也不作为 UAV 能耗计入。完整运行能耗与分配能耗的联系在第三章式~\eqref{eq:ch3-full-fleet-energy} 中给出，二者比较时必须保持分母与求和范围一致。
+
+本章归一化能耗为整个快照 $E_{\mathrm{assign}}/(25000\,\mathrm J)$，不再除以 UAV 数。学习下层奖励中的机队平均归一化可使用 $N\times25000\,\mathrm J$，上层则使用 $N\times5000\,\mathrm J$，三者不是同一数值。这里的 $25000\,\mathrm J$ 是固定参照，指标可以大于一，不是禁止超越的能量预算。以明确口径报告，可以解释后文 $2.128$ 的意义，而不会把它误读为能耗百分比或超出电池容量。
+
+\section{严格字典序目标与共同基线}
 \label{sec:mcitr-method}
 
-\subsection{字典序目标}
+\subsection{为何优先比较超时请求数}
 \label{sec:lex-objective}
 
-快照优化以截止期满足为绝对优先，其次才是时延与能耗的平滑项。本章使用严格字典序目标
-\begin{equation}
-\begin{aligned}
- F(\mathbf{a})=\bigg(&
- \sum_{m\in\mathcal{M}}\mathbf{1}[T_m(\mathbf{a})>D_m],\\
- &\frac{1}{\max(|\mathcal{M}|,1)}
-       \sum_{m\in\mathcal{M}}\frac{T_m(\mathbf{a})}{\max(D_m,10^{-9}\,\mathrm{s})},\\
- &\frac{E_{\mathrm{assign}}(\mathbf{a})}{25000\,\mathrm{J}}
- \bigg).
-\end{aligned}
-\label{eq:chapter4-lex-objective}
-\end{equation}
-比较两个分配时，先比较超时请求数；仅当前一分量完全相等才比较下一分量，不做加权和、不取整、不设容差。空请求快照的目标为 $(0,0,0)$。这样设计的理由：在服务场景中“是否超时”是硬性的用户体验边界，而时延与能耗是连续的平滑量，加权求和会引入难以解释的权重选择，且允许“多超时几个请求换更低能耗”这类违背设计意图的折中。代价是三个分量不能合成为一个标量分数，也不能把第二或第三分量的单独下降写成算法普遍成立的性质；本文所有方法比较均逐分量报告。
+对于具有任务截止期的边缘服务，是否按时完成是离散的质量界限，而缩短已成功任务的时延只是连续改善。若把超时、平均时延和能耗直接作固定加权和，算法可能通过降低很多成功任务的能耗抵消一个新增超时，也可能因单位改变而改变偏好。本文的目标先满足截止期优先的设计意图，再在第一层相同时比较其他代价。
 
-\subsection{四种求解方法}
+严格字典序目标为
+\begin{equation}
+ \begin{aligned}
+ F(\mathbf a)=\bigg(&\sum_{m\in\mathcal M}\mathbf1[T_m(\mathbf a)>D_m],\\
+ &\frac{1}{\max(K,1)}\sum_{m\in\mathcal M}
+                 \frac{T_m(\mathbf a)}{\max(D_m,10^{-9}\,\mathrm s)},\\
+ &\frac{E_{\mathrm{assign}}(\mathbf a)}{25000\,\mathrm J}\bigg).
+ \end{aligned}
+ \label{eq:chapter4-lex-objective}
+\end{equation}
+记三个分量为 $F_1,F_2,F_3$。对 $F(\mathbf a')$ 与 $F(\mathbf a)$，从第一分量开始找到首个不相等的位置，该处较小者为较优分配。实现不取整、不设置字典序容差、不加 MBS 独立惩罚，也不将请求优先级乘入超时计数。$T_m=D_m$ 视为成功；空快照 $K=0$ 时三个分量均为零。
+
+例如，$(2,0.91,2.80)$ 比 $(3,0.70,1.20)$ 更优，因为少一个超时；在超时数同为二时，$(2,0.89,3.10)$ 又比 $(2,0.91,2.80)$ 更优；只有前两个分量完全相等，第三分量才决定顺序。这些示例是目标比较的构造数字，不是某次实验结果。它们说明字典序严格下降并不要求时延与能耗同时下降，更不支持把算法描述为所有指标一致改善。
+
+第二分量使用每请求的 $T_m/D_m$，能区分在不同截止时间下的相对压力。它并非仅超时任务的平均延误，也不是所有请求共享一个截止阈值。对于同一快照，$K$ 和能耗参照在方法间相同，对每一层乘以正数不会改变字典序排序；但跨快照平均 $F_2,F_3$ 是结果汇总，不能理解为对整个历史一次性求得了字典序最优。
+
+\subsection{边际目标如何包含批量外部性}
+\label{sec:ch4-marginal-objective}
+
+对 $i\to j$ 迁移，只有待迁请求以及两节点的原有任务计算负载发生变化。在快照通信固定的条件下，第二分量的精确变化可分解为
+\begin{equation}
+ \Delta F_2=\frac{1}{K}\left[
+ \frac{\Delta T_m}{D_m}
+ -\sum_{k\in\mathcal M_i\setminus\{m\}}\frac{C_k}{F_iD_k}
+ +\sum_{\ell\in\mathcal M_j}\frac{C_\ell}{F_jD_\ell}\right],\qquad K>0.
+ \label{eq:ch4-marginal-normalized-latency}
+\end{equation}
+第一项是自身变化，后两项分别是来源释放和目标竞争的外部影响。若目的地是 MBS，不存在目标 UAV 均分外部项；若来源原为 MBS，也没有来源 UAV 释放项。实际评价器不依赖人工简化导数，而执行完整生产模型，但该式帮助解释为何仅计算自身代价一般不等于系统边际代价。
+
+第一分量更加不平滑。对受影响集合 $\mathcal H=\{m\}\cup(\mathcal M_i\setminus\{m\})\cup\mathcal M_j$，有
+\begin{equation}
+ \Delta F_1=\sum_{k\in\mathcal H}
+ \left(\mathbf1[T_k+\Delta T_k>D_k]-\mathbf1[T_k>D_k]\right).
+ \label{eq:ch4-marginal-deadline-count}
+\end{equation}
+接近截止边界的原有请求，即使只延长很少时间，也可改变超时数；远离边界的请求延长相同时间则不改变第一层。单看目标平均负载或被迁移请求的时延，无法识别这种离散门槛。整体重评估把真实缓存、最终均分和每请求截止时间共同纳入判据。
+
+第三分量变化由式~\eqref{eq:ch4-migration-total-energy} 加上待迁请求通信及回源变化后除以固定参照得到。超时减少时，搜索可以接受该层上升；超时不变且归一化时延下降时，也可接受能耗上升。这种优先顺序是方法设计选择，优势应表述为给定截止期优先目标下的整体决策，而不能省略能耗代价后声称无条件多目标占优。
+
+\subsection{四种方法保持相同问题与初值}
 \label{sec:four-methods}
 
-在同一快照上比较四种方法，差异汇总于表~\ref{tab:ch4-methods}。所有方法共享同一候选域（每请求的硬可行执行节点集合）与同一执行模型。
+本章比较四个共享候选域和生产评价器的方法，见表~\ref{tab:ch4-methods}。Heuristic-Control 按生产启发式构造执行目标，其上下文可使用估计缓存和初始来源负载，而完成结果仍按最终批量模型评估。它既提供参考历史，也作为固定快照上的简单对照。方法之间不更换通信模型、截止期、硬候选集合或缓存状态，避免用较有利的物理假设替代算法改进。
 
 \begin{table}[!htbp]
     \centering
@@ -86,71 +236,197 @@
         \midrule
         Heuristic-Control & 自身即初值 & 原启发式规则，不迭代 & 单次构造 \\
         Greedy-Single-Pass & Heuristic-Control & 逐请求自身字典序代价 & 单轮顺序扫描 \\
-        Iterative-Base & Greedy-Single-Pass & 被迁移请求自身代价 & 无改善/环路守卫退出 \\
-        MC-ITR & Greedy-Single-Pass & 系统整体字典序目标 & 无改善退出并验证局部最优 \\
+        Iterative-Base & Greedy-Single-Pass & 被迁移请求自身代价 & 自身无改善/环路/预算 \\
+        MC-ITR & Greedy-Single-Pass & 系统整体字典序目标 & 邻域无改善/预算退出 \\
         \bottomrule
     \end{tabular}
 \end{table}
 
-\textbf{Heuristic-Control} 是生产环境原有的目标选择规则，按请求逐一构造分配，作为初值来源与对照。\textbf{Greedy-Single-Pass} 从该初值出发，按 UE 编号升序对每个请求扫描其候选目标，只依据\emph{被迁移请求自身}的字典序代价（超时、归一化时延、归一化能耗）选择严格改善的目标，单轮结束。\textbf{Iterative-Base} 从贪心结果出发多轮迭代，每轮仍只看被迁移请求自身的改善，忽略其对同批次其他请求的算力摊薄影响；以已访问分配集合作环路守卫，不验证局部最优。\textbf{MC-ITR}（基于迁移与反事实重评估的迭代搜索）同样从贪心结果出发，但每轮枚举完整的单请求迁移邻域，用生产执行模型重算\emph{系统整体}字典序目标，选择其中最优且严格改善的迁移执行，并在执行后复核评估确定性；流程如图~\ref{fig:ch4-flowchart} 所示，伪代码见算法~\ref{alg:mc-itr}。本章方法是确定性的迁移搜索，不包含竞价、出价或冲突拍卖机制。
+Greedy-Single-Pass 从启发式结果出发，按 UE 编号升序逐请求扫描候选节点。定义请求自身目标
+\begin{equation}
+ f_m(\mathbf a)=\left(\mathbf1[T_m(\mathbf a)>D_m],\
+                    T_m(\mathbf a)/\max(D_m,10^{-9}\,\mathrm s),\
+                    E_m^{\mathrm{assign}}(\mathbf a)/(25000\,\mathrm J)\right).
+ \label{eq:ch4-own-cost}
+\end{equation}
+每次只选 $f_m$ 严格下降的目标并固定选择，完成一轮后不回看前面请求。各请求结果来自完整批量评价，所以它能知道自身在当前负载下的完成代价；它忽略的是评价产生的其他请求变化，而不是完全不使用共享算力模型。严格改善之外的平局保持当前选择。
+
+Iterative-Base 从同一个贪心分配出发，重复枚举单请求迁移，筛选自身代价严格改善的选项，并按自身差值元组、请求编号和目标编号择优。自身变化可能使整体目标变差，且不同请求的自身改善不一定构成共同势函数。因此实现记录已访问分配，以无自身改善、环路守卫或轮数预算退出，不把其终止自动解释为系统目标的邻域最优。
+
+MC-ITR 也从同一贪心初值出发，但使用 $F(\mathbf a)$ 的完整变化作判据。相同初值让比较集中于“自身改善”与“整体改善”的差别。不过，共享初值并不意味着两个算法遍历相同路径，它们可以到达不同局部解。理论上的严格下降只相对于 MC-ITR 的初值成立，不保证 MC-ITR 对任意快照都优于另外一个独立搜索终点，后者属于需用数据检验的比较。
+
+\section{MC-ITR 搜索过程与可证性质}
+
+\subsection{完整单请求迁移邻域}
+\label{sec:ch4-neighborhood}
+
+对当前分配 $\mathbf a$，定义改变一个请求执行目标的邻域
+\begin{equation}
+ \mathcal N_1(\mathbf a)=
+ \{\mathbf a^{m\to c}:m\in\mathcal M,\ c\in\mathcal C_m\setminus\{a_m\}\},
+ \label{eq:ch4-one-move-neighborhood}
+\end{equation}
+其中 $\mathbf a^{m\to c}$ 仅把第 $m$ 个分量替换为 $c$。MC-ITR 每轮完整扫描该邻域，选择所有严格改善选项中系统目标最小的一个，平局按请求序号、目标编号确定。它是最佳改善搜索，区别于发现第一项改善就立即执行的首次改善策略。
+
+每项候选评价均从快照的独立私有副本执行，不沿用上一候选产生的缓存、随机状态或其他累积变化。选定最佳迁移后再次评价，要求结果与扫描时元组完全相同，且仍严格优于当前目标；否则报告评价器不确定或非严格改善错误，不静默继续。这一步保证实际接受的迁移符合算法判据，但不能用少数重复检查证明任意外部随机评价都天然确定，确定性首先来自冻结状态与一致代码路径。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.72\textwidth]{docs/figures/图4-2_MC-ITR算法流程图}
+    \includegraphics[width=0.72\textwidth]{../docs/figures/图4-2_MC-ITR算法流程图}
     \bicaption{MC-ITR 算法流程。两个出口对应不同结论强度：无改善退出时可验证单请求迁移邻域局部最优；预算退出时不作此声称}{Flowchart of MC-ITR with two distinct exits}
     \label{fig:ch4-flowchart}
 \end{figure}
 
 \begin{algorithm}[!htbp]
-    \caption{MC-ITR：单请求迁移邻域的最佳改善搜索}
-    \label{alg:mc-itr}
-    \KwIn{快照候选域 $\{C_m\}_{m\in\mathcal{M}}$、贪心初值 $\mathbf{a}^{0}$、最大轮数 $R_{\max}=1000$}
-    \KwOut{分配 $\mathbf{a}$ 及其字典序目标 $F(\mathbf{a})$、终止原因}
-    $\mathbf{a}\leftarrow\mathbf{a}^{0}$，计算 $F(\mathbf{a})$\;
-    \For{$r\leftarrow 1$ \KwTo $R_{\max}$}{
-        $\mathcal{B}\leftarrow\varnothing$\;
-        \ForEach{$m\in\mathcal{M}$,\ \ $t\in C_m\setminus\{a_m\}$}{
-            $\mathbf{a}'\leftarrow$ 将 $\mathbf{a}$ 中 $a_m$ 替换为 $t$ 的分配\;
-            以生产执行模型评估 $F(\mathbf{a}')$\;
-            \If{$F(\mathbf{a}')<F(\mathbf{a})$（严格字典序）}{
-                $\mathcal{B}\leftarrow\mathcal{B}\cup\{(F(\mathbf{a}'),m,t,\mathbf{a}')\}$\;
-            }
-        }
-        \If{$\mathcal{B}=\varnothing$}{
-            \Return $\mathbf{a}$，终止原因“无改善退出”，邻域局部最优已验证\;
-        }
-        取 $\mathcal{B}$ 中字典序最小者（平局按请求、目标编号），记其分配为 $\mathbf{a}'$\;
-        重新评估 $F(\mathbf{a}')$ 复核确定性，确认严格改善后 $\mathbf{a}\leftarrow\mathbf{a}'$\;
-    }
-    \Return $\mathbf{a}$，终止原因“预算退出”，不声称局部最优\;
+ \caption{MC-ITR：全批次重评估的最佳单请求迁移搜索}
+ \label{alg:mc-itr}
+ \KwIn{固定快照、候选域 $\{\mathcal C_m\}$、共同贪心初值 $\mathbf a^0$、轮数预算 $R_{\max}=1000$}
+ \KwOut{分配、目标、终止原因与局部最优验证标记}
+ $\mathbf a\leftarrow\mathbf a^0$，$\mathbf v\leftarrow F(\mathbf a)$\;
+ \For{$r\leftarrow1$ \KwTo $R_{\max}$}{
+  $\mathrm{best}\leftarrow\varnothing$\;
+  \ForEach{$m\in\mathcal M,\ c\in\mathcal C_m\setminus\{a_m\}$}{
+   从原快照评价 $\mathbf v'=F(\mathbf a^{m\to c})$\;
+   \If{$\mathbf v'<_{\mathrm{lex}}\mathbf v$}{
+    用键 $(\mathbf v',m,c)$ 更新严格改善中的最优候选\;
+   }
+  }
+  \If{$\mathrm{best}=\varnothing$}{
+   \Return 当前分配，原因“邻域无改善”，验证标记为真\;
+  }
+  重新评价最佳分配，检查元组相同且严格改善\;
+  接受最佳迁移并更新 $\mathbf a,\mathbf v$\;
+ }
+ \Return 当前分配，原因“轮数预算”，验证标记为假\;
 \end{algorithm}
 
-\subsection{Exact-Small 精确参照}
-\label{sec:exact-small-def}
-
-为在小规模情形核验实现，另设 Exact-Small：在预先限定的完整硬可行分配空间内穷举并给出字典序精确最优；仅当分配空间大小不超过预算（$10^{4}$）时执行穷举，否则标记跳过。Exact-Small 使用独立的三 UE 小规模系统——不能把从一百 UE 快照中删减请求得到的子问题当作原问题的精确解，因为批量均分使请求间相互耦合，删请求会改变其余请求的完成时延。
-
-\section{性质与复杂度分析}
+\subsection{严格下降、有限终止及初值保证}
 \label{sec:mcitr-properties}
 
-\textbf{终止性。} 分配空间有限（大小为 $\prod_m|C_m|$），字典序目标在有限集上取值有限；MC-ITR 每轮执行严格改善的迁移，目标值严格下降且无重复访问，故搜索在有限轮内必然终止于“无改善”或“预算”两个出口之一，不存在死循环。Iterative-Base 因只看单请求自身代价，理论上可能出现目标反复，故另设已访问集合守卫，该守卫在本实验批次中未成为主要终止原因。
+\paragraph{命题一：每项接受迁移使系统字典序目标严格下降。}
+算法仅把满足 $F(\mathbf a')<_{\mathrm{lex}}F(\mathbf a)$ 且复核通过的候选写入当前解，因此接受后的目标严格更小。设第 $r$ 次接受后的分配为 $\mathbf a^r$，则
+\begin{equation}
+ F(\mathbf a^{r+1})<_{\mathrm{lex}}F(\mathbf a^r),\qquad
+ F(\mathbf a^r)\leq_{\mathrm{lex}}F(\mathbf a^0).
+ \label{eq:ch4-strict-descent}
+\end{equation}
+第一层为整数超时数，所以它不会在接受过程中增加；它不变时第二层必须下降或不变，前两层都不变时第三层下降。这是按层级的保证，不是三分量各自始终单调下降。
 
-\textbf{局部最优性的含义。} “无改善退出”表示当前解在\emph{单请求迁移邻域}内字典序最优：不存在只改一个请求目标的严格更优分配。这不蕴含全局最优——多请求联合迁移不在邻域内；“预算退出”则连邻域局部最优也不能声称。两个出口的结论强度不同，报告中以终止原因为准区分。
+\paragraph{命题二：无预算限制且评价确定时，搜索在有限次接受后终止。}
+每请求候选集合有限且非空，$\mathcal A$ 因而有限。若某个分配重复访问，确定评价会给出相同目标；但由严格下降链的传递性，后一次目标必须比前一次更小，产生矛盾。所以接受的分配不重复，最多接受 $|\mathcal A|-1$ 次迁移，随后必然无严格改善邻居。该上界可能很大，仅用于证明有限性，不能解释为实际运行高效。
 
-\textbf{每轮评价量。} 第 $r$ 轮枚举的候选迁移数为 $\sum_{m}(|C_m|-1)\le|\mathcal{M}|(\bar{C}-1)$，其中 $\bar{C}$ 为平均候选数；主配置快照的接纳请求通常为数个至数十个，每请求候选至多为“本地 $+$ MBS $+$ 硬可行邻居”，故每轮评价量与请求数近似线性，总评价数还取决于改善轮数。由于改善轮数依赖具体快照，本文不从耗时散点拟合渐近复杂度，只在第~\ref{sec:ch4-search-behavior}~节报告实测耗时。
+引入有限 $R_{\max}$ 后，算法无论是否耗尽分配空间都在有限轮内返回。轮数预算与收敛出口的意义不同：预算给计算量上限，无改善出口给局部搜索完成条件。即便最后一轮已经碰巧到达局部最优，若未扫描该新状态的完整邻域，程序仍不能把预算返回的标记改为已验证。特别地，$R_{\max}=0$ 只评价并返回初值，不检查邻域；不能利用初值可能较好而声称局部最优。
 
-\section{实验协议与主结果}
+\paragraph{命题三：无改善出口认证单请求邻域的弱局部最优。}
+在某轮完成全部候选评价且未发现严格改善时，返回解 $\mathbf a^*$ 满足
+\begin{equation}
+ F(\mathbf a^*)\leq_{\mathrm{lex}}F(\mathbf a'),\qquad
+ \forall\mathbf a'\in\mathcal N_1(\mathbf a^*).
+ \label{eq:ch4-conditional-local-optimum}
+\end{equation}
+证明来自完整枚举与无改善条件。允许邻居具有完全相同目标，因此是不存在严格更优邻居的局部最优，而非唯一最优。该命题依赖候选域完整、评价确定、没有提前截断邻域，以及终止原因为无改善；触发轮数上限时不适用。
+
+MC-ITR 相对于自身贪心初值的非劣保证来自式~\eqref{eq:ch4-strict-descent}。它不能扩展成对 Heuristic-Control 初值的普遍保证，因为贪心阶段只看自身目标，可能使系统目标变差；也不能扩展成对 Iterative-Base 的逐快照普遍占优，两者停在不同解上。主实验的平均超时改善来自受控数据，并非把局部下降定理错误外推所得。
+
+\subsection{局部最优为何仍可不同于全局最优}
+\label{sec:ch4-local-global-gap}
+
+一个最小离散例子说明单请求邻域的局限。设两个请求各有两个执行编号 $0,1$，构造目标如表~\ref{tab:ch4-local-counterexample}。初始 $(0,0)$ 的超时数为一，两个单迁邻居 $(0,1),(1,0)$ 的超时数均为二，故搜索没有可接受单迁；但同时改动两项到 $(1,1)$ 可令超时数为零。该表是搜索性质的抽象构造，非实际系统某个快照的测量。
+
+\begin{table}[!htbp]
+ \centering
+ \bicaption{单请求局部最优不蕴含全局最优的离散构造}{Discrete construction separating one-request local and global optima}
+ \label{tab:ch4-local-counterexample}
+ \begin{tabular}{lcccc}
+ \toprule
+ 分配 & $(0,0)$ & $(0,1)$ & $(1,0)$ & $(1,1)$\\
+ \midrule
+ 构造字典序目标 & $(1,1.00,1)$ & $(2,1.20,1)$ & $(2,1.20,1)$ & $(0,0.80,1)$\\
+ 初始解邻域关系 & 初值 & 单请求迁移 & 单请求迁移 & 两请求联合迁移\\
+ \bottomrule
+ \end{tabular}
+\end{table}
+
+只要存在需要协同调整才能改善的分配，单迁搜索就可能停住。真实批量问题具有来源释放、目标竞争和缓存路径改变等耦合，也没有使局部等于全局的已证明凸性或交换结构。加入二请求交换或多迁邻域可改变可达局部解，但会增加评价量并构成新算法。本章不在已有实现之外补写这样的功能，也不把冻结快照局部解称为主配置全局最优或在线策略的严格上界。
+
+\subsection{评价量、复杂度与实际调用开销}
+\label{sec:ch4-complexity}
+
+令平均候选数为 $\bar c=K^{-1}\sum_m|\mathcal C_m|$。每轮不同单请求迁移数为
+\begin{equation}
+ H=\sum_m(|\mathcal C_m|-1)=K(\bar c-1).
+ \label{eq:ch4-neighbor-count}
+\end{equation}
+主配置中每请求至多本地、MBS 和另外四架 UAV，共六种硬候选，故 $H\leq5K$。这说明单轮候选数随活跃请求数线性增加，不说明整个算法耗时线性，因为每候选评价要处理完整批次和环境状态，接受轮数也依赖问题实例。
+
+若实际扫描 $R$ 轮、接受 $r_{\mathrm{acc}}$ 项迁移，搜索核心评价量为
+\begin{equation}
+ Q_{\mathrm{eval}}=1+RH+r_{\mathrm{acc}},\qquad
+ 0\leq r_{\mathrm{acc}}\leq R\leq R_{\max}.
+ \label{eq:ch4-evaluation-count}
+\end{equation}
+起始的一次为初值目标，每轮完整邻域贡献 $H$ 次，每项接受迁移再贡献一次确定性复核。无改善出口一般还含最后一轮的完整扫描，不能把接受次数当作扫描轮数。该式描述搜索函数本身，不包括共享初值构造及结果打包所需的额外调用。
+
+设一次完整生产评价成本为 $C_{\mathrm{eval}}$，则主要时间复杂度为 $O(RK(\bar c-1)C_{\mathrm{eval}})$。$C_{\mathrm{eval}}$ 包含私有环境重建、解析全批目标、服务与其他请求处理及指标计算，随总用户数和数据结构规模变化，不可直接视为单位常数时间的单请求代价。空间包括快照、候选域和搜索轨迹；穷举解空间虽然用于有限性证明，但 MC-ITR 不需要把全部分配同时存储。
+
+实现中的四方法评价路径也影响实测时间。自身代价基线可复用有限容量的候选评价缓存，MC-ITR 核心按未缓存的生产评价作完整扫描和复核。共享的贪心初始化不计入两个迭代方法的本章搜索计时。故 wall time 比较描述实际实现的调用成本，不能仅根据差值断言慢的原因只来自更多轮数、只来自整体数学目标，或推断更换语言、硬件后必定仍有同一差距。
+
+\section{Exact-Small 与反事实评价协议}
+
+\subsection{完整穷举参照的定义}
+\label{sec:exact-small-def}
+
+Exact-Small 在完整 $\mathcal A$ 上穷举，每个分配交给相同生产评价器，取字典序最小目标，平局按分配向量编号确定。由于枚举了所有硬可行分配，只要空间大小不超过事先预算、所有评价有效且枚举完成，便可认证该固定快照的全局最优：
+\begin{equation}
+ \mathbf a^{\mathrm{ex}}\in\underset{\mathbf a\in\mathcal A}{\arg\min}_{\mathrm{lex}}
+ F(\mathbf a).
+ \label{eq:ch4-exact-global}
+\end{equation}
+冻结实验计划的枚举预算为 $10^4$ 个分配。空间超过预算时，在评价前标记跳过，不从已枚举的子集结果宣称精确完成。通用函数默认预算与实验覆盖值可能不同，正文以实际冻结运行计划为准。
+
+穷举时间为 $O(|\mathcal A|C_{\mathrm{eval}})$，候选数乘积使大批次难以使用。三 UE 配置从整个环境规模上定义小问题，而不是从一百 UE 快照中删掉大多数任务。后者会改变最终均分 $N_j$、接入关联数及请求间外部性，剩余任务的目标已不同，不能作为原大问题的精确验证。Exact-Small 的作用是核验小规模实现与比较逻辑，不证明大问题搜索没有全局差距。
+
+\subsection{快照冻结与无副作用执行}
+\label{sec:ch4-snapshot-contract}
+
+快照保存完整环境状态、请求索引、来源映射和硬候选域，并记录配置摘要。请求索引按 UE 编号升序保持搜索一致，下层执行槽位则按原环境的来源距离及用户编号映射回去，不能把搜索列表序号直接当成下层槽号。配置摘要检查保证评价时没有悄然更换 CPU、带宽或接纳规则；私有复制保证候选之间不共享可变缓存与统计量。
+
+评价时从序列化快照重建私有环境，注入显式卸载分配，采用统一固定移动动作，执行一个生产环境步。为了保留当前请求记录，评价器阻止该私有步末的新请求覆盖，但当前请求处理、缓存提交及其他私有更新仍按生产路径进行。它们的结果只用于该候选，不回写参考历史，也不传给下一候选。执行中如果发生卸载回退，评价器拒绝把它当作原目标分配的有效结果。
+
+分配能耗通过生产执行的请求记录累计，不另建一套只对 MC-ITR 有利的能量公式。所有服务目标先解析，所有最终负载再冻结，之后请求逐个执行。该设计让评价结果反映完整批量外部性，同时减少两套数学模型随维护逐渐偏离的风险。本章的推导用于解释该统一模型，而不是绕过它以解析近似值替代主结果。
+
+\subsection{可重复性应检查什么}
+\label{sec:ch4-verification-contract}
+
+固定快照的可重复性包括输入、代码配置和评价顺序。相同分配重复评价应得到同一有限目标；候选域应非空，所有返回动作应属于相应硬集合；超时数应为非负整数，时延与分配能耗应为非负有限数。贪心与迭代方法的初值应确实相同，MC-ITR 每个接受目标应严格下降，无改善标记应对应完整邻域检查。精确参照必须先核对空间大小与完成标记，不能把“运行未报错”替代为最优性验证。
+
+上述检查解决实现与协议一致性，不自动证明论文效应。一个算法可以通过所有调用与格式检查，却在目标上不优于基线；一个小例找到精确解，也不能替代多负载工作负载上的实际效果。因而本章把算法性质、实现验证和实验比较分开：性质由假设与逻辑支撑，验证说明实现遵守合同，性能则由后文配对结果支撑。
+
+\section{实验设计、主结果与代价解释}
 \label{sec:fixed-snapshot-protocol}
 
-\subsection{实验协议}
+\subsection{410 个评估单元的组成}
 \label{sec:ch4-protocol}
 
-主配置为五架 UAV、一百 UE、一个 MBS；敏感性配置分别改变 UE 数量（60/80/120/140）与 UAV 算力（0.6/0.8/1.2/1.4 倍）；另有三 UE 的 Exact-Small 精确验证配置。每个配置的十个工作负载种子各运行六个 episode，每个 episode 在 $0,100,\ldots,900$ 步采集十个快照；全部配置合计 $6000$ 个固定快照、$410$ 个“配置--工作负载种子--方法”评估单元，零接纳快照保留在内。参考历史由 Heuristic-Control 驱动；在每个被采集的历史状态上，各方法独立求解同一批自然接纳请求。统计上，先在每个工作负载种子内汇总其全部 episode 与快照的计数，再在十个工作负载种子间作配对比较（$95\%$ 区间为 $5000$ 次重抽样的 bootstrap 区间）；$6000$ 个快照不是独立实验重复。
+主配置为五 UAV、一百 UE。负载敏感性使用六十、八十、一百二十、一百四十 UE，算力敏感性使用主配置 UAV 算力的 $0.6,0.8,1.2,1.4$ 倍，其他协议保持对应冻结设置；再加三 UE Exact-Small，共十种配置。每配置十个工作负载，每工作负载六回合，每回合在 $0,100,\ldots,900$ 步采集十快照，因而每配置六百快照，总计六千快照。
 
-\subsection{主结果}
+九个正常规模配置各比较四个方法，构成 $9\times10\times4=360$ 个“配置--工作负载--方法”单元；Exact-Small 配置包含第五个穷举方法，构成 $1\times10\times5=50$ 单元，两部分合计四百一十。该计数说明评估完整性，不把同快照重复评价的四或五个方法当作独立状态。空接纳快照保留，其目标为零，反映自然覆盖参考历史中确实可能没有待卸载服务。
+
+对每个工作负载种子，先求其六十个快照的指标平均，再在十个工作负载之间比较。主要指标为每快照平均超时数、平均 $F_2$、平均归一化分配能耗和平均搜索耗时。对于方法 $c$ 和参照 $b$，设种子 $w$ 的快照平均差为
+\begin{equation}
+ d_w=\frac{1}{60}\sum_{h=1}^{60}
+ \left(Y_{c,w,h}-Y_{b,w,h}\right),\qquad
+ \bar d=\frac{1}{10}\sum_{w=1}^{10}d_w.
+ \label{eq:ch4-workload-pairing}
+\end{equation}
+置信区间以这十个工作负载配对单元作五千次 bootstrap，而不是对六千个有序历史快照直接作独立抽样。相邻快照共享历史，回合与请求也嵌套于工作负载，不能扩大独立重复数。
+
+第四章不训练新的学习模型，因此这里的独立单位是工作负载种子，不能套用第三、五章训练种子检验的叙述。敏感性设置重新采样各自参考历史并重新求解，比较的是该配置下的求解器，而非固定学习检查点的跨场景泛化。所报告区间描述对应配置的差值不确定性，不是对所有未测试场景同时成立的保证。
+
+\subsection{主配置的截止期优势}
 \label{sec:ch4-main-results}
 
-表~\ref{tab:chapter4-main} 与图~\ref{fig:ch4-comparison} 给出一百 UE 主配置在十个工作负载种子上的均值。MC-ITR 每快照平均超时请求 $2.055$ 个，低于 Iterative-Base 的 $2.228$、Greedy-Single-Pass 的 $2.243$ 与 Heuristic-Control 的 $2.908$。逐工作负载配对差值（图~\ref{fig:ch4-paired}）显示：MC-ITR 相对 Iterative-Base 每快照平均少 $0.173$ 个超时请求，$95\%$ 区间 $[-0.217,-0.127]$，十个种子中九个为负；相对 Greedy-Single-Pass 为 $-0.188$ [$-0.233$,$-0.137$]，相对 Heuristic-Control 为 $-0.853$ [$-1.068$,$-0.643$]。字典序第二分量的归一化时延差为 $+0.0004$ [$-0.0019$,$+0.0031$]，与零无显著差异——超时数的最小化未以时延恶化为代价。第三分量上，MC-ITR 的归一化分配能耗 $2.128$ 高于 Iterative-Base 的 $1.872$（差 $+0.256$ [$+0.214$,$+0.298$]）：减少超时伴随更高分配能耗，两者必须同时报告。
+表~\ref{tab:chapter4-main} 与图~\ref{fig:ch4-comparison} 给出一百 UE 主配置结果。MC-ITR 每快照平均超时数为 $2.055$，低于 Iterative-Base 的 $2.228$、Greedy-Single-Pass 的 $2.243$ 和 Heuristic-Control 的 $2.908$。共同贪心初值之后的整体重评估，因而在该批次取得了更好的第一优先级结果。相对迭代基线的 $0.173$ 个请求差值约为其平均超时数的 $7.8\%$；这一相对量由表中均值计算，不表示所有快照都减少相同比例。
 
 \begin{table}[!htbp]
     \centering
@@ -170,38 +446,56 @@
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{docs/figures/图4-3_主配置质量能耗耗时对比}
+    \includegraphics[width=0.98\textwidth]{../docs/figures/图4-3_主配置质量能耗耗时对比}
     \bicaption{固定快照主配置下四种卸载方法的超时数、分配能耗与搜索耗时（柱为十个工作负载种子均值，散点为逐种子值）}{Deadline misses, assignment energy and solver time of the four methods on the main setting}
     \label{fig:ch4-comparison}
 \end{figure}
 
+与 Iterative-Base 的配对差值为 $-0.173$，$95\%$ bootstrap 区间 $[-0.217,-0.127]$，十个工作负载的方向均为负。与 Greedy-Single-Pass 的差值为 $-0.188$，区间 $[-0.233,-0.137]$；与 Heuristic-Control 的差值为 $-0.853$，区间 $[-1.068,-0.643]$。图~\ref{fig:ch4-paired} 展示配对方向与区间，使不同方法面对同一难度状态的比较更直接。该结果支持的是每快照平均超时数量的改善，不能换算成未经闭环运行验证的端到端 DSR 提升。
+
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{docs/figures/图4-4_相对Iterative-Base配对差值}
-    \bicaption{各方法相对 Iterative-Base 的每快照超时数配对差值（十个工作负载种子；区间为 5000 次重抽样的 95\% bootstrap 区间）。Greedy 与 Iterative 差异极小，MC-ITR 的系统整体重评估带来稳定改善}{Paired per-snapshot deadline-miss differences against Iterative-Base}
+    \includegraphics[width=0.98\textwidth]{../docs/figures/图4-4_相对Iterative-Base配对差值}
+    \bicaption{各方法相对 Iterative-Base 的每快照超时数配对差值（十个工作负载种子；区间为 5000 次重抽样的 95\% bootstrap 区间）。散点、均值虚线与阴影区间描述该固定快照批次中的工作负载配对差异}{Paired per-snapshot deadline-miss differences against Iterative-Base}
     \label{fig:ch4-paired}
 \end{figure}
 
-这些改善符合式~\eqref{eq:chapter4-lex-objective} 将超时数置于第一优先级的设计，但代价同样明确：MC-ITR 的平均搜索耗时 $2.574\,\mathrm{s}$ 高于 Iterative-Base 的 $1.970\,\mathrm{s}$，且两者的计时均未计入共享的 Greedy 初始化开销，不能当作完整在线决策时延。MC-ITR 在该实验机器上的平均搜索耗时本身已超过仿真的 $1\,\mathrm{s}$ 时隙，因此现有结果不支持实时部署主张，本章方法的定位是\emph{质量参照与离线求解器}。
+主结果的解释与方法机制一致：整体判据允许接受自身未明显改善却能释放其他紧迫任务算力的迁移，也拒绝自身变好但令更多邻机任务超时的迁移。这两种可能性由批量推导与构造例说明。现有汇总数据并未逐项统计所有接受迁移的类别，因此不能声称量化识别了各类机制贡献比例；直接得到的数据结论是完整 MC-ITR 相对这些对照的平均截止期表现。
 
-\section{敏感性分析与 Exact-Small 验证}
+\subsection{第二、第三目标的联合报告}
+\label{sec:ch4-quality-energy-tradeoff}
+
+归一化时延方面，MC-ITR 减 Iterative-Base 的均值为 $+0.0004$，区间 $[-0.0019,+0.0031]$ 跨零。它说明该批次没有明确识别整体均值变化方向，不等价于时延非劣的正式证明，也不能写成减少超时没有时延代价。字典序允许以第二层上升换第一层改善，故此处结果应按实际区间解释，而不与理论性质混淆。
+
+归一化分配能耗方面，MC-ITR 为 $2.128$，高于 Iterative-Base 的 $1.872$，差值 $+0.256$，区间 $[+0.214,+0.298]$。按固定能量参照换算，对应每快照平均约 $6400\,\mathrm{J}$ 的分配能耗增量，约为该参照方法均值的 $13.7\%$。这一换算来自目标归一化定义，不是新的能耗实验。由于共同输入接收及机动等项未纳入，该百分比不能直接作为完整机队能耗增幅。
+
+截止期优先的目标在资源紧张时可能把更多任务安排到成本更高但及时的路径，或者通过降低某节点负载提高其剩余任务份额，造成计算能耗上升。上述机制提供对观测能耗变化的解释，但具体原因仍由逐分配路径记录决定。论文据此把减少超时作为本章清晰优势，同时把能量增量视为实现该优势的实际代价，避免用“字典序能耗最小化”掩盖在高优先级变化时允许发生的能耗上升。
+
+\subsection{搜索时间与在线预算}
+\label{sec:ch4-main-timing}
+
+MC-ITR 平均搜索耗时为 $2.574\,\mathrm{s}$，Iterative-Base 为 $1.970\,\mathrm{s}$，Greedy-Single-Pass 为 $0.941\,\mathrm{s}$，Heuristic-Control 为 $0.103\,\mathrm{s}$。两个迭代方法的计时不含共同 Greedy 初始化；表中 Greedy 自身值也不能机械加到每个方法的平均值后替代另一次完整路径实测，因为具体调用、缓存和记录阶段不同。它们首先说明本章实际实现为获得整体分配质量进行了更多生产评价。
+
+仿真时隙为一秒，但离线评价的 wall time 并未作为任务通信或计算时延的一部分加进 $T_m$。所以，快照方法的截止期结果不能解释成“等待两秒多求解后仍满足原截止时间”的真实在线流程。若要在线部署，需要把求解、信息收集和下发延迟纳入新的运行协议，或使用蒸馏、候选裁剪等近似机制另行验证。本章当前实现承担质量参照，而第五章的学习下层承担有限在线调用预算。
+
+\section{敏感性、精确检查与搜索完成情况}
 \label{sec:ch4-validation}
 
-\subsection{负载与算力敏感性}
+\subsection{负载与算力变化}
 \label{sec:ch4-sensitivity}
 
-图~\ref{fig:ch4-sens-ue} 与图~\ref{fig:ch4-sens-compute} 给出各变体下四种方法的超时数与分配能耗；表~\ref{tab:chapter4-sensitivity} 汇总 MC-ITR 相对 Iterative-Base 的每快照超时数配对差值。九个变体的 $95\%$ 区间均为负，说明在固定快照口径下，MC-ITR 减少超时请求的结论在所测试的负载与算力范围内方向一致；各区间的幅度随负载增大（UE 140 时 $-0.248$）与算力降低（0.6 倍时 $-0.268$）而扩大，与“资源越紧张、整体重评估的价值越大”的机制预期相符。同时，MC-ITR 的平均搜索耗时随 UE 数量从 $0.747\,\mathrm{s}$（60 UE）上升到 $5.793\,\mathrm{s}$（140 UE），增长明显快于线性，与每轮评价量和改善轮数同时增长一致。需要强调：这是\emph{第四章固定快照求解器}在变体配置上的重新求解结果，各设置独立重估，不是第五章学习策略在这些场景中的泛化证据。
+图~\ref{fig:ch4-sens-ue}、图~\ref{fig:ch4-sens-compute} 展示正常规模九种配置的结果，表~\ref{tab:chapter4-sensitivity} 汇总 MC-ITR 与 Iterative-Base 的配对超时差。九种包含一个主配置和八个敏感性配置，不能称为九个额外敏感性变体。各差值区间均低于零，支持所测试范围内平均方向一致；这是一组逐配置结果，未声称同时区间覆盖或未测试负载的普遍有效性。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{docs/figures/图4-5_UE负载敏感性}
+    \includegraphics[width=0.95\textwidth]{../docs/figures/图4-5_UE负载敏感性}
     \bicaption{UE 数量变化下四种方法的超时数与分配能耗（误差线为十个工作负载种子的逐项 95\% $t$ 区间，非同时覆盖）}{Sensitivity to the UE count}
     \label{fig:ch4-sens-ue}
 \end{figure}
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{docs/figures/图4-6_算力敏感性}
+    \includegraphics[width=0.95\textwidth]{../docs/figures/图4-6_算力敏感性}
     \bicaption{UAV 算力倍率变化下四种方法的超时数与分配能耗（误差线口径同图~\ref{fig:ch4-sens-ue}）}{Sensitivity to the UAV compute capacity scale}
     \label{fig:ch4-sens-compute}
 \end{figure}
@@ -227,33 +521,67 @@
     \end{tabular}
 \end{table}
 
-\subsection{Exact-Small 精确解验证}
+UE 数从六十增加到一百四十时，平均超时差依次为 $-0.068,-0.120,-0.173,-0.198,-0.248$。主系统有限覆盖和计算资源面对更高人口，可能出现更多活跃服务竞争与截止门槛，因此整体重评估的绝对余量增加与模型预期相容。不过，UE 总数不直接等于每快照接纳请求数，快照难度也随参考轨迹和请求类型改变；不能仅据这一序列证明改善幅度严格由人口单一因素决定。
+
+算力为 $0.6$ 倍时差值为 $-0.268$，$0.8$ 倍为 $-0.200$，标准为 $-0.173$，$1.2$ 倍为 $-0.157$，$1.4$ 倍为 $-0.148$。算力缩小时，相同 $C_m$ 的计算时间和迁移外部变化 $C_m/F_j$ 增大，更容易触及截止边界；较高算力则减轻该部分竞争。各配置仍有负向差值，说明改善不限于单一算力点，但不能外推为任意算力下都有效，更不能把该固定快照现象替代为 SF-HLM 的跨场景学习结果。
+
+能耗与算力敏感性应共同解释。式~\eqref{eq:compute-latency-energy} 中固定负载的能耗与算力平方正相关，而时延与算力反比；不同方法又会改变节点负载。因而曲线中的能耗趋势不是简单的“算力越大越省电”。本章使用统一功率模型和任务集合比较，保留这种质量与能量的相互作用，不用单项敏感性曲线宣称全部资源扩容都能降低系统代价。
+
+\subsection{Exact-Small 检查能验证到何处}
 \label{sec:exact-small}
 
-三 UE 精确验证配置的 $600$ 个快照由 $513$ 个空快照、$83$ 个单请求快照与 $4$ 个双请求快照构成（图~\ref{fig:ch4-exact}），穷举器对每个非空快照枚举完整硬可行分配空间并给出字典序精确最优。在该配置上，MC-ITR 的三个目标分量均值（超时数 $0.025$、归一化时延 $0.0608$、归一化能耗 $0.1542$）与精确解逐项一致，搜索在无改善退出时的邻域局部最优性验证通过率为 $100\%$；平均求解耗时 $8.2\,\mathrm{ms}$，与穷举的 $5.2\,\mathrm{ms}$ 处于同一量级。但 Greedy-Single-Pass 与 Iterative-Base 在此配置的三个分量均值同样与精确解一致——该配置 $85.5\%$ 的快照为空，非空快照的请求规模极小，不同搜索方法几乎无法被区分。因此 Exact-Small 的定位是\emph{实现一致性检查}（验证 MC-ITR 的评估与比较逻辑与字典序目标一致、且在小规模上能找到精确最优），不能外推为一百 UE 主配置下 MC-ITR 达到全局最优。
+三 UE 验证配置包含六百快照，其中五百一十三为空，八十三有单请求，四个有双请求，空快照比例 $85.5\%$。图~\ref{fig:ch4-exact} 展示这一分布以及方法的三个目标均值。小规模枚举器在完整硬可行域完成穷举，MC-ITR 的平均超时数 $0.025$、归一化时延 $0.0608$、归一化分配能耗 $0.1542$ 与精确参照逐项相同；Greedy 与 Iterative 的对应均值也相同。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{docs/figures/图4-7_Exact-Small验证与快照构成}
+    \includegraphics[width=0.98\textwidth]{../docs/figures/图4-7_Exact-Small验证与快照构成}
     \bicaption{Exact-Small 配置的快照构成与各方法逐分量均值。(a) 600 个快照的构成；(b)-(d) 三 UE 小规模下 MC-ITR、Greedy、Iterative 与穷举精确解的逐分量均值相同，仅 Heuristic-Control 存在差距}{Snapshot composition and per-component means on the Exact-Small setting}
     \label{fig:ch4-exact}
 \end{figure}
 
-\section{搜索行为与计算代价}
+空快照的所有方法目标天然为 $(0,0,0)$，所以大量空状态会稀释非空差异。单请求快照没有同节点其他服务的批量外部性，最佳自身选择与全局选择接近同一个问题；仅四个双请求快照才可能体现更复杂的耦合。由此，该配置对评价和比较逻辑有价值，却不具备区分高维搜索能力的充分难度。均值相同也应与逐快照完成标记和精确比较记录结合，不能只看保留四位小数的柱图就推断每个解向量完全相同。
+
+精确最优目标不必对应唯一分配。多个节点路径可以给出同样目标，算法与穷举采用不同确定性平局规则时，可得到不同分配向量但相同最优代价。实现核验应比较目标与硬可行性，再明确是否要求相同分配；不能将目标一致误写成所有动作逐项一致。本章只利用现有完整小规模参照支持实现一致性，不借此声称主配置达到全局最优。
+
+MC-ITR 在此配置平均求解时间为 $8.2\,\mathrm{ms}$，穷举为 $5.2\,\mathrm{ms}$。当非空空间极小，完整邻域扫描、接受复核和框架调用可比直接枚举更费时，局部搜索不必在最小问题上最快。两者相同量级也不能外推大问题，穷举的分配空间随请求数呈乘积增长，只有明确空间预算下的完成才具备精确意义。
+
+\subsection{搜索完成标记与规模代价}
 \label{sec:ch4-search-behavior}
 
-基于归档评估记录可确认三点搜索行为事实。其一，\textbf{预算退出未实际发生}：全部十个配置（主配置、八个敏感性与 Exact-Small）中，MC-ITR 的邻域局部最优验证比例均为 $100\%$，即所有快照上的搜索都以“无改善退出”终止，$1000$ 轮上限未被触达——实测搜索深度远低于预算，第~\ref{sec:mcitr-properties}~节的预算退出条款在本批次中是保险机制而非实际路径。其二，\textbf{耗时由问题规模驱动}：搜索耗时从 Exact-Small 的 $8.2\,\mathrm{ms}$ 到 UE 140 的 $5.793\,\mathrm{s}$ 跨越近三个数量级，与每轮评价量（请求数）和改善轮数的联合增长一致；Iterative-Base 与 MC-ITR 的耗时差距（主配置 $1.970\,\mathrm{s}$ vs $2.574\,\mathrm{s}$）来自整体目标重评估的额外开销，而非更多的迁移轮次。其三，\textbf{计时口径}：两个迭代方法的耗时均不含共享的 Greedy 初始化，Heuristic-Control 的 $0.103\,\mathrm{s}$ 是其自身构造耗时；更细粒度的逐轮搜索轨迹（每轮目标值序列）保存在远程逐快照记录中，本章未纳入分析。这些事实共同支持本章方法的定位：在数十请求规模的快照上，MC-ITR 以秒级计算换取稳定的超时数改善，适合作为离线参照与上层决策质量的分析工具，而非时隙内的在线求解器。
+归档结果显示，十种配置的 MC-ITR 邻域局部最优验证比例均为 $100\%$，本批次没有轮数预算退出。该事实意味着每快照都经过无改善出口的完整邻域检查，符合命题三的条件。它不意味着已证明在任意更大请求规模下预算仍足够，也不能从完成比例推导具体接受轮数远低于预算；后者需要逐轮轨迹统计。
 
-\section{与第五章的桥接及本章小结}
+平均搜索时间在六十 UE 时为 $0.747\,\mathrm{s}$，八十 UE 时为 $1.416\,\mathrm{s}$，主配置为 $2.574\,\mathrm{s}$，一百二十 UE 为 $4.092\,\mathrm{s}$，一百四十 UE 为 $5.793\,\mathrm{s}$。实际耗时随规模明显上升，但这几个点不能确立渐近阶数。活跃任务数、每项候选数量、改善轮数、生产步评价规模以及缓存命中都可能参与变化，不能直接拟合一个幂律后替代算法复杂度证明。
+
+比主配置迭代基线多花的时间也没有唯一的“轮数更多”解释。整体评价、复核、基线缓存复用与完整环境复制都属于实际代码路径。要进一步优化实现，应依据逐阶段 profiling 或候选复用率，而不凭均值推定瓶颈。本章保留实测时间作为应用边界，当前完成状态只认证既定搜索完成与质量，不为实时部署背书。
+
+\section{历史学习轨迹桥接与本章小结}
 \label{sec:ch4-summary}
 
-为检验本章固定快照优化与在线学习策略的关系，第五章从候选方法的在线评估轨迹中抽取 $50$ 个评估任务（10 训练种子 $\times$ 5 工作负载）的 $400$ 个冻结快照，在相同快照上分别运行在线学习下层与 MC-ITR（反事实分配不回写环境）。桥接结果（图~\ref{fig:ch4-bridge}，数值表见第五章表~\ref{tab:ch4-ch5-bridge}）显示：MC-ITR 每快照平均超时 $8.235$ 个，低于在线下层的 $10.695$，配对均值差 $-2.460$、训练种子 $t$ 区间 $[-2.707,-2.213]$、$10/10$ 种子为负；归一化分配能耗 $2.519$ 高于在线下层的 $2.035$（约 $+23.8\%$）；MC-ITR 含贪心初值的完整调用路径平均 $20.751\,\mathrm{s}$，在线下层每步决策平均 $0.012\,\mathrm{s}$。桥接批次与本章主实验的口径有两处重要差异：快照来自候选学习策略的轨迹而非启发式参考历史，且 MC-ITR 计时含贪心初值；因此桥接数值不与表~\ref{tab:chapter4-main} 混排比较。桥接说明在线学习下层与快照最优参照之间仍存在质量差距，但该差距以 $20$ 秒级离线计算为代价才可能弥合，不能写成“接入 MC-ITR 后在线 DSR 将提高”。
+\subsection{桥接设计与来源限定}
+\label{sec:ch4-historical-bridge}
+
+为检验离线分配分析在学习轨迹上是否仍有质量余量，2026-09-28 桥接实验从当时覆盖观测候选的十个训练种子和五个工作负载中选取五十个在线评估任务，共采集四百个冻结快照。在相同快照上比较原在线学习下层与 MC-ITR，反事实分配仍不回写环境。这里的历史覆盖候选是上层扩展观测加既有无注意力下层，不是最新 SF-HLM；保留该来源是理解结果的必要条件。
+
+该桥接更换的是快照分布，仍保持同快照候选之间的请求、缓存和最终负载模型一致。它回答“这批学习轨迹状态上是否存在离线分配改善空间”，而非“把 MC-ITR 接入闭环后长期运行会提高多少”。一旦写回反事实分配，后续缓存、电池、请求定型及上层观测可能变化，原来的轨迹不再保持，长期 DSR 需要新的闭环运行才能确定。
+
+\subsection{质量余量与完整调用时间}
+\label{sec:ch4-bridge-results}
+
+图~\ref{fig:ch4-bridge} 给出历史桥接结果。MC-ITR 每快照平均超时 $8.235$，原在线下层为 $10.695$，配对差 $-2.460$，以训练种子为独立重复的 $95\%$ 配对 $t$ 区间为 $[-2.707,-2.213]$，十个种子的差均为负。归一化分配能耗分别为 $2.519$ 和 $2.035$，MC-ITR 约高 $23.8\%$。这支持给定历史轨迹下的分配质量余量，并表明改善仍附带分配能耗代价。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{docs/figures/图4-8_候选轨迹快照桥接对比}
-    \bicaption{候选轨迹冻结快照上在线学习下层与第四章各快照方法的对比（400 个快照；反事实分配不回写环境）。注意本图快照来源与计时口径与本章主实验不同}{Bridge comparison on frozen snapshots from candidate trajectories}
+    \includegraphics[width=0.98\textwidth]{../docs/figures/图4-8_候选轨迹快照桥接对比}
+    \bicaption{2026-09-28 历史覆盖观测候选轨迹的快照桥接（400 个快照；反事实不回写）。该候选不是最新 SF-HLM，快照来源与计时口径亦不同于本章主实验}{Bridge comparison on frozen snapshots from candidate trajectories}
     \label{fig:ch4-bridge}
 \end{figure}
 
-本章小结：在固定轨迹与历史快照的受控条件下，本章建立了以截止期满足为第一优先级的严格字典序卸载优化口径，提出并实现了基于单请求迁移邻域与系统整体反事实重评估的 MC-ITR 搜索。主配置上 MC-ITR 相对最强迭代基线每快照减少 $0.173$ 个超时请求（$95\%$ 区间 $[-0.217,-0.127]$），九个敏感性变体方向一致；代价是更高的分配能耗（$+0.256$）与超过时隙量级的搜索耗时（$2.574\,\mathrm{s}$）。Exact-Small 验证了实现与字典序目标的一致性，但不构成主配置全局最优的证据。本章确立了卸载层在已接纳请求上的质量余量及其代价边界；在线策略能否以可承受的计算代价逼近这一参照，由第五章的学习式下层与端到端评价回答。
+完整 MC-ITR 调用含贪心初值，平均 $20.751\,\mathrm{s}$；在线下层平均调用约 $0.012\,\mathrm{s}$。桥接时间与本章主实验 $2.574\,\mathrm{s}$ 的计时口径不同，快照分布和请求规模也不同，不能通过二者之差估算贪心初始化时间。该量级对照说明，在这批状态上以完整离线搜索获取额外质量，与在线学习的快速推断承担不同职责。它不证明 MC-ITR 是严格全局最优上界，也不把该批次的调用耗时比自动推广为硬件无关常数。
+
+桥接统计使用十训练种子，每个种子内汇总五个工作负载；本章主快照实验则使用十工作负载种子。两者独立单位不同，不能把四百快照或五十任务当成五十次独立训练，亦不能合并两批次的区间以增加样本。该历史分析为后续在线下层改进提供参照，最新 SF-HLM 的结果必须在其自身冻结协议与独立评估中建立。
+
+\subsection{本章结论与后续在线方法的关系}
+
+本章以固定历史状态为条件，建立了机载批量算力均分下的截止期优先计算任务分配问题。跨机迁移外部性推导说明，自身请求改善与集群整批目标改善一般不同；MC-ITR 因而完整枚举单请求迁移，并用生产执行模型重评估系统字典序目标。在评价确定、候选完整且无预算退出时，算法有限终止并认证单请求邻域局部最优；该性质不蕴含主配置全局最优。
+
+四百一十个评估单元支持该方法在主配置及八个敏感性配置中减少平均超时请求，同时报告更高分配能耗和秒级搜索代价。Exact-Small 对小规模评价与比较逻辑提供一致性检查，历史学习轨迹桥接进一步刻画在线下层与离线搜索之间的质量余量。第五章在保持其最新冻结上层和信息协议的条件下评价 SF-HLM 在线下层，承担长期闭环与可用决策预算的问题；本章 MC-ITR 继续作为分析参照，不作为已经接入在线系统的性能组成。

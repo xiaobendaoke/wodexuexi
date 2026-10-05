@@ -1,123 +1,970 @@
 % !TeX root = ../main.tex
-\chapter{完整分层方法的端到端对比与证据边界}
+\chapter{无人机集群协同轨迹与计算任务分配的分层决策}
 \label{cha:whole-system}
+\label{cha:ch5-sfhlm}
 
-\section{完整方法的技术描述}
+\section{研究问题与方法总体设计}
 \label{sec:whole-method}
+\label{sec:ch5-motivation}
 
-本章研究的是\emph{整套方法}在自然覆盖仿真系统中的端到端服务表现。候选方法的上层为第三章所述的 Attention-MAPPO 轨迹策略，并向其提供 $460\,\mathrm{m}$ 范围内尚未接纳 UE 的预动作观测；下层采用无注意力的请求级 MAPPO 策略，而非原设计中的下层注意力网络。两个层级的实际配置列于表~\ref{tab:ch5-config}。物理接纳半径始终为 $100\,\mathrm{m}$；第四章 MC-ITR 不参与本章在线执行。
+\subsection{从覆盖接纳到批量服务质量}
+
+第三章解决集群轨迹策略能否看见尚未进入服务半径的需求，第四章进一步说明，给定位置与已接纳请求后，跨机批量算力竞争仍会限制截止期满足情况。本章研究两者形成的完整在线过程：集群通过需求感知的协同机动形成服务机会后，如何在有限计算预算内组织各节点执行计算任务，使更多请求在截止时间内完成。为此，本文采用面向可服务覆盖的分层学习与负载匹配方法，沿用实验中的方法标识 SF-HLM。上层使用第三章的覆盖需求 Attention-MAPPO，下层将节点负载配额搜索与条件化请求匹配结合，并用二部图策略网络学习配额迁移顺序。本章所有主结果均对应经过独立确认的最终候选，即\emph{冻结覆盖需求上层与学习配额匹配下层}。
+
+这一区分对应两个相互联系但不同的困难。第一，未进入物理服务范围的请求无法由卸载算法补救，轨迹策略必须及时感知未接纳需求。第二，进入服务范围并不意味着请求一定能按时完成；一个节点接收更多任务会摊薄每个任务的算力，迁移一个任务还会影响迁入与迁出节点上其他任务。若每个请求仅按自身当前预测时延独立选择节点，最终形成的批量负载可能与选择时的局部预测不一致。因而，本章并不把覆盖量最大化直接等同于端到端服务优化，而是把覆盖形成的请求集合与该集合的负载组织一起考察。
+
+设一段评估过程实际生成 $G$ 个服务请求，其中 $A$ 个被自然覆盖接纳，$S$ 个按时完成。其端到端截止期满足率仍按第三章的定义计算：
+\begin{equation}
+ \mathrm{DSR}=\frac{S}{G}=\frac{A}{G}\frac{S}{A}.
+ \label{eq:ch5-dsr-identity}
+\end{equation}
+式~\eqref{eq:ch5-dsr-identity} 给出方法设计的直接依据：上层负责形成服务机会，下层负责利用服务机会。上层观测范围为 $460\,\mathrm{m}$，物理接纳半径保持 $100\,\mathrm{m}$；扩大观测没有放宽物理服务范围。下层也不通过删除困难请求提高指标，所有已接纳请求都必须分配到质量掩码允许的执行目标，未接纳或超时请求均保留在 DSR 的统计中。
+
+\subsection{最终方法的组成与信息流}
+
+图~\ref{fig:ch5-architecture} 展示无人机集群的分层在线结构。五架 UAV 的轨迹决策仍由 Attention-MAPPO 实现，各 actor 根据所供给的局部需求与邻机观测准备二维动作；训练共同基座后，上层参数在下层训练、独立确认和冻结策略复验期间保持不变。下层协调器集中收集当前已接纳请求的允许目标及预测信息，先以共同贪心和普通修复生成合法保底，再由图策略网络选择节点间的整数配额迁移，最后在给定配额下求解条件匹配。该结构以分散轨迹推断组织机群空间部署，以集中批量调度组织计算任务分工，两类决策共同影响服务过程。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-1_SFHLM总体架构与决策时序}
+ \bicaption{无人机集群 SF-HLM 分层架构与移动前决策时序。冻结上层按局部需求及邻机观测准备轨迹动作，下层集中分配已接纳计算任务；当前请求先依据当前几何执行，随后应用轨迹动作形成下一时隙位置}{Hierarchical SF-HLM architecture for UAV swarm services: decentralized frozen trajectory inference and centralized task allocation, with request execution before movement}
+ \label{fig:ch5-architecture}
+\end{figure}
+
+本章方法的接口由三个对象组成：请求行、配额向量和分配向量。请求行包含请求标识、源 UAV、截止时间、输入字节数、所需 CPU 周期，以及每个允许执行目标的时延与能耗预测量。配额向量记录六个执行节点最终接收的请求数量；分配向量则为每个请求给出一个允许动作。两种表示不能互相替代：相同配额可以对应许多不同分配，而相同节点数量只有在进一步决定哪些请求进入该节点后才能计算准确的批量目标。SF-HLM 的核心是先学习如何调整配额，再对该配额下的具体请求分配进行条件求解。
+
+集中协调器使用的是移动前已经产生的信息，包括当前位置、当前请求及源节点可用的缓存信念。源 UAV 可以读取自身缓存，对邻机缓存使用其已有信念；搜索器不读取邻机缓存真值，不查询未来请求，不调用真实执行环境评价搜索候选。实际环境仅在最终动作确定后执行，得到的真实时延与能耗用于评估和闭环状态演化。预测目标与真实结果因而有明确的职责边界，避免把仿真执行器当作搜索时可调用的完美信息预言器。
+
+\subsection{空间部署与计算分工的协同关系}
+\label{sec:ch5-swarm-coordination}
+
+两层分解对应不同的决策对象。轨迹层改变五架无人机的未来服务位置，进而改变后续可接纳请求、邻机关系及链路；任务层在当前已经形成的接纳集合中选择计算执行节点，进而改变各机批量负载、缓存与能耗。一次地面请求在空间上由来源 UAV 接纳，在计算上可以由另一架 UAV 执行，因此“谁覆盖需求”与“谁执行任务”相互联系但不要求相同。MBS 是既有系统中的地面计算支撑，其使用量属于集群协作结果需要同时报告的资源指标。
+
+这种协同通过环境闭环发生，而非依赖上下层同时更新参数。最新协议先训练需求感知轨迹基座，再冻结上层训练与确认配额匹配下层。下层执行改变后续状态，固定参数的上层仍会对不同状态产生不同动作。故相同上层参数下出现不同轨迹，并不意味着重新训练了轨迹策略；它反映计算分工通过状态反馈影响后续空间部署。实验分别检验完整框架、学习选择增量、MBS 依赖与软件调用预算，使集群服务收益和获得收益所需资源具有同一证据口径。
 
 \begin{table}[!htbp]
-    \centering
-    \bicaption{本章候选方法的在线决策配置}{Online decision configuration of the candidate system}
-    \label{tab:ch5-config}
-    \begin{tabular}{lp{0.70\textwidth}}
-        \toprule
-        环节 & 实际执行的配置 \\
-        \midrule
-        上层轨迹 & 五架 UAV 分别以 Attention-MAPPO 输出二维轨迹动作；固定 UE 槽位优先放入已覆盖 UE，再放入 $460\,\mathrm{m}$ 感知范围内尚未接纳的 UE。 \\
-        自然接纳 & 只有位于任一 UAV 的 $100\,\mathrm{m}$ 服务半径内的请求才进入卸载；未接纳请求仍计入端到端 DSR 分母。 \\
-        下层卸载 & 无注意力的请求级 MAPPO 决定本地、MBS 或协作 UAV 执行；保留质量感知动作掩码和 DSR、MBS 负载的自适应软约束。 \\
-        \bottomrule
-    \end{tabular}
+ \centering
+ \bicaption{最终确认方法的在线合同}{Online contract of the confirmed method}
+ \label{tab:ch5-contract}
+ \begin{tabular}{lp{0.73\textwidth}}
+  \toprule
+  环节 & 固定定义 \\
+  \midrule
+  上层 & 覆盖需求 Attention-MAPPO；五个二维动作；最终确认期间参数冻结 \\
+  请求接纳 & $100\,\mathrm{m}$ 自然覆盖；未接纳请求计入实际生成服务请求分母 \\
+  执行节点 & 五个 UAV 与一个 MBS；任务不可拆分；MBS 不按批量任务数共享算力 \\
+  共同保底 & 逐请求贪心初始化，至多 $128$ 次普通修复候选评价 \\
+  配额搜索 & STOP 或节点间转移 $1/2/4$ 个请求；共 $91$ 个动作 \\
+  条件匹配 & 包含初始匹配在内至多 $16$ 次；固定配额下优化预测超时数与分配能耗 \\
+  能耗筛选 & 同状态原始贪心预测分配能耗的 $1.05$ 倍；搜索后筛选 \\
+  策略网络 & 两层、宽度 $128$ 的请求--节点二部图 MLP 消息传递 \\
+  参数学习 & $5$ 轮教师监督预训练；$100$ 次 PPO 更新，每次 $32$ 图、$8$ 轮更新 \\
+  \bottomrule
+ \end{tabular}
 \end{table}
 
-下层对当前批次接纳的每个请求作离散决策：动作 $0$ 表示本地执行，动作 $1$ 表示回传 MBS，其余动作表示转发至相应协作 UAV。动作选择受质量感知掩码约束：空请求槽位被屏蔽，估计完成时延超过截止时间的协作目标被屏蔽，超过相对时延与算力份额阈值的协作动作同样被屏蔽。下层奖励包含截止期、时延、能耗、MBS 负载与协作项，并使用自适应惩罚处理 DSR 目标和 MBS 负载上限的软约束。候选与下层无注意力强基线保持相同下层配置，主要区别在上层预接纳观测。早期修正版全量实验中，原双注意力方法的 DSR 比无注意力下层低 $1.81$ 个百分点（区间 $[-2.40,-1.17]$）；因此不能把本章的正向结果写成下层注意力模块的贡献。动作掩码和软约束仍用于候选，但本章整套方法比较不单独识别它们的因果贡献。
+\subsection{本章研究假设与验证层级}
 
-比较对象保留各自已有定义和配置：下层无注意力的原分层方法、原双注意力分层方法、Vanilla 分层方法、IPPO 和端到端 Joint MAPPO；另评估 Greedy、Local、MBS、Random 和 Uniform 五种非学习参照。候选方法独有的预接纳信息是整套方案的一部分。因此，本章回答“在这些原配置方法之间，整套候选的 DSR 是否更高”，\emph{不}回答“在同样信息预算下，注意力架构本身是否更好”。
+方法验证分为完整下层优化包、共享强框架上的学习增量和冻结策略跨场景表现三个层级。完整下层优化包包括贪心、修复、能耗筛选、配额搜索、条件匹配和最好方案保留；其比较对象是同上层的逐请求随机卸载以及已有学习下层。学习增量则要求启发式和随机对照也使用相同初始化、匹配器、普通修复、能耗参照与调用上限，只改变配额动作选择方式。跨场景表现进一步检验已确认权重在 UE 数量和 UAV 算力变化后是否仍能工作。这三个问题使用不同对照，避免用容易战胜的随机策略代替严格的机制验证。
 
-\section{评估协议、统计单位与指标体系}
+实现开发过程中还考察过服务压力反馈、临界配额动作、多入口搜索及分组策略梯度，但最终确认未采用这些扩展。服务压力上层适配没有达到事先固定的晋级条件，因此本章的主方法不包含反馈残差训练，也不把反馈协同列为已验证贡献。最终网络版本的关键变化是严格校验输入元数据、分别编码当前与最好搜索状态，以及固定采样时动作掩码；其算法仍是 $1/2/4/\mathrm{STOP}$ 配额 PPO。以最终生效的接口描述方法，比把所有开发尝试并列为算法组件更有利于复现。
+
+\section{移动前请求建模与负载相关预测}
+\label{sec:ch5-prediction}
+
+\subsection{请求集合、执行节点与质量掩码}
+
+在时隙 $t$，令已接纳服务请求集合为 $\mathcal{R}_t$，其规模为 $R_t$。为简化记号，本节省略 $t$。执行节点集合记作 $\mathcal{J}=\{0,1,\ldots,4,5\}$，前五个编号对应 UAV，编号 $5$ 对应 MBS。请求 $m$ 具有输入大小 $L_m$、单位字节 CPU 周期数 $\omega_m$、总计算周期 $C_m=\omega_mL_m$ 和截止时间 $D_m>0$。服务类型索引记为 $\sigma_m$，其源 UAV 记作 $u_m$，允许执行节点集合记为 $\mathcal{J}_m\subseteq\mathcal{J}$。
+
+允许集合由已有质量感知掩码生成，包含当前环境允许的本地、MBS 或协作动作。协调器将源 UAV 的动作编号映射为全局执行节点编号，以统一来自不同源节点的请求：源节点的动作 $0$ 表示本地，而在全局表示中本地对应 $u_m$；动作 $1$ 对应 MBS；协作动作对应目标 UAV 的全局编号。若不先完成这一步，来自不同 UAV 的两个“本地动作”可能被误计为同一节点，从而破坏配额守恒和算力共享计算。
+
+请求按照 UE 标识固定排序，保证同一个批次的贪心、匹配、学习和随机对照使用相同顺序。排序本身不是性能优势来源，其作用是明确算法输入并使保存、恢复和逐步重放具有可比较性。协调器对所有已接纳请求建立合法目标，不对请求作额外截断；若批次为空，直接返回空分配、零匹配调用和原上层轨迹动作。
+
+令 $x_{mj}\in\{0,1\}$ 表示请求 $m$ 是否被分配给节点 $j$。合法分配需满足
+\begin{equation}
+ \sum_{j\in\mathcal{J}_m}x_{mj}=1,\qquad
+ x_{mj}=0\quad(j\notin\mathcal{J}_m),\qquad
+ N_j=\sum_{m\in\mathcal{R}}x_{mj}.
+ \label{eq:ch5-assignment-feasibility}
+\end{equation}
+其中 $N_j$ 是节点的最终配额。式~\eqref{eq:ch5-assignment-feasibility} 同时表达不可拆分与完整分配：一个请求只能选择一个节点，每个已接纳请求都有去向。质量掩码限制允许目标，但并不保证最终共享负载下全部请求按时完成，这正是后续优化仍有必要的原因。
+
+\subsection{通信路径与预测量的分离}
+
+设请求 $m$ 到其源 UAV 的上传速率为 $R_m^{\mathrm{up}}$，源到目标 UAV $j$ 的速率为 $R_{u_m,j}$，目标 $j$ 到 MBS 的回传速率为 $R_j^{\mathrm{bh}}$。字节到比特的转换必须显式保留：
+\begin{equation}
+ T_m^{\mathrm{up}}=\frac{8L_m}{R_m^{\mathrm{up}}},\qquad
+ T_{mj}^{\mathrm{hop}}=\frac{8L_m}{R_{u_m,j}},\qquad
+ T_{mj}^{\mathrm{fetch}}=(1-p_{mj})\frac{8B_{\sigma_m}}{R_j^{\mathrm{bh}}}.
+ \label{eq:ch5-transfer-parts}
+\end{equation}
+$B_{\sigma_m}$ 是服务文件大小，区别于任务输入 $L_m$；$p_{mj}$ 是源节点关于执行节点服务缓存的信念。本地目标的 $p_{mj}$ 取源节点自身缓存状态，协作目标取已有邻机缓存信念。$T_{mj}^{\mathrm{hop}}$ 仅在 $j\ne u_m$ 且目标为 UAV 时存在。上传链路沿用当前接纳关系和当前带宽共享规则，不能以待执行轨迹移动后的距离重算当前请求上传时间。
+
+为使负载搜索与匹配使用同一模型，将每条合法边归纳为四个非负预测量 $b_{mj},w_{mj},e_{mj},c_{mj}$。对 UAV 目标，定义
+\begin{equation}
+ \begin{aligned}
+ b_{mj}&=T_m^{\mathrm{up}}+T_{mj}^{\mathrm{hop}}+T_{mj}^{\mathrm{fetch}},
+ &w_{mj}&=\frac{C_m}{F_j},\\
+ e_{mj}&=P_{\mathrm{bh,rx}}T_{mj}^{\mathrm{fetch}}
+       +(P_{\mathrm{u,tx}}+P_{\mathrm{u,rx}})T_{mj}^{\mathrm{hop}},
+ &c_{mj}&=\kappa C_mF_j^2.
+ \end{aligned}
+ \label{eq:ch5-edge-coefficients}
+\end{equation}
+本地执行时令转发项为零。这里的 $e_{mj}$ 只计 UAV 侧与分配相关的通信能耗，任务输入从 UE 上传的 UE 侧发射能耗不混入 UAV 分配能耗；来源 UAV 的共同输入接收能耗也排除，因为它不随卸载目标改变。$F_j$ 为目标 UAV 的可用计算能力，$\kappa$ 为计算能耗系数。所有合法边使用相同来源的物理参数与缓存信念，不为学习组构造更有利的预测器。
+
+对 MBS，设源 UAV 回传任务的时间为 $T_m^{\mathrm{bh}}$，MBS 算力为 $F_{\mathrm{MBS}}$，则
+\begin{equation}
+ b_{m5}=T_m^{\mathrm{up}}+T_m^{\mathrm{bh}}+\frac{C_m}{F_{\mathrm{MBS}}},\quad
+ w_{m5}=c_{m5}=0,\quad e_{m5}=P_{\mathrm{bh,tx}}T_m^{\mathrm{bh}}.
+ \label{eq:ch5-mbs-coefficients}
+\end{equation}
+MBS 计算时间直接进入 $b_{m5}$，没有再乘配额 $N_5$。因此 MBS 配额决定哪些请求走回传路径，不改变本实验规定的 MBS 单请求计算能力。该非共享规则是冻结物理模型的一部分，并不意味着现实基站总有无限并行处理能力。
+
+\subsection{最终负载共享下的时延与能耗}
+
+若 UAV $j$ 最终收到 $N_j\ge1$ 个请求，每个请求分得 $F_j/N_j$ 的算力。将其代入计算时间和计算能耗模型，可以逐项得到
+\begin{equation}
+ T_{mj}^{\mathrm{cmp}}=\frac{C_m}{F_j/N_j}=\frac{C_m}{F_j}N_j,
+ \qquad
+ E_{mj}^{\mathrm{cmp}}=\kappa C_m(F_j/N_j)^2
+ =\frac{\kappa C_mF_j^2}{N_j^2}.
+ \label{eq:ch5-sharing-derivation}
+\end{equation}
+进而，合法边在给定最终配额下的预测完成时延与 UAV 分配能耗为
+\begin{equation}
+ \widehat T_{mj}(N_j)=b_{mj}+w_{mj}N_j,\qquad
+ \widehat E_{mj}(N_j)=e_{mj}+\frac{c_{mj}}{N_j^2}.
+ \label{eq:ch5-prediction}
+\end{equation}
+对于配额为零的节点，矩阵构造以 $\max(N_j,1)$ 避免除零，但该节点不展开容量槽，所以没有请求实际被分配过去；MBS 在计算上述矩阵时统一使用有效负载 $1$，与式~\eqref{eq:ch5-mbs-coefficients} 一致。这个数值处理没有给空节点虚构请求，也没有改变守恒条件。
+
+式~\eqref{eq:ch5-prediction} 显示，增加一个任务会使节点上每个请求的预测计算时延增加 $w_{mj}$，而计算能耗项随负载平方下降。该模型中“把任务分散到更多节点”并不必然降低 UAV 计算能耗，因为更高的单请求算力份额可能增加平方能耗；同时，集中负载也可能降低能耗却增加超时。时延与能耗的这种结构性权衡使仅最小化单请求时延、仅最小化能耗或仅均衡任务数量都不足以直接解决截止期满足问题。
+
+设分配 $\mathbf{x}$ 的预测超时数、预测分配能耗和平均归一化时延分别为
+\begin{equation}
+ \begin{aligned}
+ M(\mathbf{x})&=\sum_{m,j}x_{mj}\mathbf{1}\{\widehat T_{mj}(N_j)>D_m\},\\
+ E(\mathbf{x})&=\sum_{m,j}x_{mj}\widehat E_{mj}(N_j),\\
+ Q(\mathbf{x})&=\frac{1}{\max(R,1)}\sum_{m,j}x_{mj}\frac{\widehat T_{mj}(N_j)}{D_m}.
+ \end{aligned}
+ \label{eq:ch5-predictor-objective}
+\end{equation}
+普通修复使用 $(M,E,Q)$ 的字典序比较；条件匹配与配额搜索的最好方案更新主要比较 $(M,E)$。$Q$ 作为普通修复的同超时、同能耗次级判别，不能被写成匹配器同时最优的第三个目标。所有截止期判断均采用严格大于号：恰好达到截止时间的请求计为按时。
+
+\section{配额分解与条件化字典序匹配}
+\label{sec:ch5-matching}
+
+\subsection{配额空间与分配空间的关系}
+
+若每个请求最多有六个合法执行目标，直接分配空间至多包含 $6^R$ 个组合。SF-HLM 首先考虑整数配额空间
+\begin{equation}
+ \mathcal{N}_R=\left\{\mathbf{n}\in\mathbb{Z}_{\ge0}^{6}:\sum_{j=0}^{5}N_j=R\right\},
+ \qquad |\mathcal{N}_R|=\binom{R+5}{5}.
+ \label{eq:ch5-quota-space}
+\end{equation}
+这个数量是忽略质量掩码后的配额数上界；掩码会排除某些无法由合法请求组成的配额。配额表示保留了算力共享所需的关键统计量，使负载相关项在给定 $\mathbf N$ 后成为已知常数。与此同时，它没有强迫同样大小的任务交换身份，也没有按配额均匀随机分配请求，具体任务依然交由条件匹配选择。
+
+配额分解的作用并非声称整个问题已变为低复杂度精确问题。式~\eqref{eq:ch5-quota-space} 仍随批量规模增长，在线预算不允许穷举。其实际优势是把复杂的两种决策分开：图策略在配额层选择值得尝试的负载组织，确定性匹配器在该组织内利用请求差异寻找分配。学习器不必逐个生成全部请求的完整组合，也不必从回报中独立重新学习指派求解器已经能够表达的条件最优结构。
+
+\subsection{容量槽展开与合法指派}
+
+给定配额 $\mathbf N$，将每个节点 $j$ 展开为 $N_j$ 个容量槽。全部槽的集合为 $\mathcal S(\mathbf N)$，大小恰好为 $R$；槽 $s$ 对应的执行节点记为 $j(s)$。令 $y_{ms}\in\{0,1\}$ 表示请求 $m$ 是否占据槽 $s$，则条件匹配满足
+\begin{equation}
+ \sum_{s\in\mathcal S}y_{ms}=1,\qquad
+ \sum_{m\in\mathcal R}y_{ms}=1,\qquad
+ y_{ms}=0\quad\bigl(j(s)\notin\mathcal J_m\bigr).
+ \label{eq:ch5-slot-constraints}
+\end{equation}
+同一节点的容量槽具有相同边成本，但分别只能接收一个请求。由一一指派得到的分配自动满足式~\eqref{eq:ch5-assignment-feasibility}，且每个节点最终恰好接收 $N_j$ 个请求。图~\ref{fig:ch5-slots} 展示配额、容量槽与请求身份的关系。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.95\textwidth]{../docs/figures/图5-2_配额与容量槽匹配}
+ \bicaption{固定配额的容量槽展开与请求匹配。示意图用于解释算法结构，不是实测任务分配}{Capacity-slot expansion and request assignment under fixed quotas; a conceptual illustration}
+ \label{fig:ch5-slots}
+\end{figure}
+
+条件匹配的基本可行性不能只由每个节点各自的合法请求数判断。例如，两个节点各有足够的合法边，但这些边可能都来自同一小部分请求，从而不能同时填满全部槽。严格可行性需由完整指派求解确认：非法边使用无穷成本，若不存在全合法的一一指派则该配额不可行。实现采用 SciPy 线性指派接口\cite{virtanen2020scipy}；其求解器采用修改的 Jonker--Volgenant 方法，矩形指派的实现背景见文献\cite{crouse2016assignment}。返回后再次检查每条边合法性与节点数量守恒。求解器判断不可行时，搜索记录这次调用并保留已有最好方案，不能把失败调用从预算中删去。
+
+\subsection{字典序目标的标量化与严格等价性}
+
+给定 $\mathbf N$，先计算全部合法边的预测能耗，令
+\begin{equation}
+ E_{\max}(\mathbf N)=\max_{m,j:\,j\in\mathcal J_m}\widehat E_{mj}(N_j),
+ \qquad \widetilde E_{mj}=\frac{\widehat E_{mj}(N_j)}{\max(E_{\max},\epsilon_E)}.
+ \label{eq:ch5-energy-normalization}
+\end{equation}
+实现用极小正数 $\epsilon_E$ 防止所有能耗为零时除零。合法边能耗非负且 $\widetilde E_{mj}\le1$，因此任何完整合法指派的归一化能耗和均处于 $[0,R]$。构造容量槽成本
+\begin{equation}
+ C_{ms}=(R+1)\mathbf1\{\widehat T_{m,j(s)}(N_{j(s)})>D_m\}
+       +\widetilde E_{m,j(s)},
+ \label{eq:ch5-slot-cost}
+\end{equation}
+非法边成本为无穷。线性指派求解
+\begin{equation}
+ \min_{\mathbf y}\sum_{m,s}C_{ms}y_{ms}
+ \quad\text{满足式~\eqref{eq:ch5-slot-constraints}}.
+ \label{eq:ch5-linear-assignment}
+\end{equation}
+权重 $R+1$ 随当前批量规模确定，不使用任意调试的超时惩罚常数。
+
+下面说明式~\eqref{eq:ch5-linear-assignment} 与固定配额下的 $(M,E)$ 字典序最小化等价。任取两个完整合法指派 $\mathbf y^{a},\mathbf y^{b}$，若 $M_a\ge M_b+1$，其标量目标差满足
+\begin{equation}
+ \mathcal C_a-\mathcal C_b
+ =(R+1)(M_a-M_b)+\widetilde E_a-\widetilde E_b
+ \ge(R+1)-R=1>0.
+ \label{eq:ch5-lex-proof}
+\end{equation}
+因此，无论能耗怎样变化，多一个预测超时的分配都不可能取得更小的标量成本。若 $M_a=M_b$，标量目标只比较归一化能耗；固定配额内归一化比例相同，故该比较与原始能耗大小完全一致。这证明求解器首先最小化预测超时数，再在最少超时的分配中最小化预测分配能耗。
+
+这个证明的适用条件需要与算法接口一起理解。它只对\emph{给定配额、固定预测信息、合法指派域}成立；没有证明配额搜索已找到全局最优配额，也没有把缓存信念预测转化为真实时延保证。能耗上限没有进入线性指派的约束，而是在求解后筛选。如果固定配额下超时最少的解超过能耗上限，算法会拒绝该候选，并不继续求解该配额下所有受限可行指派。因此，SF-HLM 不是含能耗侧约束的全局精确算法；条件最优性是明确、有限但可利用的结构性质。
+
+\subsection{预测能耗参照与保底方案}
+
+先按固定请求顺序构造原始贪心分配 $\mathbf x^{\mathrm g}$。处理一个请求时，贪心按已分配目标数估计加入后的自身时延，依次以自身时延、自身分配能耗和动作编号决胜。共同能耗参照由该\emph{原始贪心的最终批量重评估}确定：
+\begin{equation}
+ E_{\mathrm{cap}}=1.05E(\mathbf x^{\mathrm g}).
+ \label{eq:ch5-energy-cap}
+\end{equation}
+普通修复、配额学习、启发式和强随机均使用同一状态下的这个上限。它不是各方法自己的初始分配乘 $1.05$，从而避免某个方法由于初始方案能耗偏高而获得更宽松的筛选空间。
+
+普通修复以一次请求迁移为邻域，在最多 $128$ 次候选评价内寻找字典序改进。若已有学习下层提出的初始分配超出共同上限，先回到原始贪心，再开展修复；若未超限则从其提案出发。配额方法从共同贪心加修复的保底进入，并对该保底配额作一次条件匹配。候选只有在合法且预测分配能耗不超过 $E_{\mathrm{cap}}$ 时才能成为当前搜索状态；最好方案由所有已接受方案中的 $(M,E)$ 决定。
+
+这样可以给出一项逐调用可检查的不变量：最终执行分配完整且质量合法，预测分配能耗不超过共同上限；最好预测目标不会比共同保底更差。该不变量针对预测量而非真实机队总能耗。真实缓存、请求成功判定和其他闭环作用仍由环境决定，飞行、悬停和无线能量传输也不包含在 $E(\mathbf x)$ 内。论文中的真实能耗优势必须由完整评估计数支持，不能由式~\eqref{eq:ch5-energy-cap} 直接推出。
+
+\section{有限预算配额搜索与二部图策略}
+\label{sec:ch5-search}
+
+\subsection{当前状态、最好状态与动作空间}
+
+搜索的内部步号记为 $\ell$，区别于环境时隙 $t$。一个环境时隙内可以进行若干次配额迁移，但只有最终保留的分配进入环境。当前配额、当前分配与其预测目标分别记为 $\mathbf N^{(\ell)},\mathbf x^{(\ell)},F^{(\ell)}$；最好分配与目标记为 $\mathbf x^{*(\ell)},F^{*(\ell)}$。允许搜索经过比最好方案更差的当前方案，使策略能够跨越只接受即时改进的局部限制；实际执行则不受这些较差中间方案直接影响。
+
+完整搜索过程的状态可写为
+\begin{equation}
+ S_\ell=(\mathcal R,\mathbf N^{(\ell)},\mathbf x^{(\ell)},\mathbf x^{*(\ell)},\mathcal V_\ell,B_\ell),
+ \label{eq:ch5-full-search-state}
+\end{equation}
+其中 $\mathcal V_\ell$ 是已尝试配额集合，$B_\ell$ 是剩余调用预算，请求行中的预测量在本次搜索内固定。条件匹配与访问集合更新在此完整状态下定义转移。策略实际读取其二部图编码和有效动作掩码，而不是逐项展开全部访问历史；掩码反映当前动作合法性，不能据此声称图编码包含未来掩码变化的全部信息。本文采用这一可计算的策略观测训练有限搜索，不依赖图编码必为完整状态充分统计量的理论假设。
+
+配额动作集合为
+\begin{equation}
+ \mathcal A=\{\mathrm{STOP}\}\cup
+ \{(i,j,k):i,j\in\mathcal J,\ i\ne j,\ k\in\{1,2,4\}\},
+ \qquad |\mathcal A|=91.
+ \label{eq:ch5-action-space}
+\end{equation}
+转移动作仅改变节点任务数量：
+\begin{equation}
+ \mathbf N'=\mathbf N^{(\ell)}-k\mathbf e_i+k\mathbf e_j.
+ \label{eq:ch5-quota-transfer}
+\end{equation}
+这里的“转移 $k$ 个任务”是配额变动，不是预先指定 $k$ 个请求的身份。新配额的具体分配重新由条件匹配给出，可能改变多个请求的目标。因此，一次配额动作能够触发批量重组，而不是仅对一个被选中的任务作局部替换。
+
+有效动作掩码同时要求 $N_i\ge k$、新配额没有访问过、各节点配额不大于其合法边数。最后一项只是必要条件，完整可行性由匹配求解检查。STOP 始终有效，使没有可行迁移时策略也能合法终止。失败的匹配配额同样加入访问集合，避免重复耗费预算。采样时掩码属于保存的搜索状态，重算概率时不得根据更新后的访问集合重新生成它。
+
+初始条件匹配占用一次调用，整个搜索最多 $16$ 次匹配，因此普通非空批次最多再尝试 $15$ 次配额迁移。策略可以提前 STOP，也可能因为调用预算耗尽而终止；空批次不消耗匹配预算。搜索预算是求解器调用数，而不是动作数、成功迁移数或模型前向次数。该定义使不可行候选与超能耗候选也承担实际计算费用，便于与启发式和强随机保持共同预算。
+
+\subsection{请求、边与节点特征}
+
+图~\ref{fig:ch5-graph} 表示每个搜索状态的二部图。请求是左侧节点，六个执行节点是右侧节点，质量合法动作构成边。请求输入保留截止时间、计算量、输入大小和源节点；边输入描述请求放在该目标后的预测路径和负载；节点输入同时描述当前与最好方案的服务压力。区分当前与最好状态很重要：如果只编码最好方案，策略无法知道自己正在从哪个较差入口继续迁移；如果只编码当前方案，又无法知道已经保留的执行质量和剩余改进空间。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-3_二部图网络与搜索状态}
+ \bicaption{请求--执行节点二部图、当前与最好状态编码及配额动作头。非法边和填充请求在消息聚合中屏蔽}{Request--execution-node graph, current/best state encoding and quota action heads}
+ \label{fig:ch5-graph}
+\end{figure}
+
+请求特征 $\mathbf v_m\in\mathbb R^4$ 为
+\begin{equation}
+ \mathbf v_m=\left[\min(D_m,10),\ \frac{\log(1+C_m)}{30},\
+ \frac{\log(1+L_m)}{20},\ \frac{u_m}{5}\right].
+ \label{eq:ch5-request-features}
+\end{equation}
+秒、CPU 周期和字节数各自在进入网络前作固定尺度变换。变换用来控制数值范围，不改变指派预测器使用的原始量。尤其是网络中截止时间截断到 $10$ 的表示，不意味着真实截止时间判断也被截断。
+
+合法边 $\mathbf z_{mj}\in\mathbb R^{14}$ 的前十二项依次为：$b_{mj}/D_m$、$w_{mj}/D_m$、$\log(1+e_{mj})/20$、$\log(1+c_{mj})/30$、当前 $N_j/R$、截断后的 $\widehat T_{mj}/D_m$、归一化截止期余量、允许负载阈值的归一化值、MBS 标记、缓存信念、目标容量的对数表示和源节点标记。最后两项为当前分配与最好分配是否经过该边的二元标记。非法边的特征置零，并在后续聚合中屏蔽。负载阈值来自 $(D_m-b_{mj})/\max(w_{mj},10^{-12})$，只作为网络观测特征；最终方法没有把临界阈值扩展为新的动作集合。
+
+令请求在指定分配中的归一化余量为 $m_m=1-\widehat T_m/D_m$。每个节点的六项服务摘要为：接收数量占批次比例、节点内预测超时比例、平均余量、最小余量、释放一个请求可能救回的请求数占批次比例、节点分配能耗占参照比例。释放救回的判定为
+\begin{equation}
+ b_{mj}+w_{mj}\max(N_j-1,1)\le D_m
+ < b_{mj}+w_{mj}N_j,
+ \label{eq:ch5-release-rescue}
+\end{equation}
+且只对 UAV 目标计算。摘要既描述节点已经承担的请求，也提示减少该节点负载可能影响的其他请求；它没有读取真实执行成功标签。
+
+当前与最好方案分别生成六项摘要，拼接当前配额比例、剩余匹配预算比例、当前和最好预测超时占批次比例，得到 $\mathbf u_j\in\mathbb R^{16}$。所有比例在空批次处理时采用正分母保护；空节点摘要为零。平均和最小余量截断到 $[-10,1]$，边时延比上限为 $10$，容许负载特征截断到 $[-1,2]$。这些固定处理约束输入数值而不改变真实请求数量、目标可行性或实际性能评价。
+
+\subsection{两层消息传递与置换结构}
+
+分别用 MLP 将请求、节点与边特征映射为 $h=128$ 维嵌入，记为 $\mathbf h_m^{(0)},\mathbf g_j^{(0)},\mathbf e_{mj}$。每个 MLP 由线性层、LayerNorm、ReLU 和输出线性层组成。两轮消息传递中，第 $q$ 层合法边消息为
+\begin{equation}
+ \mathbf m_{mj}^{(q)}=\psi_q\bigl([
+ \mathbf h_m^{(q)},\mathbf g_j^{(q)},\mathbf e_{mj}]\bigr),
+ \qquad j\in\mathcal J_m.
+ \label{eq:ch5-message}
+\end{equation}
+$\psi_q$ 在所有合法边共享参数，非法边消息恒为零。请求侧和节点侧各按合法邻居取均值，并分别更新：
+\begin{equation}
+ \begin{aligned}
+ \overline{\mathbf m}_m^{(q)}&=
+ \frac{\sum_{j\in\mathcal J_m}\mathbf m_{mj}^{(q)}}{\max(|\mathcal J_m|,1)},
+ &\mathbf h_m^{(q+1)}&=\rho_q([\mathbf h_m^{(q)},\overline{\mathbf m}_m^{(q)}]),\\
+ \overline{\mathbf m}_j^{(q)}&=
+ \frac{\sum_{m:\,j\in\mathcal J_m}\mathbf m_{mj}^{(q)}}{\max(|\{m:j\in\mathcal J_m\}|,1)},
+ &\mathbf g_j^{(q+1)}&=\nu_q([\mathbf g_j^{(q)},\overline{\mathbf m}_j^{(q)}]).
+ \end{aligned}
+ \label{eq:ch5-message-update}
+\end{equation}
+$q=0,1$，两层使用各自参数。批量训练时，请求图填充到同一批中的最大请求数；填充请求嵌入与消息均屏蔽，均值分母只计算真实合法邻居。
+
+完成两层更新后，对真实请求取均值 $\overline{\mathbf h}$，对六个节点取均值 $\overline{\mathbf g}$。转移动作 $(i,j,k)$ 的分数由源节点、目的节点、请求池化表示和迁移量独热编码构成：
+\begin{equation}
+ z_{ijk}=f_{\mathrm{move}}([\mathbf g_i^{(2)},\mathbf g_j^{(2)},
+                  \overline{\mathbf h},\operatorname{onehot}(k)]),\qquad
+ z_{\mathrm{stop}}=f_{\mathrm{stop}}([\overline{\mathbf h},\overline{\mathbf g}]).
+ \label{eq:ch5-action-heads}
+\end{equation}
+价值头也以 $[\overline{\mathbf h},\overline{\mathbf g}]$ 为输入。掩码后的 logits 形成分类分布，训练时采样，正式评估取最大分数动作。将请求排序更换为另一个一致排列时，共享边函数与均值聚合在数学结构上保持请求置换不变；源编号、节点身份和质量合法域依然是显式输入，因此不应进一步声称算法对任意节点重编号天然不变。
+
+这一网络用消息传递表达“同一个请求的替代目标”和“同一个节点上可竞争请求”的关系。它不采用多头注意力加权聚合，下层所有合法邻居的消息使用均值。上层 Attention 与下层二部图 MLP 因而应在结构图、算法名称和贡献解释中分开。可变请求数量由图表示和填充掩码处理，而六节点动作头保持固定，这使模型在冻结跨 UE 数量评价时无需增加动作维数。
+
+\subsection{搜索奖励与最好方案不变量}
+
+一次非停止迁移后，令最好预测超时与能耗从 $(M_{\ell-1}^{*},E_{\ell-1}^{*})$ 更新到 $(M_\ell^{*},E_\ell^{*})$，训练奖励定义为
+\begin{equation}
+ r_\ell=M_{\ell-1}^{*}-M_\ell^{*}
+ +0.1\frac{E_{\ell-1}^{*}-E_\ell^{*}}{\max(E_{\mathrm{cap}},10^{-12})}-0.001.
+ \label{eq:ch5-search-reward}
+\end{equation}
+奖励评价保留的最好方案，而非较差当前方案；一次没有改进的匹配尝试仍得到 $-0.001$ 的计算惩罚。STOP 奖励为零。预测超时减少具有主要作用，能耗项在共同上限下表达较小的平滑偏好，调用惩罚为节约搜索提供信号。这个搜索奖励服务于单时隙组合求解，与环境中的轨迹奖励和真实 DSR 是不同对象。
+
+采用无折扣的有限搜索回报，若本次搜索进行了 $L$ 次非停止迁移，式~\eqref{eq:ch5-search-reward} 的差分项可望远镜求和：
+\begin{equation}
+ \sum_{\ell=1}^{L}r_\ell
+ =M_0^*-M_L^*+0.1\frac{E_0^*-E_L^*}{\max(E_{\mathrm{cap}},10^{-12})}-0.001L.
+ \label{eq:ch5-reward-telescope}
+\end{equation}
+$0$ 对应完成共同保底与初始匹配后的状态，初始匹配本身不产生一次迁移奖励。因此，训练在已有保底质量上权衡进一步改善与额外尝试，不奖励重复返回同一配额，也不把较差中间状态的真实执行结果回流到环境。
+
+\begin{algorithm}[!htbp]
+ \caption{SF-HLM 单时隙配额搜索与条件匹配}
+ \label{alg:ch5-online}
+ \KwIn{移动前请求行、质量合法域、冻结图策略 $\pi_\theta$；匹配预算 $16$，普通修复预算 $128$}
+ \KwOut{全部已接纳请求的合法分配}
+ 构造原始贪心 $\mathbf x^{\mathrm g}$ 并计算 $E_{\mathrm{cap}}=1.05E(\mathbf x^{\mathrm g})$\;
+ 在共同上限内普通修复，初始化当前与最好分配\;
+ 根据保底配额执行初始条件匹配，计入一次匹配调用\;
+ 若候选合法、低于上限且目标更好，更新保留方案\;
+ \While{批次非空、匹配调用未耗尽且搜索未停止}{
+  编码当前/最好二部图及采样时掩码\;
+  由图策略选择 STOP 或配额迁移 $(i,j,k)$\;
+  \eIf{选择 STOP}{终止搜索\;}{
+   生成守恒配额，登记访问并计入一次匹配调用\;
+   求解该配额的条件字典序匹配\;
+   若匹配合法且满足共同能耗上限，更新当前方案\;
+   若当前方案优于保留目标，更新最好方案\;
+  }
+ }
+ 将最好方案映射回各源 UAV 的请求动作，输出完整分配\;
+\end{algorithm}
+
+\subsection{计算量、终止条件与实现校验}
+
+在稠密表示下，固定配额的容量槽成本矩阵为 $R\times R$。常规指派算法的量级可按 $O(R^3)$ 讨论，矩阵存储为 $O(R^2)$；实际 SciPy 实现和稀疏合法结构会影响常数。图网络每轮沿至多 $6R$ 条请求--节点边传播，六节点和宽度固定时，其关于请求数的计算量近似线性，但 MLP 前向与张量构造具有实际开销。在线总时间还包括观测准备、普通修复、至多 $16$ 次匹配、动作映射与消息序列化，不能只用一次网络前向的时间代表完整方法。
+
+调用预算给出有限终止性，而不是全局收敛证明。每次有效非停止搜索尝试增加调用数，访问去重避免重复配额，STOP 可提前结束；因此在给定预算下总会返回保底或更好的预测方案。可行配额空间未遍历时没有全局最优承诺。原子匹配调用不能在任意时刻无损中断，墙钟预算因此是软截止；这一点将在时间预算实验中实测报告。
+
+实现校验覆盖输入非负有限性、请求完整性、动作合法性、配额守恒、采样时掩码、初始匹配计费和最终能耗参照。恢复文件还保存模型、优化器、采图随机状态、环境状态及结果摘要，评估前后核验模型指纹。串行与并行采样使用相同策略版本和轨迹种子，按任务标识汇总后更新，不能让并发数改变科研样本的定义。这些校验保证对比实际执行了同一算法合同；它们本身不替代性能实验。
+
+\section{教师初始化、配额 PPO 与分层训练}
+\label{sec:ch5-learning}
+
+\subsection{从训练轨迹采集请求图}
+
+下层训练以共同基座产生的环境和独立下层训练负载为起点，上层保持冻结。每个训练块额外采集 $25$ 个完整回合，每回合 $1000$ 步，在 $0,125,250,375,500,625,750,875$ 八个预定时刻记录移动前请求图，得到 $200$ 个图实例，空批次也保留。采图期间使用共同贪心修复策略，不依据未来独立确认结果选择“更容易学习”或“更能体现优势”的快照。图数据只记录允许的观测预测信息，教师和 PPO 搜索都在这些固定输入上运行。
+
+这一步将环境交互与组合搜索训练分开。采图给出下层可能面对的请求规模、截止期、链路和缓存信念，随后可在同一图上重复运行短的配额搜索轨迹。重复搜索不是额外的环境 episode，也不是独立训练重复；它是提高固定训练数据利用率的优化计算。图实例来自训练负载，开发评价和独立确认负载不回流采图、教师或梯度更新。图分布仍受共同基座和采集策略影响，因此这种训练不等价于在所有可能状态上完成了策略优化。
+
+图~\ref{fig:ch5-split} 显示基座训练、下层图采集、教师初始化、PPO 搜索和独立评价的先后关系。训练分割不只区分随机种子数字，还区分数据用途：基座负载生成轨迹控制的训练状态，下层负载生成组合搜索图，确认负载只用于固定最后模型的评价。模型文件和协议摘要把这三类数据的联系锁定下来，使读者可以追溯每个结果使用的共同上层和对应下层检查点。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-4_训练确认数据划分}
+ \bicaption{共同基座、下层训练图与独立确认的数据划分。图中回合是环境交互，配额 PPO 更新是固定训练图上的搜索训练}{Data split for shared foundations, lower-layer training graphs and independent confirmation}
+ \label{fig:ch5-split}
+\end{figure}
+
+\subsection{即时教师与独立监督损失}
+
+随机初始化的配额策略需要从大量无改善迁移和非法候选中学习，有限匹配预算下直接优化可能较难发现有用方向。本文先使用训练图上的即时改进教师提供可执行的动作示例。教师从同一共同保底和初始匹配出发，对当前有效迁移逐一尝试条件匹配，在合法且满足能耗上限的候选中选择优于当前目标的动作；没有找到即时改进时标记 STOP。教师总匹配预算为 $128$，包括初始匹配、试探候选和被选中迁移，不能把教师评价当作免费的真值查询。
+
+教师标签是其实际找到的动作，并非穷举配额空间的全局最优标签。即时改进教师也不一定能发现需要先经过较差状态的多步路径；这一限制说明监督阶段的作用是提供初始搜索偏好，而不是替代后续强化学习。每条样本保存当时的当前/最好图、有效动作集合和教师动作。对样本集 $\mathcal D_{\mathrm T}$，监督损失为
+\begin{equation}
+ \mathcal L_{\mathrm{BC}}(\theta)=
+ -\frac{1}{|\mathcal D_{\mathrm T}|}
+ \sum_{(s,a^{\mathrm T})\in\mathcal D_{\mathrm T}}
+ \log\pi_\theta(a^{\mathrm T}\mid s).
+ \label{eq:ch5-bc-loss}
+\end{equation}
+预训练进行 $5$ 轮，小批量为 $64$，梯度范数上限为 $0.5$。动作概率仅在样本保存的合法掩码内归一化。教师损失独立优化，不把教师动作伪装为当前策略采样，不向 PPO 的旧动作概率或优势估计中混入监督样本。
+
+监督初始化之后，策略通过自身采样的搜索轨迹学习长期搜索回报。由于最终方法允许经过较差但可行的当前状态，PPO 在有限范围内具有超越即时教师路径的机会。不过，“具有机会”是设计性质，是否带来超越强随机的增量仍需第~\ref{sec:ch5-mechanisms}~节的对照验证，不能仅由网络存在或训练损失降低推出。
+
+\subsection{有限搜索轨迹的优势估计}
+
+第 $k$ 次 PPO 更新前，冻结一个策略版本，并从本块训练图中抽取 $32$ 个实例，为每图采集一条最多 $16$ 次匹配的搜索轨迹。采集完成后按任务标识汇总，随后才开始更新。采样保存状态 $s_\ell$、原动作 $a_\ell$、旧对数概率、价值估计 $V_\phi(s_\ell)$、奖励及终止标记。模型载入后使用轨迹种子重新设定随机状态，避免首次加载与模型缓存命中产生不同样本。
+
+令 $d_\ell^{\mathrm{end}}\in\{0,1\}$ 为搜索终止标记，优势估计采用 GAE\cite{schulman2015high}：
+\begin{equation}
+ \delta_\ell=r_\ell+\gamma(1-d_\ell^{\mathrm{end}})V_\phi(s_{\ell+1})-V_\phi(s_\ell),
+ \qquad \gamma=1,
+ \label{eq:ch5-search-td}
+\end{equation}
+\begin{equation}
+ \widehat A_\ell=\delta_\ell+\gamma\lambda(1-d_\ell^{\mathrm{end}})\widehat A_{\ell+1},
+ \qquad\lambda=0.95,\qquad
+ \widehat R_\ell=\widehat A_\ell+V_\phi(s_\ell).
+ \label{eq:ch5-search-gae}
+\end{equation}
+搜索终点下一状态价值取零，递推在每条图轨迹边界停止。$\gamma=1$ 对应最多十余步的有限预算求解，而不是无限时域控制；它保留式~\eqref{eq:ch5-reward-telescope} 中改善与调用开销的完整权衡。价值训练目标使用未标准化的 $\widehat R_\ell$，策略梯度使用本次采样记录内标准化的优势。
+
+标准化写作
+\begin{equation}
+ \widetilde A_\ell=\frac{\widehat A_\ell-\overline A}
+ {\max(\operatorname{std}(\widehat A),10^{-6})}.
+ \label{eq:ch5-adv-normalization}
+\end{equation}
+若某批图没有有效搜索记录，则跳过参数更新而不是制造奖励或动作。不同图可以有不同请求数和搜索长度；填充处理的是图张量，不增加真实优势样本。请求数、搜索步或教师标签数也不能计为独立训练单位。
+
+\subsection{裁剪策略目标与概率一致性}
+
+配额 PPO 采用分类动作分布，其新旧策略概率比为
+\begin{equation}
+ \rho_\ell(\theta)=
+ \exp\left[\log\pi_\theta(a_\ell\mid s_\ell)
+          -\log\pi_{\mathrm{old}}(a_\ell\mid s_\ell)\right].
+ \label{eq:ch5-search-ratio}
+\end{equation}
+裁剪目标沿用 PPO 的有限更新思想\cite{schulman2017proximal}：
+\begin{equation}
+ \mathcal L_{\mathrm{policy}}=-\mathbb E_\ell\left[
+ \min\left(\rho_\ell\widetilde A_\ell,
+ \operatorname{clip}(\rho_\ell,0.8,1.2)\widetilde A_\ell\right)\right]
+ -0.005\,\mathbb E_\ell[\mathcal H(\pi_\theta(\cdot\mid s_\ell))].
+ \label{eq:ch5-search-ppo}
+\end{equation}
+价值损失为
+\begin{equation}
+ \mathcal L_{\mathrm{value}}=
+ \frac12\mathbb E_\ell\left[(V_\phi(s_\ell)-\widehat R_\ell)^2\right].
+ \label{eq:ch5-search-value}
+\end{equation}
+共享图编码器与动作、价值头一起最小化两项之和，Adam 学习率为 $3\times10^{-4}$，每次采样执行 $8$ 个 epoch、小批量 $64$，总计 $100$ 次 PPO 更新，梯度范数裁剪为 $0.5$。最终确认使用第 $100$ 次更新后的最后检查点，没有从开发或确认曲线中挑选最高 DSR 时刻。
+
+PPO 的概率一致性在带访问去重的搜索中尤为重要。同一个配额在轨迹前段可能未访问、后段已经访问；如果训练时重算访问集合，动作分布的归一化域会改变，概率比就不再对应原采样策略。本方法把采样时掩码和当前/最好图作为不可变记录保存，并在首次梯度更新前检验重算概率比接近 $1$。并行轨迹来自相同冻结参数，教师标签不进入这些记录，从而使比值检验具有清楚的含义。
+
+\begin{table}[!htbp]
+ \centering
+ \bicaption{已确认配额策略的训练设置}{Training settings of the confirmed quota policy}
+ \label{tab:ch5-learning-settings}
+ \begin{tabular}{lrlr}
+  \toprule
+  参数 & 数值 & 参数 & 数值 \\
+  \midrule
+  隐藏宽度 & $128$ & 消息传递层数 & $2$ \\
+  请求/边/节点维数 & $4/14/16$ & 动作数 & $91$ \\
+  每块采图回合 & $25$ & 每块训练图数 & $200$ \\
+  教师总匹配预算/图 & $128$ & 监督预训练轮数 & $5$ \\
+  PPO 更新次数 & $100$ & 每更新采样图数 & $32$ \\
+  PPO epoch & $8$ & 监督/PPO小批量 & $64$ \\
+  学习率 & $3\times10^{-4}$ & 梯度范数上限 & $0.5$ \\
+  PPO 裁剪范围 & $[0.8,1.2]$ & 熵系数 & $0.005$ \\
+  折扣因子 & $1$ & GAE参数 & $0.95$ \\
+  在线匹配调用上限 & $16$ & 普通修复候选上限 & $128$ \\
+  \bottomrule
+ \end{tabular}
+\end{table}
+
+\subsection{共同基座与交互、教师计算预算}
+
+每个独立训练块先重新训练覆盖需求分层基座 $200$ 个回合，每回合 $1000$ 步。共同基座包含上层与原学习下层的最后参数、优化器与约束状态；确认中的六种下层方法从同一个上层基座出发。配额下层再使用 $25$ 个回合采图及离线监督/PPO计算；原适配学习下层则在冻结上层后继续训练 $75$ 个回合，并恢复原优化器及 DSR、MBS 约束状态。原冻结学习组保留基座下层，贪心、启发式和强随机不进行额外模型训练。
+
+协议同时登记 $50$ 个冻结采集回合的数据机会，冻结方法复用不可变采集记录。复用有助于明确各组面对的数据条件，但不能把同一记录的多个引用说成多个方法各自新增的环境交互。教师的匹配调用和网络优化计算也不因为环境步数相同就消失。因此，本文将共同基座、独有采图、适配交互、复用记录和离线求解分别说明，不声称六组总训练计算严格相等。比较要回答在这些固定训练合同下方法的实际表现，而不是每个训练步骤都完全等算力的架构竞赛。
+
+图~\ref{fig:ch5-training} 分别给出共同基座的环境回合曲线和配额策略的搜索训练曲线。前者反映覆盖轨迹基座随环境交互的变化，后者反映固定训练图上监督与 PPO 优化过程；横轴、奖励定义和检查点含义不同，不把它们拼成一条联合端到端收敛曲线。训练损失或奖励趋稳可以帮助诊断数值运行，独立确认的服务指标才用于判断方法效果。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-5_基座与配额训练曲线}
+ \bicaption{共同基座与配额策略的实际训练记录。前四面板依次为基座平均步奖励、基座DSR、配额PPO损失和价值损失：细线为十块原始曲线，粗线和带分别为块间均值与正负一个标准差；未平滑。后两面板为每块一次教师监督损失记录和样本数；未保存逐轮损失，故不绘制教师收敛曲线。环境回合、优化更新与训练块横轴分别对应不同阶段}{Actual training records of the foundation and quota policy; curves show ten blocks, and teacher panels show one recorded summary per block}
+ \label{fig:ch5-training}
+\end{figure}
+
+\section{独立确认设计与统计方法}
 \label{sec:whole-protocol}
+\label{sec:ch5-protocol}
 
-主场景包含五架 UAV、一百 UE、一个 MBS，服务区域为 $700\,\mathrm{m}\times700\,\mathrm{m}$。使用十个新的训练种子和五个新的工作负载种子；学习方法每个训练种子训练 $200$ 个 episode、每个 episode $1000$ 步，rollout 长度 $1000$、PPO 更新 $8$ 轮、小批量 $256$，其余超参与第三章一致；每个检查点在每个工作负载上评估六个 episode。全矩阵为 $60$ 次学习式训练、$300$ 个学习式评估任务及 $25$ 个非学习式评估任务，共 $1950$ 个评估 episode。非学习方法每个工作负载运行一次，不复制成十个“训练重复”。
+\subsection{场景、种子分割与最后检查点}
 
-主指标是同一评估任务内满足截止时间的服务请求数除以实际生成的服务请求数，即式~\eqref{eq:current-dsr-decomp} 的 DSR。五个学习式主比较在实验前指定为“候选减去各对手”；先对一个训练种子的五个配对工作负载差值取平均，再以十个训练种子为独立重复，报告双侧 $95\%$ 区间及 Holm 校正的双侧检验结果。评估 episode 和单个请求只用于构成每个任务的指标，不能当成额外独立训练重复。
-
-除 DSR 外，本章报告以下次指标解释权衡，它们不在看到结果后取代 DSR 主指标：（i）\textbf{接纳率} $A/G$ 与\textbf{接纳后按时完成率} $S/A$，对应式~\eqref{eq:current-dsr-decomp} 的两个因子；（ii）\textbf{UAV 机队能耗}，为一个评估单元内五架 UAV 的总能耗除以评估 episode 数，即每 episode 平均机队能耗，含飞行与作业能耗；（iii）\textbf{公平性}，即式~\eqref{eq:jfi} 的 Jain 指数；（iv）\textbf{有效任务数/MJ}，为按时完成请求数与机队能耗之比；（v）\textbf{MBS 卸载比例}，为回传 MBS 执行的请求占已接纳请求的比例；（vi）\textbf{惩罚延迟}，为已接纳请求的实际服务延迟之和加上每个未接纳请求 $20\,\mathrm{s}$ 的固定惩罚后，对实际生成请求数取平均。该批次保存了源码内容摘要、完成标记和原始评估审计；执行标签为 pilot，尚无正式提交锁定发布凭证。
-
-\section{主场景的整套方法表现}
-\label{sec:whole-results}
+主场景沿用五架 UAV、一百 UE、一个 MBS 和 $700\,\mathrm{m}\times700\,\mathrm{m}$ 区域，通信、请求生成、能量动态、自然接纳和环境奖励均保持冻结定义。方法开发使用五个历史训练块；最终确认换用十个未参与开发模型选择的训练块，并单独设置基座训练、下层训练和确认负载。冻结候选、分析族和晋级门槛后才执行确认，不能因确认结果不理想而换检查点或补入新模块。
 
 \begin{table}[!htbp]
-    \centering
-    \bicaption{一百 UE 主场景的完整方法比较（能耗为每 episode 平均机队能耗）}{Whole-method comparison in the 100-UE main setting}
-    \label{tab:whole-method-results}
-    \footnotesize
-    \setlength{\tabcolsep}{1.5pt}
-    \begin{tabular}{lcccccccc}
-        \toprule
-        方法 & DSR $\uparrow$ & 接纳率 & 接纳后满足率 & \makecell{每 episode\\平均能耗/MJ} & 公平性 & 有效任务/MJ & MBS 比例 & 惩罚延迟/s \\
-        \midrule
-        \multicolumn{9}{l}{\emph{学习式方法（十训练种子配对推断）}} \\
-        本章候选 & \textbf{0.2798} & 0.6248 & 0.4491 & 50.79 & 0.924 & 178.8 & 0.028 & 26.72 \\
-        下层无注意力强基线 & 0.2459 & 0.5269 & 0.4703 & 54.60 & 0.853 & 146.0 & 0.029 & 32.76 \\
-        原双注意力分层方法 & 0.2433 & 0.5670 & 0.4308 & 51.19 & 0.879 & 153.2 & 0.023 & 30.34 \\
-        Vanilla 分层方法 & 0.2153 & 0.6904 & 0.3131 & 43.74 & 0.885 & 158.6 & 0.011 & 23.63 \\
-        IPPO & 0.2162 & 0.7164 & 0.3022 & 42.26 & 0.896 & 164.2 & 0.009 & 22.09 \\
-        Joint MAPPO & 0.2074 & 0.7199 & 0.2885 & 51.45 & 0.905 & 132.2 & 0.242 & 22.15 \\
-        \midrule
-        \multicolumn{9}{l}{\emph{非学习参照（无训练种子，仅描述性比较）}} \\
-        Uniform & 0.2153 & 0.3742 & 0.5799 & 82.29 & 0.688 & 85.4 & 0.154 & 41.47 \\
-        Greedy & 0.1793 & 0.3742 & 0.4841 & 57.76 & 0.680 & 97.4 & 0.026 & 41.52 \\
-        Local & 0.1721 & 0.3742 & 0.4636 & 49.85 & 0.681 & 109.9 & 0.000 & 41.55 \\
-        Random & 0.1528 & 0.3256 & 0.4700 & 63.83 & 0.786 & 77.0 & 0.299 & 44.97 \\
-        MBS & 0.0513 & 0.3742 & 0.1388 & 0.79 & 0.687 & 2062.5 & 1.000 & 41.94 \\
-        \bottomrule
-    \end{tabular}
+ \centering
+ \bicaption{SF-HLM 独立确认的数据与模型分割}{Data and model split for independent SF-HLM confirmation}
+ \label{tab:ch5-seeds}
+ \begin{tabular}{lp{0.65\textwidth}}
+  \toprule
+  用途 & 固定设置 \\
+  \midrule
+  独立训练块 & $1060001$--$1060010$，共 $10$ 块 \\
+  基座训练负载 & $1080001$--$1080010$，与各训练块一一对应 \\
+  下层采图/适配负载 & $1090001$--$1090010$，与各训练块一一对应 \\
+  配额下层初始化 & $1100001$--$1100010$，与各训练块一一对应 \\
+  确认工作负载 & $1070001$--$1070005$，全部方法配对复用 \\
+  评价长度 & 每块每负载 $6$ 回合，每回合 $1000$ 步 \\
+  模型选择 & 基座训练与配额更新均固定最后检查点 \\
+  六方法质量评价 & $6\times10\times5\times6=1800$ 回合 \\
+  独立软件计时 & 另 $1800$ 回合，在预留物理核心重放同一策略 \\
+  \bottomrule
+ \end{tabular}
 \end{table}
 
-表~\ref{tab:whole-method-results} 的数值是本批次各方法在相同主设置下的描述均值；能耗列为各评估单元的每 episode 平均 UAV 机队能耗，再对评估单元取均值。候选相对最强已有学习方法“下层无注意力强基线”的 DSR 高 $3.39$ 个百分点，训练种子配对 $t$ 的 $95\%$ 区间为 $[2.13,4.66]$ 个百分点；十个训练种子的平均差值均为正，逐种子差值如图~\ref{fig:ch5-per-seed} 所示。候选相对其他四个预先指定学习方法的 DSR 差值也均为正，五项主比较的 Holm 校正双侧 $p$ 值均小于 $0.05$。五种非学习参照中 DSR 最高的 Uniform 为 $0.2153$；全部回传 MBS 的参照在受限回传带宽下 DSR 仅 $0.0513$，说明 MBS 依赖在主场景中代价很高；这些方法的结果用于描述性比较，不能套用学习方法的十训练种子推断。因此，现有证据支持在\emph{该一百 UE 仿真设置及各方法原配置下}候选整套方法的 DSR 优势。
+所有学习、贪心、启发式和强配额随机方法在同一训练块内复用共同上层参数，工作负载与初始外生流配对。不同卸载会改变后续能量、缓存和观测，因此即使上层参数相同，长期轨迹也可能分化；本章评价是闭环运行，不是冻结几何下的反事实分配。配对只要求潜在请求、外生随机序列和模型对应关系按协议一致，并不要求每个时隙状态或生成服务请求分母完全相同。
+
+完整确认完成 $4390$ 个登记任务，包括共同基座、原下层适配、采图、教师合并、配额训练、冻结采集、质量评价和隔离计时。逐任务摘要与检查点合同核验完成，质量回合共 $180$ 万个环境步。质量评价与计时回合的分配和真实物理计数相同；隔离计时是性能测量的重放，不是额外训练重复。恢复执行保留所有已完成结果，计时调度问题和重测记录不改变算法、种子、样本或科研门槛。
+
+\subsection{六个核心对照与两种补充随机策略}
+
+表~\ref{tab:ch5-controls} 区分下层优化包与学习机制对照。启发式按当前合法目标的预测截止期风险选择配额迁移；强配额随机在有效迁移中随机选择，两者都拥有共同保底、条件匹配、最好保留和 $16$ 次调用上限。它们不能与“每请求随机选一个目标”混为同一种随机基线。
+
+\begin{table}[!htbp]
+ \centering
+ \bicaption{完整下层与学习机制对照的组成}{Components of complete lower-layer and learning-mechanism controls}
+ \label{tab:ch5-controls}
+ \small
+ \begin{tabularx}{\textwidth}{p{0.29\textwidth}Y}
+  \toprule
+  方法 & 下层与比较用途 \\
+  \midrule
+  学习配额搜索 & 二部图 PPO 选择配额迁移，条件匹配；最终候选 \\
+  启发式配额搜索 & 相同强框架与预算，按预测风险选择迁移；学习机制对照 \\
+  强配额随机搜索 & 相同强框架与预算，在有效迁移中随机；严格学习增量对照 \\
+  贪心＋普通修复 & 原始贪心后做最多 $128$ 次普通修复；主要实用对照 \\
+  原冻结学习下层＋修复 & 基座请求级 MAPPO 提案后共同修复；主要学习对照 \\
+  原适配学习下层＋修复 & 冻结上层后继续 $75$ 回合原下层训练，再共同修复 \\
+  相同上层＋逐请求随机卸载 & 共同质量掩码内逐请求均匀随机；移除整个下层优化包 \\
+  全随机（质量掩码内） & 二维轨迹在 $[-1,1]^2$ 独立均匀采样，卸载逐请求随机 \\
+  \bottomrule
+ \end{tabularx}
+\end{table}
+
+原学习下层训练保存其原始提案和采样概率，修复后的执行动作不伪装为原策略采样动作。原适配组恢复基座优化器与自适应约束状态，使其对照包含继续学习已有下层的机会。两种原学习组都经过相同共同能耗参照与普通修复，因此主差值比较的是配额匹配下层与已有学习提案加修复的完整方法，而不是未经修复的弱实现。
+
+补充随机评价在确认之后登记，复用十套冻结模型和五个已用确认负载，每新方法 $300$ 个质量回合及 $300$ 个隔离计时回合。它们保持质量掩码、自然接纳和原物理规则，但移除贪心初始化、普通修复、条件匹配、配额搜索、最好保留与方法特有的预测能耗筛选。该筛选是算法组件而非物理约束，移除它没有改变环境的物理合法域。这两个对照分别解释完整系统和完整下层优化包的收益，不能代替共享强框架上的学习检验。
+
+\subsection{请求计数聚合与十个独立统计单位}
+
+令 $b=1,\ldots,10$ 为独立训练块，$w=1,\ldots,5$ 为工作负载，$e=1,\ldots,6$ 为评估回合，$t=1,\ldots,1000$ 为时隙。对方法 $a$，先合并同一块的全部请求计数：
+\begin{equation}
+ G_b^a=\sum_{w,e,t}G_{bwet}^a,\qquad
+ A_b^a=\sum_{w,e,t}A_{bwet}^a,\qquad
+ S_b^a=\sum_{w,e,t}S_{bwet}^a.
+ \label{eq:ch5-block-counters}
+\end{equation}
+再定义块级指标
+\begin{equation}
+ D_b^a=\frac{S_b^a}{G_b^a},\qquad
+ a_b^a=\frac{A_b^a}{G_b^a},\qquad
+ q_b^a=\frac{S_b^a}{A_b^a},\qquad D_b^a=a_b^aq_b^a.
+ \label{eq:ch5-block-metrics}
+\end{equation}
+主场景各块均有非零生成与接纳计数。通用实现用正分母保护处理空统计单元，但不把没有请求的空单元解释为 $100\%$ 服务成功。
+
+方法的描述均值是 $\overline D^a=10^{-1}\sum_bD_b^a$。这使每个独立模型块的权重相同，不让生成请求稍多的块获得更大统计权重。它也不同于先求每回合比率再平均，因为后者会让请求较少的回合与请求较多的回合占相同权重。本文使用请求计数汇总的定义，并在表、图和差值检验中保持一致。
+
+跨块均值一般不满足 $\overline D=\overline a\,\overline q$，其差为
+\begin{equation}
+ \overline D-\overline a\,\overline q
+ =\frac1{10}\sum_{b=1}^{10}(a_b-\overline a)(q_b-\overline q).
+ \label{eq:ch5-mean-product}
+\end{equation}
+因此，展示平均接纳率和平均接纳后完成率有助于解释方向，却不能用两均值乘积反算报告的 DSR。图中的精确分解优先使用同块计数；若展示跨块均值，应同时保留各块指标而不是把舍入误差或块间协变误判为计数错误。
+
+训练块是主推断单位。五工作负载和六回合改善块内估计，单个请求提供服务计数，都不扩充独立训练样本数。强随机搜索在每块对应同一个学习上层，并具有独立策略随机流，因此其变化包含共同模型和策略随机性。全随机没有训练过程，补充评价的十个块只是与十套模型配对的独立随机流重复，不应称作十个全随机训练种子。
+
+\subsection{配对区间、多重比较与预定门槛}
+
+候选 $a$ 与对手 $c$ 的块级差值为 $\Delta_b=D_b^a-D_b^c$。其均值、标准差与双侧 $95\%$ 配对 $t$ 区间为
+\begin{equation}
+ \overline\Delta=\frac1{10}\sum_b\Delta_b,\quad
+ s_\Delta^2=\frac1{9}\sum_b(\Delta_b-\overline\Delta)^2,\quad
+ \mathrm{CI}_{95}=\overline\Delta\pm t_{0.975,9}\frac{s_\Delta}{\sqrt{10}}.
+ \label{eq:ch5-paired-ci}
+\end{equation}
+$t_{0.975,9}$ 约为 $2.262$。检验以模型块差值为数据，不以数百万请求计算一个人为极窄的区间。论文报告百分点，内部差值采用 $[0,1]$ 比例；从 $0.01423$ 转为 $1.423$ 个百分点时乘 $100$，不能称 $1.423\%$ 相对提升。
+
+主检验族在确认前固定为学习相对贪心修复、原冻结学习修复和原适配学习修复三项。学习相对启发式与强随机属于独立的两项机制族。每族内部按 Holm 方法校正：将 $K$ 个原始双侧 $p$ 值升序排列，计算
+\begin{equation}
+ p_{(i)}^{\mathrm{Holm}}=
+ \min\left\{1,\max_{h\le i}(K-h+1)p_{(h)}\right\}.
+ \label{eq:ch5-holm}
+\end{equation}
+族的划分由问题而不是结果决定。两种新随机补充的学习对照另组成预先登记的新族，旧机制检验不因补充的巨大差值而重新选择校正范围。
+
+每个主比较须同时满足：DSR 均值增益至少 $1$ 个百分点、配对区间下界为正、Holm 校正 $p<0.05$、真实 UAV 总能耗的块级比值平均不超过 $1.05$，以及候选每块完整软件 p95 小于 $1\,\mathrm{s}$。能耗比定义为
+\begin{equation}
+ \overline\eta_{a/c}=\frac1{10}\sum_b\frac{E_b^a}{E_b^c}.
+ \label{eq:ch5-energy-ratio}
+\end{equation}
+它不同于两个能耗均值的比。能耗筛选约束预测分配能耗，验收门槛检查真实机队总能耗，两者是互补条件。统计通过也不自动意味着达到预定实用增益，跨场景评价会同时报告这两种判断。
+
+对学习--强随机的小差值，进一步保留精确符号翻转敏感性检验。十块配对差值形成 $2^{10}$ 种符号组合，用均值绝对值与观测值比较，考察结论对小样本分布假设的敏感性。该检验仍依赖配对差值在零假设下可交换符号的条件，也不是通用因果检验；它的价值在于没有选择性地删除与参数检验不完全一致的证据。
+
+\subsection{能耗、公平性、MBS 与完整软件计时}
+
+真实能耗 $E_b^a$ 汇总五架 UAV 的飞行与作业等全部环境记录，再除以块内 $30000$ 个时隙得到 J/步。该量不包括 MBS 计算、真实部署的新增控制通信和获取大范围需求信息的全部费用，所以 UAV 节能与全网节能是不同主张。公平性按第三章 Jain 指数逐时隙计算，再在块内平均；MBS 占比为块内送往 MBS 的请求数除以已接纳服务请求数。MBS 分母是接纳数，不是全部生成数。
+
+完整软件时间从移动前输入准备开始，包含观测构造、两层策略推理、共同保底、配额搜索、匹配、动作映射及逻辑消息编码，排除环境物理仿真和结果落盘。先在各训练块 $30000$ 次策略调用上计算 p95，再跨块平均；每块最大 p95 单独用于预定门槛。隔离计时在预留物理核心运行，与共享集群上的质量评估计时区分。相同模型和外生流重放保证时间测量不改变动作及质量，硬件和软件测量条件限制其可外推范围。
+
+逻辑上传、下载字节以当前请求行、动作与摘要的序列化记录为依据，支持审计协调信息规模，但字节数不是通信时延或能耗的实测值。本章确认没有把理想协调转化为真实网络部署证明。后续若加入通信费用，需要在截止期判定前和奖励计算前分别计入相应延迟、能耗，并将其作为新物理协议评价，而不是在现有主结果上补一个未验证常数。
+
+\section{主场景性能与完整下层优化包的收益}
+\label{sec:whole-results}
+\label{sec:ch5-results}
+
+\subsection{代表轨迹与实际注意力记录}
+
+先以一个事先固定的评估实例展示集群在线运行形态：取首个确认训练块 $1060001$、首个工作负载 $1070001$、第 $0$ 回合，绘制学习配额与贪心修复的五机轨迹、实际航程和最小机间距，如图~\ref{fig:ch5-trajectories}。两方法起始外生条件和冻结上层参数相同，但下层执行影响电量、缓存和后续观测，轨迹随闭环状态演化可以不同。选择首实例而不是视觉上最有利的轨迹，有助于把运行示例与全样本性能推断分开。
 
 \begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.85\textwidth]{docs/figures/图5-2_逐训练种子DSR差值}
-    \bicaption{候选相对下层无注意力强基线的逐训练种子 DSR 差值（五个配对工作负载取平均）}{Per-training-seed DSR difference of the candidate against the strong baseline (averaged over five paired workloads)}
-    \label{fig:ch5-per-seed}
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-6_UAV轨迹与覆盖}
+ \bicaption{预选首确认回合的集群空间机动记录。上排为两方法五机轨迹，灰点仅表示初始 UE 位置，虚线为终点 $100\,\mathrm{m}$ 服务圆；下排为逐机实际水平航程与最小机间距。$200\,\mathrm{m}$ 间距线是既定几何约束；本图只描述各方法一个回合}{Swarm trajectories, per-UAV horizontal path lengths and minimum separation in one preselected episode per method; UE markers show initial positions only}
+ \label{fig:ch5-trajectories}
 \end{figure}
 
-这一优势并不意味着每个中间指标都同向改善。图~\ref{fig:ch5-decomposition} 将各学习式方法的 DSR 分解为接纳率与接纳后按时完成率。相对下层无注意力强基线，候选接纳率由 $0.5269$ 增至 $0.6248$，但接纳后按时完成率由 $0.4703$ 降至 $0.4491$；后者在本批次的配对交叉重采样 $95\%$ 区间为 $[-0.0490,0.0080]$，跨越零。第三章独立确认批次的相应下降区间未跨零，因而不能只选其中一批宣称“质量必然下降”或“质量没有下降”。相对 Vanilla、IPPO 和 Joint，候选的接纳率反而较低，DSR 较高主要对应更高的\emph{接纳后}按时完成率。不同对手的改善机制并不相同，不能以“所有对比都靠扩大覆盖”概括。
+逐机航程由实际位置差累加，即 $\ell_u=\sum_{t=0}^{T-1}\|\mathbf q_u(t+1)-\mathbf q_u(t)\|_2$，其中 $T=1000$，$\ell_u$ 的单位为 m；它不使用网络原始动作模长代替执行位移。该回合中，SF-HLM 五机航程之和约为 $41.664\,\mathrm{km}$，贪心修复约为 $42.291\,\mathrm{km}$。这些数值描述预选实例的机动分工，不代表全评估总体中的航程差异。最小机间距按 $d_*(t)=\min_{u<v}\|\mathbf q_u(t)-\mathbf q_v(t)\|_2$ 逐步计算；两方法的实际位置记录连续，最大单步位移不超过 $15\,\mathrm{m}$，最小间距为 $200\,\mathrm{m}$，核验采用 $10^{-6}\,\mathrm{m}$ 浮点容差。该结果检查的是修复后的离散位置，而不是学习策略独立提供的连续飞行避碰能力。
+
+轨迹图中的地面散点是初始位置，不能用于计算用户移动后的动态覆盖率；终点服务圆用于说明当时 UAV 的服务几何。总体接纳优势仍由完整评估计数支持。图~\ref{fig:ch5-actual-attention} 进一步展示同一代表回合第 $500$ 步的实际策略前向注意力，用当前输入及实际模型权重重算并记录，区别于独立构造的示意注意力或不参与 actor 决策的旧诊断接口。图中的权重用于查看策略在该状态下怎样聚合可见邻居与需求信息。
 
 \begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.9\textwidth]{docs/figures/图5-3_接纳与接纳后质量分解}
-    \bicaption{学习式方法的接纳率与接纳后按时完成率}{Admission fraction and deadline satisfaction among admitted for the learned methods}
-    \label{fig:ch5-decomposition}
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-7_实际前向注意力}
+ \bicaption{代表确认回合第 $500$ 步上层 actor 的实际前向注意力记录。权重说明该状态下的信息聚合，不作为注意力贡献的独立因果证明}{Actual upper-actor attention at step 500 of the representative episode; a descriptive forward-pass diagnostic}
+ \label{fig:ch5-actual-attention}
 \end{figure}
 
-UAV 侧能耗同样存在权衡。候选在本批次的每 episode 平均机队能耗约为 $50.79\,\mathrm{MJ}$，低于下层无注意力强基线的 $54.60\,\mathrm{MJ}$，却高于 Vanilla 分层方法的 $43.74\,\mathrm{MJ}$ 与 IPPO 的 $42.26\,\mathrm{MJ}$。以单位能耗的按时完成请求数衡量，候选为 $178.8$ 任务/MJ，高于全部学习式对手；但 MBS 参照的 $2062.5$ 任务/MJ 来自其几乎不消耗 UAV 能量的极端卸载方式，同时伴随最低的 DSR，不能作为能效优势解读。因此不能宣称全方法、全指标最优。当前能耗还不包括获取 $460\,\mathrm{m}$ 预接纳 UE 信息所需的实际信令成本；这里的仿真能耗差不能外推成真实部署的净节能。
+注意力可视化与统计性能互相补充：前者检查模型确实使用了所描述的前向路径，后者检验整套策略在独立训练块上的服务效果。本章核心六组共享冻结上层，所以这些比较不能单独识别上层注意力与无注意力架构的差值。上层观测与结构的证据来自第三章，本章重点是相同覆盖基座上的下层组织能力，避免用漂亮的权重图替代对照实验。
 
-早期五训练种子全量批次（不含本章候选方法）还考察了 UE 数量与算力变化：原双注意力分层方法在 60/80/100/120/140 UE 下的 DSR 依次约为 $0.357/0.290/0.243/0.203/0.176$，在 60 与 80 UE 时不高于 Vanilla 分层方法；UAV 算力在 $0.6$ 至 $1.4$ 倍间变化时其 DSR 由约 $0.196$ 升至 $0.271$，各设置均高于 Vanilla。该格栅属于早期批次、训练种子更少且不含候选方法，其结果仅作背景，不与表~\ref{tab:whole-method-results} 的绝对数值拼接。
+\subsection{八种方法的截止期满足表现}
 
-\section{与第四章固定快照求解器的桥接}
+表~\ref{tab:ch5-main-quality} 和图~\ref{fig:ch5-eight-dsr} 汇总最新确认及补充随机评价。前六组属于正式六方法确认，后两组是相同冻结模型与已用确认负载上的补充评价；二者使用相同实际生成服务请求分母和块级计数汇总。主方法 DSR 为 $34.244\%$，在本表八个方法中具有最高描述均值。该比较不把第三章或早期完整方法批次的绝对数值拼入，避免源码、训练负载和协议差异被误认为算法配对增益。
+
+\begin{table}[!htbp]
+ \centering
+ \bicaption{一百 UE 主场景的服务指标（先合并块内请求计数，再跨块平均）}{Service metrics in the 100-UE setting, obtained from within-block request counts and between-block averaging}
+ \label{tab:ch5-main-quality}
+ \begin{tabular}{lrrr}
+  \toprule
+  方法 & DSR/\% & 接纳率/\% & 接纳后完成率/\% \\
+  \midrule
+  学习配额搜索 & \textbf{34.244} & 57.339 & 59.819 \\
+  启发式配额搜索 & 33.475 & 57.342 & 58.472 \\
+  强配额随机搜索 & 34.100 & 57.379 & 59.517 \\
+  贪心＋普通修复 & 32.821 & 57.367 & 57.305 \\
+  原冻结学习下层＋修复 & 32.236 & 57.375 & 56.309 \\
+  原适配学习下层＋修复 & 32.052 & 57.383 & 55.953 \\
+  \midrule
+  全随机（质量掩码内） & 15.428 & 33.797 & 45.673 \\
+  相同上层＋逐请求随机卸载 & 23.640 & 57.431 & 41.222 \\
+  \bottomrule
+ \end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.97\textwidth]{../docs/figures/图5-8_八方法DSR比较}
+ \bicaption{最新冻结协议下八种方法的 DSR 比较。六个核心方法与两种随机补充分开标识；统计单位为十个模型/随机流配对块}{DSR comparison of eight methods under the latest frozen protocol, with core and supplementary controls identified}
+ \label{fig:ch5-eight-dsr}
+\end{figure}
+
+学习相对贪心修复的主增益为 $1.423$ 个百分点，相对原冻结、原适配学习修复分别为 $2.008$ 和 $2.192$ 个百分点，完整区间与校正检验列于表~\ref{tab:ch5-primary}. 三项差值均在十个训练块上同向为正；图~\ref{fig:ch5-primary-blocks} 展示这些块级配对差，说明均值优势并非由单个异常训练块独自支撑。三项均达到预定 $1$ 个百分点实用目标，区间下界为正，并通过三比较 Holm 校正。
+
+\begin{table}[!htbp]
+ \centering
+ \bicaption{三个预定主对照的配对 DSR 差值与真实 UAV 能耗比}{Paired DSR effects and actual UAV energy ratios for the three prespecified primary controls}
+ \label{tab:ch5-primary}
+ \small
+ \begin{tabular}{lrrrr}
+  \toprule
+  学习减对手 & 差值/百分点 & $95\%$区间/百分点 & Holm $p$ & 能耗比 \\
+  \midrule
+  贪心＋普通修复 & $+1.423$ & $[1.258,1.587]$ & $2.22\times10^{-8}$ & $0.9094$ \\
+  原冻结学习＋修复 & $+2.008$ & $[1.808,2.208]$ & $8.92\times10^{-9}$ & $0.9656$ \\
+  原适配学习＋修复 & $+2.192$ & $[1.903,2.481]$ & $3.46\times10^{-8}$ & $0.9803$ \\
+  \bottomrule
+ \end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.97\textwidth]{../docs/figures/图5-9_主比较训练块配对差}
+ \bicaption{SF-HLM 相对三个主对手的十训练块配对差。每个块先合并五工作负载、六回合的请求计数}{Per-training-block DSR differences against the three primary controls, based on pooled requests within each block}
+ \label{fig:ch5-primary-blocks}
+\end{figure}
+
+两个已有学习下层均经过共同修复，原适配组还获得了继续学习的机会，因此该结果支持配额匹配下层优于这些固定合同下的原请求级学习方案。它没有证明所有请求级强化学习都弱于配额学习，也没有证明本章网络在相同总教师计算预算下必然优于所有替代网络。直接可支持的结论是：在所评估的一百 UE 仿真主场景、十个独立训练基座和已固定训练流程中，SF-HLM 对三个预定实用对手的端到端 DSR 有稳定正增益。
+
+\subsection{接纳与接纳后质量的请求计数分解}
+
+核心六方法的平均接纳率均约为 $57.3\%$，差异较小；学习主线相对贪心的接纳率为 $57.339\%$ 对 $57.367\%$，接纳后按时完成率则为 $59.819\%$ 对 $57.305\%$。这与同覆盖基座下改善已接纳请求批量组织的设计相符。闭环状态仍可能分化，因此不能把平均接纳接近解释为所有时隙完全相同的请求集合，但结果表明主增益不是通过强行增加接纳分母获得。
+
+图~\ref{fig:ch5-outcomes} 将生成请求分为未接纳、接纳后超时与按时完成三个互斥部分。块内占比分别为 $(G-A)/G$、$(A-S)/G$ 和 $S/G$，相加为 $1$；跨块平均保持该线性恒等式。主线中三个部分约为 $42.661\%$、$23.095\%$ 和 $34.244\%$。同上层逐请求随机卸载的按时完成率仅为 $41.222\%$，而接纳率仍为 $57.431\%$，显示进入服务范围后的执行质量构成主要差距。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-10_请求结果与接纳后质量}
+ \bicaption{生成请求的互斥结果分解与接纳后完成率。三种结果按同块计数计算后平均，条件完成率以接纳请求为分母}{Mutually exclusive request outcomes and deadline completion conditional on admission}
+ \label{fig:ch5-outcomes}
+\end{figure}
+
+全随机接纳率为 $33.797\%$，明显低于采用学习上层的策略组，反映完整系统在形成服务机会方面的收益。保留学习上层之后，随机卸载的接纳后质量仍远低于配额匹配。这两个对照有助于解释覆盖与服务质量各自的作用，但不是固定状态下可相加的因果分解：全随机改变运动，随机卸载改变能量和后续观测，二者的状态轨迹不同。本文使用分解描述实际结果，不把 $18.816$ 个百分点机械拆成几个独立组件贡献。
+
+\subsection{UAV 能耗与 MBS 依赖}
+
+表~\ref{tab:ch5-main-cost} 和图~\ref{fig:ch5-energy-mbs} 同时报告 UAV 机队能耗与 MBS 占比。主线真实 UAV 能耗为 $30394.4\,\mathrm{J}/\text{步}$，低于贪心修复的 $33419.9\,\mathrm{J}/\text{步}$；按块能耗比平均计，降低约 $9.06\%$。相对原冻结与原适配学习修复，块级能耗比为 $0.9656$ 与 $0.9803$。因此三个主比较的 DSR 改善没有以超过预定机队能耗门槛为代价。
+
+\begin{table}[!htbp]
+ \centering
+ \bicaption{主场景 UAV 资源代价、公平性和完整软件时间}{UAV resource costs, fairness and full-policy software timing in the main setting}
+ \label{tab:ch5-main-cost}
+ \small
+ \begin{tabular}{lrrrr}
+  \toprule
+  方法 & UAV能耗/(J/步) & MBS占比/\% & 公平性 & 块p95均值/ms \\
+  \midrule
+  学习配额搜索 & $30394.4$ & $9.83$ & $0.9239$ & $109.24$ \\
+  启发式配额搜索 & $31854.7$ & $2.42$ & $0.9209$ & $78.16$ \\
+  强配额随机搜索 & $30123.1$ & $8.17$ & $0.9216$ & $73.47$ \\
+  贪心＋普通修复 & $33419.9$ & $2.92$ & $0.9212$ & $17.59$ \\
+  原冻结学习下层＋修复 & $31484.7$ & $3.07$ & $0.9207$ & $17.19$ \\
+  原适配学习下层＋修复 & $31010.1$ & $4.14$ & $0.9208$ & $17.17$ \\
+  全随机（质量掩码内） & $59649.6$ & $29.65$ & $0.7874$ & $4.70$ \\
+  相同上层＋随机卸载 & $57503.7$ & $29.45$ & $0.9208$ & $6.57$ \\
+  \bottomrule
+ \end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-11_UAV能耗与MBS依赖}
+ \bicaption{真实 UAV 机队能耗与 MBS 依赖。能耗为 J/步，MBS 比例为 MBS 请求数除以接纳请求数；未计 MBS 全网费用}{Actual UAV fleet energy per step and MBS fraction among admitted requests, excluding whole-network MBS costs}
+ \label{fig:ch5-energy-mbs}
+\end{figure}
+
+另一方面，主线送往 MBS 的接纳请求占比为 $9.83\%$，高于贪心的 $2.92\%$ 和启发式的 $2.42\%$。在当前非共享 MBS 计算规则下，改变哪些请求进入 MBS 会释放 UAV 算力，并改变 UAV 计算与转发能耗。这是算法可以利用的资源分配条件，也是解释 UAV 节能时必须报告的资源迁移。因此，主线的 UAV 能耗下降不能直接写成全网能耗下降，也不能在方法优势表中删除 MBS 依赖列。
+
+逐请求随机卸载的 MBS 占比接近 $29.5\%$，却同时具有较低 DSR 和较高 UAV 能耗，说明 MBS 比例本身不是充分的性能解释。请求身份、回传路径、UAV 剩余批量和质量掩码共同影响结果。后续共同 MBS 数量快照诊断将进一步控制这一维度，检验配额匹配在固定 MBS 使用数量时仍有多少单步质量余量。
+
+\subsection{公平性、计算费用与可执行性}
+
+学习主线公平性均值为 $0.9239$，核心六方法约在 $0.9207$ 至 $0.9239$ 范围；全随机为 $0.7874$。图~\ref{fig:ch5-fairness-time} 展示公平性和隔离软件 p95。主线在共享上层组中保持较高的描述公平性，同时完整软件 p95 的块均值为 $109.24\,\mathrm{ms}$，各块为约 $103$--$114\,\mathrm{ms}$，最大为 $114.343\,\mathrm{ms}$，均小于预定 $1\,\mathrm{s}$ 阈值。该结果证明在本次隔离测量条件下，完整在线调用满足协议时间门槛。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-12_公平性与隔离软件耗时}
+ \bicaption{块级公平性与隔离完整软件 p95。p95先在每块全部调用上计算，再展示十块分布及其均值}{Block-level fairness and isolated full-policy p95, computed within each block before summarizing}
+ \label{fig:ch5-fairness-time}
+\end{figure}
+
+主线比强配额随机的 $73.47\,\mathrm{ms}$、启发式的 $78.16\,\mathrm{ms}$ 和贪心修复的 $17.59\,\mathrm{ms}$ 更慢。二部图推理虽然可能减少实际匹配次数，额外前向计算仍构成净费用；因此少用求解调用不等于更短墙钟时间。相对于两个弱随机参照，主线的巨大服务提升也伴随更高软件成本。公平性和软件时间各自回答服务分布与执行负担问题，不能只选择其中较有利的一项宣称全指标优势。
+
+完整软件时间没有计入真实网络传输、MBS 排队或未建模的需求感知费用，也不构成所有硬件上的实时保障。在本章范围内，更合适的表述是“在规定服务器隔离测量条件下满足预定软件时间门槛”，而不是“已经可直接部署于任何 UAV”。实用价值来自可复现的服务增益、明确的计算预算及已测时间水平共同成立。
+
+\section{完整框架与学习机制的分层解释}
+\label{sec:ch5-mechanisms}
+
+\subsection{完整系统与完整下层优化包}
+
+补充随机评价显示，学习主线相对全随机 DSR 高 $18.816$ 个百分点，$95\%$ 配对区间为 $[17.840,19.791]$；相对相同上层逐请求随机卸载高 $10.604$ 个百分点，区间为 $[10.376,10.832]$。两项十块均为正，新两比较 Holm 校正通过，精确符号翻转 $p=0.001953$。对应真实 UAV 能耗块级比为 $0.5095$ 与 $0.5284$，即平均分别降低约 $49.0\%$ 和 $47.2\%$。
+
+这组结果表明，与不组织批量卸载的随机决策相比，完整优化包能显著利用已形成的服务机会，同时减少随机资源分配带来的 UAV 能耗。在两组共有的质量合法域下，优化包进一步使用共同贪心、普通修复、预测能耗筛选、条件指派以及最好保留。相对逐请求随机的 $10.604$ 个百分点改善属于这一完整包，不能全数记到图 PPO 的名下。对毕业论文的贡献表述应突出“配额分解与条件匹配组成的在线优化框架”，再单独报告学习策略在这个框架上带来的增量。
+
+全随机没有训练种子，其十个块是独立随机动作流与十套学习基座的配对重复。区间反映给定五个确认工作负载上模型和随机策略变化，不证明所有地理分布或请求类型下均有相同效应。补充评价也没有生成新的学习模型，因此应与正式十新训练块确认区分；其作用是补足解释层次，不能增加主确认的独立训练样本数。
+
+\subsection{相同强框架上的学习配额增量}
+
+共享强框架中，启发式 DSR 为 $33.475\%$，强配额随机为 $34.100\%$，学习为 $34.244\%$。学习相对启发式差 $0.769$ 个百分点，$95\%$ 区间 $[0.670,0.868]$，机制族 Holm $p=5.56\times10^{-8}$。这说明按图状态学习的配额选择优于本实验采用的风险排序启发式。该判断限定于所定义的启发式，不把一个启发式的结果外推为所有手工搜索规则都不能达到同样质量。
+
+图~\ref{fig:ch5-mechanism-blocks} 展示学习相对两个强框架对照的块级差。学习相对强随机的平均增量仅为 $0.143$ 个百分点，区间为 $[0.006,0.281]$；十块中六块正向，原预定机制族 Holm $p=0.0422$。参数区间与校正检验达到原协议门槛，但精确符号翻转敏感性检验 $p\approx0.0605$。两种推断在临界小效应上并不完全一致，应保留这种不确定性，而不是用弱随机对照的大效应掩盖它。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.97\textwidth]{../docs/figures/图5-13_强框架机制配对差}
+ \bicaption{学习相对启发式和强配额随机的机制差。强随机共享初始化、修复、匹配、最好保留和相同调用预算}{Mechanism differences against heuristic and strong random quota search sharing the same optimization framework}
+ \label{fig:ch5-mechanism-blocks}
+\end{figure}
+
+强随机在相同调用预算内已能取得接近学习的质量，显示条件匹配、共同保底与最好保留本身具有较强作用。学习配额的额外收益目前较小，并且完整时间更长、相对强随机 UAV 能耗块级比为 $1.0089$。因此已建立的主要实用优势是对贪心与已有请求级学习修复的稳定改善；“学习显著加速搜索”或“学习全面压倒强随机”不是本章结论。这个区分不削弱完整方法的主比较，而是准确划定了可归因于参数学习的部分。
+
+\subsection{预测误差与实际服务验证}
+
+学习主线每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个请求，平均绝对误差为 $0.366$；贪心相应值约为 $-0.209$ 和 $0.321$。负偏差说明观测预测总体上略低估真实超时，可能涉及缓存信念与真实状态的差别及执行细节。本文没有把预测器视为真实时延保证，所有 DSR 结果均由生产环境的按时完成计数计算。
+
+误差统计与条件最优证明并不矛盾。指派在给定预测量下精确优化，描述的是求解结构；预测量与实际执行之间仍存在误差，描述的是模型真实性。二者需要分别检查。如果只报告预测超时减少，可能把更乐观的预测当成性能提高；本章逐步重放实际计数，并在固定快照诊断中通过独立环境副本评价实际结果，使搜索时没有接触的执行真值用于最终验证。
+
+\subsection{固定潜在服务请求分母复核}
+
+相同外生随机流下，低电量 UE 会将潜在服务请求改为能量请求，因此实际生成服务请求分母有轻微策略依赖性。六个核心方法在全部确认回合中的潜在服务请求总数均为 $11397280$。保持原成功数不变，以共同潜在请求为分母，学习 DSR 均值为 $34.235\%$，强配额随机为 $34.091\%$；学习相对贪心的增益为 $1.421$ 个百分点，与预定实际分母下 $1.423$ 的方向和量级一致。
+
+这项复核表明，主场景的轻微分母内生性不能解释三个主比较中的服务增益。它没有令低电量 UE 继续产生服务请求，也没有重新运行改变请求生成规则的环境，因此不是反事实物理实验。预定实际分母 DSR 仍为主指标，固定潜在分母作为敏感性结果同时提供，避免事后改换较有利的指标。
+
+\section{冻结策略的负载与算力稳健性}
+\label{sec:ch5-robustness}
+
+\subsection{九格设置与冻结评价}
+
+独立确认完成后，冻结十套基座和配额最后检查点，在 $60/100/140$ UE 与 $0.6/1.0/1.4$ 倍 UAV 算力的九格上评价。每格保持原五负载、六回合和六种核心方法，主格直接引用原 $1800$ 回合，八个新格共完成 $14400$ 个质量回合。权重、优化器、奖励、MBS 算力与自然接纳保持不变，只按协议调整 UE 数和 UAV 算力。这是固定策略面对新负载与资源规模的复验，不是各格重新训练后的场景适应比较。
+
+上层输入槽位固定为训练时的 $30$ 个 UE；需求超过槽位时遵循原排序与容量规则，不扩大网络。图下层使用实际请求数，原固定尺寸 MLP 下层则沿用填充与分块推理，不能通过增加网络尺寸给其追加未训练参数。各格方法使用相同改变后的物理环境。新格复用了原训练块与确认负载，因此没有形成另一套独立训练确认；其结论是原冻结策略在规定格点上的表现。
+
+\begin{table}[!htbp]
+ \centering
+ \bicaption{学习配额主线在九格冻结评价中的 DSR}{DSR of the learned quota method across the nine frozen-policy settings}
+ \label{tab:ch5-nine-grid}
+ \begin{tabular}{lrrr}
+  \toprule
+  UE 数量 & $0.6$倍算力/\% & $1.0$倍算力/\% & $1.4$倍算力/\% \\
+  \midrule
+  $60$ & $44.430$ & $48.961$ & $50.746$ \\
+  $100$ & $29.736$ & $34.244$ & $36.349$ \\
+  $140$ & $22.142$ & $26.259$ & $28.263$ \\
+  \bottomrule
+ \end{tabular}
+\end{table}
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-14_九格冻结策略DSR}
+ \bicaption{SF-HLM 冻结策略在 UE 数量与 UAV 算力九格中的 DSR（左）和接纳后按时完成率（右）。主格引用独立确认，其他格不重新训练；数值为十块均值}{DSR and conditional completion rate of the frozen SF-HLM policy across nine UE/compute settings; cells show ten-block means}
+ \label{fig:ch5-grid-dsr}
+\end{figure}
+
+表~\ref{tab:ch5-nine-grid} 和图~\ref{fig:ch5-grid-dsr} 显示，增加 UE 数量时 DSR 下降，提高 UAV 算力时 DSR 上升。相同覆盖范围和计算节点需服务更多请求，且上层可见需求槽位固定，高负载同时加剧接纳与服务质量压力；增加算力能减轻部分计算瓶颈，却不能消除未接纳和通信路径限制。因此，算力提高到 $1.4$ 倍时 DSR 仍明显低于 $100\%$，不能将剩余失败都归因于下层计算不足。
+
+\subsection{相对三个主对手的格点差值}
+
+八个新格中学习相对贪心、原冻结学习和原适配学习的 $24$ 项比较形成一个 Holm 主族，全部通过校正。图~\ref{fig:ch5-grid-differences} 给出格点配对均值差；下文同时报告代表格点的逐项 $95\%$ 配对 $t$ 区间，完整格点结果保存在冻结实验归档中。相对贪心的增益从 $0.667$ 到 $2.219$ 个百分点，相对原冻结学习从 $1.310$ 到 $3.086$，相对原适配学习从 $1.460$ 到 $3.410$。该结果支持主线对这些对手的优势在所考察负载与算力组合中保持正向。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-15_九格主对手DSR差}
+ \bicaption{九格学习相对三个主对手的 DSR 差。八个新格的二十四项比较统一 Holm 校正，主格保留原确认族}{DSR differences against three primary controls across nine settings, with the new 24-comparison Holm family separated from nominal confirmation}
+ \label{fig:ch5-grid-differences}
+\end{figure}
+
+低算力与高负载下，贪心修复的局部选择更容易形成截止期敏感的批量，配额匹配的改善较明显。例如 $100$ UE/$0.6$ 算力下学习 DSR 为 $29.736\%$，贪心为 $27.517\%$，差 $2.219$ 个百分点，区间 $[2.051,2.387]$；$140$ UE/$0.6$ 算力差 $2.125$，区间 $[1.931,2.318]$。在 $60$ UE/$1.4$ 算力下，学习为 $50.746\%$，贪心为 $50.078\%$，差 $0.667$，区间 $[0.493,0.842]$。后者虽然统计正向，却低于主确认事先采用的 $1$ 个百分点实用目标，应如实保留。
+
+真实 UAV 能耗比同样随格点变化。学习相对贪心的块级比约为 $0.876$--$0.939$，各新格均低于 $1$；相对原适配学习在 $60$ UE/$0.6$ 算力约为 $1.0078$，没有节能但仍低于 $1.05$ 门槛。能耗还受算力平方项影响，提高计算能力可以改善时间，却可能增加实际计算能耗。因而格点分析同时报告服务率和资源费用，而不把更高算力下的 DSR 变化写成免费的性能改善。
+
+\subsection{强框架机制的场景依赖}
+
+学习相对启发式与强随机的八格共 $16$ 项比较另组成 Holm 机制族，其中 $8$ 项通过：学习相对启发式在七个新格通过，相对强随机仅在 $140$ UE/$0.6$ 算力通过。该格学习--强随机差约 $0.355$ 个百分点，区间 $[0.150,0.560]$，Holm $p=0.0317$。其他格不能仅因未校正区间下界为正而宣称机制已稳定成立。
+
+在 $60$ UE/$1.4$ 算力格，强随机为 $50.772\%$，略高于学习 $50.746\%$；差值约 $-0.026$ 个百分点且区间跨零。该结果与主场景学习增量较小的观察一致：强匹配框架已经能较充分地利用宽裕资源时，固定学习策略没有显示额外稳定优势。它不意味着学习在所有场景无效，而是说明需要根据负载与算力条件评价增量，不能把相对三主对手的跨格稳定性自动转化成相对强随机的架构优越性。
+
+跨格结果也没有验证需求信息的部署可得性。所有格点沿用理想协调和原观测合同，没有增加请求上报丢失、延迟或字段失真。因此已完成的冻结策略稳健性消除了“只有单一 UE/算力格完成比较”的缺口，但仍保留通信实现条件和未测试分布的边界。
+
+\section{固定快照、共同 MBS 与时间预算诊断}
+\label{sec:ch5-snapshot-diagnostics}
+
+\subsection{相同状态下的真实执行复核}
+
+闭环比较能够判断长期服务表现，但不同下层引起的状态分化使逐步机制较难直接控制。为此，从已确认学习主线的十块轨迹中，对五个负载的前两个回合分别在 $0/250/500/750$ 步采集移动前快照，共 $400$ 个，包括空请求批次。每个快照保留相同几何、请求和历史状态，以及观测缓存信念与私有执行状态两个用途不同的副本。算法只读取观测预测行，最终候选则由独立环境副本评价实际超时和分配能耗；反事实结果不回写主线轨迹。
+
+每块含 $40$ 个快照，先在块内平均，再以十个基座作配对分析。自由 MBS 的普通调用合同下，学习、启发式、强随机和贪心每快照实际超时数分别为 $10.2925$、$10.6450$、$10.3700$ 和 $10.8275$。学习--贪心差为 $-0.5350$ 个请求，区间 $[-0.6837,-0.3863]$；学习--强随机为 $-0.0775$，区间 $[-0.1989,0.0439]$。这说明共同状态下相对贪心有质量余量，相对强随机的差仍较小且不确定。
+
+\subsection{保持共同 MBS 请求数量}
+
+以每快照原始贪心的 MBS 请求数量为共同参照，要求初始化、修复、配额掩码、条件匹配和保底均保持这一数量，只允许改变哪些请求使用 MBS。图~\ref{fig:ch5-fixed-mbs} 对照自由和固定 MBS 结果。在固定数量下，四方法平均 MBS 请求数均为 $0.6950$，学习、强随机和贪心实际超时分别为 $10.4075$、$10.4050$ 和 $10.7875$。学习--贪心仍为 $-0.3800$，区间 $[-0.5044,-0.2556]$；学习--强随机为 $+0.0025$，区间 $[-0.0919,0.0969]$。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-16_自由与固定MBS快照诊断}
+ \bicaption{四百固定快照的自由与共同 MBS 数量诊断。两面板分别报告自由和固定共同 MBS 数量下每快照的实际超时均值；反事实分配不回写环境，描述性均值未画误差线}{Mean actual deadline misses with free and common MBS counts on 400 snapshots; descriptive means without closed-loop write-back}
+ \label{fig:ch5-fixed-mbs}
+\end{figure}
+
+固定 MBS 下学习的实际分配能耗为每快照 $29619.2\,\mathrm{J}$，强随机为 $29202.0\,\mathrm{J}$，贪心为 $31637.5\,\mathrm{J}$。因此，SF-HLM 的固定状态收益不能简化为“只需增加 MBS 比例”，因为固定 MBS 时相对贪心仍能减少超时和分配能耗；也不能说学习的额外机制完全独立于 MBS 使用，因为学习相对强随机的微小自由差在固定数量下没有保留。这个诊断限定的是相同快照上的分配解释，没有把固定 MBS 数量接入长期闭环，不提供该新约束下的端到端 DSR。
+
+\subsection{软墙钟预算下的质量与超限}
+
+在同一组快照施加 $20/50/100\,\mathrm{ms}$ 全路径软预算，时间从输入准备开始，包含模型推理、初始化、普通修复、搜索匹配、动作映射和消息编码。输入准备消耗先从搜索可用时间扣除；预算不足时保留合法保底。各档仍保持原在线最多 $16$ 次条件匹配与 $128$ 次普通评价，不为了时间曲线将模型的预算特征改成未经训练的无限调用值。
+
+图~\ref{fig:ch5-wall-budget} 同时展示实际超时、完整时间和预算超限比例。学习在三档每快照实际超时分别为 $10.6725$、$10.4250$ 和 $10.3000$，相应均值时间约为 $22.17$、$43.65$ 和 $62.92\,\mathrm{ms}$。时间预算放宽后，质量接近普通合同的 $10.2925$；但该变化是同快照诊断，不代表重新训练了时间感知策略，也不构成对所有输入都单调改善的证明。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-17_墙钟预算质量时间与超限}
+ \bicaption{软墙钟预算的真实质量、时间与超限率。原子匹配与完整路径开销可能越界，所有越界样本均保留}{Actual quality, time and overrun rates under soft wall-clock budgets, with all overruns retained}
+ \label{fig:ch5-wall-budget}
+\end{figure}
+
+学习三档超限快照比例为 $85.5\%$、$65.5\%$ 和 $12.75\%$，最大超限约 $7.33$、$7.06$ 和 $6.19\,\mathrm{ms}$。原子匹配开始前可以检查时间，但不能保证一次求解在剩余时间内完成，动作映射与序列化也继续消耗时间。因而“设置 $20\,\mathrm{ms}$ 预算”与“所有调用不超过 $20\,\mathrm{ms}$”是不同条件。报告实际越界比强制中断求解器后只保留成功结果更能反映完整方法代价。
+
+\subsection{匹配调用与停止行为}
+
+图~\ref{fig:ch5-calls} 展示 SF-HLM 在十个训练块、共 $300000$ 个确认评估环境步中的调用预算使用与终止记录，包含空请求批次，平均每步使用 $11.737$ 次匹配。另在普通固定快照诊断协议下，学习平均使用 $11.255$ 次匹配，启发式 $16.000$，强随机 $15.990$；两组记录的统计对象不同，应分别解释。预算包含初始匹配，不能把调用数理解为额外迁移数。学习可在保留当前最好方案后提前 STOP，而强随机按有效非停止动作继续直到无可尝试动作或调用耗尽。停止动作与调用惩罚共同给出节约求解机会，但实际学习前向开销仍使完整软件时间高于强随机。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-18_匹配调用与停止行为}
+ \bicaption{确认评估环境步中的匹配调用与终止行为。调用包含初始匹配及失败候选，空批次纳入统计，停止不消耗一次匹配调用}{Matching-call usage and termination behavior across confirmation evaluation steps, including initialization, failed candidates and empty batches}
+ \label{fig:ch5-calls}
+\end{figure}
+
+该记录解释了学习策略怎样使用预算，而不是把提前停止直接认定为优越性。普通快照中学习完整平均时间约 $63.30\,\mathrm{ms}$，强随机约 $51.53\,\mathrm{ms}$；两者的 p95 约为 $105.24$ 与 $74.85\,\mathrm{ms}$。这与全部确认调用中的隔离时间排序一致，显示判断搜索效率需要同时观察求解次数、推理费用和实际质量，单一计数不能替代全路径测量。
+
+\section{研究联系、适用条件与本章小结}
+\label{sec:whole-boundaries}
+\label{sec:ch5-discussion}
+
+\subsection{与第四章固定快照求解的联系}
 \label{sec:ch4-ch5-bridge}
 
-为检验第四章的固定快照优化能在第五章在线策略产生的状态上提供多少质量参考，从候选方法的十个训练种子和五个配对工作负载的评估轨迹中，各抽取八个快照，共得到 $50$ 个评估任务和 $400$ 个快照。在每个快照上冻结 UAV 位置、历史状态和已接纳请求，分别运行第五章在线下层与第四章 MC-ITR；反事实分配不回写环境，不影响下一时隙。以训练种子为统计单位，先汇总同种子的五个工作负载，再作配对比较。表~\ref{tab:ch4-ch5-bridge} 报告相同快照上的描述均值。
+第四章 MC-ITR 研究固定状态下的真实批量分配优化，本章研究观测预测条件下的有限预算在线决策。两章共享不可拆分请求和批量算力竞争的物理动机，但求解接口、目标次序、信息条件与时间预算不同。MC-ITR 没有接入 SF-HLM 在线执行，本章也没有把其真实快照执行评价当作配额搜索教师。
 
-\begin{table}[!htbp]
-    \centering
-    \bicaption{第五章候选轨迹快照上的在线下层与 MC-ITR 对比}{Online lower layer versus MC-ITR on snapshots from the Chapter 5 candidate policy}
-    \label{tab:ch4-ch5-bridge}
-    \footnotesize
-    \setlength{\tabcolsep}{4pt}
-    \begin{tabular}{lccc}
-        \toprule
-        方法 & 每快照超时数 $\downarrow$ & 归一化分配能耗 & 观测到的调用时间/s \\
-        \midrule
-        在线学习式下层 & 10.695 & 2.035 & 0.012 \\
-        MC-ITR 完整路径 & 8.235 & 2.519 & 20.751 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
+此前第四--五章桥接在另一冻结协议的候选轨迹上完成，表明离线快照搜索具有接纳后服务质量余量，同时付出分配能耗和计算时间代价。该历史证据可以解释本章为何重视低预算卸载组织，不能与最新 $34.244\%$ DSR 直接拼接成 MC-ITR 接入后的长期增益，也不能用不同测量条件的时间比宣称本方法相对其固定倍数加速。两章的连接在问题结构与质量--计算权衡，而不是同一个算法的先后版本。
 
-MC-ITR 相对在线下层平均每快照少 $2.460$ 个超时请求；训练种子配对 $95\%$ 的 $t$ 区间为 $[-2.707,-2.213]$ 个请求，十个训练种子上的差值均为负。其归一化分配能耗约高 $23.8\%$。表中的 MC-ITR 时间包含共享贪心初始化后的完整调用路径；第四章主表报告的迭代搜索耗时不含该初始化，二者不应直接比较。计时还受到实验机器与并发运行状态影响，不能当作跨硬件实时性保证，但 MC-ITR 在此测量下远超 $1\,\mathrm{s}$ 仿真时隙。该实验揭示了在线下层在接纳后服务质量上的余量及固定快照改进的计算代价；由于没有让 MC-ITR 接管闭环轨迹与请求处理，它不提供 MC-ITR 的长期 DSR，也不改变前述整套方法主比较。
+\subsection{主要贡献与仍需验证的条件}
 
-\section{统计口径和适用边界}
-\label{sec:whole-boundaries}
+本章建立了三项彼此支撑的结果：配额固定后，可用严格字典序标量化得到预测超时优先的条件匹配；有限预算搜索通过共同保底与最好保留始终输出完整合法分配；在独立训练块上，完整下层相对三种预定实用对手取得稳定服务增益，并在规定隔离时间内满足软件门槛。冻结跨场景复验进一步说明该优势在所测试 UE 与算力格点上保持正向。其技术意义是把已经能够确定性求解的指派结构交给求解器，把有限学习能力集中用于节点负载组织。
 
-虽然对照组使用相同的潜在请求随机流，UE 电池低于阈值时会将潜在服务请求转成能量请求，导致实际生成服务请求数随策略略有变化。例如，本批次候选与下层无注意力强基线的生成服务请求总数分别为 $9{,}525{,}735$ 和 $9{,}526{,}728$。为检验这种分母内生性，保持已保存评估的成功请求数不变，仅重建每个配对工作负载的潜在服务请求数作为共同分母。每个学习方法在五十个评估单元中的潜在服务请求总数均为 $9{,}526{,}870$；候选相对最强基线的 DSR 差值仍为 $3.39$ 个百分点，训练种子配对 $95\%$ 区间为 $[2.12,4.66]$ 个百分点，十个训练种子差值均为正。对五个预定学习对手的比较仍全部通过 Holm 校正。这个结果仅是原评估成功数的替代分母敏感性分析，不是“低电量 UE 仍产生服务请求”这一新环境协议的反事实运行，也不改变事前规定的原主指标。不同批次的绝对 DSR 水平不能拼接作配对差值：早期五训练种子全量实验与本批次使用了不同训练和工作负载种子。
+需要区分这些已成立结论与开放问题。强框架随机已接近学习质量，说明框架中的确定性部分承担重要作用；学习增量小且具有场景依赖。服务压力反馈未晋级，不能说本章已经证明上下层共同重训更有效。理想协调与大范围需求信息的实际获取条件仍待费用和信息受损协议验证，UAV 节能也不能外推成全网净节能。这些条件限定方法可推广的范围，但不改变本次冻结协议中三个主比较的方向。
 
-本章还有三项尚未消除的限制。第一，候选独享额外预接纳信息，尚无同信息预算强对照，因此不能将 DSR 优势归因于 Attention-MAPPO 或双层结构本身。第二，当前未对请求上报的时序、丢失、能耗和通信负载建模，部署有效性未验证。第三，候选只在一百 UE、标准算力主场景完成整套方法全量对比；第四章的 UE 数量和算力敏感性属于固定快照算法，不能替代本章候选的跨场景检验。上述问题分别需要同信息预算对照、信息代价协议，以及在不同 UE 负载和算力下的配对复验。
+后续最有判别力的工作是比较同信息预算下的强方法，并把请求上报延迟、缺失与协调开销纳入环境；这样可以判断现有收益在减少观测完整性或增加通信费用后还剩多少。若继续改善学习配额，应优先使新增特征或教师在共享强框架上产生可独立确认的增量，而不是仅增加结构复杂度。任何新候选都应重新冻结设计和模型选择规则，不能替换已确认模型后继续使用原独立确认名义。
 
-\section{本章小结}
+\subsection{集群计算任务的执行分工}
+\label{sec:ch5-swarm-task-division}
 
-本章用独立训练种子和配对工作负载比较完整在线方法。现有结果在指定仿真主场景中支持候选相对五个学习式对手的 DSR 优势，同时显示服务接纳、接纳后质量和 UAV 能耗之间的权衡。共享轨迹快照的桥接实验表明，MC-ITR 能进一步减少已接纳请求的超时，但伴随更高分配能耗和远长于在线策略调用的计算时间；该结果不代表把 MC-ITR 接入系统后的长期收益。最终结论须保留额外观测的条件、分母口径和场景范围；补充实验完成后，才能扩大关于稳健性或信息可实现性的结论。
+集群协作除空间机动之外，还体现在已接纳计算请求的执行分工。图~\ref{fig:ch5-swarm-task-division} 从 SF-HLM 的十个确认训练块原始记录中，分别累加来源本机、其他 UAV 和 MBS 三条服务执行分支的计数。每块包含五个工作负载、每负载六个回合，分支标识取自环境的服务卸载记录；这里的“本机”指请求接纳 UAV，而非 UE 自身处理器。“协作 UAV”指另一个允许执行目标，MBS 则是地面计算支撑。
+
+记块 $k$ 的三类计数为 $n_{k,\mathrm L}$、$n_{k,\mathrm C}$ 和 $n_{k,\mathrm M}$，本图的分母明确取 $n_k=n_{k,\mathrm L}+n_{k,\mathrm C}+n_{k,\mathrm M}$，各分支比例为 $\rho_{k,j}=n_{k,j}/n_k$。三类比例在块内之和为一，统计对象是已记录的执行分支，不是按时成功请求或各 UAV 的单机负载。跨块摘要采用 $10^{-1}\sum_k\rho_{k,j}$；将全部计数池化得到的 $\sum_kn_{k,j}/\sum_kn_k$ 属于另一种加权方式，不代替图中的块均值。
+
+\begin{figure}[!htbp]
+ \centering
+ \includegraphics[width=0.98\textwidth]{../docs/figures/图5-19_集群任务执行分工}
+ \bicaption{SF-HLM 十个确认训练块的计算任务执行分工。比例分母为每块本机、协作 UAV 与 MBS 三分支计数总和；显示全部训练块及等权块均值，不设置误差线或显著性检验}{Computation-task execution branches across all ten SF-HLM confirmation blocks, normalized by each block's three-branch total; descriptive block fractions and their arithmetic means}
+ \label{fig:ch5-swarm-task-division}
+\end{figure}
+
+按等权块均值，本机、协作 UAV 和 MBS 的执行比例依次约为 $45.054\%$、$45.112\%$ 和 $9.834\%$。三分支总计记录 $6\,533\,312$ 次，其中本机 $2\,945\,929$ 次、协作 UAV $2\,946\,812$ 次、MBS $640\,571$ 次；池化比例依次约为 $45.091\%$、$45.104\%$ 和 $9.805\%$。该分布说明跨 UAV 执行在这批已记录计算请求中占据较大部分，空间接纳平台与计算执行平台确实可以分离。它没有识别单独关闭跨机协作后的性能效应，也不能由较低 MBS 比例推断无需地面支持。协作分支还包含传输与资源竞争代价，服务质量与能耗仍需结合前述独立比较解释。
+
+\subsection{本章小结}
+\label{sec:ch5-summary}
+
+本章把无人机集群的需求感知空间部署与跨节点计算任务分工连接起来，形成冻结上层、学习配额和条件匹配的 SF-HLM 在线方法。上层分散轨迹推断与下层集中批量分配具有清楚的输入、输出和训练阶段，任务执行通过状态反馈影响后续机动。详细推导了移动前时延与分配能耗预测、整数配额守恒、容量槽指派、字典序等价性、二部图消息传递和配额 PPO；共同贪心参照、能耗筛选与最好保留明确了有限预算方法的输出性质。独立确认表明，该方法相对贪心修复和两种原学习修复具有端到端 DSR 优势，真实 UAV 能耗与完整软件时间同时达到预定门槛。
+
+补充随机、冻结九格、共同 MBS 和软墙钟诊断进一步区分完整优化框架的收益、学习选择的额外贡献及其资源代价。完整下层对逐请求随机具有较大改善，而共享强框架上的学习增量较小；更高 MBS 依赖与额外推理时间需要和 UAV 节能一起报告。由此，本章形成的是有明确信息条件、实测预算和独立重复支持的仿真方法结论，为后续验证通信可得性和部署费用提供可复现基础。

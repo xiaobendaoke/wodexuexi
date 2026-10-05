@@ -1,0 +1,1105 @@
+{
+  "date": "2026-10-04",
+  "scope": "28 active citations only, not the uncited historical BibTeX library",
+  "method": "Previously completed primary-source/manual metadata and claim checks plus nine-reference independent review; raw Crossref automated queries are a cache, not the final verdict.",
+  "bibliography": "latex/reference.bib",
+  "active_reference_count": 28,
+  "unresolved_entity_or_claim_mismatches": 0,
+  "full_text_all_read": false,
+  "independent_review": "reference_claims_review.md",
+  "records": [
+    {
+      "key": "chung2018swarm",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "A survey on aerial swarm robotics",
+        "author": "Chung, Soon-Jo and Paranjape, Aditya Avinash and Dames, Philip and Shen, Shaojie and Kumar, Vijay",
+        "journal": "IEEE Transactions on Robotics",
+        "volume": "34",
+        "number": "4",
+        "pages": "837--855",
+        "year": "2018",
+        "doi": "10.1109/TRO.2018.2857475",
+        "publisher": "IEEE"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "航空集群研究中的轨迹规划、任务分配、感知与飞行执行层次",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1109/TRO.2018.2857475",
+        "https://research.monash.edu/en/publications/a-survey-on-aerial-swarm-robotics/"
+      ],
+      "access_scope": "作者机构摘要和Crossref书目字段；详见swarm_reference_review.md",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 11,
+          "context": "无人机集群通过多个空中平台的机动与分工，共同完成单个平台难以独立承担的区域任务。集群能力既取决于每架飞行器的运动和载荷能力，也取决于成员如何选择服务位置、交换任务并使用有限资源。Chung 等的航空集群综述将轨迹生成、任务分配和分布式感知等列为相关研究内容，并指出空中平台的运动特性为协同设计带来额外要求\\cite{chung2018swarm}。因此，面向航空航天任务的集群协同可以从任务规划层展开：在给定平台和运动约束下，研究多机应部署到哪些位置、如何形成任务分工，以及这种分工能否改善集体任务完成效果。"
+        },
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 58,
+          "context": "无人机集群规划需要把整体任务目标转化为各平台的空间行动与资源分工。航空集群研究同时涉及轨迹生成、任务分配和协同信息使用，各层之间需要符合平台与任务条件\\cite{chung2018swarm}。对于本文的空地计算服务，整体目标是动态请求的按时完成，空间行动则影响请求能否进入物理覆盖。因而，轨迹规划既要关注用户位置，也要关注请求的时间要求和服务负载；停留在用户密集区域不必然对应最高的截止期成功比例。"
+        },
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 13,
+          "context": "无人机集群通过多个空中平台共同承担任务，研究内容包括任务分配、轨迹规划、信息交互和飞行控制等相互联系的环节\\cite{chung2018swarm}。任务分配确定哪些平台承担哪些工作，轨迹规划确定平台如何到达或保持有利位置，飞行执行将规划指令转化为实际运动。各层面对的时间尺度、状态信息和可行性条件不同：任务分配需要理解任务价值及资源需求，轨迹规划需要处理空间关系和机动限制，飞行执行还需要满足飞行器动力学与控制约束。区分这些层次有助于准确界定算法解决的航空集群问题。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "crouse2016assignment",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "On implementing {2D} rectangular assignment algorithms",
+        "author": "Crouse, David F.",
+        "journal": "IEEE Transactions on Aerospace and Electronic Systems",
+        "volume": "52",
+        "number": "4",
+        "pages": "1679--1696",
+        "year": "2016",
+        "doi": "10.1109/TAES.2016.140952"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "矩形指派实现背景；修改Jonker–Volgenant的具体API合同另外查SciPy官方文档",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1109/TAES.2016.140952",
+        "https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linear_sum_assignment.html"
+      ],
+      "access_scope": "书目元数据、官方实现文档",
+      "citations": [
+        {
+          "file": "latex/docs/chap05.tex",
+          "line": 188,
+          "context": "条件匹配的基本可行性不能只由每个节点各自的合法请求数判断。例如，两个节点各有足够的合法边，但这些边可能都来自同一小部分请求，从而不能同时填满全部槽。严格可行性需由完整指派求解确认：非法边使用无穷成本，若不存在全合法的一一指派则该配额不可行。实现采用 SciPy 线性指派接口\\cite{virtanen2020scipy}；其求解器采用修改的 Jonker--Volgenant 方法，矩形指派的实现背景见文献\\cite{crouse2016assignment}。返回后再次检查每条边合法性与节点数量守恒。求解器判断不可行时，搜索记录这次调用并保留已有最好方案，不能把失败调用从预算中删去。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "fan2021uav",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Multi-agent reinforcement learning for resources allocation optimization: A survey",
+        "author": "Hady, Mohamad A. and Hu, Siyi and Pratama, Mahardhika and Cao, Zehong and Kowalczyk, Ryszard",
+        "journal": "Artificial Intelligence Review",
+        "volume": "58",
+        "number": "11",
+        "pages": "354",
+        "year": "2025",
+        "publisher": "Springer",
+        "doi": "10.1007/s10462-025-11340-5"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "现行相关工作归述与来源对应，详细字段及获取范围见独立reference_claims_review.md",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1007/s10462-025-11340-5",
+        "https://link.springer.com/article/10.1007/s10462-025-11340-5"
+      ],
+      "access_scope": "独立代理的字段/摘要或原文片段核验；非全部全文核读",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 107,
+          "context": "Hady 等关于资源分配优化的 MARL 综述讨论了多智能体学习在网络资源问题中的方法分类与应用条件\\cite{fan2021uav}。综合这类研究，可以从三个层面审视协作方法：策略执行需要什么信息，训练阶段使用了什么额外信息，评价是否把共享数据或工作负载误当独立重复。本文使用训练块作为学习方法统计重复，以配对工作负载减少环境差异，并在主性能、机制检验与快照诊断之间保持清楚的比较对象。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "gronauer2022multi",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Multi-agent deep reinforcement learning: A survey",
+        "author": "Gronauer, Sven and Diepold, Klaus",
+        "journal": "Artificial Intelligence Review",
+        "volume": "55",
+        "number": "2",
+        "pages": "895--943",
+        "year": "2022",
+        "publisher": "Springer",
+        "doi": "10.1007/s10462-021-09996-w"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "多智能体学习的局部观测、协作和训练非平稳性",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1007/s10462-021-09996-w",
+        "https://link.springer.com/article/10.1007/s10462-021-09996-w"
+      ],
+      "access_scope": "出版方元数据与综述摘要",
+      "citations": [
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 515,
+          "context": "协作多智能体问题可以用分散式部分可观测马尔可夫决策过程描述。设智能体集合为 $\\mathcal U=\\{1,\\ldots,N\\}$，联合状态为 $s_t$，局部观测由 $o_{u,t}=\\mathcal O_u(s_t)$ 或对应观测分布生成，联合动作为 $\\boldsymbol a_t=(a_{1,t},\\ldots,a_{N,t})$。环境根据整个联合动作转移，并返回团队奖励或各智能体奖励。全局转移满足马尔可夫性时，从局部观测出发的单个智能体仍可能面对部分可观测问题；如果其他策略同步更新，其经验的生成过程还会出现训练非平稳性\\cite{gronauer2022multi}。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "he2019uav",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Computation offloading in {UAV}-enabled edge computing: A {Stackelberg} game approach",
+        "author": "Yuan, Xinwang and Xie, Zhidong and Tan, Xin",
+        "journal": "Sensors",
+        "volume": "22",
+        "number": "10",
+        "pages": "3854",
+        "year": "2022",
+        "publisher": "MDPI",
+        "doi": "10.3390/s22103854",
+        "url": "https://www.mdpi.com/1424-8220/22/10/3854"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "现行相关工作归述与来源对应，详细字段及获取范围见独立reference_claims_review.md",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://www.mdpi.com/1424-8220/22/10/3854"
+      ],
+      "access_scope": "独立代理的字段/摘要或原文片段核验；非全部全文核读",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 75,
+          "context": "博弈方法则强调不同参与者的利益与响应。Yuan、Xie 和 Tan 的研究把基站、UAV 和用户的计算资源交互表述为多层 Stackelberg 博弈，并通过各层效用和响应选择卸载策略\\cite{he2019uav}。曾耀平等在 UAV 部署与卸载联合问题中，将 UAV 与 UE 的交互表述为领导者和追随者结构，结合联盟形成与势博弈分析\\cite{zeng2026uav}。这些方法说明分层结构可以来自参与者之间的决策顺序与利益关系。本文的上下层则是同一协作系统中的轨迹与请求分配模块，其共享服务目标，不能因为同样存在“两层”便直接继承上述博弈的均衡结论。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "hu2019uav",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "{UAV}-assisted relaying and edge computing: Scheduling and trajectory optimization",
+        "author": "Hu, Xiaoyan and Wong, Kai-Kit and Yang, Kun and Zheng, Zhongbin",
+        "journal": "IEEE Transactions on Wireless Communications",
+        "volume": "18",
+        "number": "10",
+        "pages": "4738--4752",
+        "year": "2019",
+        "doi": "10.1109/TWC.2019.2928539",
+        "publisher": "IEEE"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "现行相关工作归述与来源对应，详细字段及获取范围见独立reference_claims_review.md",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1109/TWC.2019.2928539",
+        "https://discovery.ucl.ac.uk/id/eprint/10085354/"
+      ],
+      "access_scope": "Crossref字段和UCL作者机构接收稿摘要；本次未取得IEEE正式全文",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 44,
+          "context": "从集群任务规划角度看，轨迹决策改变未来的服务条件，计算任务分配利用当前已经形成的服务条件。UAV 接近某些 UE 可以提高接纳机会，但同时可能远离其他需求区域或协作节点；任务转移到算力较高的 UAV 可以降低计算时延，却可能增加传输时延、程序获取和分配能耗。这类取舍要求策略考虑多个平台和多个请求之间的关系，使空间机动服务于集体任务目标。UAV 位置或轨迹与资源分配的联合优化研究也体现了这一联系\\cite{hu2019uav,yu2020joint}。本文进一步以任务是否被接纳、是否按时完成解释轨迹规划与跨机分工各自发挥作用的环节。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "li2026sensing",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "面向感知与 {AI} 协同任务的无人机巡检多维资源联合优化算法",
+        "author": "李侍阳 and 朱晓荣",
+        "journal": "电子与信息学报",
+        "volume": "48",
+        "number": "5",
+        "pages": "2166--2177",
+        "year": "2026",
+        "doi": "10.11999/JEIT251284"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "现行相关工作归述与来源对应，详细字段及获取范围见独立reference_claims_review.md",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.11999/JEIT251284",
+        "https://jeit.ac.cn/cn/article/doi/10.11999/JEIT251284"
+      ],
+      "access_scope": "独立代理的字段/摘要或原文片段核验；非全部全文核读",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 77,
+          "context": "缓存与卸载的联合设计进一步说明，仅按链路和算力选择节点可能不足。王义君等研究微云、边缘和本地组成的多层结构，通过协同缓存自适应的分层多元宇宙优化算法处理卸载、资源配置及动态时延--能耗权衡\\cite{wang2026ccah}。该工作的服务缓存与节点选择设计，为本文考虑程序获取代价提供了相关背景；其细粒度部分卸载假设与本文不可拆分请求不同，数值结果不能直接移植。李侍阳和朱晓荣针对无人机巡检中的感知与 AI 任务，将多维资源优化拆分为若干子问题并交替求解\\cite{li2026sensing}，表明服务目标与任务结构改变时，合适的优化变量和分解方式也会改变。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "lillicrap2016continuous",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Continuous control with deep reinforcement learning",
+        "author": "Lillicrap, Timothy P and Hunt, Jonathan J and Pritzel, Alexander and Heess, Nicolas and Erez, Tom and Tassa, Yuval and Silver, David and Wierstra, Daan",
+        "journal": "arXiv preprint arXiv:1509.02971",
+        "year": "2015",
+        "url": "https://arxiv.org/abs/1509.02971"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "Actor–Critic在连续控制中的用途",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://arxiv.org/abs/1509.02971"
+      ],
+      "access_scope": "作者预印本页面及摘要；按2015预印本引用",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 84,
+          "context": "深度强化学习（Deep Reinforcement Learning，DRL）把神经网络表示与交互式决策结合，用参数化策略或值函数近似复杂状态下的长期行为。DQN 的研究说明深度网络能够从高维输入中学习动作价值\\cite{mnih2015human}；策略梯度和 Actor--Critic 方法则直接优化动作分布，为连续控制提供了基本工具\\cite{williams1992simple,lillicrap2016continuous}。这些经典算法为 UAV 位置、资源配置和任务调度提供了可采用的优化方式，但算法在一般基准上的有效性不是 UAV-MEC 特定服务协议下的性能证明。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "lowe2017multi",
+      "entry_type": "inproceedings",
+      "current_fields": {
+        "title": "Multi-agent actor-critic for mixed cooperative-competitive environments",
+        "author": "Lowe, Ryan and Wu, Yi and Tamar, Aviv and Harb, Jean and Abbeel, Pieter and Mordatch, Igor",
+        "booktitle": "Advances in Neural Information Processing Systems",
+        "volume": "30",
+        "pages": "6379--6390",
+        "year": "2017",
+        "url": "https://proceedings.neurips.cc/paper/2017/hash/68a9750337a418a86fe06c1991a1d64c-Abstract.html"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "集中训练与分散执行、集中式多智能体Critic",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://proceedings.neurips.cc/paper/2017/hash/68a9750337a418a86fe06c1991a1d64c-Abstract.html"
+      ],
+      "access_scope": "会议正式记录、摘要和方法片段",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 101,
+          "context": "集中式训练分散式执行（Centralized Training with Decentralized Execution，CTDE）在训练阶段使用更完整的信息估计价值或构造梯度，而在执行阶段让每个 Actor 根据其允许的局部观测选择动作。MADDPG 采用集中 Critic 处理多智能体动作相关性\\cite{lowe2017multi}；MAPPO 将 PPO 的策略更新方式用于协作多智能体任务，并系统研究了其在基准环境中的表现\\cite{yu2022surprising}。这些方法提供了利用训练阶段信息改善估计的路径，但 CTDE 不是执行阶段获取全局信息的许可证，也不自动解决信用分配。"
+        },
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 539,
+          "context": "CTDE 区分训练信息与执行信息。训练时 Critic 可以访问联合观测、全局状态或规定的协作信息；执行时 Actor 必须使用其信息合同允许的输入。MADDPG 与 MAPPO 分别展示了集中价值估计用于多智能体训练的不同方式\\cite{lowe2017multi,yu2022surprising}。这一范式不意味着现实系统可以免费获得联合状态，也不意味着所有策略输出都属于分散式执行。若在线模块要汇总当前请求后求解一次中央分配，就应明确其集中协调需求。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "mao2017survey",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "A survey on mobile edge computing: The communication perspective",
+        "author": "Mao, Yuyi and You, Changsheng and Zhang, Jun and Huang, Kaibin and Letaief, Khaled B",
+        "journal": "IEEE Communications Surveys \\& Tutorials",
+        "volume": "19",
+        "number": "4",
+        "pages": "2322--2358",
+        "year": "2017",
+        "publisher": "IEEE",
+        "doi": "10.1109/comst.2017.2745201"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "MEC通信与计算协作、边缘处理的一般背景",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1109/comst.2017.2745201",
+        "https://doi.org/10.1109/COMST.2017.2745201"
+      ],
+      "access_scope": "DOI元数据与综述摘要",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 15,
+          "context": "本文中的无人机（Unmanned Aerial Vehicle，UAV）同时承担移动接入节点和计算执行节点的角色，地面用户设备（User Equipment，UE）产生具有截止时间的请求，宏基站（Macro Base Station，MBS）提供另一条执行路径。移动边缘计算（Mobile Edge Computing，MEC）将计算和存储能力部署到接近数据产生位置的网络边缘，为这种计算任务载荷提供了技术基础\\cite{mao2017survey}。请求需要经历接入、数据传输、程序获取和计算等环节，空中平台的位置则决定部分请求能否进入这一流程。由此，MEC 对应集群所承担的服务任务，而集群协同轨迹规划与计算任务分配对应本文的主要决策问题。"
+        },
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 71,
+          "context": "移动边缘计算把部分计算与存储能力部署在接近用户的位置，形成终端、边缘节点与中心服务之间的协作\\cite{mao2017survey}。请求的完成过程包含数据进入、必要程序准备、计算执行和结果返回。改变计算位置可以减少某些处理环节的时间，也可能增加无线传输或回传成本。因此，“边缘更近”与“请求更快完成”不是同义关系，需要把完整路径上的代价写入评价。图~\\ref{fig:mec_architecture} 给出通用层次关系；本文进一步用移动 UAV 作为可接纳请求的空中边缘节点。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "mnih2015human",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Human-level control through deep reinforcement learning",
+        "author": "Mnih, Volodymyr and Kavukcuoglu, Koray and Silver, David and Rusu, Andrei A. and Veness, Joel and Bellemare, Marc G. and Graves, Alex and Riedmiller, Martin and Fidjeland, Andreas K. and Ostrovski, Georg and Petersen, Stig and Beattie, Charles and Sadik, Amir and Antonoglou, Ioannis and King, Helen and Kumaran, Dharshan and Wierstra, Daan and Legg, Shane and Hassabis, Demis",
+        "journal": "Nature",
+        "volume": "518",
+        "number": "7540",
+        "pages": "529--533",
+        "year": "2015",
+        "publisher": "Nature Publishing Group",
+        "doi": "10.1038/nature14236"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "深度网络近似高维输入下动作价值",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1038/nature14236",
+        "https://www.nature.com/articles/nature14236"
+      ],
+      "access_scope": "出版方元数据与摘要；不继承其基准性能",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 84,
+          "context": "深度强化学习（Deep Reinforcement Learning，DRL）把神经网络表示与交互式决策结合，用参数化策略或值函数近似复杂状态下的长期行为。DQN 的研究说明深度网络能够从高维输入中学习动作价值\\cite{mnih2015human}；策略梯度和 Actor--Critic 方法则直接优化动作分布，为连续控制提供了基本工具\\cite{williams1992simple,lillicrap2016continuous}。这些经典算法为 UAV 位置、资源配置和任务调度提供了可采用的优化方式，但算法在一般基准上的有效性不是 UAV-MEC 特定服务协议下的性能证明。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "mozaffari2019tutorial",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "A tutorial on {UAVs} for wireless networks: Applications, challenges, and open problems",
+        "author": "Mozaffari, Mohammad and Saad, Walid and Bennis, Mehdi and Nam, Youngmin and Debbah, Merouane",
+        "journal": "IEEE Communications Surveys \\& Tutorials",
+        "volume": "21",
+        "number": "3",
+        "pages": "2334--2360",
+        "year": "2019",
+        "publisher": "IEEE",
+        "doi": "10.1109/COMST.2019.2902862"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "UAV通信的应用、部署、覆盖及能量挑战",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1109/COMST.2019.2902862"
+      ],
+      "access_scope": "DOI元数据与教程摘要",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 17,
+          "context": "空地服务能力具有明确的空间依赖性。固定服务器的算力即使充足，也需要用户连接到可用接入点；无人机的机动性使接入节点的位置可以成为决策变量。UAV 辅助通信研究讨论了覆盖、部署、轨迹与能量之间的联系\\cite{zeng2016wireless,mozaffari2019tutorial}。在本文的计算服务场景中，空间错配具有两种表现：用户距离服务 UAV 过远，请求不能被接纳；请求虽然进入覆盖，却集中到少数执行节点并竞争计算和缓存资源。前者需要集群改变未来的空间部署，后者需要调整当前批次的任务分工。只报告已接纳请求的平均时延，容易遗漏未接纳需求，难以解释集群整体服务效果。"
+        },
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 71,
+          "context": "模型驱动方法首先把通信速率、计算时延、能量或覆盖条件写成目标与约束，再根据变量结构采用交替优化、连续近似、离散搜索或博弈求解。其优点是能够明确给出信息条件和约束含义，并在满足特定假设时分析子问题性质。UAV 辅助通信综述指出，部署与轨迹会同时影响覆盖、链路质量和飞行成本\\cite{zeng2016wireless,mozaffari2019tutorial}；在 MEC 场景中，还需要加入执行节点的计算和缓存条件。因此，模型是否准确描述了业务竞争，往往与求解器本身同样重要。"
+        },
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 97,
+          "context": "距离变化会影响信道功率增益，进而影响数据进入与任务转移的时延。UAV 辅助通信可以采用不同的传播模型\\cite{mozaffari2019tutorial}；本文后续仿真使用明确的自由空间路径损耗假设，不把地形遮挡、实测衰落或现实部署可靠性自动包含在该模型中。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "rashid2018qmix",
+      "entry_type": "inproceedings",
+      "current_fields": {
+        "title": "QMIX: Monotonic value function factorisation for deep multi-agent reinforcement learning",
+        "author": "Rashid, Tabish and Samvelyan, Mikayel and {Schroeder de Witt}, Christian and Farquhar, Gregory and Foerster, Jakob and Whiteson, Shimon",
+        "booktitle": "Proceedings of the 35th International Conference on Machine Learning",
+        "pages": "4295--4304",
+        "year": "2018",
+        "volume": "80",
+        "series": "Proceedings of Machine Learning Research",
+        "url": "https://proceedings.mlr.press/v80/rashid18a.html"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "QMIX单调价值混合结构",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://proceedings.mlr.press/v80/rashid18a.html"
+      ],
+      "access_scope": "正式会议页面、作者顺序及方法摘要",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 105,
+          "context": "除 Actor--Critic 方法外，值分解通过约束联合价值的组合形式支持分散选择。VDN 与 QMIX 分别使用加性分解和单调混合等结构\\cite{sunehag2018value,rashid2018qmix}。这些结构有助于从团队价值中学习个体决策，但也带来特定表达约束和动作类型要求。本文轨迹采用连续方向动作，卸载又包含批量组合结构，因此选择 MAPPO 作为上层学习基础，并通过独立求解模块处理下层分配。该选择来自问题结构与已有实现，不意味着其他 MARL 路线已经在相同协议下被排除。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "schulman2015high",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "High-dimensional continuous control using generalized advantage estimation",
+        "author": "Schulman, John and Moritz, Philipp and Levine, Sergey and Jordan, Michael and Abbeel, Pieter",
+        "journal": "arXiv preprint arXiv:1506.02438",
+        "year": "2015",
+        "url": "https://arxiv.org/abs/1506.02438"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "GAE的TD残差加权与偏差/方差解释",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://arxiv.org/abs/1506.02438"
+      ],
+      "access_scope": "作者预印本及相关公式；采用2015预印本年份",
+      "citations": [
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 379,
+          "context": "广义优势估计（Generalized Advantage Estimation，GAE）将多步优势进行指数加权\\cite{schulman2015high}。设当前非终止窗口剩余 $K$ 步，$\\lambda_{\\mathrm{GAE}}\\in[0,1]$，有限窗口的加权形式为"
+        },
+        {
+          "file": "latex/docs/chap05.tex",
+          "line": 419,
+          "context": "令 $d_\\ell^{\\mathrm{end}}\\in\\{0,1\\}$ 为搜索终止标记，优势估计采用 GAE\\cite{schulman2015high}："
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "schulman2017proximal",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Proximal policy optimization algorithms",
+        "author": "Schulman, John and Wolski, Filip and Dhariwal, Prafulla and Radford, Alec and Klimov, Oleg",
+        "journal": "arXiv preprint arXiv:1707.06347",
+        "year": "2017",
+        "url": "https://arxiv.org/abs/1707.06347"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "PPO概率比与裁剪替代目标",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://arxiv.org/abs/1707.06347"
+      ],
+      "access_scope": "作者预印本及相关公式；不称硬KL或单调性能保证",
+      "citations": [
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 445,
+          "context": "PPO 使用旧策略状态动作样本与固定优势，构造可重复优化的目标\\cite{schulman2017proximal}。为了数值稳定，概率比率通常由 log probability 之差计算："
+        },
+        {
+          "file": "latex/docs/chap05.tex",
+          "line": 450,
+          "context": "裁剪目标沿用 PPO 的有限更新思想\\cite{schulman2017proximal}："
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "skaltsis2023allocation",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "A review of task allocation methods for {UAVs}",
+        "author": "Skaltsis, George Marios and Shin, Hyo-Sang and Tsourdos, Antonios",
+        "journal": "Journal of Intelligent \\& Robotic Systems",
+        "volume": "109",
+        "number": "4",
+        "pages": "76",
+        "eid": "76",
+        "year": "2023",
+        "doi": "10.1007/s10846-023-02011-0",
+        "url": "https://link.springer.com/article/10.1007/s10846-023-02011-0",
+        "publisher": "Springer"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "无人机任务分配方法、复杂度、最优性、扩展性及通信不确定性背景",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://link.springer.com/article/10.1007/s10846-023-02011-0"
+      ],
+      "access_scope": "出版方摘要和Crossref书目字段；文章号76，详见swarm_reference_review.md",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 69,
+          "context": "任务分配需要明确被分配的对象、执行主体和评价目标。Skaltsis 等综述了 UAV 任务分配中的多类方法，重点比较计算复杂度、最优性和可扩展性，并讨论通信方式与不确定性的影响\\cite{skaltsis2023allocation}。这些维度为本文提供了评价框架：质量更好的分配需要与求解开销一起报告，集中处理所需的信息不能被省略，少量 UAV 上的结果也不能自动外推到大规模集群。本文的任务对象是已经自然接纳的不可拆分计算请求，执行主体为五架 UAV 与一个 MBS；“计算任务分配”具体对应请求执行位置选择，而不是搜索目标或航路点的指派。"
+        },
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 15,
+          "context": "本文聚焦任务层与规划层之间的协同。空中平台通过改变服务位置接纳地面计算请求，再通过机载计算、跨 UAV 协作和 MBS 支持完成请求。任务具有输入数据量、服务类别、截止时间和执行资源需求；其分配是在已接纳请求与执行节点之间建立对应关系。无人机任务分配文献包含多种任务类型和约束\\cite{skaltsis2023allocation}，本文采用其中明确的计算服务任务，未把地面请求改写为需要无人机实体到访的侦察目标或运输订单。因此，服务覆盖承担任务接入功能，执行节点选择承担资源分工功能，两者共同决定集群的时限服务能力。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "sunehag2018value",
+      "entry_type": "inproceedings",
+      "current_fields": {
+        "title": "Value-decomposition networks for cooperative multi-agent learning based on team reward",
+        "author": "Sunehag, Peter and Lever, Guy and Gruslys, Audrunas and Czarnecki, Wojciech Marian and Zambaldi, Vinicius and Jaderberg, Max and Lanctot, Marc and Sonnerat, Nicolas and Leibo, Joel Z and Tuyls, Karl and Graepel, Thore",
+        "booktitle": "Proceedings of the 17th International Conference on Autonomous Agents and MultiAgent Systems",
+        "pages": "2085--2087",
+        "year": "2018",
+        "url": "https://www.ifaamas.org/Proceedings/aamas2018/pdfs/p2085.pdf"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "VDN加性团队价值分解",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://www.ifaamas.org/Proceedings/aamas2018/pdfs/p2085.pdf"
+      ],
+      "access_scope": "正式AAMAS短论文，完整正式题名、11作者、2085–2087",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 105,
+          "context": "除 Actor--Critic 方法外，值分解通过约束联合价值的组合形式支持分散选择。VDN 与 QMIX 分别使用加性分解和单调混合等结构\\cite{sunehag2018value,rashid2018qmix}。这些结构有助于从团队价值中学习个体决策，但也带来特定表达约束和动作类型要求。本文轨迹采用连续方向动作，卸载又包含批量组合结构，因此选择 MAPPO 作为上层学习基础，并通过独立求解模块处理下层分配。该选择来自问题结构与已有实现，不意味着其他 MARL 路线已经在相同协议下被排除。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "sutton2018reinforcement",
+      "entry_type": "book",
+      "current_fields": {
+        "title": "Reinforcement learning: An introduction",
+        "author": "Sutton, Richard S and Barto, Andrew G",
+        "edition": "2nd",
+        "year": "2018",
+        "publisher": "MIT press",
+        "url": "https://mitpress.mit.edu/9780262039246/reinforcement-learning/"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "MDP、回报、Bellman关系与价值函数基础",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://mitpress.mit.edu/9780262039246/reinforcement-learning/"
+      ],
+      "access_scope": "MIT Press第二版书目及基础章节；正文代数另外独立复核",
+      "citations": [
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 176,
+          "context": "强化学习通过环境交互优化行为策略，其核心是动作对未来状态与回报的影响\\cite{sutton2018reinforcement}。在离散时隙 $t$，智能体获得输入，选择动作 $a_t$，环境产生奖励 $r_t$ 并转移到下一状态。图~\\ref{fig:rl_framework} 展示基本交互关系。这里的奖励是训练信号，评价指标则是研究要报告的量；二者可以相关，但一个多项加权奖励的改善不自动证明每一项评价指标均改善。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "tao2026online",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Online service selection and task offloading in {UAV}-assisted {MEC} via deep reinforcement learning",
+        "author": "Tao, Youwei and Kuang, Zhufang and Hou, Fen and Liu, Anfeng",
+        "journal": "IEEE Transactions on Cognitive Communications and Networking",
+        "volume": "12",
+        "pages": "4159--4173",
+        "year": "2026",
+        "doi": "10.1109/TCCN.2025.3613487",
+        "publisher": "IEEE"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "现行相关工作归述与来源对应，详细字段及获取范围见独立reference_claims_review.md",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1109/TCCN.2025.3613487"
+      ],
+      "access_scope": "Crossref注册字段及本地已有作者原文提取的摘要/贡献；本次IEEE在线摘要/全文未有效载入",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 92,
+          "context": "Tao 等研究 UAV 辅助 MEC 中在线服务选择、任务卸载、计算频率、轨迹和悬停安排的联合决策\\cite{tao2026online}。其中服务程序选择体现了缓存与业务处理之间的联系，在线决策依据当前请求和资源状态进行。本文同样关注程序可用性与请求时序，但使用多 UAV 的自然接纳规则，并以截止期成功比例评价整个服务流程。不同文献使用能效、加权能量、平均时延或服务质量等目标，各自在对应定义下成立；不能仅因均称“联合优化”就把排名拼成一条普遍结论。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "vaswani2017attention",
+      "entry_type": "inproceedings",
+      "current_fields": {
+        "title": "Attention is all you need",
+        "author": "Vaswani, Ashish and Shazeer, Noam and Parmar, Niki and Uszkoreit, Jakob and Jones, Llion and Gomez, Aidan N and Kaiser, {\\L}ukasz and Polosukhin, Illia",
+        "booktitle": "Advances in Neural Information Processing Systems",
+        "volume": "30",
+        "pages": "5998--6008",
+        "year": "2017",
+        "url": "https://proceedings.neurips.cc/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "缩放点积及多头注意力",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://proceedings.neurips.cc/paper/2017/hash/3f5ee243547dee91fbd053c1c4a845aa-Abstract.html"
+      ],
+      "access_scope": "正式会议记录及相关公式；不据此声称本方法注意力因果优势",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 112,
+          "context": "注意力机制通过查询与键之间的相似度生成权重，并对值向量加权聚合。Transformer 的缩放点积与多头结构为这一表示方式提供了经典形式\\cite{vaswani2017attention}。在多 UAV 场景中，自身状态可以作为查询，邻居 UAV 与 UE 槽位作为被聚合元素，使输出随位置、需求和邻居关系变化。这样能够显式表达元素之间的相对关系，也便于对空槽位使用掩码。但注意力仍依赖输入特征、训练信号与模型容量，其结构能力不能直接写成 DSR 必然提高的定理。"
+        },
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 586,
+          "context": "注意力把元素间的相关性转化为聚合权重\\cite{vaswani2017attention}。设查询、键和值矩阵分别为 $Q\\in\\mathbb R^{n_q\\times d_k}$、$K\\in\\mathbb R^{n_k\\times d_k}$ 和 $V\\in\\mathbb R^{n_k\\times d_v}$，缩放点积注意力为"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "virtanen2020scipy",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "{SciPy} 1.0: Fundamental algorithms for scientific computing in {Python}",
+        "author": "Virtanen, Pauli and Gommers, Ralf and Oliphant, Travis E. and Haberland, Matt and Reddy, Tyler and Cournapeau, David and Burovski, Evgeni and Peterson, Pearu and Weckesser, Warren and Bright, Jonathan and van der Walt, Stéfan J. and Brett, Matthew and Wilson, Joshua and Millman, K. Jarrod and Mayorov, Nikolay and Nelson, Andrew R. J. and Jones, Eric and Kern, Robert and Larson, Eric and Carey, C J and Polat, İlhan and Feng, Yu and Moore, Eric W. and VanderPlas, Jake and Laxalde, Denis and Perktold, Josef and Cimrman, Robert and Henriksen, Ian and Quintero, E. A. and Harris, Charles R. and Archibald, Anne M. and Ribeiro, Antônio H. and Pedregosa, Fabian and van Mulbregt, Paul and {SciPy 1.0 Contributors} and Vijaykumar, Aditya and Bardelli, Alessandro Pietro and Rothberg, Alex and Hilboll, Andreas and Kloeckner, Andreas and Scopatz, Anthony and Lee, Antony and Rokem, Ariel and Woods, C. Nathan and Fulton, Chad and Masson, Charles and Häggström, Christian and Fitzgerald, Clark and Nicholson, David A. and Hagen, David R. and Pasechnik, Dmitrii V. and Olivetti, Emanuele and Martin, Eric and Wieser, Eric and Silva, Fabrice and Lenders, Felix and Wilhelm, Florian and Young, G. and Price, Gavin A. and Ingold, Gert-Ludwig and Allen, Gregory E. and Lee, Gregory R. and Audren, Hervé and Probst, Irvin and Dietrich, Jörg P. and Silterra, Jacob and Webber, James T and Slavič, Janko and Nothman, Joel and Buchner, Johannes and Kulick, Johannes and Schönberger, Johannes L. and de Miranda Cardoso, José Vinícius and Reimer, Joscha and Harrington, Joseph and Rodríguez, Juan Luis Cano and Nunez-Iglesias, Juan and Kuczynski, Justin and Tritz, Kevin and Thoma, Martin and Newville, Matthew and Kümmerer, Matthias and Bolingbroke, Maximilian and Tartre, Michael and Pak, Mikhail and Smith, Nathaniel J. and Nowaczyk, Nikolai and Shebanov, Nikolay and Pavlyk, Oleksandr and Brodtkorb, Per A. and Lee, Perry and McGibbon, Robert T. and Feldbauer, Roman and Lewis, Sam and Tygier, Sam and Sievert, Scott and Vigna, Sebastiano and Peterson, Stefan and More, Surhud and Pudlik, Tadeusz and Oshima, Takuya and Pingel, Thomas J. and Robitaille, Thomas P. and Spura, Thomas and Jones, Thouis R. and Cera, Tim and Leslie, Tim and Zito, Tiziano and Krauss, Tom and Upadhyay, Utkarsh and Halchenko, Yaroslav O. and Vázquez-Baeza, Yoshiki",
+        "journal": "Nature Methods",
+        "volume": "17",
+        "number": "3",
+        "pages": "261--272",
+        "year": "2020",
+        "doi": "10.1038/s41592-019-0686-2"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "SciPy软件来源",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1038/s41592-019-0686-2",
+        "https://www.nature.com/articles/s41592-019-0686-2",
+        "https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linear_sum_assignment.html"
+      ],
+      "access_scope": "出版方元数据、Crossref作者列表；具体指派实现另查官方API",
+      "citations": [
+        {
+          "file": "latex/docs/chap05.tex",
+          "line": 188,
+          "context": "条件匹配的基本可行性不能只由每个节点各自的合法请求数判断。例如，两个节点各有足够的合法边，但这些边可能都来自同一小部分请求，从而不能同时填满全部槽。严格可行性需由完整指派求解确认：非法边使用无穷成本，若不存在全合法的一一指派则该配额不可行。实现采用 SciPy 线性指派接口\\cite{virtanen2020scipy}；其求解器采用修改的 Jonker--Volgenant 方法，矩形指派的实现背景见文献\\cite{crouse2016assignment}。返回后再次检查每条边合法性与节点数量守恒。求解器判断不可行时，搜索记录这次调用并保留已有最好方案，不能把失败调用从预算中删去。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "wang2026ccah",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "无人机辅助动态权重边缘计算卸载策略研究",
+        "author": "王义君 and 王雅出 and {SHAHD Batool} and 缪瑞新",
+        "journal": "电子与信息学报",
+        "year": "2026",
+        "doi": "10.11999/JEIT260054",
+        "url": "https://jeit.ac.cn/cn/article/doi/10.11999/JEIT260054",
+        "volume": "48",
+        "number": "7",
+        "pages": "3071--3083"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "现行相关工作归述与来源对应，详细字段及获取范围见独立reference_claims_review.md",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://jeit.ac.cn/cn/article/doi/10.11999/JEIT260054"
+      ],
+      "access_scope": "独立代理的字段/摘要或原文片段核验；非全部全文核读",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 77,
+          "context": "缓存与卸载的联合设计进一步说明，仅按链路和算力选择节点可能不足。王义君等研究微云、边缘和本地组成的多层结构，通过协同缓存自适应的分层多元宇宙优化算法处理卸载、资源配置及动态时延--能耗权衡\\cite{wang2026ccah}。该工作的服务缓存与节点选择设计，为本文考虑程序获取代价提供了相关背景；其细粒度部分卸载假设与本文不可拆分请求不同，数值结果不能直接移植。李侍阳和朱晓荣针对无人机巡检中的感知与 AI 任务，将多维资源优化拆分为若干子问题并交替求解\\cite{li2026sensing}，表明服务目标与任务结构改变时，合适的优化变量和分解方式也会改变。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "williams1992simple",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Simple statistical gradient-following algorithms for connectionist reinforcement learning",
+        "author": "Williams, Ronald J",
+        "journal": "Machine Learning",
+        "volume": "8",
+        "number": "3-4",
+        "pages": "229--256",
+        "year": "1992",
+        "publisher": "Springer",
+        "doi": "10.1007/BF00992696"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "随机策略得分函数梯度/REINFORCE",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1007/BF00992696",
+        "https://link.springer.com/article/10.1007/BF00992696"
+      ],
+      "access_scope": "出版方题名、作者、卷8、229–256及摘要；不是误匹配的重印章节DOI",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 84,
+          "context": "深度强化学习（Deep Reinforcement Learning，DRL）把神经网络表示与交互式决策结合，用参数化策略或值函数近似复杂状态下的长期行为。DQN 的研究说明深度网络能够从高维输入中学习动作价值\\cite{mnih2015human}；策略梯度和 Actor--Critic 方法则直接优化动作分布，为连续控制提供了基本工具\\cite{williams1992simple,lillicrap2016continuous}。这些经典算法为 UAV 位置、资源配置和任务调度提供了可采用的优化方式，但算法在一般基准上的有效性不是 UAV-MEC 特定服务协议下的性能证明。"
+        },
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 266,
+          "context": "策略梯度直接优化参数化动作分布，适用于无法方便枚举全部动作的情形\\cite{williams1992simple}。记一条交互轨迹为 $\\xi=(s_0,a_0,r_0,\\ldots,s_T)$，策略目标为"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "yu2020joint",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Joint task offloading and resource allocation in {UAV}-enabled mobile edge computing",
+        "author": "Yu, Zhe and Gong, Yanmin and Gong, Shimin and Guo, Yuanxiong",
+        "journal": "IEEE Internet of Things Journal",
+        "volume": "7",
+        "number": "4",
+        "pages": "3147--3159",
+        "year": "2020",
+        "doi": "10.1109/JIOT.2020.2965898",
+        "publisher": "IEEE"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "现行相关工作归述与来源对应，详细字段及获取范围见独立reference_claims_review.md",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1109/JIOT.2020.2965898"
+      ],
+      "access_scope": "独立代理的字段/摘要或原文片段核验；非全部全文核读",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 44,
+          "context": "从集群任务规划角度看，轨迹决策改变未来的服务条件，计算任务分配利用当前已经形成的服务条件。UAV 接近某些 UE 可以提高接纳机会，但同时可能远离其他需求区域或协作节点；任务转移到算力较高的 UAV 可以降低计算时延，却可能增加传输时延、程序获取和分配能耗。这类取舍要求策略考虑多个平台和多个请求之间的关系，使空间机动服务于集体任务目标。UAV 位置或轨迹与资源分配的联合优化研究也体现了这一联系\\cite{hu2019uav,yu2020joint}。本文进一步以任务是否被接纳、是否按时完成解释轨迹规划与跨机分工各自发挥作用的环节。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "yu2022surprising",
+      "entry_type": "inproceedings",
+      "current_fields": {
+        "title": "The surprising effectiveness of {PPO} in cooperative multi-agent games",
+        "author": "Yu, Chao and Velu, Akash and Vinitsky, Eugene and Gao, Jiaxuan and Wang, Yu and Bayen, Alexandre and Wu, Yi",
+        "booktitle": "Advances in Neural Information Processing Systems",
+        "volume": "35",
+        "pages": "24611--24624",
+        "year": "2022",
+        "url": "https://proceedings.neurips.cc/paper_files/paper/2022/hash/9c1535a02f0ce079433344e14d910597-Abstract.html"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "合作场景MAPPO及集中式价值评估",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://proceedings.neurips.cc/paper_files/paper/2022/hash/9c1535a02f0ce079433344e14d910597-Abstract.html"
+      ],
+      "access_scope": "正式NeurIPS2022会议记录、摘要及方法；会议类型已修为inproceedings",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 101,
+          "context": "集中式训练分散式执行（Centralized Training with Decentralized Execution，CTDE）在训练阶段使用更完整的信息估计价值或构造梯度，而在执行阶段让每个 Actor 根据其允许的局部观测选择动作。MADDPG 采用集中 Critic 处理多智能体动作相关性\\cite{lowe2017multi}；MAPPO 将 PPO 的策略更新方式用于协作多智能体任务，并系统研究了其在基准环境中的表现\\cite{yu2022surprising}。这些方法提供了利用训练阶段信息改善估计的路径，但 CTDE 不是执行阶段获取全局信息的许可证，也不自动解决信用分配。"
+        },
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 539,
+          "context": "CTDE 区分训练信息与执行信息。训练时 Critic 可以访问联合观测、全局状态或规定的协作信息；执行时 Actor 必须使用其信息合同允许的输入。MADDPG 与 MAPPO 分别展示了集中价值估计用于多智能体训练的不同方式\\cite{lowe2017multi,yu2022surprising}。这一范式不意味着现实系统可以免费获得联合状态，也不意味着所有策略输出都属于分散式执行。若在线模块要汇总当前请求后求解一次中央分配，就应明确其集中协调需求。"
+        },
+        {
+          "file": "latex/docs/chap02.tex",
+          "line": 560,
+          "context": "MAPPO 采用 PPO 类代理目标训练协作策略\\cite{yu2022surprising}。对于每个 UAV 的样本，定义局部比率"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "zeng2016wireless",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Wireless communications with unmanned aerial vehicles: opportunities and challenges",
+        "author": "Zeng, Yong and Zhang, Rui and Lim, Teng Joon",
+        "journal": "IEEE Communications Magazine",
+        "volume": "54",
+        "number": "5",
+        "pages": "36--42",
+        "year": "2016",
+        "publisher": "IEEE",
+        "doi": "10.1109/mcom.2016.7470933"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "UAV无线通信覆盖、机动及资源约束的一般背景",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1109/mcom.2016.7470933",
+        "https://doi.org/10.1109/MCOM.2016.7470933"
+      ],
+      "access_scope": "DOI元数据与摘要",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 17,
+          "context": "空地服务能力具有明确的空间依赖性。固定服务器的算力即使充足，也需要用户连接到可用接入点；无人机的机动性使接入节点的位置可以成为决策变量。UAV 辅助通信研究讨论了覆盖、部署、轨迹与能量之间的联系\\cite{zeng2016wireless,mozaffari2019tutorial}。在本文的计算服务场景中，空间错配具有两种表现：用户距离服务 UAV 过远，请求不能被接纳；请求虽然进入覆盖，却集中到少数执行节点并竞争计算和缓存资源。前者需要集群改变未来的空间部署，后者需要调整当前批次的任务分工。只报告已接纳请求的平均时延，容易遗漏未接纳需求，难以解释集群整体服务效果。"
+        },
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 71,
+          "context": "模型驱动方法首先把通信速率、计算时延、能量或覆盖条件写成目标与约束，再根据变量结构采用交替优化、连续近似、离散搜索或博弈求解。其优点是能够明确给出信息条件和约束含义，并在满足特定假设时分析子问题性质。UAV 辅助通信综述指出，部署与轨迹会同时影响覆盖、链路质量和飞行成本\\cite{zeng2016wireless,mozaffari2019tutorial}；在 MEC 场景中，还需要加入执行节点的计算和缓存条件。因此，模型是否准确描述了业务竞争，往往与求解器本身同样重要。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "zeng2026uav",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "无人机部署与卸载策略优化",
+        "author": "曾耀平 and 李怀 and 陈世森 and 李金丁",
+        "journal": "浙江大学学报（工学版）",
+        "volume": "60",
+        "number": "8",
+        "pages": "1686--1696",
+        "year": "2026",
+        "doi": "10.3785/j.issn.1008-973X.2026.08.008"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "现行相关工作归述与来源对应，详细字段及获取范围见独立reference_claims_review.md",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.3785/j.issn.1008-973X.2026.08.008",
+        "https://www.zjujournals.com/eng/CN/10.3785/j.issn.1008-973X.2026.08.008"
+      ],
+      "access_scope": "独立代理的字段/摘要或原文片段核验；非全部全文核读",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 75,
+          "context": "博弈方法则强调不同参与者的利益与响应。Yuan、Xie 和 Tan 的研究把基站、UAV 和用户的计算资源交互表述为多层 Stackelberg 博弈，并通过各层效用和响应选择卸载策略\\cite{he2019uav}。曾耀平等在 UAV 部署与卸载联合问题中，将 UAV 与 UE 的交互表述为领导者和追随者结构，结合联盟形成与势博弈分析\\cite{zeng2026uav}。这些方法说明分层结构可以来自参与者之间的决策顺序与利益关系。本文的上下层则是同一协作系统中的轨迹与请求分配模块，其共享服务目标，不能因为同样存在“两层”便直接继承上述博弈的均衡结论。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    },
+    {
+      "key": "zhao2024robust",
+      "entry_type": "article",
+      "current_fields": {
+        "title": "Robust computation offloading and trajectory optimization for multi-UAV-assisted MEC: A multi-agent DRL approach",
+        "author": "Li, Bin and Yang, Rongrong and Liu, Lei and Wang, Junyi and Zhang, Ning and Dong, Mianxiong",
+        "journal": "IEEE Internet of Things Journal",
+        "volume": "11",
+        "number": "3",
+        "pages": "4775--4786",
+        "year": "2024",
+        "publisher": "IEEE",
+        "doi": "10.1109/jiot.2023.3300718"
+      },
+      "identity_status": "verified",
+      "claim_status": "supported_within_stated_scope",
+      "claim": "现行相关工作归述与来源对应，详细字段及获取范围见独立reference_claims_review.md",
+      "verified_fields": [
+        "title",
+        "authors_and_order",
+        "publication_year",
+        "venue",
+        "volume_issue_pages_or_version_where_applicable"
+      ],
+      "sources": [
+        "https://doi.org/10.1109/jiot.2023.3300718",
+        "https://doi.org/10.1109/JIOT.2023.3300718"
+      ],
+      "access_scope": "独立代理的字段/摘要或原文片段核验；非全部全文核读",
+      "citations": [
+        {
+          "file": "latex/docs/chap01.tex",
+          "line": 90,
+          "context": "Li 等针对多 UAV 辅助 MEC 中的不完整信道信息与任务复杂度估计误差，联合考虑轨迹、任务划分和通信计算资源，提出使用 Beta 分布的多智能体 PPO 框架\\cite{zhao2024robust}。这项研究的中心问题是通信与计算不确定性下的鲁棒设计，并不是本文自然覆盖接纳分母或不可拆分批量请求问题。其 Beta 分布处理有界动作的思路，也不能等价于本文先保存 Gaussian 原始提案、再由环境执行裁剪的实现。明确这种动作概率与执行动作的差别，有助于避免把一篇相关论文的设计直接当成本项目已实现的机制。"
+        }
+      ],
+      "unresolved_entity_or_claim_mismatch": false
+    }
+  ]
+}

@@ -1,44 +1,50 @@
 % !TeX root = ../main.tex
-
 \begin{notation}
-
-  \begin{notationlist}{2.6em}
-    \item[$\displaystyle N$] UAV 数量
-    \item[$\displaystyle M$] UE 数量
-    \item[$\displaystyle H$] UAV 飞行高度
-    \item[$\displaystyle \tau$] 时隙时长
-    \item[$\displaystyle T$] episode 总时隙数
-    \item[$\displaystyle \mathbf{q}_u(t)$] UAV $u$ 在第 $t$ 个时隙的水平位置
-    \item[$\displaystyle v_{\max}$] UAV 最大飞行速度
-    \item[$\displaystyle d_{\min}$] UAV 间最小安全距离
-    \item[$\displaystyle R_c$] UAV 服务覆盖半径
-    \item[$\displaystyle R_s$] UAV 感知半径
-    \item[$\displaystyle G,\ A,\ S$] 评估单元内实际生成、自然接纳、按时完成的服务请求数
-    \item[$\displaystyle DSR$] 截止期满足率，$S/G$
-    \item[$\displaystyle J$] Jain 公平性指数
-    \item[$\displaystyle c_m$] UE $m$ 的累计服务覆盖量
-    \item[$\displaystyle g(\mathbf{p}_1,\mathbf{p}_2)$] 自由空间路径损耗信道功率增益
-    \item[$\displaystyle P^{\mathrm{comm}}$] 通信发射功率
-    \item[$\displaystyle \sigma^2$] 噪声功率
-    \item[$\displaystyle B^{\mathrm{edge}},B^{\mathrm{inter}},B^{\mathrm{backhaul}}$] 接入、机间、回传链路带宽
-    \item[$\displaystyle B_{\max},\ B_{\mathrm{low}}$] UE 电池容量与临界阈值
-    \item[$\displaystyle \beta$] 请求流行度 Zipf 指数
-    \item[$\displaystyle \mathcal{M}$] 固定快照中自然接纳的服务请求集合
-    \item[$\displaystyle \mathbf{a}$] 请求卸载分配向量
-    \item[$\displaystyle T_m,\ D_m$] 请求 $m$ 的完成时延与截止时间
-    \item[$\displaystyle L_m$] 请求 $m$ 的输入字节数
-    \item[$\displaystyle T_{\mathrm{tx}}$] 传输时延，$8L_m/R$
-    \item[$\displaystyle T^{\mathrm{cmp}}_m,\ E^{\mathrm{cmp}}_m$] 请求 $m$ 的计算时延与计算能耗
-    \item[$\displaystyle \omega_m$] 请求 $m$ 每字节所需 CPU 周期数
-    \item[$\displaystyle \kappa$] 芯片电容系数
-    \item[$\displaystyle F_u,\ F_{\mathrm{mbs}}$] UAV $u$ 与 MBS 的计算能力
-    \item[$\displaystyle E_{\mathrm{assign}}$] 卸载分配相关的非飞行 UAV 能耗
-    \item[$\displaystyle o_u,\ a_u$] 上层智能体 $u$ 的局部观测与连续动作
-    \item[$\displaystyle \theta,\ \phi$] 策略网络与价值网络参数
-    \item[$\displaystyle \gamma$] 折扣因子
-    \item[$\displaystyle \lambda_{\mathrm{GAE}}$] 广义优势估计系数
-    \item[$\displaystyle \varepsilon$] PPO 裁剪系数
-    \item[$\displaystyle \hat{A}_t$] 时隙 $t$ 的优势估计
+  \begin{notationlist}{5.8em}
+    \item[$N,\ M$] UAV 数量与 UE 数量
+    \item[$H,\ \tau,\ T$] UAV 飞行高度、时隙时长与 episode 时隙数
+    \item[$\mathbf q_u(t)$] UAV $u$ 在时隙 $t$ 的水平位置
+    \item[$\mathbf w_m(t)$] 地面 UE $m$ 在时隙 $t$ 的水平位置
+    \item[$\mathbf p_u(t),\ \mathbf p_m(t)$] UAV 与 UE 的三维位置
+    \item[$v_{\max},\ d_{\min}$] UAV 最大速度与机间最小安全距离
+    \item[$R_c,\ R_s$] UAV 物理服务覆盖半径与需求感知半径
+    \item[$G,\ A,\ S$] 评估单元内实际生成、自然接纳、按时完成的服务请求数
+    \item[$\mathrm{DSR}$] 端到端截止期满足率，$S/G$
+    \item[$J,\ c_m$] Jain 公平性指数与 UE $m$ 的累计服务覆盖量
+    \item[$g,\ R$] 链路信道功率增益与传输速率（bit/s）
+    \item[$P^{\mathrm{comm}}$] 通信发射功率
+    \item[$\sigma^2$] 噪声功率
+    \item[$B^{\mathrm{edge}}$] UE-UAV 接入链路带宽
+    \item[$B^{\mathrm{inter}}$] UAV 间链路带宽
+    \item[$B^{\mathrm{backhaul}}$] UAV-MBS 回传链路带宽
+    \item[$B_{\max},\ B_{\mathrm{low}}$] UE 电池容量与低电量阈值
+    \item[$\beta$] 请求流行度 Zipf 指数
+    \item[$\mathcal M_t,\ \mathcal J$] 时隙 $t$ 的自然接纳服务请求集合与执行节点集合
+    \item[$\mathcal C_m$] 请求 $m$ 的合法执行节点集合
+    \item[$\mathbf a,\ x_{mj}$] 请求分配向量与请求 $m$ 分配到节点 $j$ 的二元指示
+    \item[$L_m,\ C_m$] 请求 $m$ 的输入字节数与所需 CPU 总周期
+    \item[$\omega_m$] 请求 $m$ 每字节所需 CPU 周期数，$C_m=\omega_mL_m$
+    \item[$B_s$] 服务程序 $s$ 的字节数
+    \item[$F_u,\ F_{\mathrm{mbs}}$] UAV $u$ 与 MBS 的计算能力（周期/s）
+    \item[$N_j,\ f_{mj}$] 分配到节点 $j$ 的最终请求数与请求分得的计算频率
+    \item[$T_m,\ D_m$] 请求 $m$ 的完成时延与截止时间
+    \item[$T^{\mathrm{tx}}_m$] 请求传输时延，$8L_m/R$
+    \item[$T^{\mathrm{cmp}}_m,\ E^{\mathrm{cmp}}_m$] 请求计算时延与计算能耗
+    \item[$\kappa$] 动态 CPU 功耗模型的有效芯片电容系数
+    \item[$E_{\mathrm{assign}}$] 卸载分配相关的非飞行 UAV 能耗
+    \item[$s_t,\ O_t$] 强化学习完整状态与上层 UAV 联合观测
+    \item[$o_{u,t},\ a_{u,t}$] UAV $u$ 的局部预动作观测与连续原始动作提案
+    \item[$a^{\mathrm{exec}}_{u,t}$] 环境映射后的 UAV 执行动作
+    \item[$\pi_\theta,\ V_\phi$] 参数化策略与价值估计网络
+    \item[$\theta,\ \phi$] 策略参数与价值网络参数
+    \item[$r_t,\ \mathcal G_t$] 即时奖励与从时隙 $t$ 开始的折扣回报
+    \item[$V_t^\pi,\ Q_t^\pi$] 状态值函数与动作值函数
+    \item[$A_t^\pi,\ \widehat A_t$] 真实优势函数与优势估计
+    \item[$\gamma$] 回报折扣因子
+    \item[$\lambda_{\mathrm{GAE}}$] 广义优势估计的多步混合系数
+    \item[$b_t,\ c_t$] 价值自举掩码与优势递推连接掩码
+    \item[$\rho_t,\ \varepsilon$] PPO 新旧动作概率比率与裁剪系数
+    \item[$Q,\ K,\ V$] 注意力查询、键与值矩阵（本体按上下文区分值函数）
+    \item[$d_k$] 单个注意力头的键向量维度
   \end{notationlist}
-
 \end{notation}

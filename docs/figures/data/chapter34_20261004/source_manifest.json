@@ -1,0 +1,117 @@
+{
+  "purpose": "Reproducible source bundle for the 17 Chapter 3/4 figures; exact copies, no experiments rerun.",
+  "sources": [
+    {
+      "file": "confirmation_units.csv",
+      "source_tree": "coverage",
+      "source_path": "results/coverage_observation_confirmation_20260927/evaluation_units.csv",
+      "sha256": "b6bb6d0a8bf9ac1a2c6479d7aca31eaa368fd83251b8a5a77803ac47837a81fa",
+      "bytes": 23935
+    },
+    {
+      "file": "confirmation_training.csv",
+      "source_tree": "coverage",
+      "source_path": "results/coverage_observation_confirmation_20260927/training_curves.csv",
+      "sha256": "cce828c0eb8d056cb3e72cd9b55c090f058047201d79fe13477a5e9e63935408",
+      "bytes": 315713
+    },
+    {
+      "file": "chapter4_analysis.json",
+      "source_tree": "main",
+      "source_path": "results/canonical_all_20260920/chapter4/analysis.json",
+      "sha256": "5af4185bc81a208cbae3e262b6dad38acd602d9c17025e55f1d96da40bbf987e",
+      "bytes": 165666
+    },
+    {
+      "file": "chapter4_units.csv",
+      "source_tree": "main",
+      "source_path": "results/canonical_all_20260920/chapter4/evaluation_units.csv",
+      "sha256": "da05877a13d0ec76720734eedf62a24b4e8d958cddced90f2381f3b87c62bc73",
+      "bytes": 63745
+    },
+    {
+      "file": "bridge_analysis.json",
+      "source_tree": "main",
+      "source_path": "results/bridge_20260928/full/analysis.json",
+      "sha256": "07e8ff9f2bfe8d892bb80047521755182369c7d86b6e21022ddb6cc3b5206036",
+      "bytes": 64691
+    },
+    {
+      "file": "bottleneck_review.json",
+      "source_tree": "main",
+      "source_path": "output/bottleneck_diagnostic_20260927/validation/bottleneck_review.json",
+      "sha256": "584c1557967c22a81e217e4f371efe8170aa6bd1eb3baa88ea249749ba48d669",
+      "bytes": 7398
+    }
+  ],
+  "source_trees": {
+    "main": {
+      "branch": "双层注意力MAPPO多智能体强化学习",
+      "head": "379b03ca02ba44d13fdab8fa9c54a74f822bd815"
+    },
+    "coverage": {
+      "branch": "codex/sf-hlm-results-20261003",
+      "head": "a8bcf9a8731edd68b7bc483e1c959c576807e0d6"
+    }
+  },
+  "schematics": {
+    "experimental_data": false,
+    "random_seeds": {
+      "system_overview": 11,
+      "coverage_geometry": 7,
+      "observation_compare": 5
+    },
+    "units": {
+      "geometry": "m",
+      "sharing_latency": "s",
+      "sharing_energy": "J"
+    },
+    "sharing_constructed_parameters": {
+      "input_bytes": 2000000,
+      "cycles_per_byte": 2000,
+      "cpu_hz": 60000000000,
+      "kappa": 1e-27,
+      "batch_loads": [
+        2,
+        4
+      ]
+    },
+    "system_overview_uav_positions_m": [
+      [
+        200,
+        480
+      ],
+      [
+        500,
+        200
+      ],
+      [
+        400,
+        600
+      ],
+      [
+        150,
+        170
+      ],
+      [
+        580,
+        420
+      ]
+    ],
+    "system_overview_minimum_separation_m": 200,
+    "geometry_revision": "Only constructed overview position (430,470) changed to (400,600); all five positions now satisfy 200m minimum spacing. Experimental source files remain byte-identical."
+  },
+  "reproduction": {
+    "scripts": [
+      "docs/figures/scripts/generate_chapter34_figures_20261002.py",
+      "docs/figures/scripts/generate_2026_revision_figures.py"
+    ],
+    "data_resolution": "Prefer this bundle; fall back to original paths only when individual source files are absent.",
+    "formats": [
+      "pdf",
+      "svg",
+      "png_600dpi"
+    ],
+    "experimental_results_changed": false
+  }
+}

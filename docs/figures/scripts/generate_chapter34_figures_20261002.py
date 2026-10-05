@@ -11,7 +11,7 @@ the constructed example in 图4-1 uses formulas verified against
 environment/uavs.py::_get_computing_latency_and_energy (latency = C/(F/n),
 energy = K_CPU * C * (F/n)**2) and is labelled as a mechanism example.
 
-Outputs PDF + PNG(450 dpi) into docs/figures/ and latex/docs/figures/.
+Outputs vector PDF/SVG and 600 dpi PNG into the formal docs/figures/ directory.
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ import csv
 import json
 import math
 import sys
+import subprocess
 from collections import defaultdict
 from pathlib import Path
 
@@ -37,20 +38,18 @@ from paths import REPO_ROOT
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from thesis_figure_style import PALETTE, panel_label, save_pub, setup_thesis_style, soften_axes
 
-SKILL_SCRIPTS = Path.home() / ".zcode" / "skills" / "nature-figure" / "scripts"
+BUNDLED_QA = REPO_ROOT / "tools" / "figure_qa"
+SKILL_SCRIPTS = (BUNDLED_QA if BUNDLED_QA.is_dir() else
+                 Path.home() / ".codex" / "skills" / "nature-figure" / "scripts")
 if SKILL_SCRIPTS.is_dir():
     sys.path.insert(0, str(SKILL_SCRIPTS))
-try:
-    from audit_panel_alignment import require_matplotlib_panel_alignment
-except Exception:  # pragma: no cover - optional QA dependency
-    require_matplotlib_panel_alignment = None
+from audit_panel_alignment import require_matplotlib_panel_alignment
 
 OUTPUT_DIRS = [
     REPO_ROOT / "docs" / "figures",
-    REPO_ROOT / "latex" / "docs" / "figures",
 ]
-QA_REPORT = REPO_ROOT / "output" / "chapter3_chapter4_writing_20261002" / "validation" / "figure_text_qa.json"
-ALIGN_DIR = REPO_ROOT / ".tmp" / "chapter34_figures_20261002" / "alignment"
+QA_REPORT = REPO_ROOT / "output" / "thesis_writing_20261004" / "validation" / "figure_text_qa.json"
+ALIGN_DIR = REPO_ROOT / "output" / "thesis_writing_20261004" / "validation" / "figures"
 
 T95_DF9 = 2.2622  # t(0.975, 9), 10 paired units
 
@@ -66,23 +65,58 @@ CANDIDATE = "lower_mlp_upper_uncovered_obs"
 STRONG_BASELINE = "lower_no_attention"
 
 ALIGN_REPORTS: list[dict] = []
+SOURCE_DIR = REPO_ROOT / "docs" / "figures" / "data" / "chapter34_20261004"
+
+def source_file(name: str, fallback: Path) -> Path:
+    local = SOURCE_DIR / name
+    return local if local.exists() else fallback
+
+def clipped_circle(ax, center, radius, *, bounds, **kwargs):
+    """Render only circle segments in bounds; PDF clipping alone is not audited."""
+    theta = np.linspace(0, 2*np.pi, 2401)
+    pts = np.asarray(center) + radius*np.column_stack((np.cos(theta), np.sin(theta)))
+    x0,x1,y0,y1 = bounds
+    visible = (pts[:,0]>=x0)&(pts[:,0]<=x1)&(pts[:,1]>=y0)&(pts[:,1]<=y1)
+    points = pts.copy(); points[~visible] = np.nan
+    ax.plot(points[:,0],points[:,1], **kwargs)
+
+def method_ticks(ax, *, online=False, exact=False):
+    labels = (["O"] if online else []) + ["H", "G", "I", "MC"] + (["Ex"] if exact else [])
+    ax.set_xticks(range(len(labels)))
+    ax.set_xticklabels(labels, fontsize=8)
+
+def method_key(fig, y=-0.02, *, online=False, exact=False):
+    text = "H：Heuristic-Control；G：Greedy-Single-Pass；I：Iterative-Base；MC：MC-ITR"
+    if online: text = "O：历史在线下层；" + text
+    if exact: text += "；Ex：穷举精确解"
+    fig.text(.5,y,text,ha="center",fontsize=8,color=PALETTE["baseline"])
 
 
 def save(fig: plt.Figure, name: str, *, multi_panel: bool = False) -> None:
-    if multi_panel and require_matplotlib_panel_alignment is not None:
-        ALIGN_DIR.mkdir(parents=True, exist_ok=True)
-        try:
-            report = require_matplotlib_panel_alignment(
-                fig,
-                json_out=ALIGN_DIR / f"{name}.alignment.json",
-                overlay_svg=ALIGN_DIR / f"{name}.alignment.svg",
-                strict=True,
-            )
-            ALIGN_REPORTS.append({"figure": name, "status": "pass"})
-        except Exception as exc:  # noqa: BLE001 - recorded and fixed in the repair loop
-            ALIGN_REPORTS.append({"figure": name, "status": "fail", "detail": str(exc)[:600]})
-            print(f"[alignment] {name}: {exc}")
-    save_pub(fig, name, OUTPUT_DIRS, formats=("pdf", "png"), png_dpi=450, qa_report=QA_REPORT)
+    from matplotlib.text import Text
+    for item in fig.findobj(match=Text):
+        if item.get_fontsize() < 8:
+            item.set_fontsize(8)
+    for ax in fig.axes:
+        ax.grid(False)
+    ALIGN_DIR.mkdir(parents=True, exist_ok=True)
+    alignment = require_matplotlib_panel_alignment(
+        fig,
+        json_out=ALIGN_DIR / f"{name}.alignment.json",
+        overlay_svg=ALIGN_DIR / f"{name}.alignment.svg",
+        strict=True,
+    )
+    ALIGN_REPORTS.append({"figure": name, "verdict": alignment["verdict"],
+                          "applicable": alignment["applicable"]})
+    save_pub(fig, name, OUTPUT_DIRS, formats=("pdf", "svg", "png"), png_dpi=600, qa_report=QA_REPORT)
+    for exported in (OUTPUT_DIRS[0] / f"{name}.pdf", OUTPUT_DIRS[0] / f"{name}.svg",
+                     OUTPUT_DIRS[0] / f"{name}.png"):
+        if not exported.exists():
+            raise RuntimeError(f"Required export missing: {exported}")
+    subprocess.run([sys.executable, str(SKILL_SCRIPTS / "audit_figure_collisions.py"),
+                    str(OUTPUT_DIRS[0] / f"{name}.pdf"),
+                    "--json-out", str(ALIGN_DIR / f"{name}.collision.json")],
+                   check=True, capture_output=True, text=True)
     print(f"saved {name}")
 
 
@@ -90,175 +124,87 @@ def save(fig: plt.Figure, name: str, *, multi_panel: bool = False) -> None:
 
 
 def fig_system_overview() -> None:
-    """图3-1: system scenario with natural coverage admission (schematic)."""
-    fig, ax = plt.subplots(figsize=(5.8, 5.2))
+    """Natural coverage admission; illustrative positions, not recorded data."""
+    fig, ax = plt.subplots(figsize=(5.8,5.6))
     rng = np.random.default_rng(11)
-
-    ax.add_patch(Rectangle((0, 0), 700, 700, fill=False, edgecolor=PALETTE["axis"], lw=1.0))
-    hotspots = [np.array([210.0, 500.0]), np.array([520.0, 180.0])]
+    hotspots = [np.array([210.,500.]),np.array([520.,180.])]
+    uavs = [np.array(p) for p in [(200,480),(500,200),(400,600),(150,170),(580,420)]]
+    assert min(np.linalg.norm(a-b) for i,a in enumerate(uavs) for b in uavs[i+1:]) >= 200
     for h in hotspots:
-        ax.add_patch(Circle(h, 100, fill=True, facecolor=PALETTE["orange"], alpha=0.10,
-                            edgecolor=PALETTE["orange"], linestyle=":", lw=0.9))
-    ax.text(hotspots[0][0], hotspots[0][1] + 112, "热点区域", ha="center", fontsize=7.5,
-            color=PALETTE["orange"])
-
-    uavs = [np.array(p) for p in [(200, 480), (500, 200), (430, 470), (150, 170), (580, 420)]]
-    for i, p in enumerate(uavs):
-        ax.add_patch(Circle(p, 100, fill=True, facecolor=PALETTE["full"], alpha=0.13,
-                            edgecolor=PALETTE["full"], lw=0.9))
-        ax.plot(*p, marker="^", color=PALETTE["red"], markersize=11, zorder=5)
-        ax.annotate(f"UAV{i+1}", p + np.array([8, 10]), fontsize=7.5, color=PALETTE["red"])
-    # sensing range shown once to avoid clutter
-    ax.add_patch(Circle(uavs[0], 460, fill=False, edgecolor=PALETTE["full"], linestyle="--", lw=1.1))
-    arc_pt = uavs[0] + 460 * np.array([np.cos(5.0), np.sin(5.0)])
-    ax.annotate("感知范围 $R_s=460$ m", arc_pt,
-                fontsize=7.5, color=PALETTE["full"],
-                xytext=(430, 60), arrowprops=dict(arrowstyle="->", lw=0.7, color=PALETTE["full"]))
-
-    def ue_cloud(center: np.ndarray, r: float, n: int) -> np.ndarray:
-        ang = rng.uniform(0, 2 * np.pi, n)
-        rad = r * np.sqrt(rng.uniform(0, 1, n))
-        return center + np.stack([rad * np.cos(ang), rad * np.sin(ang)], axis=1)
-
-    covered_pts, uncovered_pts = [], []
-    pts = np.vstack([ue_cloud(hotspots[0], 95, 24), ue_cloud(hotspots[1], 95, 22),
-                     ue_cloud(np.array([350.0, 350.0]), 320, 8)])
-    for q in pts:
-        if not (0 < q[0] < 700 and 0 < q[1] < 700):
-            continue
-        (covered_pts if any(np.linalg.norm(q - u) <= 100 for u in uavs) else uncovered_pts).append(q)
-    covered_pts = np.array(covered_pts)
-    uncovered_pts = np.array(uncovered_pts)
-    ax.scatter(covered_pts[:, 0], covered_pts[:, 1], s=14, color=PALETTE["green"],
-               marker="o", zorder=4, label="已覆盖 UE（请求被接纳）")
-    ax.scatter(uncovered_pts[:, 0], uncovered_pts[:, 1], s=16, color=PALETTE["red"],
-               marker="x", zorder=4, label="未覆盖 UE（请求不接纳，计入 DSR 分母）")
-
-    mbs = np.array([350.0, 350.0])
-    ax.plot(*mbs, marker="*", color=PALETTE["purple"], markersize=17, zorder=5)
-    ax.annotate("MBS", mbs + np.array([12, 6]), fontsize=8, color=PALETTE["purple"])
-
-    ax.plot([], [], marker="^", color=PALETTE["red"], linestyle="", markersize=9, label="UAV（实线圆：覆盖半径 $R_c=100$ m）")
-    ax.set_xlim(-15, 715)
-    ax.set_ylim(-15, 715)
+        ax.add_patch(Circle(h,100,facecolor=PALETTE["orange"],alpha=.10,edgecolor="none"))
+    for u in uavs:
+        ax.add_patch(Circle(u,100,facecolor=PALETTE["full"],alpha=.13,edgecolor=PALETTE["full"],lw=.8))
+        ax.plot(*u,marker="^",color=PALETTE["red"],markersize=10,zorder=5)
+    clipped_circle(ax,uavs[0],460,bounds=(0,700,0,700),color=PALETTE["full"],ls="--",lw=1)
+    def cloud(center,r,n):
+        ang=rng.uniform(0,2*np.pi,n);rad=r*np.sqrt(rng.uniform(0,1,n))
+        return center+np.column_stack((rad*np.cos(ang),rad*np.sin(ang)))
+    pts=np.vstack([cloud(hotspots[0],95,24),cloud(hotspots[1],95,22),cloud(np.array([350.,350.]),320,8)])
+    pts=pts[(pts[:,0]>0)&(pts[:,0]<700)&(pts[:,1]>0)&(pts[:,1]<700)]
+    covered=np.array([any(np.linalg.norm(p-u)<=100 for u in uavs) for p in pts])
+    ax.scatter(*pts[covered].T,s=14,color=PALETTE["green"],zorder=4,label="已覆盖 UE：接纳")
+    ax.scatter(*pts[~covered].T,s=16,color=PALETTE["red"],marker="x",zorder=4,label="未覆盖 UE：不接纳")
+    ax.plot(350,350,marker="*",color=PALETTE["purple"],markersize=15,zorder=5,label="MBS")
+    ax.plot([],[],marker="^",color=PALETTE["red"],ls="",label="UAV")
+    ax.set(xlim=(0,700),ylim=(0,700),xlabel="$x$ / m",ylabel="$y$ / m")
     ax.set_aspect("equal")
-    ax.set_xlabel("$x$ / m")
-    ax.set_ylabel("$y$ / m")
-    ax.legend(loc="upper left", bbox_to_anchor=(0.0, -0.075), fontsize=7.2, frameon=False, ncol=2)
-    fig.text(0.5, 0.005, "示意图：UAV/UE 位置仅为说明覆盖与接纳关系，并非仿真轨迹记录",
-             ha="center", fontsize=7.2, color=PALETTE["baseline"], style="italic")
-    fig.subplots_adjust(bottom=0.16)
-    soften_axes(ax, axis="both")
-    save(fig, "图3-1_系统与自然覆盖示意图")
-
+    ax.legend(loc="upper center",bbox_to_anchor=(.5,-.11),ncol=2,fontsize=8)
+    fig.text(.5,.01,"实线圆：100 m服务范围；虚线弧：460 m感知范围；橙色区域：热点",ha="center",fontsize=8)
+    fig.subplots_adjust(bottom=.23)
+    save(fig,"图3-1_系统与自然覆盖示意图")
 
 def fig_slot_timeline() -> None:
-    """图3-3: decision order inside one time slot (from environment/env.py step)."""
-    fig, ax = plt.subplots(figsize=(7.4, 2.9))
-    ax.axis("off")
-    stages = [
-        ("S0", "时隙开始：\n冻结快照\n（位置/请求/负载）", PALETTE["baseline"], "环境"),
-        ("S1-S2", "下层卸载决策\n（质量感知掩码\n+自适应惩罚）", PALETTE["lower"], "下层"),
-        ("S3", "请求批量执行\n（按最终负载\n均分算力）", PALETTE["lower"], "下层"),
-        ("S4", "上层轨迹动作执行\n（速度/边界裁剪、\n碰撞消解）", PALETTE["upper"], "上层"),
-        ("S5", "能耗结算", PALETTE["baseline"], "环境"),
-        ("S6", "奖励与\n指标统计", PALETTE["baseline"], "环境"),
-        ("S7", "缓存提交、UE 移动、\n生成下一时隙观测；\n新请求生成与接纳", PALETTE["baseline"], "环境"),
-    ]
-    n = len(stages)
-    w, h, gap = 0.118, 0.34, 0.022
-    x0, y0 = 0.015, 0.30
-    for i, (tag, text, color, actor) in enumerate(stages):
-        x = x0 + i * (w + gap)
-        box = FancyBboxPatch((x, y0), w, h, boxstyle="round,pad=0.008",
-                             facecolor=color, alpha=0.16, edgecolor=color, lw=1.0,
-                             transform=ax.transAxes)
-        ax.add_patch(box)
-        ax.text(x + w / 2, y0 + h - 0.045, tag, transform=ax.transAxes, ha="center",
-                fontsize=8, fontweight="bold", color=color)
-        ax.text(x + w / 2, y0 + h / 2 - 0.075, text, transform=ax.transAxes, ha="center",
-                va="center", fontsize=6.6, color=PALETTE["text"])
-        ax.text(x + w / 2, y0 + h + 0.055, actor, transform=ax.transAxes, ha="center",
-                fontsize=7.2, color=color)
-        if i < n - 1:
-            ax.add_patch(FancyArrowPatch((x + w + 0.002, y0 + h / 2), (x + w + gap - 0.002, y0 + h / 2),
-                                         arrowstyle="-|>", mutation_scale=9, lw=0.9,
-                                         color=PALETTE["axis"], transform=ax.transAxes))
-    # loop-back arrow: S7 feeds the next slot's S0 (routed below the boxes)
-    ax.add_patch(FancyArrowPatch((x0 + (n - 1) * (w + gap) + w / 2, y0 - 0.015),
-                                 (x0 + w / 2, y0 - 0.015),
-                                 arrowstyle="-|>", mutation_scale=9, lw=0.9,
-                                 color=PALETTE["baseline"], linestyle="--",
-                                 connectionstyle="arc3,rad=-0.32", transform=ax.transAxes))
-    ax.text(0.5, 0.115, "进入下一时隙", transform=ax.transAxes, ha="center", fontsize=6.8,
-            color=PALETTE["baseline"])
-    ax.text(0.5, 0.02, "时隙 $t$", transform=ax.transAxes, ha="center", fontsize=8.5,
-            color=PALETTE["text"])
-    ax.text(0.5, 0.90, "单个 1 s 时隙内的决策与执行顺序（依 environment/env.py 的 step 流程）",
-            transform=ax.transAxes, ha="center", fontsize=8.5, color=PALETTE["text"])
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    save(fig, "图3-3_单时隙决策时序图")
-
+    """Current-request service precedes application of the prepared motion."""
+    fig,ax=plt.subplots(figsize=(7.2,3.8));ax.axis("off")
+    entries=[("S0 当前状态","请求已生成\n自然覆盖关联"),("S1 两层准备","当前观测计算\n轨迹与卸载动作"),("S2 请求执行","冻结移动前几何\n按最终负载均分"),("S3 应用轨迹","速度与边界约束\n联合冲突消解"),("S4 能耗结算","实际移动/悬停\n通信/计算/WPT"),("S5 奖励指标","DSR/公平性\n能耗与违例"),("S6 下一状态","缓存提交/UE移动\n新请求与新观测")]
+    positions=[(.02,.59),(.27,.59),(.52,.59),(.77,.59),(.77,.10),(.52,.10),(.27,.10)]
+    w,h=.21,.31
+    for i,((title,body),(x,y)) in enumerate(zip(entries,positions)):
+        color=PALETTE["full"] if i in (1,3) else PALETTE["lower"]
+        ax.add_patch(FancyBboxPatch((x,y),w,h,boxstyle="round,pad=.007",facecolor=color,alpha=.12,edgecolor=color,transform=ax.transAxes))
+        ax.text(x+w/2,y+h*.78,title,ha="center",va="center",fontsize=8,transform=ax.transAxes,fontweight="bold")
+        ax.text(x+w/2,y+h*.35,body,ha="center",va="center",fontsize=8,transform=ax.transAxes)
+        if i:
+            px,py=positions[i-1]
+            if py==y:
+                start=(px+w+.005,py+h/2) if x>px else (px-.005,py+h/2)
+                end=(x-.005,y+h/2) if x>px else (x+w+.005,y+h/2)
+            else:start=(px+w/2,py-.015);end=(x+w/2,y+h+.015)
+            ax.add_patch(FancyArrowPatch(start,end,arrowstyle="-|>",mutation_scale=9,transform=ax.transAxes))
+    ax.text(.02,.24,"下一时隙\n返回S0",ha="left",va="center",fontsize=8,transform=ax.transAxes)
+    ax.text(.5,1.02,"1 s 时隙：当前请求先执行，轨迹改变后续覆盖",ha="center",fontsize=9,transform=ax.transAxes)
+    save(fig,"图3-3_单时隙决策时序图")
 
 def fig_network_structure() -> None:
-    """图3-4: Attention-MAPPO network and CTDE training structure (schematic)."""
-    fig, ax = plt.subplots(figsize=(7.2, 4.3))
-    ax.axis("off")
-
-    def box(x, y, w, h, text, color, fs=7.0, alpha=0.15, weight="normal"):
-        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.006",
-                                    facecolor=color, alpha=alpha, edgecolor=color, lw=1.0,
-                                    transform=ax.transAxes))
-        ax.text(x + w / 2, y + h / 2, text, transform=ax.transAxes, ha="center", va="center",
-                fontsize=fs, color=PALETTE["text"], fontweight=weight)
-
-    def arrow(p1, p2, color=PALETTE["axis"], style="-|>", lw=0.9, ls="-"):
-        ax.add_patch(FancyArrowPatch(p1, p2, arrowstyle=style, mutation_scale=9, lw=lw,
-                                     color=color, linestyle=ls, transform=ax.transAxes))
-
-    # observation groups (left)
-    box(0.02, 0.62, 0.17, 0.24, "自身状态\n77 维\n（位置/能量/缓存等）", PALETTE["full"])
-    box(0.02, 0.35, 0.17, 0.20, "邻居 UAV\n$4\\times 2$ 维", PALETTE["lower"])
-    box(0.02, 0.08, 0.17, 0.20, "关联 UE 槽位\n$30\\times 8$ 维\n（扩展观测含感知内\n未覆盖 UE）", PALETTE["orange"])
-
-    # encoders
-    box(0.26, 0.35, 0.13, 0.51, "分组线性嵌入\n（各组映射到\n64 维向量）", PALETTE["baseline"])
-    arrow((0.19, 0.74), (0.26, 0.66))
-    arrow((0.19, 0.45), (0.26, 0.55))
-    arrow((0.19, 0.18), (0.26, 0.42))
-
-    # cross attention
-    box(0.45, 0.42, 0.17, 0.44, "交叉注意力提取器\n（8 头、64 维）\n\n自身状态为 query\nUAV-UAV 关系\nUAV-UE 关系", PALETTE["purple"], fs=6.8)
-    arrow((0.39, 0.60), (0.45, 0.62))
-
-    # actor
-    box(0.68, 0.55, 0.15, 0.22, "共享 Actor $\\pi_\\theta$\n输出二维飞行动作\n（5 架 UAV 共用\n同一网络参数）", PALETTE["green"], fs=6.8)
-    arrow((0.62, 0.66), (0.68, 0.66))
-
-    # critic
-    box(0.68, 0.16, 0.15, 0.22, "集中式 Critic $V_\\phi$\n输入全局状态\n（仅训练时使用）", PALETTE["red"], fs=6.8)
-    arrow((0.535, 0.42), (0.68, 0.27), color=PALETTE["red"], ls="--")
-
-    # training loop annotation
-    box(0.26, 0.02, 0.34, 0.13, "集中式训练、分布式执行（CTDE）：\nPPO 更新（clip $\\epsilon=0.2$，GAE $\\lambda=0.95$）",
-        PALETTE["baseline"], fs=6.8, alpha=0.10)
-    arrow((0.71, 0.16), (0.60, 0.10), color=PALETTE["red"], ls="--")
-    arrow((0.43, 0.085), (0.325, 0.34), color=PALETTE["baseline"], ls="--")
-
-    ax.text(0.02, 0.93, "上层 Attention-MAPPO 的网络与训练结构（下层为独立的无注意力 MAPPO，见第二、五章）",
-            transform=ax.transAxes, fontsize=8.5, color=PALETTE["text"])
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    save(fig, "图3-4_Attention-MAPPO网络与训练结构")
-
+    """Actual upper actor and joint-local-observation critic; no energy own feature."""
+    fig,ax=plt.subplots(figsize=(7.2,4.2));ax.axis("off")
+    def box(x,y,w,h,text,color):
+        ax.add_patch(FancyBboxPatch((x,y),w,h,boxstyle="round,pad=.006",facecolor=color,alpha=.13,edgecolor=color,transform=ax.transAxes))
+        ax.text(x+w/2,y+h/2,text,ha="center",va="center",fontsize=8,transform=ax.transAxes)
+    def arrow(a,b,ls="-"):
+        ax.add_patch(FancyArrowPatch(a,b,arrowstyle="-|>",mutation_scale=9,lw=.8,ls=ls,transform=ax.transAxes))
+    box(.01,.72,.20,.20,"自身77维\n位置2 + 缓存75",PALETTE["full"])
+    box(.01,.44,.20,.20,"邻机4 × 2维\n相对位置",PALETTE["lower"])
+    box(.01,.16,.20,.20,"UE 30 × 8维\n位置/请求/电量",PALETTE["orange"])
+    box(.28,.43,.18,.49,"分组嵌入\nLinear/LN/ReLU\n各64维",PALETTE["baseline"])
+    for y in (.82,.54,.26):arrow((.215,y),(.275,.67 if y>.7 else .54 if y>.4 else .46))
+    box(.53,.43,.20,.49,"自身为query\n邻机与UE交叉注意力\n8头，每头8维\n缩放1/√8\n融合192→128→64",PALETTE["purple"])
+    arrow((.465,.68),(.525,.68))
+    box(.79,.60,.20,.28,"共享Actor\n二维Normal\n均值tanh\n原始动作概率",PALETTE["green"])
+    arrow((.735,.74),(.785,.74))
+    box(.35,.03,.28,.22,"联合局部观测\n集中注意力Critic\n每UAV一个价值",PALETTE["red"])
+    box(.72,.03,.27,.22,"CTDE / PPO\nclip .2，GAE .95\n两网络分别更新",PALETTE["baseline"])
+    arrow((.635,.14),(.715,.14),ls="--")
+    ax.text(.5,1.02,"上层 Attention-MAPPO：局部执行，联合观测评价",ha="center",fontsize=9,transform=ax.transAxes)
+    save(fig,"图3-4_Attention-MAPPO网络与训练结构")
 
 def fig_observation_compare() -> None:
     """图3-5: original vs extended UE observation slot filling (schematic)."""
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.3))
     rng = np.random.default_rng(5)
-    titles = ["(a) 原观测：仅已覆盖 UE 入槽", "(b) 扩展观测：补入感知范围内未覆盖 UE"]
+    titles = ["(a) 原观测：仅已覆盖 UE", "(b) 扩展观测：补入未覆盖 UE"]
     for k, ax in enumerate(axes):
+        rng = np.random.default_rng(5)  # same illustrative geometry in both panels
         uav = np.array([0.0, 0.0])
         ax.add_patch(Circle(uav, 460, fill=False, edgecolor=PALETTE["full"], linestyle="--", lw=1.0))
         ax.add_patch(Circle(uav, 100, fill=True, facecolor=PALETTE["full"], alpha=0.15,
@@ -290,11 +236,11 @@ def fig_observation_compare() -> None:
             ax.add_patch(Rectangle((x, -545), 940 / n_slots - 3, 52,
                                    facecolor=color, edgecolor="white", lw=0.3))
         ax.text(0, -625, f"UE 槽位（共 30 个）：填充 {filled} 个，其余补零",
-                ha="center", fontsize=7.0, color=PALETTE["text"])
-        if k == 0:
-            ax.legend(loc="upper right", fontsize=6.8, frameon=False)
+                ha="center", fontsize=8, color=PALETTE["text"])
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles,labels,loc="upper center",bbox_to_anchor=(.5,1.10),ncol=2,fontsize=8,frameon=False)
     fig.text(0.5, 0.015, "示意图：槽位填充规则对照，几何与 UE 数为示意，并非注意力权重或真实观测记录",
-             ha="center", fontsize=7.2, color=PALETTE["baseline"], style="italic")
+             ha="center", fontsize=8, color=PALETTE["baseline"], style="italic")
     fig.subplots_adjust(bottom=0.10, wspace=0.08)
     save(fig, "图3-5_原观测与扩展观测对照示意", multi_panel=True)
 
@@ -303,7 +249,7 @@ def fig_observation_compare() -> None:
 
 
 def _load_confirmation(cov_root: Path) -> dict[str, dict[int, dict[str, list[float]]]]:
-    path = cov_root / "results" / "coverage_observation_confirmation_20260927" / "evaluation_units.csv"
+    path = source_file("confirmation_units.csv", cov_root / "results" / "coverage_observation_confirmation_20260927" / "evaluation_units.csv")
     data: dict[str, dict[int, dict[str, list[float]]]] = defaultdict(
         lambda: defaultdict(lambda: defaultdict(list)))
     with path.open() as f:
@@ -329,13 +275,12 @@ def fig_confirmation_seed_diff(cov_root: Path) -> None:
     ax.bar(range(len(seeds)), diffs, color=PALETTE["full"], width=0.62)
     ax.axhline(0, color=PALETTE["axis"], lw=0.8)
     ax.axhline(mean, color=PALETTE["red"], lw=1.0, linestyle="--")
-    for i, v in enumerate(diffs):
-        ax.text(i, v + 0.13, f"{v:.1f}", ha="center", fontsize=7.2)
-    ax.text(0.02, 0.95,
+
+    ax.text(0.02, 1.10,
             f"均值 +{mean:.2f} 个百分点，配对 $t$ 95% CI [{mean-ci:.2f}, {mean+ci:.2f}]；10/10 种子为正",
-            transform=ax.transAxes, fontsize=7.4, color=PALETTE["red"], va="top")
+            transform=ax.transAxes, fontsize=8, color=PALETTE["red"], va="bottom")
     ax.set_xticks(range(len(seeds)))
-    ax.set_xticklabels([str(s) for s in seeds], fontsize=7.0)
+    ax.set_xticklabels([str(s) for s in seeds], fontsize=8)
     ax.set_xlabel("训练种子")
     ax.set_ylabel("DSR 差值 / 个百分点")
     ax.margins(y=0.16)
@@ -356,18 +301,16 @@ def fig_admission_quality_paired(cov_root: Path) -> None:
             ax.plot([0, 1], [b, c], color=PALETTE["baseline"], lw=0.7, alpha=0.45, zorder=2)
         mb, mc = float(np.mean(base)), float(np.mean(cand))
         ax.plot([0, 1], [mb, mc], color=PALETTE["full"], lw=1.8, marker="o", markersize=5, zorder=3)
-        ax.text(0, mb + 0.012, f"{mb:.3f}", ha="center", fontsize=7.4, color=PALETTE["baseline"])
-        ax.text(1, mc + 0.012, f"{mc:.3f}", ha="center", fontsize=7.4, color=PALETTE["full"])
         ax.set_xlim(-0.25, 1.25)
         ax.set_xticks([0, 1])
         ax.set_xticklabels(["强基线", "候选"], fontsize=8)
-        ax.set_title(title, fontsize=8.5)
+        ax.set_title(f"{title}\n均值：{mb:.3f} → {mc:.3f}", fontsize=8,pad=8)
         vals = base + cand
         span = max(vals) - min(vals)
         ax.set_ylim(min(vals) - 0.25 * span - 0.02, max(vals) + 0.30 * span + 0.03)
         soften_axes(ax)
     axes[0].text(0.0, -0.30, "灰线：10 个训练种子各自的配对连接（每种取 5 个工作负载均值）；蓝线：种子均值",
-                 transform=axes[0].transAxes, fontsize=6.8, color=PALETTE["baseline"])
+                 transform=axes[0].transAxes, fontsize=8, color=PALETTE["baseline"])
     save(fig, "图3-9_接纳率与接纳后质量配对比较", multi_panel=True)
 
 
@@ -397,12 +340,12 @@ def fig_sharing_externality() -> None:
                                    facecolor=PALETTE["full"] if row == 0 else PALETTE["orange"],
                                    alpha=0.25 + 0.12 * (i % 2), edgecolor=PALETTE["axis"], lw=0.6))
             ax.text(i * seg_w + seg_w / 2, 1 - row + 0.36, f"{seg_w:.0f} GHz", ha="center",
-                    va="center", fontsize=7.2)
+                    va="center", fontsize=8)
         ax.text(-3.5, 1 - row + 0.36, f"$n={n}$", ha="right", va="center", fontsize=8)
     ax.set_xlim(0, 60)
     ax.set_ylim(-0.15, 2.05)
     ax.set_yticks([])
-    ax.set_xlabel("UAV 算力 $F_u=60$ GHz 在批内最终负载间均分")
+    ax.set_xlabel("UAV 算力 $F_u=60$ GHz 在批内最终负载间均分", fontsize=9)
     ax.set_title("(a) 批量算力均分", fontsize=8.5)
 
     for ax, (idx, title, unit, fmt) in zip(axes[1:], [
@@ -412,92 +355,47 @@ def fig_sharing_externality() -> None:
         bars = ax.bar(["$n=2$", "$n=4$"], vals, width=0.55,
                       color=[PALETTE["full"], PALETTE["orange"]])
         for b, v in zip(bars, vals):
-            ax.text(b.get_x() + b.get_width() / 2, v, fmt % v, ha="center", va="bottom", fontsize=7.4)
+            ax.text(b.get_x() + b.get_width() / 2, v + max(vals)*.05, fmt % v, ha="center", va="bottom", fontsize=8)
         ax.set_title(title, fontsize=8.5)
         ax.set_ylabel(unit)
         ax.margins(y=0.20)
         soften_axes(ax)
-    fig.text(0.5, -0.035,
-             "机制示例（构造参数，非仿真数据）：$L_m=2$ MB，$\\omega_m=2000$ cycles/byte，$\\kappa=10^{-27}$；"
-             "$T^{cmp}=\\omega_m L_m/(F_u/n)$，$E^{cmp}=\\kappa\\,\\omega_m L_m\\,(F_u/n)^2$。"
+    fig.text(0.5, -0.11,
+             "机制构造例（非仿真数据）：$L_m=2$ MB，$\\omega_m=2000$ cycles/byte，$\\kappa=10^{-27}$\n"
+             "$T^{cmp}=\\omega_m L_m/(F_u/n)$，$E^{cmp}=\\kappa\\,\\omega_m L_m\\,(F_u/n)^2$\n"
              "任务迁入使批内每任务时延上升、单任务计算能耗下降。",
-             ha="center", fontsize=6.9, color=PALETTE["baseline"])
+             ha="center", fontsize=9, color=PALETTE["baseline"])
     fig.subplots_adjust(bottom=0.20, wspace=0.30)
     save(fig, "图4-1_批量算力共享与迁移外部影响示意", multi_panel=True)
 
 
 def fig_mc_itr_flowchart() -> None:
-    """图4-2: MC-ITR algorithm flowchart."""
-    fig, ax = plt.subplots(figsize=(5.8, 5.4))
-    ax.axis("off")
-
-    def box(x, y, w, h, text, color, fs=7.2):
-        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.008",
-                                    facecolor=color, alpha=0.15, edgecolor=color, lw=1.0,
-                                    transform=ax.transAxes))
-        ax.text(x + w / 2, y + h / 2, text, transform=ax.transAxes, ha="center", va="center",
-                fontsize=fs, color=PALETTE["text"])
-
-    def diamond(cx, cy, w, h, text, color, fs=6.8):
-        xs = [cx, cx + w / 2, cx, cx - w / 2]
-        ys = [cy + h / 2, cy, cy - h / 2, cy]
-        ax.fill(xs, ys, facecolor=color, alpha=0.15, edgecolor=color, lw=1.0,
-                transform=ax.transAxes)
-        ax.text(cx, cy, text, transform=ax.transAxes, ha="center", va="center",
-                fontsize=fs, color=PALETTE["text"])
-
-    def arrow(p1, p2, color=PALETTE["axis"], cs="arc3,rad=0.0"):
-        ax.add_patch(FancyArrowPatch(p1, p2, arrowstyle="-|>", mutation_scale=9, lw=0.9,
-                                     color=color, connectionstyle=cs, transform=ax.transAxes))
-
-    cx = 0.46
-    # main flow (top to bottom)
-    box(cx - 0.21, 0.845, 0.42, 0.105, "输入：冻结快照（请求、位置、缓存、算力）\n共享贪心初值 $x^{(0)}$（与 Iterative-Base 相同）",
-        PALETTE["baseline"])
-    box(cx - 0.21, 0.665, 0.42, 0.10, "枚举当前解的全部单请求迁移邻域 $\\mathcal{N}(x)$\n（本地/MBS/协作 UAV 间的单请求迁移）",
-        PALETTE["full"])
-    box(cx - 0.21, 0.49, 0.42, 0.10, "对每个候选按字典序目标整体评价\n$F=(\\sum\\mathbb{1}[T>T_m],\\ \\bar{T},\\ \\bar{E})$",
-        PALETTE["full"])
-    diamond(cx, 0.355, 0.30, 0.13, "存在严格字典序\n改善的候选？", PALETTE["purple"])
-    box(cx - 0.21, 0.155, 0.42, 0.085, "执行最佳改善迁移，$k\\leftarrow k+1$", PALETTE["green"])
-    # budget checkpoint on the loop-back edge
-    box(0.015, 0.40, 0.20, 0.115, "预算检查：\n轮次达到\n$R_{\\max}=10^3$？", PALETTE["orange"], fs=6.6)
-    # output
-    box(0.70, 0.28, 0.28, 0.15, "输出当前解\n（无改善退出：邻域局部最优；\n预算退出：不保证）", PALETTE["red"], fs=6.6)
-
-    arrow((cx, 0.845), (cx, 0.765))
-    arrow((cx, 0.665), (cx, 0.59))
-    arrow((cx, 0.49), (cx, 0.42))
-    # improvement branch
-    arrow((cx, 0.29), (cx, 0.24), color=PALETTE["green"])
-    ax.text(cx + 0.015, 0.265, "是", transform=ax.transAxes, fontsize=7, color=PALETTE["green"])
-    # no-improvement branch -> output
-    arrow((cx + 0.15, 0.355), (0.70, 0.355), color=PALETTE["red"])
-    ax.text(cx + 0.19, 0.368, "否", transform=ax.transAxes, fontsize=7, color=PALETTE["red"])
-    # loop back through the budget checkpoint
-    arrow((cx - 0.21, 0.1975), (0.115, 0.1975))
-    arrow((0.115, 0.1975), (0.115, 0.40))
-    arrow((0.115, 0.515), (0.115, 0.715))
-    arrow((0.115, 0.715), (cx - 0.21, 0.715))
-    ax.text(0.022, 0.60, "未超预算：\n继续搜索", transform=ax.transAxes, fontsize=6.4,
-            color=PALETTE["orange"])
-    # budget exceeded -> output
-    arrow((0.215, 0.4575), (0.84, 0.4575), color=PALETTE["orange"])
-    arrow((0.84, 0.4575), (0.84, 0.43), color=PALETTE["orange"])
-    ax.text(0.52, 0.468, "超预算退出", transform=ax.transAxes, fontsize=6.4, color=PALETTE["orange"])
-
-    ax.text(0.5, 0.972, "MC-ITR：共享贪心初值上的最佳改善字典序局部搜索",
-            transform=ax.transAxes, ha="center", fontsize=8.5)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 1)
-    save(fig, "图4-2_MC-ITR算法流程图")
-
+    """Finite search with distinct verified-local and budget exits."""
+    fig,ax=plt.subplots(figsize=(6.4,5.8));ax.axis("off")
+    def box(x,y,w,h,text,color):
+        ax.add_patch(FancyBboxPatch((x,y),w,h,boxstyle="round,pad=.005",facecolor=color,alpha=.13,edgecolor=color,transform=ax.transAxes))
+        ax.text(x+w/2,y+h/2,text,ha="center",va="center",fontsize=8,transform=ax.transAxes)
+    def arrow(a,b,color="axis"):
+        ax.add_patch(FancyArrowPatch(a,b,arrowstyle="-|>",mutation_scale=9,lw=.8,color=PALETTE[color],transform=ax.transAxes))
+    x,w,cx=.35,.62,.66
+    box(x,.85,w,.12,"冻结完整快照与硬候选域\n共享 Greedy 初值，评价系统目标",PALETTE["baseline"])
+    box(x,.64,w,.12,"检查轮数预算 Rmax = 1000\n有预算：完整枚举单请求迁移",PALETTE["orange"])
+    box(x,.43,w,.12,"生产执行器整体重评估\n严格比较：超时数→归一化时延→能耗",PALETTE["full"])
+    box(x,.22,w,.12,"选择最佳严格改善迁移\n重复评价，确认确定且严格下降",PALETTE["green"])
+    box(.01,.64,.25,.12,"预算耗尽返回\n不认证局部最优",PALETTE["orange"])
+    box(.01,.43,.25,.12,"完整邻域无改善\n验证单迁局部最优",PALETTE["red"])
+    arrow((cx,.845),(cx,.765));arrow((cx,.635),(cx,.555));arrow((cx,.425),(cx,.345))
+    arrow((x-.006,.70),(.265,.70),"orange");arrow((x-.006,.49),(.265,.49),"red")
+    arrow((cx,.215),(cx,.12));arrow((cx,.12),(.30,.12));arrow((.30,.12),(.30,.80));arrow((.30,.80),(cx,.80));arrow((cx,.80),(cx,.765))
+    ax.text(.09,.17,"接受后继续\n（目标严格下降）",ha="left",fontsize=8,transform=ax.transAxes)
+    ax.text(.5,1.015,"MC-ITR：全批次重评估的最佳单请求迁移",ha="center",fontsize=9,transform=ax.transAxes)
+    save(fig,"图4-2_MC-ITR算法流程图")
 
 def _load_ch4() -> tuple[dict, list[dict]]:
     analysis = json.loads(
-        (REPO_ROOT / "results" / "canonical_all_20260920" / "chapter4" / "analysis.json").read_text())
+        source_file("chapter4_analysis.json", REPO_ROOT / "results" / "canonical_all_20260920" / "chapter4" / "analysis.json").read_text())
     rows = list(csv.DictReader(
-        (REPO_ROOT / "results" / "canonical_all_20260920" / "chapter4" / "evaluation_units.csv").open()))
+        source_file("chapter4_units.csv", REPO_ROOT / "results" / "canonical_all_20260920" / "chapter4" / "evaluation_units.csv").open()))
     return analysis, rows
 
 
@@ -523,14 +421,13 @@ def fig_main_comparison() -> None:
             ax.bar(i, mean, width=0.62, color=color, alpha=0.85, zorder=2)
             jitter = rng.uniform(-0.16, 0.16, len(vals))
             ax.scatter(i + jitter, vals, s=8, color=PALETTE["text"], alpha=0.55, zorder=3)
-            ax.text(i, mean, fmt % mean, ha="center", va="bottom", fontsize=7.2, zorder=4)
-        ax.set_xticks(range(len(CH4_METHODS)))
-        ax.set_xticklabels([label for _, label, _ in CH4_METHODS], fontsize=6.6, rotation=18)
+
+        method_ticks(ax)
         ax.set_title(title, fontsize=8.5)
         ax.margins(y=0.20)
         soften_axes(ax)
-    axes[2].text(0.0, -0.42, "散点：10 个工作负载种子各自的每快照均值；搜索耗时不含共享贪心初值",
-                 transform=axes[2].transAxes, fontsize=6.8, color=PALETTE["baseline"], ha="right")
+    method_key(fig, y=-.025)
+    fig.text(.5,-.095,"柱：均值；散点：10 工作负载；迭代计时不含共享贪心初值",ha="center",fontsize=8)
     save(fig, "图4-3_主配置质量能耗耗时对比", multi_panel=True)
 
 
@@ -568,16 +465,14 @@ def fig_paired_diff_iterative() -> None:
         ax.scatter(range(len(seeds)), diffs, s=16, color=color, zorder=3)
         ax.axhline(mean, color=color, lw=1.2, linestyle="--")
         ax.fill_between([-0.5, len(seeds) - 0.5], lo, hi, color=color, alpha=0.15)
-        ax.set_title(label, fontsize=8.2)
+        ax.set_title(f"{label}\n均值 {mean:+.3f}\n95% CI [{lo:+.3f}, {hi:+.3f}]",fontsize=8,pad=8)
         ax.set_xlabel("工作负载种子（排序）")
-        ax.text(0.03, 0.94, f"均值 {mean:+.3f}，95% CI [{lo:+.3f}, {hi:+.3f}]",
-                transform=ax.transAxes, fontsize=6.8, va="top", color=PALETTE["text"])
         ax.set_xticks(range(len(seeds)))
-        ax.set_xticklabels([str(s) for s in seeds], fontsize=6.0, rotation=45)
+        ax.set_xticklabels([f"S{i+1}" for i in range(len(seeds))], fontsize=8)
         soften_axes(ax)
     axes[0].set_ylabel("超时数差值（方法 $-$ Iterative-Base）")
-    axes[0].text(0.0, -0.38, "差值为 10 个工作负载种子配对；区间为 5000 次重抽样的 95% bootstrap 区间，与归档 analysis.json 一致",
-                 transform=axes[0].transAxes, fontsize=6.6, color=PALETTE["baseline"])
+    axes[0].text(0.0, -0.38, "S1-S10：42、84、126、168、210、252、294、336、378、420；阴影：5000 次 bootstrap 的95%区间",
+                 transform=axes[0].transAxes, fontsize=8, color=PALETTE["baseline"])
     save(fig, "图4-4_相对Iterative-Base配对差值", multi_panel=True)
 
 
@@ -620,14 +515,15 @@ def fig_sensitivity(kind: str) -> None:
             ax.errorbar(x, means, yerr=cis, color=color, lw=1.2, marker="o", markersize=3.5,
                         capsize=2, label=label)
         ax.set_xticks(x)
-        ax.set_xticklabels([xl for _, xl in variant_map], fontsize=7.5)
+        ax.set_xticklabels([xl for _, xl in variant_map], fontsize=8)
         ax.set_xlabel(xlabel)
         ax.set_title(title, fontsize=8.5)
         soften_axes(ax)
     legend_ax = axes[0] if kind == "ue" else axes[1]
-    legend_ax.legend(fontsize=6.6, loc="lower right", frameon=False)
-    axes[0].text(0.0, -0.32, "误差线：10 个工作负载种子的逐项 95% $t$ 区间（非同时覆盖）；各设置独立重估",
-                 transform=axes[0].transAxes, fontsize=6.8, color=PALETTE["baseline"])
+    handles, labels = legend_ax.get_legend_handles_labels()
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(.5,1.08), ncol=4, fontsize=8, frameon=False)
+    axes[0].text(0.0, -0.32, "误差线：10 个工作负载种子的逐项 95% $t$ 区间（非同时覆盖）\n每个设置独立采集快照并求解",
+                 transform=axes[0].transAxes, fontsize=8, color=PALETTE["baseline"])
     save(fig, name, multi_panel=True)
 
 
@@ -657,16 +553,15 @@ def fig_exact_small() -> None:
     colors = ["#C9CDD4", PALETTE["full"], PALETTE["orange"]]
     left = 0
     for c, v, col in zip(cats, vals, colors):
-        ax.barh([0], [v], left=left, color=col, height=0.5, label=f"{c}：{v}")
-        if v > 30:
-            ax.text(left + v / 2, 0, f"{v}\n({v/6:.1f}%)", ha="center", va="center", fontsize=7.2,
-                    color="white" if col != "#C9CDD4" else PALETTE["text"])
+        ax.barh([0], [v], left=left, color=col, height=0.5, label=f"{c}：{v}（{v/6:.1f}%）")
         left += v
     ax.set_xlim(0, 600)
     ax.set_yticks([])
     ax.set_xlabel("快照数（共 600）")
     ax.set_title("(a) 快照构成", fontsize=8.5)
-    ax.legend(fontsize=6.6, loc="upper center", bbox_to_anchor=(0.5, -0.42), ncol=3, frameon=False)
+    handles, legend_labels = ax.get_legend_handles_labels()
+    fig.legend(handles, legend_labels, fontsize=8, loc="upper center",
+               bbox_to_anchor=(.5,1.12), ncol=3, frameon=False)
     soften_axes(ax, axis="x")
 
     labels = [("heuristic_control", "Heuristic"), ("greedy_single_pass", "Greedy"),
@@ -678,23 +573,21 @@ def fig_exact_small() -> None:
         vals = [means[k][comp] for k, _ in labels]
         cols = ["#9AA0A6", "#D8A448", "#53A6A6", "#3D6FB6", PALETTE["purple"]]
         bars = ax.bar(range(5), vals, color=cols, width=0.62)
-        for b, v in zip(bars, vals):
-            ax.text(b.get_x() + b.get_width() / 2, v, fmt % v, ha="center", va="bottom",
-                    fontsize=6.0, rotation=0)
-        ax.set_xticks(range(5))
-        ax.set_xticklabels([lb for _, lb in labels], fontsize=5.8, rotation=25)
+
+        method_ticks(ax, exact=True)
         ax.set_title(title, fontsize=8.5)
         ax.margins(y=0.22)
         soften_axes(ax)
-    fig.text(0.5, -0.06, "三 UE 小规模设置；MC-ITR、Greedy、Iterative 与穷举精确解的逐分量均值相同（实现一致性检查，非主配置最优性证明）",
-             ha="center", fontsize=6.8, color=PALETTE["baseline"])
+    fig.text(0.5, -0.06, "三 UE 设置：MC-ITR、Greedy、Iterative 与精确解的逐分量均值相同\n实现一致性检查，非主配置全局最优性证明",
+             ha="center", fontsize=8, color=PALETTE["baseline"])
+    method_key(fig, y=-.19, exact=True)
     fig.subplots_adjust(bottom=0.30)
     save(fig, "图4-7_Exact-Small验证与快照构成", multi_panel=True)
 
 
 def fig_bridge() -> None:
     """图4-8: shared-trajectory snapshot bridge (chapter 4 solver vs online lower layer)."""
-    analysis = json.loads((REPO_ROOT / "results" / "bridge_20260928" / "full" / "analysis.json").read_text())
+    analysis = json.loads(source_file("bridge_analysis.json", REPO_ROOT / "results" / "bridge_20260928" / "full" / "analysis.json").read_text())
     units = analysis["units"]
     methods = [("online_lower", "在线学习下层", PALETTE["baseline"])] + CH4_METHODS
 
@@ -709,9 +602,8 @@ def fig_bridge() -> None:
             ax.bar(i, mean, width=0.62, color=color, alpha=0.85, zorder=2)
             jitter = rng.uniform(-0.15, 0.15, len(vals))
             ax.scatter(i + jitter, vals, s=5, color=PALETTE["text"], alpha=0.4, zorder=3)
-            ax.text(i, mean, fmt % mean, ha="center", va="bottom", fontsize=6.8, zorder=4)
-        ax.set_xticks(range(len(methods)))
-        ax.set_xticklabels([lb for _, lb, _ in methods], fontsize=6.0, rotation=20)
+
+        method_ticks(ax, online=True)
         ax.set_title(title, fontsize=8.5)
         ax.margins(y=0.18)
         soften_axes(ax)
@@ -723,20 +615,19 @@ def fig_bridge() -> None:
     ax.axhline(0, color=PALETTE["axis"], lw=0.8)
     ax.bar(range(len(diffs)), diffs, color=PALETTE["full"], width=0.62)
     ax.axhline(float(pair["mean_difference"]), color=PALETTE["red"], lw=1.0, linestyle="--")
-    for i, v in enumerate(diffs):
-        ax.text(i, v - 0.13, f"{v:.2f}", ha="center", va="top", fontsize=6.2)
+
     ax.set_xticks(range(len(diffs)))
-    ax.set_xticklabels([f"S{i+1}" for i in range(len(diffs))], fontsize=6.8)
+    ax.set_xticklabels([f"S{i+1}" for i in range(len(diffs))], fontsize=8)
     ax.set_xlabel("训练种子（排序）")
-    ax.set_title("(c) MC-ITR $-$ 在线下层：逐种子差值", fontsize=8.5)
-    ax.text(0.03, 0.04, f"均值 {pair['mean_difference']:.3f}，95% CI [{ci[0]:.3f}, {ci[1]:.3f}]；10/10 为负",
-            transform=ax.transAxes, fontsize=6.8, color=PALETTE["red"])
+    ax.set_ylabel("超时数差值")
+    ax.set_title(f"(c) MC-ITR - 在线下层\n均值 {pair['mean_difference']:.3f}\n95% CI [{ci[0]:.3f}, {ci[1]:.3f}]",fontsize=8,pad=8)
     ax.margins(y=0.25)
     soften_axes(ax)
-    axes[0].text(0.0, -0.40,
-                 "50 个评估任务（10 训练种子 × 5 工作负载）× 8 冻结快照 = 400 快照；"
-                 "快照方法在候选轨迹的冻结快照上离线求解，未回写环境",
-                 transform=axes[0].transAxes, fontsize=6.6, color=PALETTE["baseline"])
+    fig.text(.5,-.25,
+             "历史 09-28 覆盖候选（非 SF-HLM）：50 评估任务 × 8 冻结快照 = 400 快照\n"
+             "10 训练种子 × 5 工作负载；反事实分配未回写环境",
+             ha="center", fontsize=8, color=PALETTE["baseline"])
+    method_key(fig, y=-.14, online=True)
     save(fig, "图4-8_候选轨迹快照桥接对比", multi_panel=True)
 
 
@@ -749,7 +640,11 @@ def main() -> None:
         help="coverage-optimization worktree root holding the confirmation batch",
     )
     args = parser.parse_args()
-    setup_thesis_style(font_size=8)
+    family = setup_thesis_style(font_size=8)
+    # Explicit guarantees also visible to a source-only preflight; the shared
+    # style chooses an installed Chinese font before these final settings.
+    plt.rcParams.update({"font.family": "serif", "font.serif": [family],
+                         "svg.fonttype": "none", "pdf.fonttype": 42})
 
     fig_system_overview()
     fig_slot_timeline()
@@ -770,8 +665,9 @@ def main() -> None:
         out = QA_REPORT.parent / "figure_panel_alignment.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(ALIGN_REPORTS, ensure_ascii=False, indent=2), encoding="utf-8")
-        fails = [r for r in ALIGN_REPORTS if r["status"] != "pass"]
-        print(f"alignment: {len(ALIGN_REPORTS) - len(fails)} pass, {len(fails)} fail")
+        passed = sum(r["verdict"] == "PASS" for r in ALIGN_REPORTS)
+        nonapp = sum(not r["applicable"] for r in ALIGN_REPORTS)
+        print(f"alignment: {passed} multi-panel pass, {nonapp} single-panel not applicable")
 
 
 if __name__ == "__main__":
