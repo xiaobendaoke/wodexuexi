@@ -1,0 +1,149 @@
+\section{研究假设与适用范围声明}
+\label{sec:assumptions-and-scope}
+
+为确保研究结论得到准确理解和合理应用，本节明确列出本文采用的核心假设、简化条件及其对结论适用范围的影响。
+
+\subsection{场景规模与可扩展性假设}
+\label{sec:scale-assumptions}
+
+本文实验主要基于\textbf{五架 UAV、一百个 UE 和一个 MBS 在 $700\times700\,\mathrm{m}$ 区域}的主场景配置。虽然第五章第 5.9 节进行了 UE 数量（50/100/150）与 UAV 算力（$0.5\times$/原值/$2\times$）的九格敏感性分析，但 \textbf{UAV 数量始终固定为五架}，未验证更大规模集群（如 10+ 架）的性能表现。
+
+\textbf{适用范围说明}：
+\begin{itemize}
+    \item 本文结论适用于小规模 UAV 集群（3--7 架）的应急临时服务场景
+    \item 当 UAV 数量增加到 10 架以上时，以下因素可能影响方法有效性：
+    \begin{itemize}
+        \item 上层 Attention-MAPPO 的邻机观测槽位（当前为 4 个）需要扩展
+        \item 下层集中调度的通信开销与决策延迟可能显著增加
+        \item 机间协作链路的拓扑复杂度呈二次增长
+    \end{itemize}
+    \item 实际部署前需要针对目标规模进行专门的可扩展性测试
+\end{itemize}
+
+\subsection{运动模型的简化假设}
+\label{sec:motion-assumptions}
+
+本文采用\textbf{固定高度（$H=100\,\mathrm{m}$）下的二维平面运动模型}，具体简化包括：
+\begin{itemize}
+    \item \textbf{运动学简化}：仅建模水平位置 $\mathbf{q}_u(t)\in\mathbb{R}^2$，忽略俯仰、偏航、滚转等姿态角
+    \item \textbf{动力学简化}：采用单步最大位移约束（$\|\mathbf{q}_u(t+1)-\mathbf{q}_u(t)\|\leq v_{\max}\tau$），未建模推力、阻力、转弯半径等动力学特性
+    \item \textbf{环境简化}：未考虑风场扰动、气流湍流、降雨、温度等气象条件
+    \item \textbf{避障简化}：仅通过最小机间距约束（$d_{\min}=200\,\mathrm{m}$）处理 UAV 间冲突，未建模三维障碍物（如建筑物、树木）
+\end{itemize}
+
+\textbf{对结论的影响}：
+\begin{itemize}
+    \item 真实 UAV 的三维机动能力（如快速爬升规避障碍）未被利用，实际可达覆盖区域可能大于本文二维模型的预测
+    \item 风场干扰会导致实际轨迹偏离规划轨迹，影响覆盖精度和能耗估计
+    \item 转弯半径限制可能使实际轨迹比直线轨迹更长，增加飞行能耗
+    \item 第五章第 5.11 节图 5.20 显示，加入逐次软件费用后方法排序发生改变（学习 $29.379\%$、强随机 $30.073\%$、贪心 $32.161\%$），说明\textbf{简化假设对结论具有显著影响}
+\end{itemize}
+
+\textbf{适用条件}：本文轨迹规划结果适用于开阔低空空域、低风速（$<5\,\mathrm{m/s}$）、无复杂障碍物的应急服务场景。实际部署需结合飞控系统的轨迹跟踪能力与局部避障模块。
+
+\subsection{能耗模型的理想化假设}
+\label{sec:energy-assumptions}
+
+本文能耗模型采用以下简化：
+\begin{itemize}
+    \item \textbf{计算能耗}：使用等效频率模型 $E_m^{\mathrm{cmp}}=\kappa f_{mj}^3 T_m^{\mathrm{cmp}}$，其中 $\kappa=10^{-27}$ 为\textbf{未标定具体芯片}的有效电容系数
+    \item \textbf{飞行能耗}：采用恒定悬停功率与速度相关项的线性组合，未建模机体质量、载荷变化、电池放电曲线
+    \item \textbf{通信能耗}：假设固定发射功率，未考虑链路自适应调制编码、功率控制
+    \item \textbf{电池约束}：当前模型记录能耗但\textbf{未强制有限电池容量与返航约束}
+\end{itemize}
+
+\textbf{对结论的影响}：
+\begin{itemize}
+    \item 第五章第 5.7.4 节报告的"UAV 能耗降低约 $9.06\%$"是基于理想化模型的相对比较，\textbf{不对应实测机载功率或续航时间}
+    \item 不同芯片架构（如 ARM Cortex-A、Intel x86、NVIDIA Jetson）的功耗特性差异显著，实际能耗可能偏离本文估计值 $\pm50\%$ 以上
+    \item 电池放电效率随剩余电量非线性变化（如低电量时内阻增大），本文恒定效率假设在长航时任务中误差较大
+    \item 表 5.8 显示计算能耗占总能耗约 $96\%$，说明本模型中\textbf{飞行能耗被相对低估}（真实旋翼 UAV 飞行功率通常占主导）
+\end{itemize}
+
+\textbf{适用条件}：能耗结论用于\textbf{算法间的相对比较}，实际部署的绝对能耗、续航时间需结合目标硬件平台（如 DJI Matrice 系列、AscTec Falcon 等）进行实测标定。
+
+\subsection{软件时间测量的隔离条件}
+\label{sec:timing-assumptions}
+
+第五章第 5.7.5 节报告的完整软件 p95 时间（学习配额 $109.24\,\mathrm{ms}$）是在\textbf{规定服务器的隔离测量}条件下获得的，具体条件包括：
+\begin{itemize}
+    \item \textbf{硬件环境}：单独分配的计算资源，无操作系统多任务抢占
+    \item \textbf{网络假设}：忽略 UAV 间通信延迟、MBS 回传时延、需求感知上报延迟
+    \item \textbf{调度等待}：主 DSR 指标\textbf{未计入调度等待时间}；事后加入逐次软件费用后排序改变（见第 5.11 节表 5.11）
+\end{itemize}
+
+\textbf{对结论的影响}：
+\begin{itemize}
+    \item 满足 $1\,\mathrm{s}$ 软件门槛\textbf{不能直接证明}计入求解等待后的截止期增益
+    \item 机载嵌入式平台（如 Raspberry Pi、NVIDIA Jetson Nano）的算力远低于服务器，实际推理时间可能增加 $5$--$10$ 倍
+    \item 无线信道的传输延迟、丢包重传会进一步增加端到端时延
+\end{itemize}
+
+\textbf{适用条件}：软件时间结论适用于算法可行性论证，\textbf{面向机载部署仍需补充对应硬件与通信测量}。
+
+\subsection{统计推断的样本量限制}
+\label{sec:statistical-assumptions}
+
+本文使用\textbf{十个独立训练块}作为学习方法的统计重复（见第五章第 5.6 节），该样本量选择基于以下考虑：
+\begin{itemize}
+    \item 每个训练块需要约 12--16 小时完成（共同基座训练 + 配额 PPO 训练）
+    \item 受计算资源限制，十个块是平衡统计功效与实验成本的折中
+    \item \textbf{未进行事前功效分析}（power analysis）确定最小所需样本量
+\end{itemize}
+
+\textbf{对结论的影响}：
+\begin{itemize}
+    \item 对于较小效应（如学习配额 vs. 强随机的 $0.143$ 个百分点差异），十个样本在不同统计方法下结论敏感：
+    \begin{itemize}
+        \item 配对 $t$ 检验：$p=0.0422$（Holm 校正后）
+        \item 精确符号翻转检验：$p\approx 0.0605$
+    \end{itemize}
+    \item 第五章第 5.8.2 节承认"\textbf{学习增量对统计方法具有敏感性}"
+    \item 增加样本量至 20--30 个块可能改变部分边际显著比较的结论
+\end{itemize}
+
+\textbf{适用条件}：主要比较（DSR 差异 $>1$ 个百分点）的结论稳健；边际比较（差异 $<0.2$ 个百分点）需谨慎解释，建议作为探索性发现而非确证性结论。
+
+\subsection{问题建模的特定协议}
+\label{sec:protocol-assumptions}
+
+本文采用以下特定的服务协议与评价口径：
+\begin{itemize}
+    \item \textbf{接纳规则}：$100\,\mathrm{m}$ 物理服务半径内的请求被自然接纳；$460\,\mathrm{m}$ 感知半径内的未覆盖需求可被上层观测但不自动接纳
+    \item \textbf{任务不可拆分}：每个请求必须完整分配到单个执行节点，不支持部分卸载或任务拆分
+    \item \textbf{算力均分}：节点上的所有请求\textbf{均分等效计算频率}，无优先级或抢占调度
+    \item \textbf{DSR 分母}：以\textbf{实际生成服务请求}为分母（受 UE 电池状态影响），而非所有潜在需求
+\end{itemize}
+
+\textbf{与现有文献的差异}：
+\begin{itemize}
+    \item 部分文献（如 \cite{wang2026ccah}）支持细粒度部分卸载，可能获得更高灵活性
+    \item 部分文献采用\textbf{强制关联}全部 UE，DSR 分母包含所有请求；本文自然接纳使未覆盖请求不进入分母
+    \item 不同协议下的绝对 DSR 值\textbf{不可直接比较}（如本文 $34.244\%$ vs. AirFed \cite{nguyen2024airfed} 的 $99\%$）
+\end{itemize}
+
+\textbf{适用条件}：结论适用于\textbf{相同协议下的算法比较}；跨协议、跨场景的性能排序需要重新评估。
+
+\subsection{研究范围的总体声明}
+\label{sec:overall-scope}
+
+综合上述假设，本文研究成果的适用范围总结如下：
+
+\textbf{适用场景}：
+\begin{itemize}
+    \item 小规模 UAV 集群（3--7 架）的应急临时服务
+    \item 开阔低空空域（无复杂三维障碍物）
+    \item 短期任务（电池容量充足，无返航约束）
+    \item 服务器端或边缘计算节点的算法验证
+\end{itemize}
+
+\textbf{需要进一步研究的条件}：
+\begin{itemize}
+    \item 大规模集群（10+ 架）的分布式协调与通信开销
+    \item 三维避障、风场扰动、动力学约束下的轨迹跟踪
+    \item 真实芯片与电池的能耗标定、续航优化
+    \item 机载嵌入式平台的实时推理性能
+    \item 不同接纳协议、任务模型下的跨场景泛化能力
+\end{itemize}
+
+本文为上述进一步研究提供了\textbf{可复核的基线方法与实验协议}，后续工作可在明确假设差异的前提下进行公平比较。

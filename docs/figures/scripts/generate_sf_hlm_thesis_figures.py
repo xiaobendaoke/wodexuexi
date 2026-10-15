@@ -32,10 +32,10 @@ OUT = REPO_ROOT/'docs/figures'
 QA = REPO_ROOT/'output/thesis_writing_20261004/validation/figures'
 METHODS = ['learned','random','heuristic','greedy','original_frozen','original_adapted','upper_random_offload','full_random']
 LABELS = dict(learned='SF-HLM 学习配额',random='强配额随机',heuristic='启发式配额',greedy='贪心＋修复',
-    original_frozen='原冻结下层＋修复',original_adapted='原适配下层＋修复',
+    original_frozen='冻结请求级下层＋修复',original_adapted='适配请求级下层＋修复',
     upper_random_offload='相同上层＋随机卸载',full_random='全随机（质量掩码内）')
 SHORT = dict(learned='SF-HLM',random='强随机',heuristic='启发式',greedy='贪心修复',
-    original_frozen='原冻结下层',original_adapted='原适配下层',upper_random_offload='随机卸载',full_random='全随机')
+    original_frozen='冻结请求级下层',original_adapted='适配请求级下层',upper_random_offload='随机卸载',full_random='全随机')
 COLORS = dict(zip(METHODS,['#3569AC','#89909A','#65A69A','#CCAB69','#8790BE','#AF98B5','#B9A58A','#BCBCBC']))
 BLUE, TEAL, GRAY = COLORS['learned'],COLORS['heuristic'],'#7B818A'
 NAMES = {
@@ -374,7 +374,7 @@ def performance(pack):
         paired(ax,pack['confirmation']['comparisons']['learned-'+m],SHORT[m])
     axs[0,0].set_ylabel('训练块序号')
     save(fig,9,list(axs.flat))
-    fig,axs=panels(1,2,4.7);fig.subplots_adjust(left=.26,wspace=.45)
+    fig,axs=panels(1,2,4.7);fig.subplots_adjust(left=.26,wspace=.62)
     ax=axs[0,0];y=np.arange(8)
     adm=np.array([block_values(pack,m,'admission').mean() for m in METHODS])*100
     succ=np.array([block_values(pack,m,'dsr').mean() for m in METHODS])*100
@@ -390,12 +390,12 @@ def performance(pack):
     axs[0,1].set_xlabel('接纳后按时完成率 / %')
     fig.subplots_adjust(bottom=.25)
     save(fig,10,list(axs.flat))
-    fig,axs=panels(1,2,4.6);fig.subplots_adjust(left=.25,wspace=.45)
+    fig,axs=panels(1,2,4.6);fig.subplots_adjust(left=.25,wspace=.62)
     ranking(axs[0,0],pack,'energy_per_step',.001,'UAV总能耗 / (kJ/步)')
     ranking(axs[0,1],pack,'mbs_share',100,'MBS占已接纳服务请求 / %')
     for ax in axs.flat:ax.set_yticklabels([SHORT[m] for m in METHODS],fontsize=9)
     save(fig,11,list(axs.flat))
-    fig,axs=panels(1,2,4.6);fig.subplots_adjust(left=.25,wspace=.45)
+    fig,axs=panels(1,2,4.6);fig.subplots_adjust(left=.25,wspace=.62)
     ranking(axs[0,0],pack,'fairness',1,'Jain公平性')
     ranking(axs[0,1],pack,'p95',1000,'隔离完整路径p95 / ms')
     for ax in axs.flat:ax.set_yticklabels([SHORT[m] for m in METHODS],fontsize=9)

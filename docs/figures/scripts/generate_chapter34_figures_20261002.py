@@ -87,7 +87,7 @@ def method_ticks(ax, *, online=False, exact=False):
 
 def method_key(fig, y=-0.02, *, online=False, exact=False):
     text = "H：Heuristic-Control；G：Greedy-Single-Pass；I：Iterative-Base；MC：MC-ITR"
-    if online: text = "O：历史在线下层；" + text
+    if online: text = "O：在线请求级下层；" + text
     if exact: text += "；Ex：穷举精确解"
     fig.text(.5,y,text,ha="center",fontsize=8,color=PALETTE["baseline"])
 
@@ -624,7 +624,7 @@ def fig_bridge() -> None:
     ax.margins(y=0.25)
     soften_axes(ax)
     fig.text(.5,-.25,
-             "历史 09-28 覆盖候选（非 SF-HLM）：50 评估任务 × 8 冻结快照 = 400 快照\n"
+             "需求感知上层＋无注意力请求级下层：50 评估任务 × 8 快照 = 400 快照\n"
              "10 训练种子 × 5 工作负载；反事实分配未回写环境",
              ha="center", fontsize=8, color=PALETTE["baseline"])
     method_key(fig, y=-.14, online=True)

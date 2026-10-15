@@ -1,0 +1,18 @@
+编号	严重程度	位置	问题	核查证据	影响的结论	修改建议	是否必须修改
+P1	重大(规范)	封面(物理页1)/摘要页I/III	身份字段占位 YOUR_SPECIALITY/YOUR_NAME/YOUR_SUPERVISOR	渲染页 front_p001/front_p005; latex/sysusetup.tex	不影响科学结论;送审合规	填入真实信息	是
+P2	重大(规范)	印刷页133	在读期间取得的科研成果整页为空(仅TODO注释)	latex/docs/achievements.tex; p151.txt	不影响科学结论;送审合规	填写真实成果或按学院格式说明	是
+P3	重大(规范)	印刷页132	致谢仅一句模板话	latex/docs/acknowledgements.tex	不影响科学结论	补写真实致谢	是
+P4	重大(文献厚度)	印刷页130-131	全文仅28篇被引文献(bib 105条中77条未引用);1.2节综述偏薄	PDF参考文献[1]-[28]; LaTeX \cite去重28个key	不影响数值结论;影响研究现状评阅印象	补充真实一手文献并扩充1.2节;不得为凑数引用未读文献	是(建议送审前)
+P5	一般	印刷页130 [15]	zhao2024robust标题UAV/MEC/DRL未加括号保护,印刷为小写	p148.txt; reference.bib	仅格式	标题内缩写加大括号保护	是
+P6	一般	印刷页130-131 [14][24][25]	Lillicrap/Schulman-GAE/PPO三条印为[A]. 2015/2017,出处缺失	p148.txt; reference.bib	仅格式;但属方法一手来源	补 arXiv 编号或正式出处(GAE/Lillicrap 为 ICLR 2016)	是
+P7	一般	reference.bib	key命名误导:zhao2024robust实为Li 2024;he2019uav实为Yuan 2022;fan2021uav实为Hady 2025(印刷与归述均正确,已Crossref核验)	Crossref: 10.3390/s22103854; 10.1109/JIOT.2023.3300718; 10.1007/s10462-025-11340-5	无实质影响	重命名key并全局替换	否
+P8	一般(无法核实)	印刷页130 [9][11]	曾耀平/李侍阳两条2026中文文献无法在线核实(非证实有误);王义君等[10]已核实为真	WebFetch jeit.ac.cn; Crossref 404	无实质影响	作者凭知网/纸质记录自查卷期页码	是(作者自查)
+P9	一般	docs/figures/	未引用遗留图文件(图3-3_主配置性能工作点.*;*.alignment.svg)	ls docs/figures; LaTeX未引用	无	归档或删除	否
+P10	一般	编译	main.log: sysuthesis Warning LiShu font is required(封面回退字体)	latex/main.log	仅排版合规	安装/指定隶书字体后重编译确认	否(送印前)
+P11	建议	印刷页55 图3.5	图中槽位数字(6→14)与正文构造例(12→30)不同;均为示意	渲染p073; chap03.tex:629	无	图注注明数字仅为示意或统一数字	否
+P12	建议	全文	Actor/Critic大小写不统一(chap03用小写actor/critic,chap02标题用Actor–Critic)	通读记录	无	统一大小写	否
+P13	建议	印刷页59 图3.7	图内小字注释在正文尺寸下接近可读性下限	渲染p077(110dpi)	无	略增大图内字号	否
+D1	建议	chap05.tex:793	"对毕业论文的贡献表述"宜用"本文"	chap05.tex:793	无	改为"对本文的贡献表述"	否
+D3	建议	chap03.tex:34	"确认实验"在第三章指覆盖观测批次,与第五章确认同名	通读记录	无	首次出现处加限定语(可保留)	否
+D4	建议	chap04.tex:411	"采集十快照"口语化	chap04.tex:411	无	改为"采集10个快照"(非必须)	否
+D5	建议	chap06.tex:46	"不再属于尚未完成的工作"双重否定略拗口	chap06.tex:46	无	改为"已在本次论文工作中完成"	否

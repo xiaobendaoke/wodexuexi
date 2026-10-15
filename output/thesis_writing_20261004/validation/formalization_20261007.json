@@ -1,0 +1,1741 @@
+{
+  "date": "2026-10-07",
+  "baseline_hashes": {
+    "latex/docs/abstract.tex": "cd5cbaa060e870634ee80b0856092022b3db99b7dd4399526a6384a9cdf784b9",
+    "latex/docs/achievements.tex": "495ce12de13b5c9a6edffcb414d41a3a3c17fa7fcdf0236aeda3dc9edc42ee42",
+    "latex/docs/acknowledgements.tex": "f58d60d6bda32f433826f3b0e6fe62aadd8497395429602a10cadd94e709f179",
+    "latex/docs/chap01.tex": "f6da396dc99411d7896859d5e07b65348212d14366d3ced1cfbbcc384752b279",
+    "latex/docs/chap02.tex": "cfa7a51a1bf25c39e4302a28e8b2d0b08324d2e37aadac58b5c2a19fc4ae6457",
+    "latex/docs/chap03.tex": "bf640456bdcd5ef32b00e25df50602a7573474c6c5ed12ea606e58a49a84a070",
+    "latex/docs/chap04.tex": "21668d126b34ba7fb197cab296d03a7536197d960fe67a54ba8c218696aaca23",
+    "latex/docs/chap05.tex": "a79d9033d524e70d5b669fa242b13e5b16b6f73d510b07cef236274cf73faab2",
+    "latex/docs/chap06.tex": "2ffd01f3c1a64f638a15c0b8522903ea660ead47ede477f71a2ceb4ad65d318e",
+    "latex/docs/complementary.tex": "16cd139a63e00a2dac835b78db2930e8885386a9cf64182e431db5150324652a",
+    "latex/docs/notation.tex": "f0b0ef472cc4cdde56542d4d2f851b316ada7a665f8e6c301b427d2261763882",
+    "docs/figures/scripts/generate_chapter34_figures_20261002.py": "e3ff0168489a0893a472d7dc2a73fd037ae2764d7e46832e718c6db5f18edd15",
+    "latex/main.pdf": "3ce593325b303d4d34a55a46891cc6769629bba09be64a9fc0dd14e0043c60fe"
+  },
+  "source_data_hashes": {
+    "docs/figures/data/chapter34_20261004/confirmation_units.csv": "b6bb6d0a8bf9ac1a2c6479d7aca31eaa368fd83251b8a5a77803ac47837a81fa",
+    "docs/figures/data/chapter34_20261004/source_manifest.json": "10c8fff9ed77272fe9635021c4ca13ff70a99ff05854ec02f9e954db4aa05138",
+    "docs/figures/data/chapter34_20261004/chapter4_analysis.json": "5af4185bc81a208cbae3e262b6dad38acd602d9c17025e55f1d96da40bbf987e",
+    "docs/figures/data/chapter34_20261004/confirmation_training.csv": "cce828c0eb8d056cb3e72cd9b55c090f058047201d79fe13477a5e9e63935408",
+    "docs/figures/data/chapter34_20261004/bridge_analysis.json": "07e8ff9f2bfe8d892bb80047521755182369c7d86b6e21022ddb6cc3b5206036",
+    "docs/figures/data/chapter34_20261004/bottleneck_review.json": "584c1557967c22a81e217e4f371efe8170aa6bd1eb3baa88ea249749ba48d669",
+    "docs/figures/data/chapter34_20261004/chapter4_units.csv": "da05877a13d0ec76720734eedf62a24b4e8d958cddced90f2381f3b87c62bc73",
+    "docs/figures/data/sf_hlm_20261004/swarm_motion_timeseries.csv": "8f3274809651bfaf3637ccb2b2fb9f45fcea0c64c2df5ed5d1ef01f4cffa33e4",
+    "docs/figures/data/sf_hlm_20261004/swarm_motion_diagnostics.json": "5286672c5c1c565a5c6a55984a66e1db4181407a44ed5a62102c205291a3c0d8",
+    "docs/figures/data/sf_hlm_20261004/swarm_task_division.json": "82b2d1c98febf655b9aceae69832a1ebd39938b5f6f6577bc0f4af696bc1cd67",
+    "docs/figures/data/sf_hlm_20261004/swarm_motion_summary.csv": "8dc787cd06b8e197206987e2d5e50b5a1924339ccc87f2ae06d83975cdb57271",
+    "docs/figures/data/sf_hlm_20261004/replay.json": "e502ae48a1caf07e826ef0f741e72a142949c4fdc2d3ccdd423350021f1c239b",
+    "docs/figures/data/sf_hlm_20261004/analysis_data.json": "6e810711eaa3f92aaf13464f48bd360526178267c6a98523064accdc8b73da87",
+    "docs/figures/data/sf_hlm_20261004/swarm_task_division.csv": "daafc2855c86935cbb7442e6f03622243c0e02802bf6fc1d828c9cbae76e4d8b",
+    "docs/figures/data/sf_hlm_20261004/training_behavior.json": "f31d61bf11f78b814c5270857251808d082db95bbab665d01cf87c197d06cba8"
+  },
+  "method_evidence": [
+    {
+      "method": "需求感知轨迹策略 + 无注意力学习式下层",
+      "chapter": 3,
+      "source": "coverage_observation_confirmation_20260927",
+      "unit": "10 独立训练种子，5 配对工作负载",
+      "dsr": [
+        0.2444,
+        0.2793
+      ],
+      "difference_pp": 3.49,
+      "ci95_pp": [
+        2.44,
+        4.54
+      ]
+    },
+    {
+      "method": "MC-ITR 固定快照分配",
+      "chapter": 4,
+      "source": "canonical_all_20260920/chapter4",
+      "unit": "10 工作负载种子",
+      "misses_mc_itr": 2.055,
+      "misses_iterative_base": 2.228
+    },
+    {
+      "method": "学习轨迹上的 MC-ITR 反事实分配",
+      "chapter": 4,
+      "source": "bridge_20260928/full",
+      "unit": "10 训练种子，5 工作负载，共400快照",
+      "misses_difference": -2.46,
+      "energy_change_percent": 23.8,
+      "full_path_seconds": 20.751
+    },
+    {
+      "method": "SF-HLM 固定需求感知上层 + 学习配额搜索与条件匹配",
+      "chapter": 5,
+      "source": "sf_hlm_v2_20261001/followup_20261002",
+      "archive_commit": "a8bcf9a8731edd68b7bc483e1c959c576807e0d6",
+      "unit": "10 独立训练块，5 配对工作负载",
+      "dsr_percent": 34.244,
+      "main_differences_pp": [
+        1.423,
+        2.008,
+        2.192
+      ],
+      "learned_increment_pp": 0.143,
+      "sign_flip_p": 0.0605
+    }
+  ],
+  "edits": [
+    {
+      "file": "latex/docs/chap01.tex",
+      "baseline_line": 26,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "baseline_line": 37,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "baseline_line": 48,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "baseline_line": 90,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "baseline_line": 101,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "baseline_line": 125,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "baseline_line": 127,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "baseline_line": 129,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "baseline_line": 142,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 10,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 26,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 28,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 33,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 35,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 42,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 44,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 46,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 48,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 55,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 57,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "baseline_line": 68,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 59,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 63,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 87,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 112,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 166,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 195,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 256,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 309,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 318,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 332,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 341,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 403,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 427,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 451,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 476,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 539,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 578,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 608,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 626,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 641,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 643,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 693,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 710,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "baseline_line": 712,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 15,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 17,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 57,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 67,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 102,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 128,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 132,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 210,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 310,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 356,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 449,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 473,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 489,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 539,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 594,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 604,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 627,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 634,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 646,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 648,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 657,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 692,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 754,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "baseline_line": 770,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 16,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 78,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 254,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 256,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 271,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 318,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 329,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 350,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 372,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 392,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 396,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 401,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 403,
+      "action": "deleted",
+      "reason": "实现检查与前段合并；算法性质和性能由各自理论、实验段落说明"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 422,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 424,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 454,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 463,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 468,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 470,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 472,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 477,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 479,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 487,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 526,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 544,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 551,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 553,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 557,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 563,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 565,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 570,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 575,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 579,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 581,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "baseline_line": 587,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 12,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 23,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 36,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 43,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 47,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 70,
+      "action": "deleted",
+      "reason": "删除未采用的开发尝试、晋级叙述及版本实现说明；有效编码和动作定义在后文完整说明"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 81,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 153,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 188,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 221,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 234,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 248,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 329,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 375,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 377,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 379,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 388,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 390,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 411,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 413,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 417,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 494,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 496,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 511,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 536,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 563,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 565,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 606,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 621,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 623,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 631,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 650,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 659,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 663,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 689,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 718,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 722,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 767,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 782,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 784,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 793,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 795,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 801,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 810,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 822,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 878,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 900,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 906,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 915,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 937,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 939,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 945,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "baseline_line": 947,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/abstract.tex",
+      "baseline_line": 13,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/abstract.tex",
+      "baseline_line": 23,
+      "action": "rewritten",
+      "reason": "删除过程性叙述或重复限定，保留方法与结论条件"
+    },
+    {
+      "file": "latex/docs/abstract.tex",
+      "phrase": "原适配学习下层",
+      "replacement": "适配请求级下层",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/abstract.tex",
+      "phrase": "原冻结",
+      "replacement": "冻结请求级下层",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/abstract.tex",
+      "phrase": "主线 DSR",
+      "replacement": "SF-HLM 的 DSR",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/abstract.tex",
+      "phrase": "主线各块",
+      "replacement": "SF-HLM 各块",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "phrase": "原适配学习下层",
+      "replacement": "适配请求级下层",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "phrase": "原冻结",
+      "replacement": "冻结请求级下层",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "phrase": "主线 DSR",
+      "replacement": "SF-HLM 的 DSR",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "phrase": "主证据",
+      "replacement": "主要结果",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "phrase": "探索性 pilot",
+      "replacement": "探索性实验",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "phrase": "生产环境",
+      "replacement": "仿真环境",
+      "count": 2
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "phrase": "生产执行",
+      "replacement": "环境执行",
+      "count": 3
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "phrase": "生产评价",
+      "replacement": "环境评价",
+      "count": 3
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "原冻结学习下层",
+      "replacement": "冻结请求级下层",
+      "count": 3
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "原适配学习下层",
+      "replacement": "适配请求级下层",
+      "count": 4
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "原冻结与原适配学习修复",
+      "replacement": "冻结与适配请求级下层修复",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "原冻结学习修复",
+      "replacement": "冻结请求级下层修复",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "原适配学习修复",
+      "replacement": "适配请求级下层修复",
+      "count": 2
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "原冻结学习组",
+      "replacement": "冻结请求级下层组",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "原适配学习",
+      "replacement": "适配请求级下层",
+      "count": 4
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "原冻结学习",
+      "replacement": "冻结请求级下层",
+      "count": 3
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "原冻结",
+      "replacement": "冻结请求级下层",
+      "count": 2
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "两种原学习修复",
+      "replacement": "两种请求级下层修复",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "原学习下层",
+      "replacement": "请求级 MAPPO 下层",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "最终候选",
+      "replacement": "SF-HLM",
+      "count": 2
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "学习主线",
+      "replacement": "SF-HLM",
+      "count": 4
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "主线真实",
+      "replacement": "SF-HLM 的真实",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "主线在",
+      "replacement": "SF-HLM 在",
+      "count": 2
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "主线轨迹",
+      "replacement": "SF-HLM 轨迹",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "主线对",
+      "replacement": "SF-HLM 对",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "普通调用合同",
+      "replacement": "常规调用设置",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "预先登记的新族",
+      "replacement": "事先确定的补充检验族",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "旧机制检验",
+      "replacement": "核心机制检验",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "phrase": "生产环境",
+      "replacement": "仿真环境",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "phrase": "主线各块",
+      "replacement": "SF-HLM 各块",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/abstract.tex",
+      "phrase": "the frozen original learned lower layer with repair, and its adapted counterpart",
+      "replacement": "a frozen request-level lower layer with repair, and its adapted counterpart",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "phrase": "历史批次共用",
+      "replacement": "基线比较批次共用",
+      "count": 1
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "line_before_refinement": 46,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "line_before_refinement": 60,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "line_before_refinement": 64,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "line_before_refinement": 69,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "line_before_refinement": 86,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "line_before_refinement": 99,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "line_before_refinement": 103,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "line_before_refinement": 105,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "line_before_refinement": 142,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "line_before_refinement": 483,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "line_before_refinement": 576,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap02.tex",
+      "line_before_refinement": 717,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "line_before_refinement": 636,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "line_before_refinement": 638,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "line_before_refinement": 690,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "line_before_refinement": 724,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "line_before_refinement": 763,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "line_before_refinement": 58,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "line_before_refinement": 101,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "line_before_refinement": 221,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "line_before_refinement": 581,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "line_before_refinement": 591,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "line_before_refinement": 612,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "line_before_refinement": 829,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "line_before_refinement": 874,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "line_before_refinement": 883,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "line_before_refinement": 926,
+      "action": "rewritten",
+      "reason": "上下文复核与重复表述压缩"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "action": "final_context_refinement",
+      "old": "但注意力仍依赖输入特征、训练信号与模型容量，其结构能力不能直接写成 DSR 必然提高的定理。",
+      "new": "注意力的实际收益取决于输入特征、训练信号与模型容量，其对 DSR 的影响由具体对照实验评价。"
+    },
+    {
+      "file": "latex/docs/chap01.tex",
+      "action": "final_context_refinement",
+      "old": "本文第三章以覆盖观测为研究中心，保留同信息对照的证据边界。",
+      "new": "本文第三章以需求可见性为研究中心，并通过同信息对照评价结构作用。"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "action": "final_context_refinement",
+      "old": "\\subsection{可重复性应检查什么}",
+      "new": "\\subsection{评价的确定性与实现一致性}"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "action": "final_context_refinement",
+      "old": "\\subsection{Exact-Small 检查能验证到何处}",
+      "new": "\\subsection{Exact-Small 的结果与问题规模}"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "action": "final_context_refinement",
+      "old": "能耗与算力敏感性应共同解释。",
+      "new": "算力变化同时影响时延与能耗。"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "action": "final_context_refinement",
+      "old": "本章使用统一功率模型和任务集合比较，保留这种质量与能量的相互作用，不用单项敏感性曲线宣称全部资源扩容都能降低系统代价。",
+      "new": "统一功率模型和任务集合下的比较反映了服务质量与能耗之间的权衡。"
+    },
+    {
+      "file": "latex/docs/chap04.tex",
+      "action": "final_context_refinement",
+      "old": "比主配置迭代基线多花的时间也没有唯一的“轮数更多”解释。整体评价、复核、基线缓存复用与完整环境复制都属于实际代码路径。要进一步优化实现，应依据逐阶段 profiling 或候选复用率，而不凭均值推定瓶颈。本章保留实测时间作为应用边界，当前完成状态只认证既定搜索完成与质量，不为实时部署背书。",
+      "new": "实际时间包含整体评价、确定性复核、基线缓存复用与环境复制等环节。分阶段计时和候选复用率可进一步确定实现瓶颈。本批次完整邻域搜索验证了局部最优条件，秒级计算开销则限制了其在当前时隙中的在线使用。"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "action": "final_context_refinement",
+      "old": "上层 Attention 与下层二部图 MLP 因而应在结构图、算法名称和贡献解释中分开。",
+      "new": "SF-HLM 因而由上层注意力聚合与下层二部图 MLP 两种结构组成。"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "action": "final_context_refinement",
+      "old": "后者虽然统计正向，却低于主确认事先采用的 $1$ 个百分点实用目标，应如实保留。",
+      "new": "后者的差值区间为正，但未达到主确认事先采用的 $1$ 个百分点实用目标。"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "action": "final_context_refinement",
+      "old": "因而格点分析同时报告服务率和资源费用，而不把更高算力下的 DSR 变化写成免费的性能改善。",
+      "new": "因此，格点分析联合评价服务率和资源费用。"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "action": "final_context_refinement",
+      "old": "两组记录的统计对象不同，应分别解释。",
+      "new": "前者汇总闭环环境步，后者汇总固定快照。"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "action": "final_context_refinement",
+      "old": "原配对区间为约",
+      "new": "配对区间约为"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "action": "final_context_refinement",
+      "old": "因此，学习额外收益应按较小效应解释，同时保留强框架本身的主要贡献。",
+      "new": "这一较小增量及其统计敏感性表明，完整框架构成了主要收益来源。"
+    },
+    {
+      "file": "latex/docs/chap06.tex",
+      "action": "final_context_refinement",
+      "old": "服务质量提升与软件开销必须共同呈现。",
+      "new": "学习搜索提供小幅服务质量增益，同时增加软件开销。"
+    },
+    {
+      "file": "latex/docs/chap03.tex",
+      "action": "shorten_chapter_summary",
+      "reason": "remove isolated two-line final page without changing conclusions"
+    },
+    {
+      "file": "latex/docs/chap05.tex",
+      "action": "caption_unit_correction",
+      "reason": "Figure5-11 kJ/step matches plotted axis; table remains J/step"
+    }
+  ],
+  "terminology": {
+    "SF-HLM": "固定需求感知上层 + CompleteQuotaPPO配额搜索与条件匹配",
+    "冻结请求级下层": "保持基座请求级MAPPO参数固定，再进行共同修复",
+    "适配请求级下层": "固定上层，继续训练请求级MAPPO下层75回合，再进行共同修复",
+    "MC-ITR": "固定快照单请求迁移整体重评估，未接入在线SF-HLM"
+  },
+  "content_invariants": {
+    "abstract": {
+      "display_math_unchanged": true,
+      "labels_unchanged": true,
+      "citations_unchanged": true,
+      "references_valid": true,
+      "table_numeric_tokens_unchanged": true,
+      "cannot_before": 0,
+      "cannot_after": 0,
+      "characters_before": 6011,
+      "characters_after": 5926
+    },
+    "chap01": {
+      "display_math_unchanged": true,
+      "labels_unchanged": true,
+      "citations_unchanged": true,
+      "references_valid": true,
+      "table_numeric_tokens_unchanged": true,
+      "cannot_before": 19,
+      "cannot_after": 6,
+      "characters_before": 13086,
+      "characters_after": 11763
+    },
+    "chap02": {
+      "display_math_unchanged": true,
+      "labels_unchanged": true,
+      "citations_unchanged": true,
+      "references_valid": true,
+      "table_numeric_tokens_unchanged": true,
+      "cannot_before": 33,
+      "cannot_after": 16,
+      "characters_before": 35235,
+      "characters_after": 33735
+    },
+    "chap03": {
+      "display_math_unchanged": true,
+      "labels_unchanged": true,
+      "citations_unchanged": true,
+      "references_valid": true,
+      "table_numeric_tokens_unchanged": true,
+      "cannot_before": 36,
+      "cannot_after": 16,
+      "characters_before": 38034,
+      "characters_after": 36182
+    },
+    "chap04": {
+      "display_math_unchanged": true,
+      "labels_unchanged": true,
+      "citations_unchanged": true,
+      "references_valid": true,
+      "table_numeric_tokens_unchanged": true,
+      "cannot_before": 42,
+      "cannot_after": 11,
+      "characters_before": 29158,
+      "characters_after": 27164
+    },
+    "chap05": {
+      "display_math_unchanged": true,
+      "labels_unchanged": true,
+      "citations_unchanged": true,
+      "references_valid": true,
+      "table_numeric_tokens_unchanged": true,
+      "cannot_before": 46,
+      "cannot_after": 11,
+      "characters_before": 49772,
+      "characters_after": 46419
+    },
+    "chap06": {
+      "display_math_unchanged": true,
+      "labels_unchanged": true,
+      "citations_unchanged": true,
+      "references_valid": true,
+      "table_numeric_tokens_unchanged": true,
+      "cannot_before": 8,
+      "cannot_after": 1,
+      "characters_before": 5026,
+      "characters_after": 4514
+    }
+  },
+  "source_data_unchanged": true,
+  "author_only_pages_unchanged": true,
+  "current_source_hashes": {
+    "latex/docs/notation.tex": "f0b0ef472cc4cdde56542d4d2f851b316ada7a665f8e6c301b427d2261763882",
+    "latex/docs/chap01.tex": "2af7fa102e792589bc56d2ad209b7e510fc16867f243e05edc6d3d47579124ab",
+    "latex/docs/chap03.tex": "13b5c2fead937e31ea13d5242986a054b574845c95bd3f062e5d8f390e69720f",
+    "latex/docs/abstract.tex": "d243131faef46d6df81aad249a0710cdef5d305a295076e4f85a88cfc059e572",
+    "latex/docs/chap02.tex": "72c4dda4866002e9e5d18438dbf38209365a36b47ca1283a22298cde9497caf7",
+    "latex/docs/chap06.tex": "10f2c42fb8df6606235d899d2756ff70fb073c531c29a4eca880dd14f40e885c",
+    "latex/docs/acknowledgements.tex": "f58d60d6bda32f433826f3b0e6fe62aadd8497395429602a10cadd94e709f179",
+    "latex/docs/chap05.tex": "4bc54b56814a0fcfb687c7cea489bddc870dc0dac06953451cc7896a3633c9f3",
+    "latex/docs/achievements.tex": "495ce12de13b5c9a6edffcb414d41a3a3c17fa7fcdf0236aeda3dc9edc42ee42",
+    "latex/docs/chap04.tex": "4c33659ed2fb83d2e5f3d65b59d817e598a29dcfde4edc45556e3cb5d2d1b6bf",
+    "latex/docs/complementary.tex": "16cd139a63e00a2dac835b78db2930e8885386a9cf64182e431db5150324652a"
+  },
+  "archived_sources": {
+    "random": {
+      "sha256_matches_archive": true,
+      "summaries_match_archive": true,
+      "excluded_raw_file_inventory_only": true,
+      "archive_path": "results/sf_hlm_random_baselines_20261004/analysis/summary.json",
+      "commit": "a8bcf9a8731edd68b7bc483e1c959c576807e0d6"
+    },
+    "confirmation": {
+      "sha256_matches_archive": true,
+      "summaries_match_archive": true,
+      "excluded_raw_file_inventory_only": true,
+      "archive_path": "results/sf_hlm_v2_20261001/followup_20261002/analysis/confirmation.json",
+      "commit": "a8bcf9a8731edd68b7bc483e1c959c576807e0d6"
+    },
+    "timing": {
+      "sha256_matches_archive": true,
+      "summaries_match_archive": true,
+      "excluded_raw_file_inventory_only": true,
+      "archive_path": "results/sf_hlm_v2_20261001/followup_20261002/analysis/confirmation_timing.json",
+      "commit": "a8bcf9a8731edd68b7bc483e1c959c576807e0d6"
+    },
+    "robustness": {
+      "sha256_matches_archive": true,
+      "summaries_match_archive": true,
+      "excluded_raw_file_inventory_only": true,
+      "archive_path": "results/sf_hlm_v2_20261001/followup_20261002/robustness_20261003/analysis/robustness.json",
+      "commit": "a8bcf9a8731edd68b7bc483e1c959c576807e0d6"
+    }
+  },
+  "recomputed_ch5": {
+    "dsr_percent": 34.24376426375534,
+    "difference_pp": {
+      "greedy": 1.423,
+      "original_frozen": 2.008,
+      "original_adapted": 2.192,
+      "random": 0.143
+    },
+    "learned_vs_random_sign_flip_p": 0.060546875,
+    "ci95_pp": [
+      0.006308498656146765,
+      0.2805279265082839
+    ],
+    "holm_p": 0.04216796808697227
+  },
+  "recomputed_ch3": {
+    "lower_mlp_upper_uncovered_obs": {
+      "DSR": 0.2793088880898766,
+      "Admission fraction": 0.6189160076510598,
+      "Deadline satisfaction among admitted": 0.45371684970149123
+    },
+    "lower_no_attention": {
+      "DSR": 0.24438670135338517,
+      "Admission fraction": 0.49961684378015053,
+      "Deadline satisfaction among admitted": 0.49190395040768786
+    }
+  },
+  "recomputed_ch4": {
+    "mc_itr": 2.055,
+    "iterative_base": 2.2283333333333335
+  },
+  "recomputed_bridge": {
+    "mc_itr": {
+      "deadline_misses": 8.235,
+      "normalized_assignment_energy": 2.519472989517072
+    },
+    "online_lower": {
+      "deadline_misses": 10.695,
+      "normalized_assignment_energy": 2.0354751075384363
+    },
+    "full_path_seconds": 20.750554602099584
+  },
+  "figure_numeric_invariants": {
+    "图4-8_候选轨迹快照桥接对比": {
+      "plotted_numeric_labels_unchanged": true
+    },
+    "图5-10_请求结果与接纳后质量": {
+      "plotted_numeric_labels_unchanged": true
+    },
+    "图5-12_公平性与隔离软件耗时": {
+      "plotted_numeric_labels_unchanged": true
+    },
+    "图5-11_UAV能耗与MBS依赖": {
+      "plotted_numeric_labels_unchanged": true
+    },
+    "图5-9_主比较训练块配对差": {
+      "plotted_numeric_labels_unchanged": true
+    },
+    "图5-15_九格主对手DSR差": {
+      "plotted_numeric_labels_unchanged": true
+    },
+    "图5-8_八方法DSR比较": {
+      "plotted_numeric_labels_unchanged": true
+    }
+  },
+  "figure_preflight_resolution": {
+    "chapter34_font_family": "Static journal rule rejects serif family. Shared thesis_figure_style configures installed Chinese serif font and embedded type42 fonts; final PDF minimum text8pt. Preserve the established school-thesis typeface.",
+    "other_preflight_warnings": "Requested formats are PNG600dpi and vectorPDF/SVG;147.3mm is thesis-specific width. Randomized schematic generation is outside the re-exported bridge function; bridge data are archived."
+  },
+  "acceptance": {
+    "status": "PASS",
+    "total_pdf_pages": 143,
+    "body_pages": 121,
+    "body_pages_minimum": 91,
+    "body_blank_pages": [],
+    "compile": "make main success",
+    "undefined_references": false,
+    "missing_glyphs": false,
+    "visual_review": "All143 pages inspected in contact sheets; seven modified figure pages and neighboring floats checked; final caption5-11 checked at full-page scale. Chapter3 widow fixed; long labels in5-10 to5-12 spaced.",
+    "figure_final_QA": "7 PDFs font>=5pt, collisions0, applicable alignment deviations<=1.5pt; numeric labels unchanged",
+    "layout": "PASS",
+    "diff_check": "PASS",
+    "preserved_template_warnings": [
+      "LiShu font unavailable",
+      "bicaption main language unset",
+      "cover hbox12.51598pt warning"
+    ],
+    "unchanged_author_facts": true,
+    "no_training_or_git_integration": true
+  },
+  "final_pdf_sha256": "60b1d7e7baf3c6f8024f74ca6caaec6f2636a9a976f450803207e28a426040ab",
+  "reference_deletions": {
+    "chap02": [
+      "one redundant eq:ch2-mappo-loss call"
+    ],
+    "chap05": [
+      "one redundant eq:ch5-energy-cap call"
+    ]
+  }
+}
