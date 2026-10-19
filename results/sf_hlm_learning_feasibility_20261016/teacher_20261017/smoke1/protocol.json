@@ -1,0 +1,675 @@
+{
+  "name": "sf_hlm_teacher_same_state_20261017_v1",
+  "smoke": true,
+  "purpose": "verification",
+  "inventory_sha256": "d7bb5ff5045790879963819938919cabe663708f7ec8cb7e001bd4ec47f85263",
+  "input_files": {
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/parent_launch.json": "cc3e1a9ee9c3c87881e13d2ab8baa3928675be3e6cd38cd84c5916f9ef1f7d96",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/protocol.json": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/protocol.json": "7cf4b827017adb4b0da3153ba0875bc5078b7567a494eb66dedcf7293f7fc04d",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/learning_improvement_release_20261003_951dea3274/scripts/analysis/sf_hlm_learning_improvement.py": "4181d639223b2600f5d711190e37df8bb090dbd83b862ea09a63cbe0aa28f741",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/learning_improvement_release_20261003_951dea3274/utils/sf_hlm_learning_improvement.py": "e6fe22ee07b1f360a4befb03f17f3ef43edebe2264a207e281a601b96ee25659",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/learning_improvement_release_20261003_951dea3274/marl_models/sf_hlm_action_effect.py": "ab358b4a94332957ab3fa9f481ac0bc39f74a944cb2bb279f0bec8a28e6b2b66",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/learning_improvement_release_20261003_951dea3274/tests/test_sf_hlm_learning_improvement.py": "63cfc828e2fcbaeca6faf2cff7ef0e239b07b22749773f833735c611512e057c",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/learning_improvement_release_20261003_951dea3274/paths.py": "4df4bbdaef288bec0e46ae6919ccd556ed1b91f6e86ed0e97cfa1bf768aa47eb",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/scripts/analysis/sf_hlm_learning_feasibility.py": "4fbaec7c74ad715d77c6ff8d789a7a2b51cacc7fc0e0122e4aaddd62fea8f710",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/utils/sf_hlm_feasibility.py": "45f93264a651cecfeb3a645ef91afff849cf686682762d36291749b20662f12e",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/tests/test_sf_hlm_learning_feasibility.py": "ecb60cfb9021f0c1c3839391d6d42889fe978f9086450d6e5eb0e24d3e827b45",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/paths.py": "4df4bbdaef288bec0e46ae6919ccd556ed1b91f6e86ed0e97cfa1bf768aa47eb",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/docs/plans/sf_hlm_learning_feasibility_20261016.md": "0a1a2a8a2c99a3e967f96d3ef056e6fa3ac2f5db91381238dbcf4f2ae2c6d95b",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001/utils/sf_hlm_resources.py": "3995def60164c46201dcb839eef79eeaa3426813b0cfc75420e0ac6e2ea185ac",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_v2_20261001/dataset/block_620001/dataset.pt": "58bf75df2482e6e91a4fff699e6f0d67681302c0f608e8f79e96391e22981cf2",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620001_workload_0/result.json": "7a841582b708a654725913c7edd87f65c3037cfe7f9fde7bc27ffe5d6d6c93ba",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620001_workload_0/losses.json": "a203ce02fbb11f0623be9395eb337c039e39ffe020d353611395087809cc3d94",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620001_workload_0/bc/quota_v2.pt": "ee665f6b1a5a6fee11fe8826d6d43c469d7031da8f3f071a02bcf290d1620765",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620001_workload_0/checkpoint/quota_v2.pt": "5334a0d105f3328f3b87c562fbcaae544fcdbbc34ed489852917cea41a8ddc7d",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620001_workload_0/result.json": "1bc14fba6a375731eaf0109d9ccfe96e4e033820db0e36e8e9e1bd93b02a1f1c",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620001_workload_0/losses.json": "a75b02c9e27c58172b37eb26eb7899fd2fa3189ba759aeb2068a911ad6e081fe",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620001_workload_0/bc/quota_v2.pt": "d54e3e3b7929da65dc9b9838715d06b3e23e8016ee3c486272756fcd7702de58",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620001_workload_0/checkpoint/quota_v2.pt": "30afa0b951eec5980afae2baf8e0bf6a2a76ac75c432fd2ddac342f66789a54a",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620001_workload_0/result.json": "1db722c8a3f8ea0fa12b6f179d0f5d2ce6ebed9cf5383da3e080c9d322538056",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620001_workload_0/teacher.json": "639424c235075db712b89404e434282f6835027c062047748e6e337fa20dad25",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620001_workload_0/data.pt": "a467326b0f15d2e2691fc81184bedf8e94c24f868e1cd39c01f57e3031c0262b",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_v2_20261001/dataset/block_620002/dataset.pt": "822bfef1440540eaa2b7d07b2b42310303aa1e50b7aaddeb73e8d16153919b6c",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620002_workload_0/result.json": "c44d36e02481ff850452abcc166c459972777fe6f72da7c92423fb0c9399b8e0",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620002_workload_0/losses.json": "0cd01774920f421446b250a507f9f42f39ffb3a39aabcceed40881579ecd7cf7",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620002_workload_0/bc/quota_v2.pt": "ccf3dea532c252ab5a54418235a4840c6ddae3a685e494ef3b1af40395f22259",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620002_workload_0/checkpoint/quota_v2.pt": "57d7ec128aa414a1b1598c7247dc4fdebeed2add775e3cdb9de7b665bbfbca48",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620002_workload_0/result.json": "f5862b525fa039769450385973683576b6c62b62212ed86a47dcc9350a492488",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620002_workload_0/losses.json": "4233662a81c1522457bd3a61d33962810af0705390604bba0dc5b78330ca5407",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620002_workload_0/bc/quota_v2.pt": "488c3ae4bbaf1fea2bcbac606bb12e220fa7d63908f0dde5cc9abe4a18c59360",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620002_workload_0/checkpoint/quota_v2.pt": "a74052d36be2a72a391c6d482bc2b2b053f83347c217f89819c11ef003c4836b",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620002_workload_0/result.json": "2f88d45b5337eed3fabe968e4f1d7e65ed304b004c6e0e16b166ca9b94a2d81e",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620002_workload_0/teacher.json": "21ef34f27c536e3b2be031ab35ecd34dec8ef5743897fcbf91650763867f569c",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620002_workload_0/data.pt": "a4c49ec6dbe06ae3e15e67c6145ed43efd7bad1e7bf7c8a241d392f3188cadb3",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_v2_20261001/dataset/block_620003/dataset.pt": "9c0090f5b449c2c1e8facc475f18111ae6e4dc63fef49604843e1668768cbd74",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620003_workload_0/result.json": "98adaf19fe67274cfd764ff41513cd4f5d3aad0c2c5b0aff1886720c5f3fe49b",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620003_workload_0/losses.json": "54fe6a716c6de6a67f009a2f792defc928a9272d0ba2a8514bd4e742c17d03e2",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620003_workload_0/bc/quota_v2.pt": "26794ec1ea5eae280433a241ca02b126ebac90228e04ff7cdc5995270d41365e",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620003_workload_0/checkpoint/quota_v2.pt": "d65228b2f376eb8e3f2e41659cfd6e6bd0bff1acc47f2d7a8d7d056e3a492fc2",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620003_workload_0/result.json": "4dc48e3a3efdde29381cb06e47d576530520bb140efc2a1eea0d32f3f48e7dea",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620003_workload_0/losses.json": "bb5cc54cde250b3fc646d1364290d1c6f4135fa7186757e0c3c884f3253dd5e3",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620003_workload_0/bc/quota_v2.pt": "6b3192da38fe63d52055b3968ffc1dde7d600aa23a79b89c8470bd71064927bf",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620003_workload_0/checkpoint/quota_v2.pt": "c4f30b53925426a3799a12a1f8e8dd45077410707d142150430c1b7e09ba2d81",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620003_workload_0/result.json": "4883c3843e7c3fb28a4fd6b15f90a2596d23bb6394b9a6eecf2acaac4fea2f34",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620003_workload_0/teacher.json": "384b4380dabe717c3e30bcb8e41c28733ad3df4005d18f8b40c7268f91760383",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620003_workload_0/data.pt": "6fd64b5cdf1dac9ded974854e3cabac4453bae0b4510be99619d9bf32ba08a90",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_v2_20261001/dataset/block_620004/dataset.pt": "f0c4c3085af40c0d9d1090e433b4b60efa11667dae2f82916b47ef70ba2cb668",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620004_workload_0/result.json": "cbc5cf575a2e419c53b6508ee44bb2328873d26237847da8851db56b566f279a",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620004_workload_0/losses.json": "1d5cf37850a5eb9c079d9cce6e6e519ea82c7ecf9593a6666853337b07fd2299",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620004_workload_0/bc/quota_v2.pt": "cc8d4ac1e18bb873ca3de6fd4a2261dcda512455bcb7e795d98fa281a17bbdd0",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620004_workload_0/checkpoint/quota_v2.pt": "86b0a89983fc3ed974789b76a6e78acb2352085d63a5749601e7dbeeab961d3f",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620004_workload_0/result.json": "f25a9fcf9587781eaf131e13d1de3db9a8fe86b1fb6b64f4d08b266cfba4e098",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620004_workload_0/losses.json": "0f895659af329d6f2d984c77b442e86ab22a862c38ccefe6909e4bc87130d987",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620004_workload_0/bc/quota_v2.pt": "ddda406ccd9a8508a81b50c3bb1f66c15793214f1b46bbbf757199d1f5946c0c",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620004_workload_0/checkpoint/quota_v2.pt": "370286f4503a2c2b440355a063f47d806a8159b8c132fdbf9b7e4b622f44f2b2",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620004_workload_0/result.json": "1967b34de13a385d1ec32d7b1eedfb610c5277bcf3ef28ec472b71dbe2b5acb5",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620004_workload_0/teacher.json": "64bea49877371148c008e42f5d82ba3058abe842bfa6245578d0447fb52ffd57",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620004_workload_0/data.pt": "0fd1fa9455743056165aa1c46f26ee8807556961bc955389cc90c1744d898fa7",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_v2_20261001/dataset/block_620005/dataset.pt": "de3fa2231ac6cb373635b12b2ab646ea83578dfdbb4ab967ca7a9cdbcc7b4228",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620005_workload_0/result.json": "f50ae1793105dbea512a7e2de751297b722020efbd5b80e54aff8a42b8a6ffd1",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620005_workload_0/losses.json": "357995a74faef0e8b00b7a9eff9e0fc7071f9886e192b24871a82133d2c4f8b7",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620005_workload_0/bc/quota_v2.pt": "8a893ad9da177db9fa2e736f813512c6ac2d4756eea923d752905ffed6a51e81",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620005_workload_0/checkpoint/quota_v2.pt": "7e5d4d4b09ed669fb20096b7a7a0832b61f9c6ad2a0a96a8c7a92f4e7600351f",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620005_workload_0/result.json": "2c7a8ca76a5ef82b8f7bd84a24ff457bb6533beaeb5319ffdb0d2d3d5e9ff8c3",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620005_workload_0/losses.json": "0ed8db9252910f0b5de17c9b08e64824601d126067f1c6a7ff1f753aca1b8a23",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620005_workload_0/bc/quota_v2.pt": "405b626a8800fd295eb6596b04849f04c2cef52bc59dc92e8a90a8bc018c52d6",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620005_workload_0/checkpoint/quota_v2.pt": "a783bd6b68239e7eb9f97f2915e0c11584a6d7f8419815fc40c24484288e242d",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620005_workload_0/result.json": "d2cb534e847fe5ed613bd92c3e73153e293e5c350f840beb3d2794c8e72c3df6",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620005_workload_0/teacher.json": "92a44681d6afe2f4691fa7ad1429903041a05005df4faf9c0c31b92ebaf6c951",
+    "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/teacher/multistep/block_620005_workload_0/data.pt": "dac02839e3f40d36fb4ef0f56083bc1a9402cfdce80cc8c552cb28573881ef6c"
+  },
+  "files": {
+    "paths.py": "4df4bbdaef288bec0e46ae6919ccd556ed1b91f6e86ed0e97cfa1bf768aa47eb",
+    "scripts/analysis/sf_hlm_teacher_feasibility.py": "387f10834921f13e09c4bf9b24f7c7d2387350e509c44ea5a580e7d86533203b",
+    "tests/test_sf_hlm_teacher_feasibility.py": "4ab440d46dd8b0dfe7d7a3bcef2943b51ece2a92e9b975393b36e488874f1c00",
+    "docs/plans/sf_hlm_learning_feasibility_20261016.md": "f684e1f0e3f6e2f269cb29637fb9e0fee483bd53b5fece9872195efc4abb2af2"
+  },
+  "identities": [
+    [
+      "learned",
+      620001,
+      780001,
+      0,
+      0
+    ],
+    [
+      "learned",
+      620001,
+      780001,
+      0,
+      250
+    ],
+    [
+      "learned",
+      620002,
+      780001,
+      0,
+      0
+    ],
+    [
+      "learned",
+      620002,
+      780001,
+      0,
+      250
+    ],
+    [
+      "greedy",
+      620001,
+      780001,
+      0,
+      0
+    ],
+    [
+      "greedy",
+      620001,
+      780001,
+      0,
+      250
+    ],
+    [
+      "greedy",
+      620002,
+      780001,
+      0,
+      0
+    ],
+    [
+      "greedy",
+      620002,
+      780001,
+      0,
+      250
+    ]
+  ],
+  "methods": [
+    "G",
+    "old_L16",
+    "R16",
+    "baseline_bc",
+    "baseline_ppo",
+    "multistep_bc",
+    "multistep_ppo"
+  ],
+  "candidates": [
+    "baseline_bc",
+    "baseline_ppo",
+    "multistep_bc",
+    "multistep_ppo"
+  ],
+  "states": [
+    {
+      "identity": [
+        "learned",
+        620001,
+        780001,
+        0,
+        0
+      ],
+      "state": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/states/learned/block_620001_workload_780001/episode_00000/step_00000/state.json",
+      "state_sha256": "c2bde3dca493e24f339cc037084bbf88fac535a2cc229b2d701380e6b9f7a5dd",
+      "benchmark": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/tasks/benchmark_learned_620001_780001_0_0/benchmark.json",
+      "benchmark_sha256": "e0c1cf905dc8e4e656ee76e242e32a10deb3b8cdbd724a631a303b77c8e175f6"
+    },
+    {
+      "identity": [
+        "learned",
+        620001,
+        780001,
+        0,
+        250
+      ],
+      "state": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/states/learned/block_620001_workload_780001/episode_00000/step_00250/state.json",
+      "state_sha256": "40412bb779309b6017daaac7f092e01b4529fe77c92159be5d60336052cd300b",
+      "benchmark": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/tasks/benchmark_learned_620001_780001_0_250/benchmark.json",
+      "benchmark_sha256": "13e47084b389595d4d55ff8923c77d7da5d986a97e6edf3234215370f103d2eb"
+    },
+    {
+      "identity": [
+        "learned",
+        620002,
+        780001,
+        0,
+        0
+      ],
+      "state": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/states/learned/block_620002_workload_780001/episode_00000/step_00000/state.json",
+      "state_sha256": "7a90baa0e39c81fcaa22c0198249b10fcfc012b6d822c903681283c9e1443186",
+      "benchmark": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/tasks/benchmark_learned_620002_780001_0_0/benchmark.json",
+      "benchmark_sha256": "a9bef46c94902f5db1eca24456350ae8cfbe8074c1fcb96682684c61122f5436"
+    },
+    {
+      "identity": [
+        "learned",
+        620002,
+        780001,
+        0,
+        250
+      ],
+      "state": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/states/learned/block_620002_workload_780001/episode_00000/step_00250/state.json",
+      "state_sha256": "55f8589266eb4f107a61253d1d2f0920b2365ad8d29089a24c7ecf24e3a9595a",
+      "benchmark": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/tasks/benchmark_learned_620002_780001_0_250/benchmark.json",
+      "benchmark_sha256": "73617ccf6da801998e1099890896af05bacc9ce2cb802e12417edde4fd9a51dd"
+    },
+    {
+      "identity": [
+        "greedy",
+        620001,
+        780001,
+        0,
+        0
+      ],
+      "state": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/states/greedy/block_620001_workload_780001/episode_00000/step_00000/state.json",
+      "state_sha256": "9469ebc7ee4f426ce3189b839d5687933f87cd81a238e48e38c5835f475cad95",
+      "benchmark": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/tasks/benchmark_greedy_620001_780001_0_0/benchmark.json",
+      "benchmark_sha256": "d2ef43d1a5a7fb97d51e9f76cd38a2cd4041d7ad0b959e80974859200da48bdd"
+    },
+    {
+      "identity": [
+        "greedy",
+        620001,
+        780001,
+        0,
+        250
+      ],
+      "state": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/states/greedy/block_620001_workload_780001/episode_00000/step_00250/state.json",
+      "state_sha256": "96740bc944d8b9d7513143485b2428cab146a2e0c72b50e11204aadc7f549401",
+      "benchmark": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/tasks/benchmark_greedy_620001_780001_0_250/benchmark.json",
+      "benchmark_sha256": "0abf9c89b32b5bf4c562f323eb05aa7973d391b7689877f7eade5c68c80bac56"
+    },
+    {
+      "identity": [
+        "greedy",
+        620002,
+        780001,
+        0,
+        0
+      ],
+      "state": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/states/greedy/block_620002_workload_780001/episode_00000/step_00000/state.json",
+      "state_sha256": "8b429f7d785ad53b6c577e65e15a296dd0cdecace46c745ba5c610ead2827031",
+      "benchmark": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/tasks/benchmark_greedy_620002_780001_0_0/benchmark.json",
+      "benchmark_sha256": "0a58c53ae792c70823f5cab43f55376e377771163b7ebf9e9b3da0f21662a468"
+    },
+    {
+      "identity": [
+        "greedy",
+        620002,
+        780001,
+        0,
+        250
+      ],
+      "state": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/states/greedy/block_620002_workload_780001/episode_00000/step_00250/state.json",
+      "state_sha256": "b115a71ee9f7aa03471265620faa82536df93101a9c4e8b7e5c2039f9374efa6",
+      "benchmark": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/tasks/benchmark_greedy_620002_780001_0_250/benchmark.json",
+      "benchmark_sha256": "b568f33f47c1f8f2697e3971da624113e6467249e90440562ff03b4f161308bc"
+    }
+  ],
+  "models": [
+    {
+      "block": 620001,
+      "method": "baseline_bc",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620001_workload_0/bc/quota_v2.pt",
+      "sha256": "ee665f6b1a5a6fee11fe8826d6d43c469d7031da8f3f071a02bcf290d1620765",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "baseline",
+        "block": 620001,
+        "training_only": true
+      },
+      "supervised_samples": 512,
+      "unique_labels": 512,
+      "training_schedule_sha256": "37556a92714f3b740e772838867b15459f0a5060fc56d921c88d1cdba8f02ffa"
+    },
+    {
+      "block": 620001,
+      "method": "baseline_ppo",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620001_workload_0/checkpoint/quota_v2.pt",
+      "sha256": "5334a0d105f3328f3b87c562fbcaae544fcdbbc34ed489852917cea41a8ddc7d",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "baseline",
+        "block": 620001,
+        "training_only": true
+      },
+      "supervised_samples": 512,
+      "unique_labels": 512,
+      "training_schedule_sha256": "37556a92714f3b740e772838867b15459f0a5060fc56d921c88d1cdba8f02ffa"
+    },
+    {
+      "block": 620001,
+      "method": "multistep_bc",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620001_workload_0/bc/quota_v2.pt",
+      "sha256": "d54e3e3b7929da65dc9b9838715d06b3e23e8016ee3c486272756fcd7702de58",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "multistep",
+        "block": 620001,
+        "training_only": true
+      },
+      "supervised_samples": 512,
+      "unique_labels": 512,
+      "training_schedule_sha256": "37556a92714f3b740e772838867b15459f0a5060fc56d921c88d1cdba8f02ffa"
+    },
+    {
+      "block": 620001,
+      "method": "multistep_ppo",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620001_workload_0/checkpoint/quota_v2.pt",
+      "sha256": "30afa0b951eec5980afae2baf8e0bf6a2a76ac75c432fd2ddac342f66789a54a",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "multistep",
+        "block": 620001,
+        "training_only": true
+      },
+      "supervised_samples": 512,
+      "unique_labels": 512,
+      "training_schedule_sha256": "37556a92714f3b740e772838867b15459f0a5060fc56d921c88d1cdba8f02ffa"
+    },
+    {
+      "block": 620002,
+      "method": "baseline_bc",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620002_workload_0/bc/quota_v2.pt",
+      "sha256": "ccf3dea532c252ab5a54418235a4840c6ddae3a685e494ef3b1af40395f22259",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "baseline",
+        "block": 620002,
+        "training_only": true
+      },
+      "supervised_samples": 497,
+      "unique_labels": 497,
+      "training_schedule_sha256": "079adc68a20946ac1b3cd06e4c795797afb41bac6f4b8d68c01e8c550ff386f5"
+    },
+    {
+      "block": 620002,
+      "method": "baseline_ppo",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620002_workload_0/checkpoint/quota_v2.pt",
+      "sha256": "57d7ec128aa414a1b1598c7247dc4fdebeed2add775e3cdb9de7b665bbfbca48",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "baseline",
+        "block": 620002,
+        "training_only": true
+      },
+      "supervised_samples": 497,
+      "unique_labels": 497,
+      "training_schedule_sha256": "079adc68a20946ac1b3cd06e4c795797afb41bac6f4b8d68c01e8c550ff386f5"
+    },
+    {
+      "block": 620002,
+      "method": "multistep_bc",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620002_workload_0/bc/quota_v2.pt",
+      "sha256": "488c3ae4bbaf1fea2bcbac606bb12e220fa7d63908f0dde5cc9abe4a18c59360",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "multistep",
+        "block": 620002,
+        "training_only": true
+      },
+      "supervised_samples": 497,
+      "unique_labels": 497,
+      "training_schedule_sha256": "079adc68a20946ac1b3cd06e4c795797afb41bac6f4b8d68c01e8c550ff386f5"
+    },
+    {
+      "block": 620002,
+      "method": "multistep_ppo",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620002_workload_0/checkpoint/quota_v2.pt",
+      "sha256": "a74052d36be2a72a391c6d482bc2b2b053f83347c217f89819c11ef003c4836b",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "multistep",
+        "block": 620002,
+        "training_only": true
+      },
+      "supervised_samples": 497,
+      "unique_labels": 497,
+      "training_schedule_sha256": "079adc68a20946ac1b3cd06e4c795797afb41bac6f4b8d68c01e8c550ff386f5"
+    },
+    {
+      "block": 620003,
+      "method": "baseline_bc",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620003_workload_0/bc/quota_v2.pt",
+      "sha256": "26794ec1ea5eae280433a241ca02b126ebac90228e04ff7cdc5995270d41365e",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "baseline",
+        "block": 620003,
+        "training_only": true
+      },
+      "supervised_samples": 442,
+      "unique_labels": 442,
+      "training_schedule_sha256": "136da6d9143cef86595666f7e5145aca1a6f326130dacd70dfc10c9dc48bcd5c"
+    },
+    {
+      "block": 620003,
+      "method": "baseline_ppo",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620003_workload_0/checkpoint/quota_v2.pt",
+      "sha256": "d65228b2f376eb8e3f2e41659cfd6e6bd0bff1acc47f2d7a8d7d056e3a492fc2",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "baseline",
+        "block": 620003,
+        "training_only": true
+      },
+      "supervised_samples": 442,
+      "unique_labels": 442,
+      "training_schedule_sha256": "136da6d9143cef86595666f7e5145aca1a6f326130dacd70dfc10c9dc48bcd5c"
+    },
+    {
+      "block": 620003,
+      "method": "multistep_bc",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620003_workload_0/bc/quota_v2.pt",
+      "sha256": "6b3192da38fe63d52055b3968ffc1dde7d600aa23a79b89c8470bd71064927bf",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "multistep",
+        "block": 620003,
+        "training_only": true
+      },
+      "supervised_samples": 442,
+      "unique_labels": 442,
+      "training_schedule_sha256": "136da6d9143cef86595666f7e5145aca1a6f326130dacd70dfc10c9dc48bcd5c"
+    },
+    {
+      "block": 620003,
+      "method": "multistep_ppo",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620003_workload_0/checkpoint/quota_v2.pt",
+      "sha256": "c4f30b53925426a3799a12a1f8e8dd45077410707d142150430c1b7e09ba2d81",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "multistep",
+        "block": 620003,
+        "training_only": true
+      },
+      "supervised_samples": 442,
+      "unique_labels": 442,
+      "training_schedule_sha256": "136da6d9143cef86595666f7e5145aca1a6f326130dacd70dfc10c9dc48bcd5c"
+    },
+    {
+      "block": 620004,
+      "method": "baseline_bc",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620004_workload_0/bc/quota_v2.pt",
+      "sha256": "cc8d4ac1e18bb873ca3de6fd4a2261dcda512455bcb7e795d98fa281a17bbdd0",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "baseline",
+        "block": 620004,
+        "training_only": true
+      },
+      "supervised_samples": 435,
+      "unique_labels": 435,
+      "training_schedule_sha256": "10c6983ec19f9927e89c0edf5f04e8c9ec2de3ae539698b2b6813814bb348cd9"
+    },
+    {
+      "block": 620004,
+      "method": "baseline_ppo",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620004_workload_0/checkpoint/quota_v2.pt",
+      "sha256": "86b0a89983fc3ed974789b76a6e78acb2352085d63a5749601e7dbeeab961d3f",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "baseline",
+        "block": 620004,
+        "training_only": true
+      },
+      "supervised_samples": 435,
+      "unique_labels": 435,
+      "training_schedule_sha256": "10c6983ec19f9927e89c0edf5f04e8c9ec2de3ae539698b2b6813814bb348cd9"
+    },
+    {
+      "block": 620004,
+      "method": "multistep_bc",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620004_workload_0/bc/quota_v2.pt",
+      "sha256": "ddda406ccd9a8508a81b50c3bb1f66c15793214f1b46bbbf757199d1f5946c0c",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "multistep",
+        "block": 620004,
+        "training_only": true
+      },
+      "supervised_samples": 435,
+      "unique_labels": 435,
+      "training_schedule_sha256": "10c6983ec19f9927e89c0edf5f04e8c9ec2de3ae539698b2b6813814bb348cd9"
+    },
+    {
+      "block": 620004,
+      "method": "multistep_ppo",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620004_workload_0/checkpoint/quota_v2.pt",
+      "sha256": "370286f4503a2c2b440355a063f47d806a8159b8c132fdbf9b7e4b622f44f2b2",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "multistep",
+        "block": 620004,
+        "training_only": true
+      },
+      "supervised_samples": 435,
+      "unique_labels": 435,
+      "training_schedule_sha256": "10c6983ec19f9927e89c0edf5f04e8c9ec2de3ae539698b2b6813814bb348cd9"
+    },
+    {
+      "block": 620005,
+      "method": "baseline_bc",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620005_workload_0/bc/quota_v2.pt",
+      "sha256": "8a893ad9da177db9fa2e736f813512c6ac2d4756eea923d752905ffed6a51e81",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "baseline",
+        "block": 620005,
+        "training_only": true
+      },
+      "supervised_samples": 434,
+      "unique_labels": 434,
+      "training_schedule_sha256": "0c4723acbbe8ef74d545a5a6a4f319ff6db0fb2a9c40d43feb4db2c041dd79a1"
+    },
+    {
+      "block": 620005,
+      "method": "baseline_ppo",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/baseline/block_620005_workload_0/checkpoint/quota_v2.pt",
+      "sha256": "7e5d4d4b09ed669fb20096b7a7a0832b61f9c6ad2a0a96a8c7a92f4e7600351f",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "baseline",
+        "block": 620005,
+        "training_only": true
+      },
+      "supervised_samples": 434,
+      "unique_labels": 434,
+      "training_schedule_sha256": "0c4723acbbe8ef74d545a5a6a4f319ff6db0fb2a9c40d43feb4db2c041dd79a1"
+    },
+    {
+      "block": 620005,
+      "method": "multistep_bc",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620005_workload_0/bc/quota_v2.pt",
+      "sha256": "405b626a8800fd295eb6596b04849f04c2cef52bc59dc92e8a90a8bc018c52d6",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "multistep",
+        "block": 620005,
+        "training_only": true
+      },
+      "supervised_samples": 434,
+      "unique_labels": 434,
+      "training_schedule_sha256": "0c4723acbbe8ef74d545a5a6a4f319ff6db0fb2a9c40d43feb4db2c041dd79a1"
+    },
+    {
+      "block": 620005,
+      "method": "multistep_ppo",
+      "path": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_improvement_20261003/train/multistep/block_620005_workload_0/checkpoint/quota_v2.pt",
+      "sha256": "a783bd6b68239e7eb9f97f2915e0c11584a6d7f8419815fc40c24484288e242d",
+      "contract": {
+        "protocol_sha256": "75eed6a839afc86bc2b2c73b4bfcd1bd27b7265b61b37ffab9c0a6c0bfc68706",
+        "variant": "multistep",
+        "block": 620005,
+        "training_only": true
+      },
+      "supervised_samples": 434,
+      "unique_labels": 434,
+      "training_schedule_sha256": "0c4723acbbe8ef74d545a5a6a4f319ff6db0fb2a9c40d43feb4db2c041dd79a1"
+    }
+  ],
+  "offline_teacher": [
+    {
+      "block": 620001,
+      "graphs": 200,
+      "matching_calls": 25183,
+      "labels": 805,
+      "budget_per_graph": 128,
+      "beam_width": 4,
+      "branch_width": 8,
+      "depth": 6
+    },
+    {
+      "block": 620002,
+      "graphs": 200,
+      "matching_calls": 24974,
+      "labels": 811,
+      "budget_per_graph": 128,
+      "beam_width": 4,
+      "branch_width": 8,
+      "depth": 6
+    },
+    {
+      "block": 620003,
+      "graphs": 200,
+      "matching_calls": 25199,
+      "labels": 833,
+      "budget_per_graph": 128,
+      "beam_width": 4,
+      "branch_width": 8,
+      "depth": 6
+    },
+    {
+      "block": 620004,
+      "graphs": 200,
+      "matching_calls": 25146,
+      "labels": 835,
+      "budget_per_graph": 128,
+      "beam_width": 4,
+      "branch_width": 8,
+      "depth": 6
+    },
+    {
+      "block": 620005,
+      "graphs": 200,
+      "matching_calls": 25403,
+      "labels": 826,
+      "budget_per_graph": 128,
+      "beam_width": 4,
+      "branch_width": 8,
+      "depth": 6
+    }
+  ],
+  "timing_repeats": 3,
+  "random_repeats": 5,
+  "matching_budget": 16,
+  "base_repair_budget": 128,
+  "jobs": [
+    [
+      "greedy",
+      620001
+    ],
+    [
+      "greedy",
+      620002
+    ],
+    [
+      "learned",
+      620001
+    ],
+    [
+      "learned",
+      620002
+    ]
+  ],
+  "primary_attribution_pairs": [
+    [
+      "multistep_ppo",
+      "baseline_ppo"
+    ],
+    [
+      "multistep_bc",
+      "baseline_bc"
+    ],
+    [
+      "baseline_ppo",
+      "baseline_bc"
+    ],
+    [
+      "multistep_ppo",
+      "multistep_bc"
+    ]
+  ],
+  "gates": {
+    "quality_gain_vs_R16": 0.003,
+    "cost_gain_vs_G": 0.005,
+    "positive_blocks": 4,
+    "energy_ratio": 1.05,
+    "p95_seconds": 1.0
+  },
+  "no_training": true,
+  "confirmation_used": false,
+  "state_delay_applied": false,
+  "no_automatic_next_stage": true,
+  "timing_contract": "Full feasibility adapter: prepare+upper+repair+search+feedback+mapping+serialization; private restore/physics excluded",
+  "score_contract": "Threshold every request at every measured cost then average timing/random repeats; denominator all generated",
+  "inference_unit": "Five reused historical training blocks, not 400 states or timing repetitions"
+}

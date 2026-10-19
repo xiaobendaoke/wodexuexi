@@ -1,0 +1,3638 @@
+{
+  "identity": [
+    "learned",
+    620003,
+    780005,
+    1,
+    500
+  ],
+  "generated": 22,
+  "admitted": 16,
+  "basis": {
+    "source_config": "3ec40e9f1ab460c16be6731f71c263efd7136b2cc7c6d745f1b19f8443d547ba",
+    "upper_contract_sha256": "905587962a45fc164a73b3b3dc9373cffc8fed48be31261742749330072d8628"
+  },
+  "model_fingerprint": "d543a7f0e78ea89b3d3dbdaa4c2e5d63210485075efd6fbd865d1e710d05579a",
+  "hgb_sha256": "1883ede3365d6037529117dd1caf8a2d409a641ba9640723dd30397ae143b2f2",
+  "price_sha256": "0b72cd742f0dd965e97d0eff53b91bcb2ed17fd90a38b3119c5525d7348dfe04",
+  "state_sha256": "9acdd344b5c05b3c40f282d26d9b3f0f0f01a9cf28f6a801808e8c6dd0193265",
+  "reference_price_labels": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/energy_price_20261017/development_v1/tasks/priced_learned_620003_780005_1_500/labels.json",
+  "reference_price_labels_sha256": "f14bc33d7488ad33202983304905fe6f526cecd10b2a7acb7af1582171b8a243",
+  "reference_original": "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/tasks/benchmark_learned_620003_780005_1_500/benchmark.json",
+  "reference_original_sha256": "5f63ab8614895b27a936bde24c8484faf3c4a3dc67f7ebe586cd39f973748b38",
+  "compatibility": {
+    "feature_quota_checks": 9,
+    "probability_quota_checks": 9,
+    "initialization_equal": true
+  },
+  "results": [
+    {
+      "method": "R8",
+      "kind": "random",
+      "cap": 8,
+      "repeat": 3,
+      "seed": 3538589877,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        0,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.009782863780856133,
+        0.009772093966603279,
+        0.009787984192371368
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        12,
+        12,
+        12
+      ],
+      "execution_rank": [
+        0,
+        17,
+        18
+      ],
+      "call_observation_ns": [
+        [
+          8096684624409975,
+          8096684680723223
+        ],
+        [
+          8096686755592638,
+          8096686812696064
+        ],
+        [
+          8096688027478542,
+          8096688084586576
+        ]
+      ],
+      "diagnostic": {
+        "matching_calls": 8,
+        "matching_budget": 8,
+        "base_evaluations": 110,
+        "initial_evaluations": 55,
+        "common_energy_cap": 44487.57339765466,
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 42521.51750315554,
+          "latency_ratio": 1.4904690262071318,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.3646826985123457,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.3188047773216467,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            42521.51750315554,
+            1.4904690262071318
+          ]
+        },
+        "termination": "external_matching_cap",
+        "search_seconds": 0.004692752845585346,
+        "feature_budget": 16,
+        "prefix": null
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.18956904153363,
+        "lower_assignment_energy": 42521.503792699266,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9470172588942,
+        "energy": 43847.97147023595,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 42520.63618688303,
+        "service_comm_energy": 2.1103092821302627,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 43847.97147023595,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.000159642504893336,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 538,
+      "fee_success": 6
+    },
+    {
+      "method": "probability_price",
+      "kind": "probability_price",
+      "cap": 10,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        1,
+        6,
+        5,
+        1,
+        0,
+        2,
+        1,
+        0,
+        2,
+        6,
+        1,
+        6,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.018087084405124187,
+        0.017229700461030006,
+        0.017108253203332424
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        8,
+        8,
+        8
+      ],
+      "execution_rank": [
+        1,
+        9,
+        11
+      ],
+      "call_observation_ns": [
+        [
+          8096684680805468,
+          8096684746438358
+        ],
+        [
+          8096686282481363,
+          8096686346390179
+        ],
+        [
+          8096687606164244,
+          8096687671292996
+        ]
+      ],
+      "diagnostic": {
+        "chosen_predicted": {
+          "misses": 10,
+          "energy": 38037.4630894442,
+          "latency_ratio": 1.7915584511169482,
+          "latencies": [
+            3.0521598049616148,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.514349646600975,
+            0.6799928539007135,
+            1.3646826985123457,
+            2.7439207364672535,
+            1.1969260902670213,
+            2.0686915514705975,
+            1.586010511451163,
+            3.5570337946427735,
+            1.4083689085790452,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            10,
+            38037.4630894442,
+            1.7915584511169482
+          ]
+        },
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "common_energy_cap": 44487.57339765466,
+        "matching_calls": 10,
+        "matching_budget": 10,
+        "base_evaluations": 110,
+        "selected_action": 45,
+        "nominal_cost_ms": 10.0,
+        "g_anchored_energy": false,
+        "price_applied": true,
+        "expected_success": 6.058499922677133,
+        "hgb_batches": 1
+      },
+      "raw_success": 6,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.375,
+        "lower_service_latency": 30.47016477014451,
+        "lower_assignment_energy": 38037.44110727444,
+        "lower_mbs_load_ratio": 0.25,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 6.0,
+        "latency": 656.2276129875052,
+        "energy": 39363.908784811116,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 38032.05361748025,
+        "service_comm_energy": 2.128814427414405,
+        "service_fetch_or_backhaul_energy": 4.9067235268076,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 39363.908784811116,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.2727272727272727,
+        "offloading_ratio_local": 0.1875,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.25,
+        "mbs_load_ratio": 0.18181818181818182,
+        "effective_energy_efficiency": 0.00015242388739390508,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 3.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 4.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 544,
+      "fee_success": 5
+    },
+    {
+      "method": "R8",
+      "kind": "random",
+      "cap": 8,
+      "repeat": 4,
+      "seed": 1702960604,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        0,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.009844751097261906,
+        0.009931634180247784,
+        0.009821847081184387
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        13,
+        13,
+        13
+      ],
+      "execution_rank": [
+        2,
+        0,
+        1
+      ],
+      "call_observation_ns": [
+        [
+          8096684746519040,
+          8096684803319565
+        ],
+        [
+          8096685751786259,
+          8096685808781471
+        ],
+        [
+          8096686932391365,
+          8096686989307198
+        ]
+      ],
+      "diagnostic": {
+        "matching_calls": 8,
+        "matching_budget": 8,
+        "base_evaluations": 110,
+        "initial_evaluations": 55,
+        "common_energy_cap": 44487.57339765466,
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 42521.51750315554,
+          "latency_ratio": 1.4904690262071318,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.3646826985123457,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.3188047773216467,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            42521.51750315554,
+            1.4904690262071318
+          ]
+        },
+        "termination": "external_matching_cap",
+        "search_seconds": 0.004713301546871662,
+        "feature_budget": 16,
+        "prefix": null
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.18956904153363,
+        "lower_assignment_energy": 42521.503792699266,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9470172588942,
+        "energy": 43847.97147023595,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 42520.63618688303,
+        "service_comm_energy": 2.1103092821302627,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 43847.97147023595,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.000159642504893336,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 538,
+      "fee_success": 6
+    },
+    {
+      "method": "smooth_price",
+      "kind": "smooth_price",
+      "cap": 10,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        0,
+        0,
+        0,
+        6,
+        6,
+        0,
+        2,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.01335097011178732,
+        0.013410893268883228,
+        0.01395105104893446
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        7,
+        7,
+        7
+      ],
+      "execution_rank": [
+        3,
+        6,
+        6
+      ],
+      "call_observation_ns": [
+        [
+          8096684803397993,
+          8096684863741407
+        ],
+        [
+          8096686104450627,
+          8096686165143178
+        ],
+        [
+          8096687223608301,
+          8096687284831872
+        ]
+      ],
+      "diagnostic": {
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 43035.376646959405,
+          "latency_ratio": 1.4867034376722366,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.329329954801364,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.2717835265582522,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            43035.376646959405,
+            1.4867034376722366
+          ]
+        },
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "common_energy_cap": 44487.57339765466,
+        "matching_calls": 10,
+        "matching_budget": 10,
+        "base_evaluations": 110,
+        "selected_action": 0,
+        "nominal_cost_ms": 10.0,
+        "g_anchored_energy": false,
+        "price_applied": true,
+        "expected_success": 5.524618848134216,
+        "hgb_batches": 0
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.17399105116171,
+        "lower_assignment_energy": 43035.36961610353,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9314392685224,
+        "energy": 44361.83729364022,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 43034.50281488303,
+        "service_comm_energy": 2.1095046863985383,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 44361.83729364022,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.00015779328420654774,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 541,
+      "fee_success": 6
+    },
+    {
+      "method": "smooth",
+      "kind": "smooth",
+      "cap": 10,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        0,
+        0,
+        0,
+        6,
+        6,
+        0,
+        2,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.013370277360081673,
+        0.0134595250710845,
+        0.013376588001847267
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        3,
+        3,
+        3
+      ],
+      "execution_rank": [
+        4,
+        7,
+        14
+      ],
+      "call_observation_ns": [
+        [
+          8096684863821368,
+          8096684924451812
+        ],
+        [
+          8096686165147497,
+          8096686225533802
+        ],
+        [
+          8096687790743908,
+          8096687851322003
+        ]
+      ],
+      "diagnostic": {
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 43035.376646959405,
+          "latency_ratio": 1.4867034376722366,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.329329954801364,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.2717835265582522,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            43035.376646959405,
+            1.4867034376722366
+          ]
+        },
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "common_energy_cap": 44487.57339765466,
+        "matching_calls": 10,
+        "matching_budget": 10,
+        "base_evaluations": 110,
+        "selected_action": 0,
+        "nominal_cost_ms": 10.0,
+        "g_anchored_energy": false,
+        "price_applied": false,
+        "expected_success": 5.524618848134216,
+        "hgb_batches": 0
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.17399105116171,
+        "lower_assignment_energy": 43035.36961610353,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9314392685224,
+        "energy": 44361.83729364022,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 43034.50281488303,
+        "service_comm_energy": 2.1095046863985383,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 44361.83729364022,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.00015779328420654774,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 541,
+      "fee_success": 6
+    },
+    {
+      "method": "G",
+      "kind": "native_G",
+      "cap": 0,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        0,
+        0,
+        0,
+        6,
+        2,
+        0,
+        6,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.00777842104434967,
+        0.007973228581249714,
+        0.007913745939731598
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        0,
+        0,
+        0
+      ],
+      "execution_rank": [
+        5,
+        12,
+        10
+      ],
+      "call_observation_ns": [
+        [
+          8096684924529979,
+          8096684979220393
+        ],
+        [
+          8096686463165895,
+          8096686518534054
+        ],
+        [
+          8096687550917834,
+          8096687606160157
+        ]
+      ],
+      "diagnostic": {
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 43456.516656040774,
+          "latency_ratio": 1.4854462934573227,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.329329954801364,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.4370733553175683,
+            1.6008613120938446,
+            1.4083689085790452,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            43456.516656040774,
+            1.4854462934573227
+          ]
+        },
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "common_energy_cap": 44487.57339765466,
+        "base_evaluations": 110,
+        "matching_calls": 0,
+        "matching_budget": 0
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.16163927704891,
+        "lower_assignment_energy": 43456.50962518491,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9190874944095,
+        "energy": 44782.9773027216,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 43455.64277113303,
+        "service_comm_energy": 2.1095575177708574,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 44782.9773027216,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.0001563093930240897,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 539,
+      "fee_success": 6
+    },
+    {
+      "method": "gcap_smooth",
+      "kind": "gcap_smooth",
+      "cap": 10,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        0,
+        0,
+        0,
+        6,
+        6,
+        0,
+        2,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.014557941816747189,
+        0.013404270634055138,
+        0.01332858856767416
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        5,
+        5,
+        5
+      ],
+      "execution_rank": [
+        6,
+        1,
+        2
+      ],
+      "call_observation_ns": [
+        [
+          8096684979295384,
+          8096685041073368
+        ],
+        [
+          8096685808785689,
+          8096685869034214
+        ],
+        [
+          8096686989311085,
+          8096687049543530
+        ]
+      ],
+      "diagnostic": {
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 43035.376646959405,
+          "latency_ratio": 1.4867034376722366,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.329329954801364,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.2717835265582522,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            43035.376646959405,
+            1.4867034376722366
+          ]
+        },
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "common_energy_cap": 44487.57339765466,
+        "matching_calls": 10,
+        "matching_budget": 10,
+        "base_evaluations": 110,
+        "selected_action": 0,
+        "nominal_cost_ms": 10.0,
+        "g_anchored_energy": true,
+        "price_applied": false,
+        "expected_success": 5.524618848134216,
+        "hgb_batches": 0
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.17399105116171,
+        "lower_assignment_energy": 43035.36961610353,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9314392685224,
+        "energy": 44361.83729364022,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 43034.50281488303,
+        "service_comm_energy": 2.1095046863985383,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 44361.83729364022,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.00015779328420654774,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 541,
+      "fee_success": 6
+    },
+    {
+      "method": "binary",
+      "kind": "binary",
+      "cap": 10,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        2,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.013156875036656857,
+        0.013319501653313637,
+        0.013287210837006569
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        2,
+        2,
+        2
+      ],
+      "execution_rank": [
+        7,
+        3,
+        0
+      ],
+      "call_observation_ns": [
+        [
+          8096685041152427,
+          8096685101663066
+        ],
+        [
+          8096685929067465,
+          8096685989202436
+        ],
+        [
+          8096686871704365,
+          8096686932387197
+        ]
+      ],
+      "diagnostic": {
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 43830.2106361419,
+          "latency_ratio": 1.47480720506423,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            4.929995649716741,
+            0.7456435523054264,
+            1.4134776389923458,
+            1.196050090696037,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.4958108475938445,
+            1.3268071534382524,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            43830.2106361419,
+            1.47480720506423
+          ]
+        },
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "common_energy_cap": 44487.57339765466,
+        "matching_calls": 10,
+        "matching_budget": 10,
+        "base_evaluations": 110,
+        "selected_action": 31,
+        "nominal_cost_ms": 10.0,
+        "g_anchored_energy": false,
+        "price_applied": false,
+        "expected_success": 7.0,
+        "hgb_batches": 0
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 25.988195999577336,
+        "lower_assignment_energy": 43830.196925684424,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.745644216938,
+        "energy": 45156.66460322111,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 43829.282071651774,
+        "service_comm_energy": 2.1575574985433423,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 45156.66460322111,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.375,
+        "offloading_ratio_cooperative": 0.625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.00015501587775596423,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 6.0,
+        "service_offloads_cooperative": 10.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 571,
+      "fee_success": 7
+    },
+    {
+      "method": "R16",
+      "kind": "random",
+      "cap": 16,
+      "repeat": 2,
+      "seed": 224685950,
+      "assignment": [
+        1,
+        6,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        6,
+        0,
+        6,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.012380093336105347,
+        0.011468025855720043,
+        0.01152217760682106
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        16,
+        16,
+        16
+      ],
+      "execution_rank": [
+        8,
+        11,
+        4
+      ],
+      "call_observation_ns": [
+        [
+          8096685101742285,
+          8096685161968629
+        ],
+        [
+          8096686404928114,
+          8096686463161807
+        ],
+        [
+          8096687108394645,
+          8096687166847511
+        ]
+      ],
+      "diagnostic": {
+        "matching_calls": 16,
+        "matching_budget": 16,
+        "base_evaluations": 110,
+        "initial_evaluations": 55,
+        "common_energy_cap": 44487.57339765466,
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 28605.397419945297,
+          "latency_ratio": 1.6112434671855564,
+          "latencies": [
+            3.0521598049616148,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.6799928539007135,
+            1.329329954801364,
+            1.2849872030388942,
+            1.1969260902670213,
+            4.7046241953210295,
+            1.586010511451163,
+            1.6008613120938446,
+            1.4083689085790452,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            28605.397419945297,
+            1.6112434671855564
+          ]
+        },
+        "termination": "matching_budget",
+        "search_seconds": 0.006949481554329395,
+        "feature_budget": 16,
+        "prefix": null
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 29.38993348091332,
+        "lower_assignment_energy": 28605.397419897843,
+        "lower_mbs_load_ratio": 0.125,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 655.1473816982739,
+        "energy": 29931.865097434522,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 28602.19532734275,
+        "service_comm_energy": 2.0129791565950295,
+        "service_fetch_or_backhaul_energy": 2.8371615585269008,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 29931.865097434522,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.4375,
+        "offloading_ratio_mbs": 0.125,
+        "mbs_load_ratio": 0.09090909090909091,
+        "effective_energy_efficiency": 0.0002338644777802361,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 7.0,
+        "service_offloads_mbs": 2.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 541,
+      "fee_success": 6
+    },
+    {
+      "method": "R16",
+      "kind": "random",
+      "cap": 16,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        0,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.011550321243703365,
+        0.011521846987307072,
+        0.011840717867016792
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        14,
+        14,
+        14
+      ],
+      "execution_rank": [
+        9,
+        10,
+        8
+      ],
+      "call_observation_ns": [
+        [
+          8096685162056284,
+          8096685220539727
+        ],
+        [
+          8096686346394346,
+          8096686404924087
+        ],
+        [
+          8096687346442141,
+          8096687406648387
+        ]
+      ],
+      "diagnostic": {
+        "matching_calls": 16,
+        "matching_budget": 16,
+        "base_evaluations": 110,
+        "initial_evaluations": 55,
+        "common_energy_cap": 44487.57339765466,
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 42521.51750315554,
+          "latency_ratio": 1.4904690262071318,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.3646826985123457,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.3188047773216467,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            42521.51750315554,
+            1.4904690262071318
+          ]
+        },
+        "termination": "matching_budget",
+        "search_seconds": 0.006442946381866932,
+        "feature_budget": 16,
+        "prefix": null
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.18956904153363,
+        "lower_assignment_energy": 42521.503792699266,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9470172588942,
+        "energy": 43847.97147023595,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 42520.63618688303,
+        "service_comm_energy": 2.1103092821302627,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 43847.97147023595,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.000159642504893336,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 538,
+      "fee_success": 6
+    },
+    {
+      "method": "binary_price",
+      "kind": "binary_price",
+      "cap": 10,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        2,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.013276058249175549,
+        0.013313409872353077,
+        0.013960197567939758
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        6,
+        6,
+        6
+      ],
+      "execution_rank": [
+        10,
+        2,
+        7
+      ],
+      "call_observation_ns": [
+        [
+          8096685220618665,
+          8096685280654530
+        ],
+        [
+          8096685869038482,
+          8096685929063337
+        ],
+        [
+          8096687284835709,
+          8096687346437342
+        ]
+      ],
+      "diagnostic": {
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 43830.2106361419,
+          "latency_ratio": 1.47480720506423,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            4.929995649716741,
+            0.7456435523054264,
+            1.4134776389923458,
+            1.196050090696037,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.4958108475938445,
+            1.3268071534382524,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            43830.2106361419,
+            1.47480720506423
+          ]
+        },
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "common_energy_cap": 44487.57339765466,
+        "matching_calls": 10,
+        "matching_budget": 10,
+        "base_evaluations": 110,
+        "selected_action": 31,
+        "nominal_cost_ms": 10.0,
+        "g_anchored_energy": false,
+        "price_applied": true,
+        "expected_success": 7.0,
+        "hgb_batches": 0
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 25.988195999577336,
+        "lower_assignment_energy": 43830.196925684424,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.745644216938,
+        "energy": 45156.66460322111,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 43829.282071651774,
+        "service_comm_energy": 2.1575574985433423,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 45156.66460322111,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.375,
+        "offloading_ratio_cooperative": 0.625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.00015501587775596423,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 6.0,
+        "service_offloads_cooperative": 10.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 571,
+      "fee_success": 7
+    },
+    {
+      "method": "R8",
+      "kind": "random",
+      "cap": 8,
+      "repeat": 1,
+      "seed": 1929101066,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        0,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.009851053357124329,
+        0.009936884045600891,
+        0.009812970645725727
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        10,
+        10,
+        10
+      ],
+      "execution_rank": [
+        11,
+        4,
+        17
+      ],
+      "call_observation_ns": [
+        [
+          8096685280734180,
+          8096685337708453
+        ],
+        [
+          8096685989206915,
+          8096686046195864
+        ],
+        [
+          8096687970668609,
+          8096688027474735
+        ]
+      ],
+      "diagnostic": {
+        "matching_calls": 8,
+        "matching_budget": 8,
+        "base_evaluations": 110,
+        "initial_evaluations": 55,
+        "common_energy_cap": 44487.57339765466,
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 42521.51750315554,
+          "latency_ratio": 1.4904690262071318,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.3646826985123457,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.3188047773216467,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            42521.51750315554,
+            1.4904690262071318
+          ]
+        },
+        "termination": "external_matching_cap",
+        "search_seconds": 0.004727698862552643,
+        "feature_budget": 16,
+        "prefix": null
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.18956904153363,
+        "lower_assignment_energy": 42521.503792699266,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9470172588942,
+        "energy": 43847.97147023595,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 42520.63618688303,
+        "service_comm_energy": 2.1103092821302627,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 43847.97147023595,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.000159642504893336,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 538,
+      "fee_success": 6
+    },
+    {
+      "method": "R16",
+      "kind": "random",
+      "cap": 16,
+      "repeat": 3,
+      "seed": 3538589877,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        0,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.011524391360580921,
+        0.011514983139932156,
+        0.01156017929315567
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        17,
+        17,
+        17
+      ],
+      "execution_rank": [
+        12,
+        5,
+        3
+      ],
+      "call_observation_ns": [
+        [
+          8096685337789105,
+          8096685396359391
+        ],
+        [
+          8096686046199592,
+          8096686104446680
+        ],
+        [
+          8096687049547077,
+          8096687108390798
+        ]
+      ],
+      "diagnostic": {
+        "matching_calls": 16,
+        "matching_budget": 16,
+        "base_evaluations": 110,
+        "initial_evaluations": 55,
+        "common_energy_cap": 44487.57339765466,
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 42521.51750315554,
+          "latency_ratio": 1.4904690262071318,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.3646826985123457,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.3188047773216467,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            42521.51750315554,
+            1.4904690262071318
+          ]
+        },
+        "termination": "matching_budget",
+        "search_seconds": 0.006406048312783241,
+        "feature_budget": 16,
+        "prefix": null
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.18956904153363,
+        "lower_assignment_energy": 42521.503792699266,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9470172588942,
+        "energy": 43847.97147023595,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 42520.63618688303,
+        "service_comm_energy": 2.1103092821302627,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 43847.97147023595,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.000159642504893336,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 538,
+      "fee_success": 6
+    },
+    {
+      "method": "gcap_binary",
+      "kind": "gcap_binary",
+      "cap": 10,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        2,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.013267192989587784,
+        0.013352744281291962,
+        0.013241704553365707
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        4,
+        4,
+        4
+      ],
+      "execution_rank": [
+        13,
+        15,
+        15
+      ],
+      "call_observation_ns": [
+        [
+          8096685396437809,
+          8096685456737581
+        ],
+        [
+          8096686634143535,
+          8096686694838892
+        ],
+        [
+          8096687851326883,
+          8096687912216344
+        ]
+      ],
+      "diagnostic": {
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 43830.2106361419,
+          "latency_ratio": 1.47480720506423,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            4.929995649716741,
+            0.7456435523054264,
+            1.4134776389923458,
+            1.196050090696037,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.4958108475938445,
+            1.3268071534382524,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            43830.2106361419,
+            1.47480720506423
+          ]
+        },
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "common_energy_cap": 44487.57339765466,
+        "matching_calls": 10,
+        "matching_budget": 10,
+        "base_evaluations": 110,
+        "selected_action": 31,
+        "nominal_cost_ms": 10.0,
+        "g_anchored_energy": true,
+        "price_applied": false,
+        "expected_success": 7.0,
+        "hgb_batches": 0
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 25.988195999577336,
+        "lower_assignment_energy": 43830.196925684424,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.745644216938,
+        "energy": 45156.66460322111,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 43829.282071651774,
+        "service_comm_energy": 2.1575574985433423,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 45156.66460322111,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.375,
+        "offloading_ratio_cooperative": 0.625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.00015501587775596423,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 6.0,
+        "service_offloads_cooperative": 10.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 571,
+      "fee_success": 7
+    },
+    {
+      "method": "R8",
+      "kind": "random",
+      "cap": 8,
+      "repeat": 2,
+      "seed": 224685950,
+      "assignment": [
+        1,
+        6,
+        5,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        6,
+        0,
+        6,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.009787503629922867,
+        0.009797652252018452,
+        0.010035338811576366
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        11,
+        11,
+        11
+      ],
+      "execution_rank": [
+        14,
+        13,
+        9
+      ],
+      "call_observation_ns": [
+        [
+          8096685456815096,
+          8096685513592278
+        ],
+        [
+          8096686518538984,
+          8096686575477108
+        ],
+        [
+          8096687406653186,
+          8096687550913426
+        ]
+      ],
+      "diagnostic": {
+        "matching_calls": 8,
+        "matching_budget": 8,
+        "base_evaluations": 110,
+        "initial_evaluations": 55,
+        "common_energy_cap": 44487.57339765466,
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 28605.397419945297,
+          "latency_ratio": 1.6112434671855564,
+          "latencies": [
+            3.0521598049616148,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.6799928539007135,
+            1.329329954801364,
+            1.2849872030388942,
+            1.1969260902670213,
+            4.7046241953210295,
+            1.586010511451163,
+            1.6008613120938446,
+            1.4083689085790452,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            28605.397419945297,
+            1.6112434671855564
+          ]
+        },
+        "termination": "external_matching_cap",
+        "search_seconds": 0.004632338881492615,
+        "feature_budget": 16,
+        "prefix": null
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 29.38993348091332,
+        "lower_assignment_energy": 28605.397419897843,
+        "lower_mbs_load_ratio": 0.125,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 655.1473816982739,
+        "energy": 29931.865097434522,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 28602.19532734275,
+        "service_comm_energy": 2.0129791565950295,
+        "service_fetch_or_backhaul_energy": 2.8371615585269008,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 29931.865097434522,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.4375,
+        "offloading_ratio_mbs": 0.125,
+        "mbs_load_ratio": 0.09090909090909091,
+        "effective_energy_efficiency": 0.0002338644777802361,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 7.0,
+        "service_offloads_mbs": 2.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 541,
+      "fee_success": 6
+    },
+    {
+      "method": "old_pool_fee",
+      "kind": "old_pool_fee",
+      "cap": 10,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        0,
+        0,
+        0,
+        6,
+        2,
+        0,
+        6,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.013420331291854382,
+        0.013521882705390453,
+        0.013462580740451813
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        1,
+        1,
+        1
+      ],
+      "execution_rank": [
+        15,
+        16,
+        12
+      ],
+      "call_observation_ns": [
+        [
+          8096685513672409,
+          8096685574570827
+        ],
+        [
+          8096686694842519,
+          8096686755589111
+        ],
+        [
+          8096687671296863,
+          8096687731629938
+        ]
+      ],
+      "diagnostic": {
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 43456.516656040774,
+          "latency_ratio": 1.4854462934573227,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.329329954801364,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.4370733553175683,
+            1.6008613120938446,
+            1.4083689085790452,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            43456.516656040774,
+            1.4854462934573227
+          ]
+        },
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "common_energy_cap": 44487.57339765466,
+        "matching_calls": 9,
+        "matching_budget": 9,
+        "base_evaluations": 110,
+        "selected_action": -1,
+        "nominal_cost_ms": 10.0,
+        "g_anchored_energy": false,
+        "price_applied": false,
+        "expected_success": null,
+        "hgb_batches": 0
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.16163927704891,
+        "lower_assignment_energy": 43456.50962518491,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9190874944095,
+        "energy": 44782.9773027216,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 43455.64277113303,
+        "service_comm_energy": 2.1095575177708574,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 44782.9773027216,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.0001563093930240897,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 539,
+      "fee_success": 6
+    },
+    {
+      "method": "R8",
+      "kind": "random",
+      "cap": 8,
+      "repeat": 0,
+      "seed": 4031469954,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        0,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.00979351531714201,
+        0.009842175990343094,
+        0.009761734865605831
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        9,
+        9,
+        9
+      ],
+      "execution_rank": [
+        16,
+        8,
+        5
+      ],
+      "call_observation_ns": [
+        [
+          8096685574651179,
+          8096685631439832
+        ],
+        [
+          8096686225537899,
+          8096686282477837
+        ],
+        [
+          8096687166851839,
+          8096687223604344
+        ]
+      ],
+      "diagnostic": {
+        "matching_calls": 8,
+        "matching_budget": 8,
+        "base_evaluations": 110,
+        "initial_evaluations": 55,
+        "common_energy_cap": 44487.57339765466,
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 42521.51750315554,
+          "latency_ratio": 1.4904690262071318,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.3646826985123457,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.3188047773216467,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            42521.51750315554,
+            1.4904690262071318
+          ]
+        },
+        "termination": "external_matching_cap",
+        "search_seconds": 0.004657837562263012,
+        "feature_budget": 16,
+        "prefix": null
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.18956904153363,
+        "lower_assignment_energy": 42521.503792699266,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9470172588942,
+        "energy": 43847.97147023595,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 42520.63618688303,
+        "service_comm_energy": 2.1103092821302627,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 43847.97147023595,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.000159642504893336,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 538,
+      "fee_success": 6
+    },
+    {
+      "method": "R16",
+      "kind": "random",
+      "cap": 16,
+      "repeat": 1,
+      "seed": 1929101066,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        0,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.011983245611190796,
+        0.011439763009548187,
+        0.01143428310751915
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        15,
+        15,
+        15
+      ],
+      "execution_rank": [
+        17,
+        18,
+        16
+      ],
+      "call_observation_ns": [
+        [
+          8096685631520434,
+          8096685691440350
+        ],
+        [
+          8096686812700432,
+          8096686871634182
+        ],
+        [
+          8096687912220302,
+          8096687970664832
+        ]
+      ],
+      "diagnostic": {
+        "matching_calls": 16,
+        "matching_budget": 16,
+        "base_evaluations": 110,
+        "initial_evaluations": 55,
+        "common_energy_cap": 44487.57339765466,
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 42521.51750315554,
+          "latency_ratio": 1.4904690262071318,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.3646826985123457,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.3188047773216467,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            42521.51750315554,
+            1.4904690262071318
+          ]
+        },
+        "termination": "matching_budget",
+        "search_seconds": 0.006422930397093296,
+        "feature_budget": 16,
+        "prefix": null
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.18956904153363,
+        "lower_assignment_energy": 42521.503792699266,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9470172588942,
+        "energy": 43847.97147023595,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 42520.63618688303,
+        "service_comm_energy": 2.1103092821302627,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 43847.97147023595,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.000159642504893336,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 538,
+      "fee_success": 6
+    },
+    {
+      "method": "R16",
+      "kind": "random",
+      "cap": 16,
+      "repeat": 4,
+      "seed": 1702960604,
+      "assignment": [
+        0,
+        6,
+        5,
+        0,
+        2,
+        2,
+        0,
+        0,
+        6,
+        6,
+        0,
+        0,
+        5,
+        5,
+        5,
+        0
+      ],
+      "software_seconds": [
+        0.01189639326184988,
+        0.011603530496358871,
+        0.01157120056450367
+      ],
+      "timing_iteration": [
+        0,
+        1,
+        2
+      ],
+      "selected_order": [
+        18,
+        18,
+        18
+      ],
+      "execution_rank": [
+        18,
+        14,
+        13
+      ],
+      "call_observation_ns": [
+        [
+          8096685691523317,
+          8096685751634163
+        ],
+        [
+          8096686575481165,
+          8096686634139728
+        ],
+        [
+          8096687731634206,
+          8096687790739870
+        ]
+      ],
+      "diagnostic": {
+        "matching_calls": 16,
+        "matching_budget": 16,
+        "base_evaluations": 110,
+        "initial_evaluations": 55,
+        "common_energy_cap": 44487.57339765466,
+        "reference_predicted": {
+          "misses": 11,
+          "energy": 42369.11752157586,
+          "latency_ratio": 1.4841939516174014,
+          "latencies": [
+            2.5691916016372516,
+            1.5436902218748336,
+            1.2284372774385306,
+            5.127650850631026,
+            0.7109987216654264,
+            1.3816102481727925,
+            1.3739243153817515,
+            1.3142181801670214,
+            2.095335514817911,
+            1.4370733553175683,
+            1.7059117765938447,
+            1.3258334682590454,
+            1.6536230152986509,
+            1.6099861362093515,
+            0.7695201708839196,
+            0.24861186926066248
+          ],
+          "objective": [
+            11,
+            42369.11752157586,
+            1.4841939516174014
+          ]
+        },
+        "chosen_predicted": {
+          "misses": 9,
+          "energy": 42521.51750315554,
+          "latency_ratio": 1.4904690262071318,
+          "latencies": [
+            2.4552567500372517,
+            1.5704881296910476,
+            1.2881858226620602,
+            5.028823250173883,
+            0.7109987216654264,
+            1.3646826985123457,
+            1.2849872030388942,
+            1.1969260902670213,
+            2.261472418837911,
+            1.586010511451163,
+            1.6008613120938446,
+            1.3188047773216467,
+            1.7228556421104155,
+            1.7622627757928262,
+            0.8752997188368608,
+            0.2987577818253684
+          ],
+          "objective": [
+            9,
+            42521.51750315554,
+            1.4904690262071318
+          ]
+        },
+        "termination": "matching_budget",
+        "search_seconds": 0.006534770131111145,
+        "feature_budget": 16,
+        "prefix": null
+      },
+      "raw_success": 7,
+      "metrics": {
+        "lower_admitted_service_count": 16.0,
+        "lower_deadline_satisfaction_rate": 0.4375,
+        "lower_service_latency": 26.18956904153363,
+        "lower_assignment_energy": 42521.503792699266,
+        "lower_mbs_load_ratio": 0.0,
+        "lower_visible_count": 16.0,
+        "capacity_fallback_count": 0.0,
+        "invalid_action_fallback_count": 0.0,
+        "deadline_satisfied_count": 7.0,
+        "latency": 651.9470172588942,
+        "energy": 43847.97147023595,
+        "flight_energy": 1086.6980096546285,
+        "hover_energy": 206.65099517268578,
+        "wpt_energy": 0.0,
+        "service_compute_energy": 42520.63618688303,
+        "service_comm_energy": 2.1103092821302627,
+        "service_fetch_or_backhaul_energy": 0.40534469414214575,
+        "content_related_energy": 31.47062454932624,
+        "uav_fleet_total_energy": 43847.97147023595,
+        "fairness": 0.9769588708877563,
+        "offline_rate": 0.0,
+        "deadline_satisfaction_rate": 0.3181818181818182,
+        "offloading_ratio_local": 0.4375,
+        "offloading_ratio_cooperative": 0.5625,
+        "offloading_ratio_mbs": 0.0,
+        "mbs_load_ratio": 0.0,
+        "effective_energy_efficiency": 0.000159642504893336,
+        "service_requests_generated": 22.0,
+        "service_requests_processed": 16.0,
+        "service_requests_uncovered": 6.0,
+        "generated_service_count": 22.0,
+        "admitted_service_count": 16.0,
+        "unadmitted_service_count": 6.0,
+        "processed_service_count": 16.0,
+        "forced_service_admissions": 0.0,
+        "forced_admission_ratio": 0.0,
+        "natural_coverage_service_ratio": 0.7272727272727273,
+        "service_offloads_local": 7.0,
+        "service_offloads_cooperative": 9.0,
+        "service_offloads_mbs": 0.0,
+        "service_learned_decision_count": 16.0,
+        "service_heuristic_decision_count": 0.0,
+        "service_fallback_count": 0.0,
+        "service_predict_exception_fallback_count": 0.0,
+        "service_offload_policy_loaded": 0.0
+      },
+      "logical_upload_bytes": 10893,
+      "logical_download_bytes": 538,
+      "fee_success": 6
+    }
+  ],
+  "timing_samples": 57,
+  "timing_order": [
+    [
+      0,
+      12
+    ],
+    [
+      0,
+      8
+    ],
+    [
+      0,
+      13
+    ],
+    [
+      0,
+      7
+    ],
+    [
+      0,
+      3
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      5
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      0,
+      16
+    ],
+    [
+      0,
+      14
+    ],
+    [
+      0,
+      6
+    ],
+    [
+      0,
+      10
+    ],
+    [
+      0,
+      17
+    ],
+    [
+      0,
+      4
+    ],
+    [
+      0,
+      11
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      0,
+      9
+    ],
+    [
+      0,
+      15
+    ],
+    [
+      0,
+      18
+    ],
+    [
+      1,
+      13
+    ],
+    [
+      1,
+      5
+    ],
+    [
+      1,
+      6
+    ],
+    [
+      1,
+      2
+    ],
+    [
+      1,
+      10
+    ],
+    [
+      1,
+      17
+    ],
+    [
+      1,
+      7
+    ],
+    [
+      1,
+      3
+    ],
+    [
+      1,
+      9
+    ],
+    [
+      1,
+      8
+    ],
+    [
+      1,
+      14
+    ],
+    [
+      1,
+      16
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      1,
+      11
+    ],
+    [
+      1,
+      18
+    ],
+    [
+      1,
+      4
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      12
+    ],
+    [
+      1,
+      15
+    ],
+    [
+      2,
+      2
+    ],
+    [
+      2,
+      13
+    ],
+    [
+      2,
+      5
+    ],
+    [
+      2,
+      17
+    ],
+    [
+      2,
+      16
+    ],
+    [
+      2,
+      9
+    ],
+    [
+      2,
+      7
+    ],
+    [
+      2,
+      6
+    ],
+    [
+      2,
+      14
+    ],
+    [
+      2,
+      11
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      2,
+      8
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      2,
+      18
+    ],
+    [
+      2,
+      3
+    ],
+    [
+      2,
+      4
+    ],
+    [
+      2,
+      15
+    ],
+    [
+      2,
+      10
+    ],
+    [
+      2,
+      12
+    ]
+  ],
+  "observation_timestamps_include_restore_and_validation": true,
+  "cpu": [
+    0
+  ],
+  "load_average": [
+    7.85,
+    5.07,
+    2.99
+  ],
+  "state_delay_applied": false,
+  "physical_results_reused_after_exact_state_and_assignment": true
+}
