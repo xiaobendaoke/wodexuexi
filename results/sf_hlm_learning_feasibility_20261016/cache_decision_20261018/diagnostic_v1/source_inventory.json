@@ -1,0 +1,491 @@
+{
+  "files": {
+    "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/uavs.py": "526ef41a9103bd3f472902f4390d618e23734bbcd69285fe8a15b1b47dd38288",
+    "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/user_equipments.py": "e55b405b6f7c03cb46b3c7ba57d2a5edd13a555b73e09e6300a8ff37cfea2d32",
+    "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/config.py": "abe12f03345df3e6187474ca49b63233d0db73e374ddfc70844bf3bfd4a587ec"
+  },
+  "excerpts": {
+    "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/uavs.py": [
+      {
+        "line": 344,
+        "text": "            return"
+      },
+      {
+        "line": 345,
+        "text": ""
+      },
+      {
+        "line": 346,
+        "text": "        def _candidate_key(fid: int):"
+      },
+      {
+        "line": 347,
+        "text": "            score = float(self._ema_scores[fid]) / max(float(config.FILE_SIZES[fid]), float(config.EPSILON))"
+      },
+      {
+        "line": 348,
+        "text": "            return (-score, fid)"
+      },
+      {
+        "line": 349,
+        "text": ""
+      },
+      {
+        "line": 350,
+        "text": "        sorted_pending = sorted(self.pending_cache, key=_candidate_key)"
+      },
+      {
+        "line": 351,
+        "text": "        used_space = int(np.sum(self.cache * config.FILE_SIZES))"
+      },
+      {
+        "line": 352,
+        "text": "        cap = int(config.UAV_STORAGE_CAPACITY[self.id])"
+      },
+      {
+        "line": 353,
+        "text": "        for fid in sorted_pending:"
+      },
+      {
+        "line": 354,
+        "text": "            if self.cache[fid]:"
+      },
+      {
+        "line": 355,
+        "text": "                continue"
+      },
+      {
+        "line": 356,
+        "text": "            fsize = int(config.FILE_SIZES[fid])"
+      },
+      {
+        "line": 357,
+        "text": "            if used_space + fsize <= cap:"
+      },
+      {
+        "line": 358,
+        "text": "                self.cache[fid] = True"
+      },
+      {
+        "line": 359,
+        "text": "                used_space += fsize"
+      },
+      {
+        "line": 360,
+        "text": "        self.pending_cache.clear()"
+      },
+      {
+        "line": 578,
+        "text": "            cooperative_available=cooperative_uav is not None,"
+      },
+      {
+        "line": 579,
+        "text": "            local_queue_length=self._current_service_request_count,"
+      },
+      {
+        "line": 580,
+        "text": "            request_size=current_req.req_size,"
+      },
+      {
+        "line": 581,
+        "text": "            service_file_size=int(config.FILE_SIZES[req_id]),"
+      },
+      {
+        "line": 582,
+        "text": "            cpu_cycles_per_byte=float(config.CPU_CYCLES_PER_BYTE[req_id]),"
+      },
+      {
+        "line": 583,
+        "text": "            neighbor_count=len(self._neighbors),"
+      },
+      {
+        "line": 584,
+        "text": "            ue_uav_rate=ue_uav_rate,"
+      },
+      {
+        "line": 585,
+        "text": "            uav_mbs_rate=self._uav_mbs_rate,"
+      },
+      {
+        "line": 713,
+        "text": "    def _estimate_local_service_latency(self, current_req: Request, ue_uav_rate: float) -> float:"
+      },
+      {
+        "line": 714,
+        "text": "        req_size: int = current_req.req_size"
+      },
+      {
+        "line": 715,
+        "text": "        req_id: int = current_req.req_id"
+      },
+      {
+        "line": 716,
+        "text": "        file_size: int = int(config.FILE_SIZES[req_id])"
+      },
+      {
+        "line": 717,
+        "text": "        cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[req_id]) * float(req_size)"
+      },
+      {
+        "line": 718,
+        "text": "        p_local: float = 1.0 if self.cache[req_id] else 0.0"
+      },
+      {
+        "line": 719,
+        "text": "        ue_uav_upload_latency: float = _tx_latency_bytes(req_size, ue_uav_rate)"
+      },
+      {
+        "line": 720,
+        "text": "        exp_fetch_latency: float = (1.0 - p_local) * _tx_latency_bytes(file_size, self._uav_mbs_rate)"
+      },
+      {
+        "line": 741,
+        "text": "        \"\"\"Estimate the best cooperative UAV and expose its raw runtime state for learned policies.\"\"\""
+      },
+      {
+        "line": 742,
+        "text": "        req_size: int = current_req.req_size"
+      },
+      {
+        "line": 743,
+        "text": "        req_id: int = current_req.req_id"
+      },
+      {
+        "line": 744,
+        "text": "        file_size: int = int(config.FILE_SIZES[req_id])"
+      },
+      {
+        "line": 745,
+        "text": "        cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[req_id]) * float(req_size)"
+      },
+      {
+        "line": 746,
+        "text": "        ue_uav_upload_latency: float = _tx_latency_bytes(req_size, ue_uav_rate)"
+      },
+      {
+        "line": 747,
+        "text": ""
+      },
+      {
+        "line": 748,
+        "text": "        best_latency: float = np.inf"
+      },
+      {
+        "line": 793,
+        "text": "    # \u51fd\u6570 _estimate_local_content_latency\uff1a\u5173\u952e\u51fd\u6570\uff0c\u627f\u8f7d\u672c\u6a21\u5757\u7684\u4e00\u6bb5\u53ef\u590d\u7528\u5b9e\u9a8c\u903b\u8f91\uff0c\u4e3b\u8981\u53c2\u6570\uff1acurrent_req, ue_uav_rate\u3002"
+      },
+      {
+        "line": 794,
+        "text": "    def _estimate_local_content_latency(self, current_req: Request, ue_uav_rate: float) -> float:"
+      },
+      {
+        "line": 795,
+        "text": "        req_id: int = current_req.req_id"
+      },
+      {
+        "line": 796,
+        "text": "        file_size: int = int(config.FILE_SIZES[req_id])"
+      },
+      {
+        "line": 797,
+        "text": "        p_local: float = 1.0 if self.cache[req_id] else 0.0"
+      },
+      {
+        "line": 798,
+        "text": "        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)"
+      },
+      {
+        "line": 799,
+        "text": "        exp_fetch_latency: float = (1.0 - p_local) * _tx_latency_bytes(file_size, self._uav_mbs_rate)"
+      },
+      {
+        "line": 800,
+        "text": "        # \u8fd4\u56de\u7ed3\u679c\uff1a\u628a\u672c\u9636\u6bb5\u8ba1\u7b97\u51fa\u7684\u6307\u6807\u3001\u72b6\u6001\u6216\u5bf9\u8c61\u4ea4\u7ed9\u4e0a\u5c42\u6d41\u7a0b\u7ee7\u7eed\u4f7f\u7528\u3002"
+      },
+      {
+        "line": 802,
+        "text": ""
+      },
+      {
+        "line": 803,
+        "text": "    # \u51fd\u6570 _estimate_mbs_content_latency\uff1a\u5173\u952e\u51fd\u6570\uff0c\u627f\u8f7d\u672c\u6a21\u5757\u7684\u4e00\u6bb5\u53ef\u590d\u7528\u5b9e\u9a8c\u903b\u8f91\uff0c\u4e3b\u8981\u53c2\u6570\uff1acurrent_req, ue_uav_rate\u3002"
+      },
+      {
+        "line": 804,
+        "text": "    def _estimate_mbs_content_latency(self, current_req: Request, ue_uav_rate: float) -> float:"
+      },
+      {
+        "line": 805,
+        "text": "        file_size: int = int(config.FILE_SIZES[current_req.req_id])"
+      },
+      {
+        "line": 806,
+        "text": "        uav_mbs_download_latency: float = _tx_latency_bytes(file_size, self._uav_mbs_rate)"
+      },
+      {
+        "line": 807,
+        "text": "        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)"
+      },
+      {
+        "line": 808,
+        "text": "        # \u8fd4\u56de\u7ed3\u679c\uff1a\u628a\u672c\u9636\u6bb5\u8ba1\u7b97\u51fa\u7684\u6307\u6807\u3001\u72b6\u6001\u6216\u5bf9\u8c61\u4ea4\u7ed9\u4e0a\u5c42\u6d41\u7a0b\u7ee7\u7eed\u4f7f\u7528\u3002"
+      },
+      {
+        "line": 809,
+        "text": "        return uav_mbs_download_latency + ue_uav_download_latency"
+      },
+      {
+        "line": 811,
+        "text": "    # \u51fd\u6570 _estimate_best_cooperative_content_latency\uff1a\u5173\u952e\u51fd\u6570\uff0c\u627f\u8f7d\u672c\u6a21\u5757\u7684\u4e00\u6bb5\u53ef\u590d\u7528\u5b9e\u9a8c\u903b\u8f91\uff0c\u4e3b\u8981\u53c2\u6570\uff1acurrent_req, ue_uav_rate\u3002"
+      },
+      {
+        "line": 812,
+        "text": "    def _estimate_best_cooperative_content_latency(self, current_req: Request, ue_uav_rate: float) -> tuple[float, \"UAV\" | None]:"
+      },
+      {
+        "line": 813,
+        "text": "        req_id: int = current_req.req_id"
+      },
+      {
+        "line": 814,
+        "text": "        file_size: int = int(config.FILE_SIZES[req_id])"
+      },
+      {
+        "line": 815,
+        "text": "        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)"
+      },
+      {
+        "line": 816,
+        "text": ""
+      },
+      {
+        "line": 817,
+        "text": "        best_latency: float = np.inf"
+      },
+      {
+        "line": 818,
+        "text": "        best_neighbor: UAV | None = None"
+      },
+      {
+        "line": 839,
+        "text": "        req_id: int = current_req.req_id"
+      },
+      {
+        "line": 840,
+        "text": "        assert req_id < config.NUM_SERVICES"
+      },
+      {
+        "line": 841,
+        "text": "        cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[req_id]) * float(req_size)"
+      },
+      {
+        "line": 842,
+        "text": "        file_size: int = int(config.FILE_SIZES[req_id])"
+      },
+      {
+        "line": 843,
+        "text": ""
+      },
+      {
+        "line": 844,
+        "text": "        ue_uav_upload_latency: float = _tx_latency_bytes(req_size, ue_uav_rate)"
+      },
+      {
+        "line": 845,
+        "text": "        ue.update_battery(0.0, ue_uav_upload_latency)"
+      },
+      {
+        "line": 846,
+        "text": "        rx_energy: float = _comm_energy(config.UAV_COMM_RX_POWER, ue_uav_upload_latency)"
+      },
+      {
+        "line": 908,
+        "text": "        current_req: Request = ue.current_request"
+      },
+      {
+        "line": 909,
+        "text": "        req_id: int = current_req.req_id"
+      },
+      {
+        "line": 910,
+        "text": "        assert req_id >= config.NUM_SERVICES"
+      },
+      {
+        "line": 911,
+        "text": "        file_size: int = int(config.FILE_SIZES[req_id])"
+      },
+      {
+        "line": 912,
+        "text": ""
+      },
+      {
+        "line": 913,
+        "text": "        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)"
+      },
+      {
+        "line": 914,
+        "text": "        ue.update_battery(0.0, 0.0, ue_receive_time=ue_uav_download_latency)"
+      },
+      {
+        "line": 915,
+        "text": "        downlink_energy: float = _comm_energy(config.UAV_COMM_TX_POWER, ue_uav_download_latency)"
+      },
+      {
+        "line": 981,
+        "text": "        self.commit_pending_cache()"
+      },
+      {
+        "line": 982,
+        "text": ""
+      },
+      {
+        "line": 983,
+        "text": "    # \u51fd\u6570 gdsf_cache_update\uff1a\u66f4\u65b0\u6a21\u578b\u3001\u73af\u5883\u6216\u7edf\u8ba1\u91cf\u7684\u72b6\u6001\u3002"
+      },
+      {
+        "line": 984,
+        "text": "    def gdsf_cache_update(self) -> None:"
+      },
+      {
+        "line": 985,
+        "text": "        \"\"\"Update cache using the GDSF caching policy at a longer timescale.\"\"\""
+      },
+      {
+        "line": 986,
+        "text": "        priority_scores: np.ndarray = self._ema_scores / np.maximum(config.FILE_SIZES, 1.0)"
+      },
+      {
+        "line": 987,
+        "text": "        sorted_file_ids: np.ndarray = np.lexsort((np.arange(config.NUM_FILES), -priority_scores))"
+      },
+      {
+        "line": 988,
+        "text": "        self.cache = np.zeros(config.NUM_FILES, dtype=bool)"
+      },
+      {
+        "line": 989,
+        "text": "        used_space = 0.0"
+      },
+      {
+        "line": 990,
+        "text": "        # \u5faa\u73af\u5904\u7406\uff1a\u904d\u5386 file_id \u5bf9\u5e94\u7684\u6570\u636e\u96c6\u5408\uff0c\u9010\u9879\u6267\u884c\u73af\u5883\u4ea4\u4e92\u3001\u8bad\u7ec3\u66f4\u65b0\u6216\u7ed3\u679c\u7edf\u8ba1\u3002"
+      },
+      {
+        "line": 991,
+        "text": "        for file_id in sorted_file_ids:"
+      },
+      {
+        "line": 992,
+        "text": "            file_size = config.FILE_SIZES[file_id]"
+      },
+      {
+        "line": 993,
+        "text": "            # \u6761\u4ef6\u5206\u652f\uff1a\u6839\u636e\u5f53\u524d\u914d\u7f6e\u3001\u72b6\u6001\u6216\u8bc4\u4f30\u7ed3\u679c\u9009\u62e9\u4e0d\u540c\u5904\u7406\u8def\u5f84\u3002"
+      },
+      {
+        "line": 994,
+        "text": "            if used_space + file_size <= config.UAV_STORAGE_CAPACITY[self.id]:"
+      },
+      {
+        "line": 995,
+        "text": "                self.cache[file_id] = True"
+      },
+      {
+        "line": 996,
+        "text": "                used_space += file_size"
+      }
+    ],
+    "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/user_equipments.py": [],
+    "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/config.py": [
+      {
+        "line": 143,
+        "text": "NUM_FILES: int = NUM_SERVICES + NUM_CONTENTS  # S + K"
+      },
+      {
+        "line": 144,
+        "text": "# \u5173\u952e\u53d8\u91cf CPU_CYCLES_PER_BYTE\uff1a\u5168\u5c40\u5e38\u91cf\u6216\u914d\u7f6e\u9879\uff0c\u4f1a\u5f71\u54cd\u73af\u5883\u89c4\u6a21\u3001\u8bad\u7ec3\u8fc7\u7a0b\u6216\u5b9e\u9a8c\u8f93\u51fa\u3002"
+      },
+      {
+        "line": 145,
+        "text": "CPU_CYCLES_PER_BYTE: np.ndarray = _static_rng.randint(1200, 2800, size=NUM_SERVICES)  # omega_s_m"
+      },
+      {
+        "line": 146,
+        "text": "# \u5173\u952e\u53d8\u91cf FILE_SIZES\uff1a\u5168\u5c40\u5e38\u91cf\u6216\u914d\u7f6e\u9879\uff0c\u4f1a\u5f71\u54cd\u73af\u5883\u89c4\u6a21\u3001\u8bad\u7ec3\u8fc7\u7a0b\u6216\u5b9e\u9a8c\u8f93\u51fa\u3002"
+      },
+      {
+        "line": 147,
+        "text": "FILE_SIZES: np.ndarray = _static_rng.randint(10**6, 5 * 10**6, size=NUM_FILES).astype(np.int64)  # in bytes"
+      },
+      {
+        "line": 148,
+        "text": "# \u5173\u952e\u53d8\u91cf MIN_INPUT_SIZE\uff1a\u5168\u5c40\u5e38\u91cf\u6216\u914d\u7f6e\u9879\uff0c\u4f1a\u5f71\u54cd\u73af\u5883\u89c4\u6a21\u3001\u8bad\u7ec3\u8fc7\u7a0b\u6216\u5b9e\u9a8c\u8f93\u51fa\u3002"
+      },
+      {
+        "line": 149,
+        "text": "MIN_INPUT_SIZE: int = 1 * 10**6  # in bytes"
+      },
+      {
+        "line": 150,
+        "text": "# \u5173\u952e\u53d8\u91cf MAX_INPUT_SIZE\uff1a\u5168\u5c40\u5e38\u91cf\u6216\u914d\u7f6e\u9879\uff0c\u4f1a\u5f71\u54cd\u73af\u5883\u89c4\u6a21\u3001\u8bad\u7ec3\u8fc7\u7a0b\u6216\u5b9e\u9a8c\u8f93\u51fa\u3002"
+      },
+      {
+        "line": 151,
+        "text": "MAX_INPUT_SIZE: int = 5 * 10**6  # in bytes"
+      },
+      {
+        "line": 223,
+        "text": "GDSF_SMOOTHING_FACTOR: float = 0.75  # beta^gdsf"
+      },
+      {
+        "line": 224,
+        "text": ""
+      },
+      {
+        "line": 225,
+        "text": "# Probabilistic Caching Parameters"
+      },
+      {
+        "line": 226,
+        "text": "AVG_FILE_SIZE: float = float(np.mean(FILE_SIZES))"
+      },
+      {
+        "line": 227,
+        "text": "# \u5173\u952e\u53d8\u91cf PROB_GAMMA\uff1a\u5168\u5c40\u5e38\u91cf\u6216\u914d\u7f6e\u9879\uff0c\u4f1a\u5f71\u54cd\u73af\u5883\u89c4\u6a21\u3001\u8bad\u7ec3\u8fc7\u7a0b\u6216\u5b9e\u9a8c\u8f93\u51fa\u3002"
+      },
+      {
+        "line": 228,
+        "text": "PROB_GAMMA: float = 0.5  # gamma"
+      },
+      {
+        "line": 229,
+        "text": ""
+      },
+      {
+        "line": 230,
+        "text": "# Communication Parameters"
+      }
+    ]
+  },
+  "old_feature_names": [
+    "prior_logit",
+    "prior",
+    "own_cache",
+    "own_cache_visible",
+    "prior_logit_times_own_cache",
+    "log_size",
+    "log_cycles_per_byte",
+    "log_target_capacity",
+    "source_0",
+    "source_1",
+    "source_2",
+    "source_3",
+    "source_4",
+    "target_0",
+    "target_1",
+    "target_2",
+    "target_3",
+    "target_4"
+  ],
+  "note": "Source availability only; no new online feature or communication contract is claimed"
+}

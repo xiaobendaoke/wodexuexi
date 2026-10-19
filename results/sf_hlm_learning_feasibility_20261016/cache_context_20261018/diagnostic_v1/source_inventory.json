@@ -1,0 +1,58 @@
+{
+  "files": {
+    "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/uavs.py": "526ef41a9103bd3f472902f4390d618e23734bbcd69285fe8a15b1b47dd38288",
+    "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/user_equipments.py": "e55b405b6f7c03cb46b3c7ba57d2a5edd13a555b73e09e6300a8ff37cfea2d32",
+    "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/env.py": "4e7b34c2855c9642c06bc368325ce9dd44927571089740bd9a85a6b80877e25f",
+    "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/config.py": "abe12f03345df3e6187474ca49b63233d0db73e374ddfc70844bf3bfd4a587ec"
+  },
+  "excerpts": {
+    "neighbor_cache_prior": {
+      "path": "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/uavs.py",
+      "first_line": 57,
+      "source": "def _get_belief_probability(file_id: int, neighbor_id: int, rank_map=None) -> float:\n    \"\"\"Returns the estimated probability P_{v,i} that a neighbor has file_i.\"\"\"\n    rank: int = (UE.id_to_rank_map if rank_map is None else rank_map)[file_id]\n    c_hat_v: float = config.UAV_STORAGE_CAPACITY[neighbor_id] / config.AVG_FILE_SIZE\n    exponent: float = config.PROB_GAMMA * (rank - c_hat_v)\n    probability: float = 1.0 / (1.0 + np.exp(exponent))\n    # \u8fd4\u56de\u7ed3\u679c\uff1a\u628a\u672c\u9636\u6bb5\u8ba1\u7b97\u51fa\u7684\u6307\u6807\u3001\u72b6\u6001\u6216\u5bf9\u8c61\u4ea4\u7ed9\u4e0a\u5c42\u6d41\u7a0b\u7ee7\u7eed\u4f7f\u7528\u3002\n    return probability\n"
+    },
+    "uav_initial_state": {
+      "path": "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/uavs.py",
+      "first_line": 94,
+      "source": "    def __init__(self, uav_id: int, rng=None, rank_map=None) -> None:\n        rng = np.random if rng is None else rng\n        self._rank_map = dict(UE.id_to_rank_map if rank_map is None else rank_map)\n        self.id: int = uav_id\n        min_bound: float = config.UAV_COVERAGE_RADIUS / 2.0\n        self.pos: np.ndarray = np.array(\n            [\n                rng.uniform(min_bound, config.AREA_WIDTH - min_bound),\n                rng.uniform(min_bound, config.AREA_HEIGHT - min_bound),\n                config.UAV_ALTITUDE,\n            ],\n            dtype=np.float32,\n        )\n\n        self._dist_moved: float = 0.0\n        self._current_covered_ues: list[UE] = []\n        self._neighbors: list[UAV] = []\n        self._current_service_request_count: int = 0\n        self._energy_current_slot: float = 0.0\n        self.collision_violation: bool = False\n        self.boundary_violation: bool = False\n\n        # Energy component instrumentation (ENV-R9)\n        self.flight_energy: float = 0.0\n        self.hover_energy: float = 0.0\n        self.wpt_energy: float = 0.0\n        self.service_compute_energy: float = 0.0\n        self.service_comm_energy: float = 0.0\n        self.service_fetch_or_backhaul_energy: float = 0.0\n        self.content_related_energy: float = 0.0\n\n        # Cache lifecycle (ENV-R5)\n        self.cache: np.ndarray = np.zeros(config.NUM_FILES, dtype=bool)\n        self.cache_snapshot: np.ndarray = np.zeros(config.NUM_FILES, dtype=bool)\n        self.pending_cache: set[int] = set()\n        self._working_cache: np.ndarray = np.zeros(config.NUM_FILES, dtype=bool)\n        self._freq_counts: np.ndarray = np.zeros(config.NUM_FILES, dtype=np.float32)\n        self._ema_scores: np.ndarray = np.zeros(config.NUM_FILES, dtype=np.float32)\n\n        # Per-step service-request statistics\n        self._service_request_count: int = 0\n        self._service_offload_local_count: int = 0\n        self._service_offload_cooperative_count: int = 0\n        self._service_offload_mbs_count: int = 0\n        self._service_learned_decision_count: int = 0\n        self._service_heuristic_decision_count: int = 0\n        self._service_fallback_count: int = 0\n        self._service_predict_exception_fallback_count: int = 0\n\n        self._uav_mbs_rate: float = 0.0\n        self.assignment_causal_energy: float = 0.0\n        policy_entry = self._get_service_offload_policy()\n        self._service_offload_policy = policy_entry[\"policy\"]\n        self._service_offload_policy_requested: str = str(policy_entry[\"requested_policy\"])\n        self._service_offload_policy_loaded: bool = bool(policy_entry[\"loaded\"])\n        self._service_offload_policy_checkpoint_path: str | None = (\n            str(policy_entry[\"checkpoint_path\"]) if policy_entry[\"checkpoint_path\"] is not None else None\n        )\n        self._service_offload_policy_feature_family: str | None = (\n            str(policy_entry[\"feature_family\"]) if policy_entry[\"feature_family\"] is not None else None\n        )\n        self._service_offload_policy_load_error: str | None = (\n            str(policy_entry[\"load_error\"]) if policy_entry[\"load_error\"] is not None else None\n        )\n"
+    },
+    "pending_cache_commit": {
+      "path": "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/uavs.py",
+      "first_line": 339,
+      "source": "    def commit_pending_cache(self) -> None:\n        \"\"\"Deterministically commit pending cache files at end of slot.\n        Priority: score = EMA / size descending, tie-breaker: file_id ascending.\n        \"\"\"\n        if not hasattr(self, \"pending_cache\") or not self.pending_cache:\n            return\n\n        def _candidate_key(fid: int):\n            score = float(self._ema_scores[fid]) / max(float(config.FILE_SIZES[fid]), float(config.EPSILON))\n            return (-score, fid)\n\n        sorted_pending = sorted(self.pending_cache, key=_candidate_key)\n        used_space = int(np.sum(self.cache * config.FILE_SIZES))\n        cap = int(config.UAV_STORAGE_CAPACITY[self.id])\n        for fid in sorted_pending:\n            if self.cache[fid]:\n                continue\n            fsize = int(config.FILE_SIZES[fid])\n            if used_space + fsize <= cap:\n                self.cache[fid] = True\n                used_space += fsize\n        self.pending_cache.clear()\n        self._working_cache = self.cache.copy()\n"
+    },
+    "periodic_cache_update": {
+      "path": "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/uavs.py",
+      "first_line": 984,
+      "source": "    def gdsf_cache_update(self) -> None:\n        \"\"\"Update cache using the GDSF caching policy at a longer timescale.\"\"\"\n        priority_scores: np.ndarray = self._ema_scores / np.maximum(config.FILE_SIZES, 1.0)\n        sorted_file_ids: np.ndarray = np.lexsort((np.arange(config.NUM_FILES), -priority_scores))\n        self.cache = np.zeros(config.NUM_FILES, dtype=bool)\n        used_space = 0.0\n        # \u5faa\u73af\u5904\u7406\uff1a\u904d\u5386 file_id \u5bf9\u5e94\u7684\u6570\u636e\u96c6\u5408\uff0c\u9010\u9879\u6267\u884c\u73af\u5883\u4ea4\u4e92\u3001\u8bad\u7ec3\u66f4\u65b0\u6216\u7ed3\u679c\u7edf\u8ba1\u3002\n        for file_id in sorted_file_ids:\n            file_size = config.FILE_SIZES[file_id]\n            # \u6761\u4ef6\u5206\u652f\uff1a\u6839\u636e\u5f53\u524d\u914d\u7f6e\u3001\u72b6\u6001\u6216\u8bc4\u4f30\u7ed3\u679c\u9009\u62e9\u4e0d\u540c\u5904\u7406\u8def\u5f84\u3002\n            if used_space + file_size <= config.UAV_STORAGE_CAPACITY[self.id]:\n                self.cache[file_id] = True\n                used_space += file_size\n            else:\n                break\n        self._working_cache = self.cache.copy()\n"
+    },
+    "popularity_initialization": {
+      "path": "/home/PengYanghan/Lunwen/batch-offload-20260928/source_launch_20260929/environment/user_equipments.py",
+      "first_line": 36,
+      "source": "    @classmethod\n    def initialize_ue_class(cls, rng=None) -> None:\n        rng = np.random if rng is None else rng\n        cls.all_ids = np.arange(config.NUM_FILES)  # Assume IDs 0 to NUM_SERVICES-1 are Services, rest are Contents\n        cls.global_ranks = np.arange(1, config.NUM_FILES + 1)\n        rng.shuffle(cls.global_ranks)  # Currently random ranks assigned\n        cls.id_to_rank_map = dict(zip(cls.all_ids, cls.global_ranks))  # Mapping from ID to rank\n        zipf_denom: float = np.sum(1 / cls.global_ranks**config.ZIPF_BETA)\n        cls.global_probs = (1 / cls.global_ranks**config.ZIPF_BETA) / zipf_denom\n\n        # \u6761\u4ef6\u5206\u652f\uff1a\u6839\u636e\u5f53\u524d\u914d\u7f6e\u3001\u72b6\u6001\u6216\u8bc4\u4f30\u7ed3\u679c\u9009\u62e9\u4e0d\u540c\u5904\u7406\u8def\u5f84\u3002\n        if getattr(config, \"USE_HOTSPOTS\", False):\n            cls.generate_hotspots(rng)\n"
+    },
+    "env_lifecycle_calls": [
+      {
+        "line": 59,
+        "text": "        UE.initialize_ue_class(self._rng)"
+      },
+      {
+        "line": 283,
+        "text": "            uav.update_ema_and_cache()"
+      },
+      {
+        "line": 285,
+        "text": "        if self._time_step % config.T_CACHE_UPDATE_INTERVAL == 0:"
+      },
+      {
+        "line": 287,
+        "text": "                uav.gdsf_cache_update()"
+      }
+    ]
+  },
+  "constants": {
+    "cache_update_interval": 50,
+    "probability_gamma": 0.5,
+    "average_file_size": 3046244.053333333
+  }
+}
