@@ -1,0 +1,60 @@
+{
+  "protocol": "batch_offload_pilot_20260928_v1",
+  "stage": "pilot",
+  "purpose": "pilot",
+  "training_seeds": [
+    620001,
+    620002,
+    620003,
+    620004,
+    620005
+  ],
+  "workload_seeds": [
+    720001,
+    720002,
+    720003,
+    720004,
+    720005
+  ],
+  "training_workload_seeds": {
+    "620001": 820001,
+    "620002": 820002,
+    "620003": 820003,
+    "620004": 820004,
+    "620005": 820005
+  },
+  "train_episodes": 200,
+  "eval_episodes": 6,
+  "steps": 1000,
+  "rollout": 1000,
+  "ppo_epochs": 8,
+  "batch_size": 256,
+  "checkpoint_every": 20,
+  "statistical_unit": "training seed after averaging paired workloads",
+  "candidate_method": "lower_mlp_upper_uncovered_obs",
+  "primary_comparators": [],
+  "promotion_gates": {
+    "minimum_dsr_difference": 0.01,
+    "minimum_positive_seeds": 4,
+    "maximum_energy_ratio": 1.05,
+    "maximum_policy_p95_seconds": 1.0,
+    "simplicity_tie": 0.005
+  },
+  "selected_lower_method": null,
+  "variants": [
+    {
+      "name": "main",
+      "ue_count": 100,
+      "compute_scale": 1.0,
+      "methods": [
+        "lower_mlp_upper_uncovered_obs",
+        "lower_batch_upper_uncovered_obs",
+        "lower_sequential_upper_uncovered_obs",
+        "vanilla_lower_mlp_upper_uncovered_obs"
+      ]
+    }
+  ],
+  "timing_contract": "policy_step_wall_cuda_synchronized_v1",
+  "checkpoint_selection": "final prespecified episode only",
+  "information_contract": "covered_plus_uncovered; unchanged radius, fields, mask and rewards"
+}

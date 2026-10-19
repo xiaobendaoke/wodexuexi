@@ -1,0 +1,35 @@
+test_new_budget_registration_is_limited_to_random_ten (test_sf_hlm_framework_evaluation.FrameworkAdapterContract.test_new_budget_registration_is_limited_to_random_ten) ... ok
+test_no_quota_actor_is_silently_used (test_sf_hlm_framework_evaluation.FrameworkAdapterContract.test_no_quota_actor_is_silently_used) ... ok
+test_primary_and_hgb_use_frozen_existing_kinds (test_sf_hlm_framework_evaluation.FrameworkAdapterContract.test_primary_and_hgb_use_frozen_existing_kinds) ... ok
+test_random_cap_and_exogenous_search_seed_are_matched (test_sf_hlm_framework_evaluation.FrameworkAdapterContract.test_random_cap_and_exogenous_search_seed_are_matched) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.085s
+
+OK
+
+No GPU available, using CPU.
+
+
+No GPU available, using CPU.
+
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_37b20fd2222b/scripts/analysis/sf_hlm_framework_evaluation.py", line 159, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_37b20fd2222b/scripts/analysis/sf_hlm_framework_evaluation.py", line 156, in main
+    else:adapter_smoke(a)
+         ^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_37b20fd2222b/scripts/analysis/sf_hlm_framework_evaluation.py", line 127, in adapter_smoke
+    alternate=CacheMatchingPolicy(rt,hgb,None,prices,prices['powers']);rt.clear();assignment,diagnostic,_=alternate.run(rows,num_uavs=5,kind=method)
+                                                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_37b20fd2222b/utils/sf_hlm_cache_matching.py", line 81, in run
+    parameters=self.prices['prices']['rerank' if rerank else variant]
+               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'prior'
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/framework_confirmation_20261018/adapter_r10_controller.py", line 4, in <module>
+    subprocess.run(command,check=True)
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/home/PengYanghan/miniconda3/envs/drone/bin/python', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_37b20fd2222b/scripts/analysis/sf_hlm_framework_evaluation.py', 'adapter-smoke', '--release-root', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_37b20fd2222b', '--foundation-release', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_confirmation_56089f0121e7', '--foundation-launch', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/framework_confirmation_20261018/smoke_launch_v1.json', '--calibration-root', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/framework_confirmation_20261018/calibration_v1', '--calibration-release', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_c4b228db3be7', '--results-root', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/framework_confirmation_20261018/smoke_v1/evaluation_r10', '--validation-root', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/framework_confirmation_20261018']' returned non-zero exit status 1.

@@ -1,0 +1,215 @@
+\section{核心术语与概念的操作性定义}
+\label{sec:ch2-core-terminology}
+
+为确保研究问题、方法设计和实验结果得到准确理解，本节对本文使用的若干核心术语给出操作性定义（operational definition）。操作性定义明确术语在本研究中的具体含义、测量方式或计算方法，使读者能够在相同条件下复现或验证相关结论。
+
+\subsection{自然覆盖接纳 (Natural Coverage-Based Admission)}
+\label{sec:ch2-term-natural-admission}
+
+\textbf{定义}：当且仅当服务请求产生时，发出该请求的 UE 位于至少一架 UAV 的物理服务半径 $R_{\mathrm{cov}}$ 内，该请求被系统\textbf{自然接纳}（admitted）；否则该请求不被接纳（not admitted）。
+
+\textbf{形式化表述}：设请求 $m$ 在时隙 $t$ 由 UE $i$ 产生，UE $i$ 的水平位置为 $\mathbf{w}_i(t)$，UAV $u$ 的水平位置为 $\mathbf{q}_u(t)$，高度为 $H$。定义三维距离
+\begin{equation}
+    d_{iu}(t) = \sqrt{\|\mathbf{w}_i(t) - \mathbf{q}_u(t)\|_2^2 + H^2}.
+    \label{eq:ch2-term-distance}
+\end{equation}
+则请求 $m$ 的接纳状态为
+\begin{equation}
+    \text{admitted}(m) =
+    \begin{cases}
+        \text{true}, & \text{if } \exists u \in \{1,\ldots,N\}: d_{iu}(t) \leq R_{\mathrm{cov}}, \\
+        \text{false}, & \text{otherwise}.
+    \end{cases}
+    \label{eq:ch2-term-admission}
+\end{equation}
+本文主场景采用 $R_{\mathrm{cov}} = 100\,\mathrm{m}$，$H = 100\,\mathrm{m}$。
+
+\textbf{"自然"的含义}：
+\begin{itemize}
+    \item \textbf{基于物理距离的自动接纳}：无需人工指定 UE--UAV 关联关系，系统根据几何条件自动确定哪些请求可被服务
+    \item \textbf{区别于强制关联}：某些文献采用预先分配的 UE--UAV 关联（如 Voronoi 划分或优化关联），所有 UE 的请求均被强制接纳；本文允许请求因覆盖外而不被接纳
+    \item \textbf{区别于主动申请}：UE 不需要发送关联请求并等待 UAV 批准，覆盖范围内的请求即刻进入服务流程
+\end{itemize}
+
+\textbf{与传统 MEC 术语的关系}：自然覆盖接纳对应传统蜂窝网络中的"接入"（access）环节，但强调空中平台位置可变性对接入机会的影响。本文使用"接纳"而非"关联"，是为了突出请求级别的服务接入，而非持续的设备级别连接。
+
+\subsection{端到端截止期满足率 (End-to-End Deadline Satisfaction Rate, DSR)}
+\label{sec:ch2-term-dsr}
+
+\textbf{定义}：在一个评估单元（evaluation unit）内，\textbf{端到端截止期满足率}（DSR）定义为在截止时间前完成的服务请求数量占实际生成服务请求总数的比例。
+
+\textbf{形式化表述}：设评估单元内实际生成的服务请求总数为 $G$（Generated），其中被自然接纳的请求数为 $A$（Admitted），在截止时间前成功完成的请求数为 $S$（Satisfied）。则
+\begin{equation}
+    \mathrm{DSR} = \frac{S}{G} = \frac{A}{G} \times \frac{S}{A} = \text{接纳率} \times \text{接纳后按时完成率},
+    \label{eq:ch2-term-dsr}
+\end{equation}
+其中 $0 \leq S \leq A \leq G$。当 $G = 0$ 或 $A = 0$ 时，相应比率不定义。
+
+\textbf{评估单元的选择}：
+\begin{itemize}
+    \item \textbf{单个回合}：一次完整的环境交互序列（如 1000 个时隙）
+    \item \textbf{训练块}：一个独立训练种子产生的模型，在多个评估回合上的性能
+    \item \textbf{工作负载}：一组共享外生随机流的配对评估
+\end{itemize}
+
+\textbf{与传统 QoS 指标的区别}：
+\begin{itemize}
+    \item \textbf{任务成功率}（Task Success Rate）：通常以\textbf{已接纳任务}为分母，不反映覆盖失败
+    \item \textbf{截止期违反率}（Deadline Violation Rate）：$1 - S/A$，仅评价已接纳请求的执行质量
+    \item \textbf{系统吞吐量}（System Throughput）：单位时间内完成的请求数或数据量，不体现截止期约束
+\end{itemize}
+
+本文选择 DSR 的理由：
+\begin{enumerate}
+    \item \textbf{端到端视角}：同时评价空间部署（影响 $A/G$）和执行质量（影响 $S/A$）
+    \item \textbf{请求级公平性}：每个请求等权计入分母，避免只服务少量易完成请求
+    \item \textbf{与应急场景对应}：应急服务需要最大化成功服务的请求比例，而非仅优化已连接设备的条件质量
+\end{enumerate}
+
+\textbf{分母的策略依赖性}：由于 UE 电池状态会影响实际生成服务请求与能量请求的类别，不同策略的 $G$ 可能有轻微差异（约 $\pm 0.1\%$）。本文以实际生成服务请求为主评价分母，并在第五章第 5.8.4 节进行固定潜在分母的敏感性分析。
+
+\subsection{配额 (Quota) 与分配 (Allocation)}
+\label{sec:ch2-term-quota-allocation}
+
+\textbf{配额（Quota）}：执行节点任务数向量，记为 $\mathbf{q} \in \mathbb{N}^{|\mathcal{J}|}$，其中 $q_j$ 表示节点 $j \in \mathcal{J}$ 被分配的请求数量。
+
+\textbf{形式化表述}：设当前时隙已接纳的服务请求集合为 $\mathcal{M}_t$，执行节点集合为 $\mathcal{J} = \{\text{UAV}_1, \ldots, \text{UAV}_N, \text{MBS}\}$。配额向量 $\mathbf{q} = (q_1, \ldots, q_{|\mathcal{J}|})$ 满足
+\begin{equation}
+    \sum_{j \in \mathcal{J}} q_j = |\mathcal{M}_t|, \quad q_j \in \mathbb{N}_{\geq 0}.
+    \label{eq:ch2-term-quota}
+\end{equation}
+
+\textbf{分配（Allocation）}：请求到执行节点的具体映射，记为二元矩阵 $\mathbf{a} \in \{0,1\}^{|\mathcal{M}_t| \times |\mathcal{J}|}$，其中 $a_{mj} = 1$ 表示请求 $m$ 被分配到节点 $j$。
+
+\textbf{形式化表述}：分配矩阵 $\mathbf{a}$ 满足
+\begin{equation}
+    \sum_{j \in \mathcal{J}} a_{mj} = 1, \quad \forall m \in \mathcal{M}_t \quad \text{（每个请求恰好分配到一个节点）},
+    \label{eq:ch2-term-allocation-row}
+\end{equation}
+\begin{equation}
+    \sum_{m \in \mathcal{M}_t} a_{mj} = q_j, \quad \forall j \in \mathcal{J} \quad \text{（节点任务数与配额一致）}.
+    \label{eq:ch2-term-allocation-col}
+\end{equation}
+
+\textbf{配额与分配的关系}：
+\begin{itemize}
+    \item \textbf{配额是分配的汇总}：给定分配 $\mathbf{a}$，可唯一确定配额 $\mathbf{q}$
+    \item \textbf{配额不唯一确定分配}：给定配额 $\mathbf{q}$，可能存在多个满足式~\eqref{eq:ch2-term-allocation-row}--\eqref{eq:ch2-term-allocation-col} 的分配 $\mathbf{a}$
+    \item \textbf{决策层次}：本文第五章 SF-HLM 框架首先学习配额迁移（改变 $\mathbf{q}$），然后由条件化指派确定具体分配（生成 $\mathbf{a}$）
+\end{itemize}
+
+\textbf{配额的作用}：
+\begin{enumerate}
+    \item \textbf{决定节点负载}：配额 $q_j$ 确定了节点 $j$ 的最终请求数，在批量算力均分模型下，每个请求的计算频率为 $f_{mj} = F_j / q_j$
+    \item \textbf{压缩动作空间}：配额向量的维度为 $|\mathcal{J}|$（通常为 6--7），远小于分配矩阵的维度 $|\mathcal{M}_t| \times |\mathcal{J}|$（可达数百）
+    \item \textbf{支持条件化优化}：固定配额后，最优分配可通过条件化指派（Assignment Problem）求解
+\end{enumerate}
+
+\textbf{与传统卸载术语的区别}：
+\begin{itemize}
+    \item \textbf{卸载决策}（Offloading Decision）：通常指单个请求的目标节点选择，对应本文的 $a_{mj}$
+    \item \textbf{负载均衡}（Load Balancing）：通常指使各节点负载接近，对应本文配额向量的分布特性
+    \item \textbf{配额搜索}（Quota Search）：本文特有术语，指在配额空间中搜索改进方向的学习过程
+\end{itemize}
+
+\subsection{需求感知 (Demand-Aware) 与预接纳观测 (Pre-Admission Observation)}
+\label{sec:ch2-term-demand-aware}
+
+\textbf{需求感知（Demand-Aware）}：策略的观测包含\textbf{未被当前覆盖的需求信息}，使轨迹决策能够依据潜在服务机会调整空间部署。
+
+\textbf{预接纳观测（Pre-Admission Observation）}：在物理服务半径 $R_{\mathrm{cov}}$ 之外、感知半径 $R_{\mathrm{sense}}$ 之内的 UE 及其请求特征，可被上层 Actor 观测但不被自然接纳。
+
+\textbf{形式化表述}：设 UAV $u$ 在时隙 $t$ 的位置为 $\mathbf{q}_u(t)$，UE $i$ 的位置为 $\mathbf{w}_i(t)$，三维距离为 $d_{iu}(t)$。定义
+\begin{equation}
+    \text{覆盖集合} \quad \mathcal{C}_u(t) = \{i : d_{iu}(t) \leq R_{\mathrm{cov}}\},
+    \label{eq:ch2-term-covered}
+\end{equation}
+\begin{equation}
+    \text{感知集合} \quad \mathcal{S}_u(t) = \{i : d_{iu}(t) \leq R_{\mathrm{sense}}\}.
+    \label{eq:ch2-term-sensed}
+\end{equation}
+预接纳观测对应集合差 $\mathcal{S}_u(t) \setminus \mathcal{C}_u(t)$ 中的 UE 特征（位置、电量、潜在请求等）。
+
+\textbf{本文配置}：$R_{\mathrm{cov}} = 100\,\mathrm{m}$，$R_{\mathrm{sense}} = 460\,\mathrm{m}$，使感知范围约为服务半径的 4.6 倍。
+
+\textbf{需求感知 vs. 覆盖优化}：
+\begin{itemize}
+    \item \textbf{传统覆盖优化}：通常以最大化覆盖面积或覆盖 UE 数为目标，假设所有 UE 位置已知
+    \item \textbf{需求感知}：强调未覆盖需求对轨迹决策的影响，使空间部署服务于\textbf{接纳率与截止期完成率的联合提升}
+\end{itemize}
+
+\textbf{信息条件的明确性}：
+\begin{enumerate}
+    \item 预接纳观测\textbf{不等于}全局信息：UAV 仍然只能观测感知范围内的 UE，范围外的需求不进入决策
+    \item 预接纳观测\textbf{不改变}物理接纳规则：$R_{\mathrm{sense}}$ 的扩大不会使 $R_{\mathrm{cov}}$ 之外的请求被接纳
+    \item 实际获取预接纳信息需要\textbf{上报机制}（如 UE 定期广播位置与电量），本文假设该信息可得，但未建模上报延迟与通信成本
+\end{enumerate}
+
+\textbf{第三章的研究问题}：在相同物理接纳规则（$R_{\mathrm{cov}} = 100\,\mathrm{m}$）下，扩展观测从"仅已覆盖 UE"到"感知范围内所有 UE"，对端到端 DSR 有何影响。
+
+\subsection{批量算力均分 (Batch-Shared Equal Computation)}
+\label{sec:ch2-term-batch-shared}
+
+\textbf{定义}：在一个时隙内，分配到同一执行节点的所有请求\textbf{平等均分}该节点的计算能力，每个请求获得的计算频率为节点总算力除以最终请求数。
+
+\textbf{形式化表述}：设节点 $j$ 的计算能力为 $F_j$（单位：周期/秒），该节点在当前时隙被分配的请求集合为 $\mathcal{M}_j \subseteq \mathcal{M}_t$，最终请求数为 $N_j = |\mathcal{M}_j|$。则每个请求 $m \in \mathcal{M}_j$ 获得的计算频率为
+\begin{equation}
+    f_{mj} = \frac{F_j}{N_j}, \quad \forall m \in \mathcal{M}_j.
+    \label{eq:ch2-term-batch-shared}
+\end{equation}
+
+\textbf{计算时延的计算}：请求 $m$ 的计算时延为
+\begin{equation}
+    T_m^{\mathrm{cmp}} = \frac{C_m}{f_{mj}} = \frac{C_m \cdot N_j}{F_j},
+    \label{eq:ch2-term-comp-delay}
+\end{equation}
+其中 $C_m = \omega_m L_m$ 为请求 $m$ 所需的 CPU 总周期。
+
+\textbf{批量外部影响}：迁移一个请求会改变\textbf{迁出节点和迁入节点上所有其他请求}的计算频率和完成时间，这称为\textbf{跨机资源竞争}或\textbf{批量外部影响}。
+
+\textbf{示例}：假设 UAV 1 初始有 3 个请求，UAV 2 有 1 个请求，$F_1 = F_2 = 60\,\mathrm{GHz}$。若将 UAV 1 的一个请求迁移到 UAV 2：
+\begin{itemize}
+    \item UAV 1 上剩余 2 个请求，每个获得 $60 / 2 = 30\,\mathrm{GHz}$（原为 $60 / 3 = 20\,\mathrm{GHz}$），计算时延\textbf{减少}
+    \item UAV 2 上变为 2 个请求，每个获得 $60 / 2 = 30\,\mathrm{GHz}$（原为 $60 / 1 = 60\,\mathrm{GHz}$），计算时延\textbf{增加}
+\end{itemize}
+
+\textbf{与其他资源模型的区别}：
+\begin{itemize}
+    \item \textbf{独占式}：每个请求获得节点全部算力直至完成，后续请求排队等待（本文未采用）
+    \item \textbf{优先级调度}：不同请求获得不同计算频率，高优先级任务优先完成（本文未采用）
+    \item \textbf{部分卸载}：单个请求可拆分到多个节点并行执行（本文未采用，请求不可拆分）
+\end{itemize}
+
+本文采用批量均分的理由：
+\begin{enumerate}
+    \item \textbf{简化模型}：避免引入额外的调度策略参数
+    \item \textbf{公平性}：所有请求平等共享资源，无需人工设定优先级
+    \item \textbf{突出批量影响}：使跨机迁移的外部效应清晰可见，便于分析 MC-ITR 的整体重评估必要性（第四章）
+\end{enumerate}
+
+\subsection{术语表总结}
+\label{sec:ch2-term-summary}
+
+表~\ref{tab:ch2-terminology} 汇总本文核心术语的简明定义与对应章节。
+
+\begin{table}[htbp]
+    \centering
+    \bicaption{核心术语操作性定义汇总}{Summary of operational definitions for core terminology}
+    \label{tab:ch2-terminology}
+    \small
+    \begin{tabularx}{\textwidth}{p{0.18\textwidth}Yp{0.12\textwidth}}
+        \toprule
+        术语 & 操作性定义 & 主要章节 \\
+        \midrule
+        自然覆盖接纳 & 请求产生时 UE 在任一 UAV 的 $R_{\mathrm{cov}}$ 内即被接纳 & 第三章 \\
+        端到端 DSR & $S/G$，按时完成请求数除以实际生成请求数 & 全文 \\
+        配额 & 节点任务数向量 $\mathbf{q} \in \mathbb{N}^{|\mathcal{J}|}$ & 第五章 \\
+        分配 & 请求-节点二元矩阵 $\mathbf{a} \in \{0,1\}^{|\mathcal{M}| \times |\mathcal{J}|}$ & 第四、五章 \\
+        需求感知 & 策略观测包含未覆盖需求信息 & 第三章 \\
+        预接纳观测 & $R_{\mathrm{sense}}$ 内但 $R_{\mathrm{cov}}$ 外的 UE 特征 & 第三章 \\
+        批量算力均分 & $f_{mj} = F_j / N_j$，同节点请求平等共享算力 & 第四、五章 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+这些操作性定义为理解本文的问题建模、方法设计和实验结果提供了明确的语义基础，也为后续研究提供了可对照的术语规范。

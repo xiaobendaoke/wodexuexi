@@ -1,0 +1,36 @@
+"""Report every fixed cheap-ranker result, including failed gates."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+def read(p):return json.loads(Path(p).read_text())
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+ap=argparse.ArgumentParser()
+for k in ('results','validation','report'):ap.add_argument('--'+k,type=Path,required=True)
+a=ap.parse_args();s=read(a.results/'analysis/summary.json');audit=read(a.validation/'raw_record_audit.json')
+assert audit['status']=='PASS' and audit['summary_sha256']==sha(a.results/'analysis/summary.json')
+lines=['**匹配前廉价动作排序：三个固定模型均未过开发闸门**','',
+    '400个复用开发状态、25个同时留块/留负载折、75个模型全部完成。输入限定128维公开统计、初始分配反馈与动作影响；候选匹配后的分配和实际执行结果只用于监督标签。每状态总训练权重为1。','',
+    '| 共同费用假设/ms | Ridge实际教师−G/pp | HGB实际教师−G/pp | HGB预测教师−G/pp | 同输入费用感知规则−G/pp |',
+    '|---:|---:|---:|---:|---:|']
+names=('ridge_actual','hgb_actual','hgb_predictor','rule_cost')
+for cost,value in s['subsets']['all'].items():
+    vals=[value['comparisons'][n+'-G']['mean']*100 for n in names]
+    lines.append(f"| {float(cost):g} | "+' | '.join(f'{v:+.3f}' for v in vals)+' |')
+lines+=['','主10 ms假设下的五训练块配对结果：','',
+    '| 方法相对G | 差/pp | 95% t区间/pp | 正向块 | 精确双侧符号翻转p |','|---|---:|---|---:|---:|']
+for name in names:
+    v=s['subsets']['all']['10.0']['comparisons'][name+'-G']
+    lines.append(f"| {name} | {v['mean']*100:+.3f} | [{v['ci95'][0]*100:+.3f}, {v['ci95'][1]*100:+.3f}] | {v['positive']}/5 | {v['exact_signflip_p']:.4f} |")
+lines+=['',
+    '三个学习候选均未达到相对G至少+0.5 pp且4/5块正向的乐观筛选要求；固定规则也低于目标。没有测量这三个排序器的完整原生费用，不晋级为实用方案。共同费用假设不能当作学习的真实费用或安全线。','',
+    '固定首折620001/780001另做无重拟合诊断：训练状态Ridge/HGB实际教师收益约+0.484/+0.393 pp，同集合经验择优约+1.924 pp；对应留出16状态收益0/+0.289 pp。仅此一折不足以诊断所有失败机制，但不支持仅把失败归于留出泛化。该诊断不改变主留出结果，也不以它调整本轮超参。','',
+    f"**自审。** 复算{audit['feature_rows']:,}行特征/实际和预测标签、权重及公开字段隔离，重构全部折身份；检查75个序列化模型全部留出推理，并重新拟合固定首折三个模型。全部块级原始计数、区间、符号翻转及闸门复算通过。这是主代理自审，不是独立代理评审。",'',
+    '统计单位是五个历史训练块；400状态、25交叉折、逐动作标签和四费用条件都不增加独立n。这里是复用开发数据上的固定探针负结果，不能推出所有学习模型或质量改进均无效。','',
+    '后续另行冻结少量付费匹配后的请求风险校准；当前结果、门槛和原确认不改写。全费用、新负载闭环与独立确认仍未完成，持续目标保持活跃。','',
+    '可复核文件：[冻结协议](../../../results/sf_hlm_learning_feasibility_20261016/ranker_20261017/development_v1/protocol.json)、[完整统计](../../../results/sf_hlm_learning_feasibility_20261016/ranker_20261017/development_v1/analysis/summary.json)、[全部留出选择](../../../results/sf_hlm_learning_feasibility_20261016/ranker_20261017/development_v1/analysis/predictions.json)、[固定首折诊断](../../../results/sf_hlm_learning_feasibility_20261016/ranker_20261017/development_v1/analysis/fit_diagnostic.json)、[复算验收](../validation/ranker_20261017/raw_record_audit.json)。','',
+    '布局检查保留既存根目录`修改总结报告.md`白名单问题；未修改该文件、白名单或论文。']
+a.report.parent.mkdir(parents=True,exist_ok=True);a.report.write_text('\n'.join(lines)+'\n')
+files=[a.results/'protocol.json',a.results/'analysis/summary.json',a.results/'analysis/predictions.json',a.validation/'raw_record_audit.json',a.report]
+out=dict(status='COMPLETED_AND_VALIDATED',states=400,models=75,goal_complete=False,decision=s['decision'],files={str(p):sha(p) for p in files})
+(a.validation/'completion.json').write_text(json.dumps(out,indent=2)+'\n');print(json.dumps(dict(status=out['status'],goal_complete=False)))

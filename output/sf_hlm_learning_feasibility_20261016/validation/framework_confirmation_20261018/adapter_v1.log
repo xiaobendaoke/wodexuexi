@@ -1,0 +1,44 @@
+test_no_quota_actor_is_silently_used (test_sf_hlm_framework_evaluation.FrameworkAdapterContract.test_no_quota_actor_is_silently_used) ... ok
+test_primary_and_hgb_use_frozen_existing_kinds (test_sf_hlm_framework_evaluation.FrameworkAdapterContract.test_primary_and_hgb_use_frozen_existing_kinds) ... ok
+test_random_cap_and_exogenous_search_seed_are_matched (test_sf_hlm_framework_evaluation.FrameworkAdapterContract.test_random_cap_and_exogenous_search_seed_are_matched) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.027s
+
+OK
+{"status": "CALIBRATED", "prices": {"binary": 0.0, "mixture": 0.0016477315429376078, "probability": 0.0835866719566673, "cold_prior": 0.0, "cold_half": 0.0}, "duplicates": 12000}
+
+No GPU available, using CPU.
+
+
+No GPU available, using CPU.
+
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_c4b228db3be7/scripts/analysis/sf_hlm_framework_evaluation.py", line 154, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_c4b228db3be7/scripts/analysis/sf_hlm_framework_evaluation.py", line 151, in main
+    else:adapter_smoke(a)
+         ^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_c4b228db3be7/scripts/analysis/sf_hlm_framework_evaluation.py", line 120, in adapter_smoke
+    left=rt.complete_policy(core,left_env,left_obs,job,models,None,runner);right=rt.complete_policy(core,right_env,right_obs,job,models,ForbiddenQuotaActor(),runner)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_c4b228db3be7/utils/sf_hlm_fast_runtime.py", line 151, in complete_policy
+    out=core.complete_policy(env,obs,spec,models,lower,runner)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/utils/sf_hlm_feasibility.py", line 123, in complete_policy
+    assignment, diagnostic, _ = truncated_search(rows, num_uavs=config.NUM_UAVS,
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_c4b228db3be7/utils/sf_hlm_priced_runtime.py", line 66, in run
+    if kind in ('random','learned'):return self.rt.truncated_search(rows,num_uavs=num_uavs,kind=kind,model=model,rng=rng,cap=cap,trace=trace)
+                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_c4b228db3be7/utils/sf_hlm_fast_runtime.py", line 130, in truncated_search
+    if cap not in (8,16) or kind not in ('learned','random','heuristic'):raise ValueError('Unregistered deployment search')
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: Unregistered deployment search
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/framework_confirmation_20261018/adapter_controller.py", line 4, in <module>
+    subprocess.run(command,check=True)
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/home/PengYanghan/miniconda3/envs/drone/bin/python', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_c4b228db3be7/scripts/analysis/sf_hlm_framework_evaluation.py', 'adapter-smoke', '--release-root', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_c4b228db3be7', '--foundation-release', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_confirmation_56089f0121e7', '--foundation-launch', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/framework_confirmation_20261018/smoke_launch_v1.json', '--calibration-root', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/framework_confirmation_20261018/calibration_v1', '--calibration-release', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/framework_evaluation_c4b228db3be7', '--results-root', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/framework_confirmation_20261018/smoke_v1/evaluation', '--validation-root', '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/framework_confirmation_20261018']' returned non-zero exit status 1.

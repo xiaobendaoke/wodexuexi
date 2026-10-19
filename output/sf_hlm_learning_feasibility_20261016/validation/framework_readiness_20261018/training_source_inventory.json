@@ -1,0 +1,276 @@
+{
+  "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/followup_release_20261002/scripts/analysis/sf_hlm_followup.py": {
+    "sha256": "fc2bb714f4f3e9af35d852149c7b8b105cbcd733abbbaaf633f90496246a88ee",
+    "definitions": [
+      {
+        "name": "read",
+        "line": 29
+      },
+      {
+        "name": "sha",
+        "line": 32
+      },
+      {
+        "name": "load",
+        "line": 39
+      },
+      {
+        "name": "runner",
+        "line": 44
+      },
+      {
+        "name": "initialize",
+        "line": 47
+      },
+      {
+        "name": "make_protocol",
+        "line": 56
+      },
+      {
+        "name": "folder",
+        "line": 107
+      },
+      {
+        "name": "receipt",
+        "line": 112
+      },
+      {
+        "name": "verified",
+        "line": 117
+      },
+      {
+        "name": "complete",
+        "line": 129
+      },
+      {
+        "name": "component_args",
+        "line": 134
+      },
+      {
+        "name": "component_protocol",
+        "line": 139
+      },
+      {
+        "name": "checkpoint_contract",
+        "line": 150
+      },
+      {
+        "name": "basis",
+        "line": 154
+      },
+      {
+        "name": "quota",
+        "line": 176
+      },
+      {
+        "name": "policy",
+        "line": 186
+      },
+      {
+        "name": "original_training",
+        "line": 199
+      },
+      {
+        "name": "residual_training",
+        "line": 251
+      },
+      {
+        "name": "evaluate",
+        "line": 302
+      },
+      {
+        "name": "snapshots",
+        "line": 336
+      },
+      {
+        "name": "foundation",
+        "line": 374
+      },
+      {
+        "name": "worker",
+        "line": 404
+      },
+      {
+        "name": "run",
+        "line": 443
+      },
+      {
+        "name": "aggregate",
+        "line": 481
+      },
+      {
+        "name": "snapshot_analysis",
+        "line": 530
+      },
+      {
+        "name": "split_audit",
+        "line": 552
+      },
+      {
+        "name": "confirmation_analysis",
+        "line": 579
+      },
+      {
+        "name": "pipeline",
+        "line": 600
+      },
+      {
+        "name": "main",
+        "line": 647
+      }
+    ],
+    "training_related": [
+      {
+        "line": 4,
+        "text": "lease; only independent episodes/blocks and frozen-policy search are parallel."
+      },
+      {
+        "line": 74,
+        "text": "        tasks += [['foundation_training','shared',b,upper_train[str(b)],-1]]"
+      },
+      {
+        "line": 87,
+        "text": "        steps=8 if smoke else 1000,original_adaptation_episodes=2 if smoke else 75,"
+      },
+      {
+        "line": 88,
+        "text": "        residual_episodes=2 if smoke else 50,foundation_episodes=2 if smoke else 200,"
+      },
+      {
+        "line": 89,
+        "text": "        dataset_episodes=1 if smoke else 25,lower_iterations=2 if smoke else 100,"
+      },
+      {
+        "line": 95,
+        "text": "        budgets=dict(environment_per_method=3 if smoke else 275,common_foundation=2 if smoke else 200,"
+      },
+      {
+        "line": 143,
+        "text": "        dataset_episodes=p['dataset_episodes'],dataset_steps=[0,4] if p['smoke'] else old['dataset_steps'],"
+      },
+      {
+        "line": 159,
+        "text": "        a=copy.copy(args);a.phase='foundation_training';a.method='shared';a.workload=p['training_workloads'][str(args.block)];a.episode=-1"
+      },
+      {
+        "line": 161,
+        "text": "        if sha(checkpoint/'contract.json')!=manifest['files'][str((checkpoint/'contract.json').relative_to(path))]:raise ValueError('Foundation checkpoint contract changed')"
+      },
+      {
+        "line": 219,
+        "text": "    for ep in range(start,p['original_adaptation_episodes']):"
+      },
+      {
+        "line": 239,
+        "text": "        r.res.atomic_json(path/'episodes'/f'{ep:05d}.json',dict(episode=ep,seed=seed,**totals,loss=loss,rho_dsr=rho_dsr,rho_mbs=rho_mbs,exogenous_trace_hash=trace.hexdigest(),action_trace_hash=actions_hash.hexdigest()))"
+      },
+      {
+        "line": 244,
+        "text": "        r.res.atomic_json(path/'progress.json',dict(episode=ep+1,episodes=p['original_adaptation_episodes'],pid=os.getpid()))"
+      },
+      {
+        "line": 247,
+        "text": "    receipt(r,path,contract,episodes=p['original_adaptation_episodes'],upper_fixed=True,initial_lower_fingerprint=initial_hash,"
+      },
+      {
+        "line": 273,
+        "text": "    for ep in range(start,p['residual_episodes']):"
+      },
+      {
+        "line": 290,
+        "text": "        r.res.atomic_json(path/'episodes'/f'{ep:05d}.json',dict(episode=ep,seed=seed,**totals,upper_loss=loss,"
+      },
+      {
+        "line": 295,
+        "text": "        r.res.atomic_json(path/'progress.json',dict(episode=ep+1,episodes=p['residual_episodes'],pid=os.getpid()))"
+      },
+      {
+        "line": 298,
+        "text": "    receipt(r,path,contract,episodes=p['residual_episodes'],initial_fingerprint=initial,lower_fixed=True,backbone_fixed=True,"
+      },
+      {
+        "line": 350,
+        "text": "    original=read(original_path/'episodes'/f'{args.episode:05d}.json')"
+      },
+      {
+        "line": 374,
+        "text": "def foundation(args,r,p,contract,lease):"
+      },
+      {
+        "line": 381,
+        "text": "        '--episodes',str(p['foundation_episodes']),'--steps',str(p['steps']),'--rollout',str(plan['rollout']),"
+      },
+      {
+        "line": 386,
+        "text": "    with (path/'foundation-child.lock').open('a+') as child_lock:"
+      },
+      {
+        "line": 388,
+        "text": "        except BlockingIOError:raise RuntimeError('Canonical foundation child is still running')"
+      },
+      {
+        "line": 389,
+        "text": "        already_done=(target/'latest.json').exists() and read(target/'latest.json')['completed_episodes']==p['foundation_episodes']"
+      },
+      {
+        "line": 393,
+        "text": "            if child.wait()!=0:raise RuntimeError('Canonical foundation training failed')"
+      },
+      {
+        "line": 395,
+        "text": "    if latest['completed_episodes']!=p['foundation_episodes']:raise ValueError('Common basis is incomplete')"
+      },
+      {
+        "line": 397,
+        "text": "    if lock['source_hash']!=p['source_hash']:raise ValueError('Foundation source differs')"
+      },
+      {
+        "line": 399,
+        "text": "        if sha(checkpoint/f)!=h:raise ValueError('Foundation final checkpoint changed')"
+      },
+      {
+        "line": 400,
+        "text": "    if {f.name for f in (target/'episodes').glob('*.json')}!={f'{e:05d}.json' for e in range(p['foundation_episodes'])}:raise ValueError('Foundation episodes are incomplete')"
+      },
+      {
+        "line": 401,
+        "text": "    receipt(r,path,contract,episodes=p['foundation_episodes'],shared_foundation=True)"
+      },
+      {
+        "line": 412,
+        "text": "    if args.phase.startswith('confirmation') or args.phase.startswith('component') or args.phase=='foundation_training':"
+      },
+      {
+        "line": 422,
+        "text": "            if args.phase=='foundation_training':foundation(args,r,p,contract,lease);return"
+      },
+      {
+        "line": 466,
+        "text": "            if t[0].endswith('training') and t[0]!='foundation_training':"
+      },
+      {
+        "line": 467,
+        "text": "                episodes=p['original_adaptation_episodes'] if t[0].endswith('original_training') else p['residual_episodes']"
+      },
+      {
+        "line": 468,
+        "text": "                if d['episodes']!=episodes or {f.name for f in (folder(a)/'episodes').glob('*.json')}!={f'{e:05d}.json' for e in range(episodes)}:raise ValueError('Training episodes are incomplete')"
+      },
+      {
+        "line": 476,
+        "text": "            a.method='bounded_feedback';first=read(folder(a)/'episodes/00000.json')"
+      },
+      {
+        "line": 477,
+        "text": "            a.method='bounded_zero';zero=read(folder(a)/'episodes/00000.json')"
+      },
+      {
+        "line": 633,
+        "text": "            run(args,r,p,['foundation_training'])"
+      }
+    ]
+  },
+  "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001/scripts/analysis/sf_hlm_v2.py": {
+    "exists": false
+  }
+}

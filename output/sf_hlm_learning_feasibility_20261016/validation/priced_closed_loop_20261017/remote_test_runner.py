@@ -1,0 +1,16 @@
+import os,json,unittest
+from pathlib import Path
+import sys
+sys.path[:0]=["/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/priced_closed_loop_a3e5f7128a06","/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/priced_runtime_58737342e164"]
+from scripts.analysis import sf_hlm_priced_closed_loop as c
+from argparse import Namespace
+a=Namespace(**{k:Path(v) for k,v in {"release_root":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/priced_closed_loop_a3e5f7128a06","feasibility_release":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3","parent_launch":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/parent_launch.json","old_training":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/calibrated_matching_20261017/training_v1","old_price_calibration":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/energy_price_20261017/calibration_v1","native_results":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/priced_runtime_20261017/logging_development_v2","native_validation":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/priced_runtime_20261017","fit_root":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/priced_closed_loop_20261017/final_fit_v1","smoke_results":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/priced_closed_loop_20261017/smoke_v1","results_root":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/results/sf_hlm_learning_feasibility_20261016/priced_closed_loop_20261017/smoke_v1","validation_root":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/priced_closed_loop_20261017","resource_module":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001/utils/sf_hlm_resources.py","resources":"/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/train_logs/resources"}.items()})
+old=a.validation_root/'remote_unit_tests.json'
+if old.exists():old.rename(a.validation_root/'remote_unit_tests_initial.json')
+res=c.resources(a)
+with res.CpuLease(a.resources,task=['priced_closed_loop_unit_tests'],kind='environment'):
+ c.archive(a).boot(a,620001);c.public_modules(a)
+ suite=unittest.defaultTestLoader.discover(str(a.release_root/'tests'),pattern='test_sf_hlm_*.py')
+ result=unittest.TextTestRunner(verbosity=1).run(suite)
+ c.write(a.validation_root/'remote_unit_tests.json',dict(status='PASS' if result.wasSuccessful() else 'FAIL',tests=result.testsRun,skipped=len(result.skipped),errors=len(result.errors),failures=len(result.failures),cpu=sorted(os.sched_getaffinity(0)),old_runtime_spec_test_support="/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/priced_runtime_58737342e164",initial_failure='test harness lacked archived specs module, no scientific algorithm failure'))
+ if not result.wasSuccessful():sys.exit(1)

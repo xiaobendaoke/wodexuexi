@@ -1,0 +1,13 @@
+--- upstream/sysuthesis.cls
++++ project/sysuthesis.cls
+@@ -1872,8 +1872,8 @@
+       \setCJKfamilyfont{zhli}{LiSu}
+       \providecommand\lishu{\CJKfamily{zhli}}
+     \else
+-      \sysu@warning{LiShu font is required}
+-      \providecommand\lishu{\sffamily}
++      % 本项目研究生封面未调用 \lishu；仅在实际使用时提示替代字体。
++      \providecommand\lishu{\sysu@warning{LiShu font is required}\sffamily}
+     \fi
+   \fi
+ \fi

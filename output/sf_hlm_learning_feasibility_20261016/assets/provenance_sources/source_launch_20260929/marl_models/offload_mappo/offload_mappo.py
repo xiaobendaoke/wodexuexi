@@ -1,0 +1,436 @@
+from __future__ import annotations
+
+import os
+from typing import Any
+
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.distributions import Categorical
+
+import config
+from marl_models.base_model import ExperienceBatch, MARLModel
+from marl_models.buffer_and_helpers import get_state_dict, layer_init, load_safe
+
+
+class OffloadActor(nn.Module):
+    def __init__(self, obs_dim: int, max_requests: int, num_actions: int) -> None:
+        super().__init__()
+        self.max_requests = max_requests
+        self.num_actions = num_actions
+        self.own_dim = 5
+        self.request_dim = config.OFFLOAD_REQUEST_FEATURE_DIM
+        expected_obs_dim = self.own_dim + self.max_requests * self.request_dim
+        if obs_dim != expected_obs_dim:
+            raise ValueError(f"Unexpected offload obs dim: {obs_dim} != {expected_obs_dim}")
+        hidden_dim = config.OFFLOAD_ATTN_HIDDEN_DIM
+
+        self.own_encoder = nn.Sequential(
+            layer_init(nn.Linear(self.own_dim, hidden_dim)),
+            nn.LayerNorm(hidden_dim),
+            nn.ReLU(),
+        )
+        self.request_encoder = nn.Sequential(
+            layer_init(nn.Linear(self.request_dim, hidden_dim)),
+            nn.LayerNorm(hidden_dim),
+            nn.ReLU(),
+        )
+        self.request_attention = nn.MultiheadAttention(
+            embed_dim=hidden_dim,
+            num_heads=config.OFFLOAD_ATTN_NUM_HEADS,
+            batch_first=True,
+        )
+        self.head = nn.Sequential(
+            layer_init(nn.Linear(hidden_dim * 3, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, num_actions), std=0.01),
+        )
+
+    def forward(self, obs: torch.Tensor, masks: torch.Tensor | None = None) -> torch.Tensor:
+        original_shape = obs.shape[:-1]
+        flat_obs = obs.reshape(-1, obs.shape[-1])
+        own_features = flat_obs[:, : self.own_dim]
+        request_features = flat_obs[:, self.own_dim :].reshape(-1, self.max_requests, self.request_dim)
+        request_valid = (torch.abs(request_features).sum(dim=-1) > 1.0e-6)
+
+        own_embedding = self.own_encoder(own_features)
+        request_embedding = self.request_encoder(request_features)
+        key_padding_mask = ~request_valid
+        all_padding = key_padding_mask.all(dim=1)
+        if torch.any(all_padding):
+            key_padding_mask = key_padding_mask.clone()
+            key_padding_mask[all_padding, 0] = False
+
+        request_context, _ = self.request_attention(
+            request_embedding,
+            request_embedding,
+            request_embedding,
+            key_padding_mask=key_padding_mask,
+            need_weights=False,
+        )
+        request_context = torch.nan_to_num(request_context, nan=0.0)
+        own_context = own_embedding.unsqueeze(1).expand(-1, self.max_requests, -1)
+        fused = torch.cat([request_embedding, request_context, own_context], dim=-1)
+        logits = self.head(fused).view(*original_shape, self.max_requests, self.num_actions)
+        if masks is not None:
+            logits = logits.masked_fill(masks <= 0.0, -1.0e9)
+        return logits
+
+    def extract_request_attention_weights(self, obs: torch.Tensor) -> dict[str, torch.Tensor]:
+        original_shape = obs.shape[:-1]
+        flat_obs = obs.reshape(-1, obs.shape[-1])
+        request_features = flat_obs[:, self.own_dim :].reshape(-1, self.max_requests, self.request_dim)
+        request_valid = (torch.abs(request_features).sum(dim=-1) > 1.0e-6)
+        request_embedding = self.request_encoder(request_features)
+        key_padding_mask = ~request_valid
+        all_padding = key_padding_mask.all(dim=1)
+        if torch.any(all_padding):
+            key_padding_mask = key_padding_mask.clone()
+            key_padding_mask[all_padding, 0] = False
+        _, weights = self.request_attention(
+            request_embedding,
+            request_embedding,
+            request_embedding,
+            key_padding_mask=key_padding_mask,
+            need_weights=True,
+            average_attn_weights=False,
+        )
+        weights = torch.nan_to_num(weights, nan=0.0)
+        return {
+            "request_weights": weights.view(*original_shape, weights.shape[-3], weights.shape[-2], weights.shape[-1]),
+            "request_mask": request_valid.view(*original_shape, self.max_requests),
+            "request_states": request_features.view(*original_shape, self.max_requests, self.request_dim),
+        }
+
+
+class OffloadCritic(nn.Module):
+    def __init__(self, obs_dim: int) -> None:
+        super().__init__()
+        hidden_dim = config.OFFLOAD_ATTN_HIDDEN_DIM
+        self.encoder = nn.Sequential(
+            layer_init(nn.Linear(obs_dim, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, hidden_dim)),
+            nn.LayerNorm(hidden_dim),
+            nn.ReLU(),
+        )
+        self.attn = nn.MultiheadAttention(
+            embed_dim=hidden_dim,
+            num_heads=config.OFFLOAD_ATTN_NUM_HEADS,
+            batch_first=True,
+        )
+        self.value = nn.Sequential(
+            layer_init(nn.Linear(hidden_dim * 2, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, 1), std=1.0),
+        )
+
+    def forward(self, obs: torch.Tensor) -> torch.Tensor:
+        emb = self.encoder(obs)
+        context, _ = self.attn(emb, emb, emb, need_weights=False)
+        fused = torch.cat([emb, context], dim=-1)
+        return self.value(fused).squeeze(-1)
+
+
+class OffloadMLPActor(nn.Module):
+    def __init__(self, obs_dim: int, max_requests: int, num_actions: int) -> None:
+        super().__init__()
+        self.max_requests = max_requests
+        self.num_actions = num_actions
+        self.own_dim = 5
+        self.request_dim = config.OFFLOAD_REQUEST_FEATURE_DIM
+        expected_obs_dim = self.own_dim + self.max_requests * self.request_dim
+        if obs_dim != expected_obs_dim:
+            raise ValueError(f"Unexpected offload obs dim: {obs_dim} != {expected_obs_dim}")
+
+        self.net = nn.Sequential(
+            layer_init(nn.Linear(self.own_dim + self.request_dim, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, num_actions), std=0.01),
+        )
+
+    def forward(self, obs: torch.Tensor, masks: torch.Tensor | None = None) -> torch.Tensor:
+        original_shape = obs.shape[:-1]
+        flat_obs = obs.reshape(-1, obs.shape[-1])
+        own_features = flat_obs[:, : self.own_dim]
+        request_features = flat_obs[:, self.own_dim :].reshape(-1, self.max_requests, self.request_dim)
+        own_context = own_features.unsqueeze(1).expand(-1, self.max_requests, -1)
+        fused = torch.cat([own_context, request_features], dim=-1)
+        logits = self.net(fused).view(*original_shape, self.max_requests, self.num_actions)
+        if masks is not None:
+            logits = logits.masked_fill(masks <= 0.0, -1.0e9)
+        return logits
+
+
+class BatchOffloadActor(nn.Module):
+    """Local batch summary and optional causal prefix; no environment access.
+
+    Prefix channels count only THIS UAV's prior assignments. They are not a
+    prediction of fleet-final load. B and C have exactly matching parameters.
+    """
+    def __init__(self, obs_dim, max_requests, num_actions, *, sequential=False):
+        super().__init__()
+        self.max_requests, self.num_actions = max_requests, num_actions
+        self.request_dim = config.OFFLOAD_REQUEST_FEATURE_DIM
+        self.sequential = sequential
+        if obs_dim != 5 + max_requests * self.request_dim:
+            raise ValueError("Unexpected batch offload observation dimension")
+        width = 5 + 2 * self.request_dim + 1 + 2 * num_actions
+        self.net = nn.Sequential(
+            layer_init(nn.Linear(width, config.MLP_HIDDEN_DIM)), nn.LayerNorm(config.MLP_HIDDEN_DIM), nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, config.MLP_HIDDEN_DIM)), nn.LayerNorm(config.MLP_HIDDEN_DIM), nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, num_actions), std=0.01))
+
+    def decide(self, obs, masks, *, exploration=True, actions=None):
+        leading = obs.shape[:-1]
+        flat = obs.reshape(-1, obs.shape[-1])
+        req = flat[:, 5:].reshape(-1, self.max_requests, self.request_dim)
+        mask = masks.reshape(-1, self.max_requests, self.num_actions) > 0
+        valid = (req[..., 0] > 0) & mask.any(dim=-1)
+        clean = torch.where(valid[..., None], req, torch.zeros_like(req))
+        number = valid.sum(-1, keepdim=True)
+        summary = clean.sum(1) / number.clamp_min(1)
+        fraction = number.to(obs.dtype) / self.max_requests
+        prefix_count = flat.new_zeros((len(flat), self.num_actions))
+        prefix_size = torch.zeros_like(prefix_count)
+        teacher = None if actions is None else actions.reshape(-1, self.max_requests)
+        if teacher is not None and teacher.shape != valid.shape:
+            raise ValueError("Teacher action shape mismatch")
+        chosen, logps, entropies = [], [], []
+        for i in range(self.max_requests):
+            context = torch.cat((flat[:, :5], clean[:, i], summary, fraction,
+                                 prefix_count / self.max_requests, prefix_size / self.max_requests), -1)
+            logits = self.net(context)
+            # Empty slots use a harmless distribution and contribute no gradient.
+            legal = mask[:, i] | ~valid[:, i, None]
+            logits = logits.masked_fill(~legal, -1e9)
+            dist = Categorical(logits=logits)
+            action = (dist.sample() if exploration else logits.argmax(-1)) if teacher is None else teacher[:, i]
+            action = torch.where(valid[:, i], action, torch.zeros_like(action))
+            if teacher is not None:
+                if ((action < 0) | (action >= self.num_actions)).any():
+                    raise ValueError("Teacher action out of range")
+                if not legal.gather(1, action[:, None]).all():
+                    raise ValueError("Teacher action is masked")
+            chosen.append(action)
+            logps.append(dist.log_prob(action) * valid[:, i])
+            entropies.append(dist.entropy() * valid[:, i])
+            if self.sequential:
+                weight = valid[:, i].to(obs.dtype)[:, None]
+                prefix_count = prefix_count.scatter_add(1, action[:, None], weight)
+                prefix_size = prefix_size.scatter_add(1, action[:, None], clean[:, i, 1:2] * weight)
+        return (torch.stack(chosen, -1).reshape(*leading, self.max_requests),
+                torch.stack(logps, -1).sum(-1).reshape(leading),
+                torch.stack(entropies, -1).sum(-1).reshape(leading))
+
+
+class OffloadMLPCritic(nn.Module):
+    def __init__(self, obs_dim: int) -> None:
+        super().__init__()
+        self.value = nn.Sequential(
+            layer_init(nn.Linear(obs_dim, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, config.MLP_HIDDEN_DIM)),
+            nn.LayerNorm(config.MLP_HIDDEN_DIM),
+            nn.ReLU(),
+            layer_init(nn.Linear(config.MLP_HIDDEN_DIM, 1), std=1.0),
+        )
+
+    def forward(self, obs: torch.Tensor) -> torch.Tensor:
+        return self.value(obs).squeeze(-1)
+
+
+class OffloadMAPPO(MARLModel):
+    """Discrete lower-layer MAPPO for request-level service offloading."""
+
+    def __init__(
+        self,
+        model_name: str,
+        num_agents: int,
+        obs_dim: int,
+        action_dim: int,
+        device: str,
+        max_requests: int | None = None,
+        num_actions: int | None = None,
+    ) -> None:
+        super().__init__(model_name, num_agents, obs_dim, action_dim, device)
+        self.max_requests = int(max_requests or config.MAX_OFFLOAD_REQUESTS_PER_UAV)
+        self.num_actions = int(num_actions or config.OFFLOAD_NUM_ACTIONS)
+        both_attention = bool(getattr(config, "OFFLOAD_USE_ATTENTION", True))
+        architecture = {
+            "no_attention_offload_mappo": (False, False),
+            "batch_offload_mappo": (False, False),
+            "sequential_offload_mappo": (False, False),
+            "actor_attention_only_offload_mappo": (True, False),
+            "critic_attention_only_offload_mappo": (False, True),
+        }
+        self.actor_attention, self.critic_attention = architecture.get(
+            model_name, (both_attention, both_attention)
+        )
+        self.use_attention = self.actor_attention  # historical actor-attention inspection API
+        actor_type = OffloadActor if self.actor_attention else OffloadMLPActor
+        critic_type = OffloadCritic if self.critic_attention else OffloadMLPCritic
+        self.batch_coordination = model_name in {"batch_offload_mappo", "sequential_offload_mappo"}
+        self.probability_contract = ("conditional_joint_sum_v1" if model_name == "sequential_offload_mappo"
+                                     else "batch_joint_sum_v1" if self.batch_coordination else "joint_sum_v1")
+        self.actor = (BatchOffloadActor(obs_dim, self.max_requests, self.num_actions,
+                      sequential=model_name == "sequential_offload_mappo") if self.batch_coordination
+                      else actor_type(obs_dim, self.max_requests, self.num_actions)).to(device)
+        self.critic = critic_type(obs_dim).to(device)
+        self.actor_optimizer = torch.optim.Adam(self.actor.parameters(), lr=config.ACTOR_LR)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=config.CRITIC_LR)
+
+    def select_actions(self, observations: np.ndarray, exploration: bool) -> np.ndarray:
+        masks = np.ones((self.num_agents, self.max_requests, self.num_actions), dtype=np.float32)
+        actions, _, _ = self.get_action_and_value(observations, masks=masks, exploration=exploration)
+        return actions
+
+    def get_action_and_value(
+        self,
+        obs: np.ndarray,
+        state: np.ndarray | None = None,
+        masks: np.ndarray | None = None,
+        exploration: bool = True,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        del state
+        obs_tensor = torch.from_numpy(obs).float().to(self.device)
+        if masks is None:
+            masks_tensor = torch.ones(
+                (obs_tensor.shape[0], self.max_requests, self.num_actions),
+                dtype=torch.float32,
+                device=self.device,
+            )
+        else:
+            masks_tensor = torch.from_numpy(masks).float().to(self.device)
+        with torch.no_grad():
+            if self.batch_coordination:
+                actions, log_probs, _ = self.actor.decide(obs_tensor, masks_tensor, exploration=exploration)
+                values = self.critic(obs_tensor.unsqueeze(0)).squeeze(0)
+                return actions.cpu().numpy(), log_probs.cpu().numpy(), values.cpu().numpy()
+            logits = self.actor(obs_tensor, masks_tensor)
+            dist = Categorical(logits=logits)
+            if exploration:
+                actions = dist.sample()
+            else:
+                actions = torch.argmax(logits, dim=-1)
+            slot_valid = (masks_tensor.sum(dim=-1) > 0.0).float()
+            action_log_probs = dist.log_prob(actions) * slot_valid
+            log_probs = action_log_probs.sum(dim=-1)
+            actions = torch.where(slot_valid.bool(), actions, torch.zeros_like(actions))
+            values = self.critic(obs_tensor.unsqueeze(0)).squeeze(0)
+        return actions.cpu().numpy(), log_probs.cpu().numpy(), values.cpu().numpy()
+
+    def extract_request_attention_weights(self, observations: np.ndarray) -> dict[str, np.ndarray]:
+        if not self.use_attention or not hasattr(self.actor, "extract_request_attention_weights"):
+            return {}
+        with torch.no_grad():
+            obs_tensor = torch.from_numpy(observations).float().to(self.device)
+            weights = self.actor.extract_request_attention_weights(obs_tensor)
+        return {key: value.detach().cpu().numpy() for key, value in weights.items()}
+
+    def update(self, batch: ExperienceBatch) -> dict[str, float]:
+        assert isinstance(batch, dict), "OffloadMAPPO expects an on-policy dict batch"
+        obs_batch: torch.Tensor = batch["obs"]
+        actions_batch: torch.Tensor = batch["actions"].long()
+        masks_batch: torch.Tensor = batch["masks"]
+        valid_slots: torch.Tensor = batch["valid_slots"]
+        old_log_probs: torch.Tensor = batch["old_log_probs"]
+        advantages: torch.Tensor = batch["advantages"]
+        returns: torch.Tensor = batch["returns"]
+        old_values: torch.Tensor = batch["old_values"]
+
+        values = self.critic(obs_batch)
+        values_clipped = old_values + torch.clamp(values - old_values, -config.PPO_CLIP_EPS, config.PPO_CLIP_EPS)
+        value_loss_1 = (values - returns).pow(2)
+        value_loss_2 = (values_clipped - returns).pow(2)
+        critic_loss = 0.5 * torch.max(value_loss_1, value_loss_2).mean()
+
+        self.critic_optimizer.zero_grad(set_to_none=True)
+        critic_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.critic.parameters(), config.MAX_GRAD_NORM)
+        self.critic_optimizer.step()
+
+        if self.batch_coordination:
+            _, new_log_probs, entropy = self.actor.decide(obs_batch, masks_batch, actions=actions_batch)
+        else:
+            logits = self.actor(obs_batch, masks_batch)
+            dist = Categorical(logits=logits)
+            slot_log_probs = dist.log_prob(actions_batch) * valid_slots
+            new_log_probs = slot_log_probs.sum(dim=-1)
+            entropy = (dist.entropy() * valid_slots).sum(dim=-1)
+        active = valid_slots.sum(dim=-1) > 0
+
+        ratio = torch.exp((new_log_probs - old_log_probs).double())
+        if not torch.isfinite(ratio).all():
+            raise FloatingPointError("Non-finite joint lower PPO ratio")
+        surr1 = ratio * advantages
+        surr2 = torch.clamp(ratio, 1.0 - config.PPO_CLIP_EPS, 1.0 + config.PPO_CLIP_EPS) * advantages
+        actor_loss = (-(torch.min(surr1, surr2)[active]).mean()
+                      - config.PPO_ENTROPY_COEF * entropy[active].mean()) if active.any() else new_log_probs.sum() * 0.0
+
+        self.actor_optimizer.zero_grad(set_to_none=True)
+        if active.any():
+            actor_loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.actor.parameters(), config.MAX_GRAD_NORM, error_if_nonfinite=True)
+            self.actor_optimizer.step()
+
+        return {
+            "actor": float(actor_loss.item()),
+            "critic": float(critic_loss.item()),
+            "entropy": float(entropy[active].mean().item()) if active.any() else 0.0,
+            "ratio_mean": float(ratio[active].mean().item()) if active.any() else 1.0,
+        }
+
+    def reset(self) -> None:
+        pass
+
+    def save(self, directory: str) -> None:
+        torch.save(
+            {
+                "actor": get_state_dict(self.actor),
+                "critic": get_state_dict(self.critic),
+                "actor_optimizer": self.actor_optimizer.state_dict(),
+                "critic_optimizer": self.critic_optimizer.state_dict(),
+                "metadata": {
+                    "probability_contract": self.probability_contract,
+                    "environment_semantics": config.ENV_SEMANTICS_VERSION,
+                    "max_requests": self.max_requests,
+                    "num_actions": self.num_actions,
+                    "obs_dim": self.obs_dim,
+                    "constrained_attention_actor": self.actor_attention,
+                    "lower_actor_attention": self.actor_attention,
+                    "lower_critic_attention": self.critic_attention,
+                },
+            },
+            os.path.join(directory, "offload_mappo.pth"),
+        )
+
+    def load(self, directory: str) -> None:
+        path = os.path.join(directory, "offload_mappo.pth")
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Model file not found: {path}")
+        checkpoint: dict[str, Any] = torch.load(path, map_location=self.device, weights_only=True)
+        metadata = checkpoint.get("metadata", {})
+        if (metadata.get("probability_contract") != self.probability_contract
+                or metadata.get("environment_semantics") != config.ENV_SEMANTICS_VERSION
+                or metadata.get("max_requests") != self.max_requests
+                or metadata.get("obs_dim") != self.obs_dim
+                or metadata.get("num_actions") != self.num_actions
+                or metadata.get("lower_actor_attention", metadata.get("constrained_attention_actor"))
+                != self.actor_attention
+                or metadata.get("lower_critic_attention", metadata.get("constrained_attention_actor"))
+                != self.critic_attention):
+            raise ValueError("Incompatible or historical lower checkpoint; retrain under canonical semantics")
+        load_safe(self.actor, checkpoint["actor"])
+        load_safe(self.critic, checkpoint["critic"])
+        self.actor_optimizer.load_state_dict(checkpoint["actor_optimizer"])
+        self.critic_optimizer.load_state_dict(checkpoint["critic_optimizer"])

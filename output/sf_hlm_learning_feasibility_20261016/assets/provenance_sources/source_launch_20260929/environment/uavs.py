@@ -1,0 +1,1020 @@
+"""
+中文注释说明：environment/uavs.py
+
+文件作用：
+    定义无人机实体的状态、移动、电量、计算资源和服务缓存等行为。
+
+整体流程：
+    1. 读取全局配置、命令行参数或上游传入对象，准备实验所需的环境、模型与数据。
+    2. 按本文件职责执行仿真、训练、评估、绘图或结果汇总等核心步骤。
+    3. 将关键指标、模型参数或报告写入统一结果目录，便于论文实验复现和对比。
+
+关键变量与对象：
+    - UAV: 无人机对象，包含位置、电量、计算资源和缓存服务。
+    - _get_belief_probability(): 关键函数，承载本模块的一段可复用实验逻辑。
+    - _get_computing_latency_and_energy(): 执行、移动或通信过程产生的能耗。
+    - _try_add_file_to_cache(): 关键函数，承载本模块的一段可复用实验逻辑。
+
+主要依赖：
+    collections, pathlib, typing, numpy, warnings, config, environment, marl_models
+
+注意事项：
+    本文件新增的是解释性中文注释，不改变原有算法、参数默认值或文件读写路径。
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable
+from pathlib import Path
+from typing import Any
+import numpy as np
+import warnings
+
+import config
+from environment import comm_model as comms
+from environment.request_types import Request
+from environment.user_equipments import UE
+from marl_models.offload_policy import (
+    OFFLOAD_TARGET_COOPERATIVE,
+    OFFLOAD_TARGET_LOCAL,
+    OFFLOAD_TARGET_MBS,
+    ServiceOffloadContext,
+    build_offload_policy,
+)
+
+
+def _tx_latency_bytes(size_bytes: float, rate_bps: float) -> float:
+    """Return transmission latency for a byte-sized payload over a bit/s link."""
+    return float(size_bytes) * float(config.BITS_PER_BYTE) / max(float(rate_bps), float(config.EPSILON))
+
+
+def _comm_energy(power_watts: float, duration_seconds: float) -> float:
+    """Return communication energy in Joules for a link active during duration_seconds."""
+    return float(power_watts) * max(float(duration_seconds), 0.0)
+
+
+# 函数 _get_belief_probability：关键函数，承载本模块的一段可复用实验逻辑，主要参数：file_id, neighbor_id。
+def _get_belief_probability(file_id: int, neighbor_id: int, rank_map=None) -> float:
+    """Returns the estimated probability P_{v,i} that a neighbor has file_i."""
+    rank: int = (UE.id_to_rank_map if rank_map is None else rank_map)[file_id]
+    c_hat_v: float = config.UAV_STORAGE_CAPACITY[neighbor_id] / config.AVG_FILE_SIZE
+    exponent: float = config.PROB_GAMMA * (rank - c_hat_v)
+    probability: float = 1.0 / (1.0 + np.exp(exponent))
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+    return probability
+
+
+# 函数 _get_computing_latency_and_energy：执行、移动或通信过程产生的能耗，主要参数：uav, cpu_cycles。
+def _get_computing_latency_and_energy(uav: "UAV", cpu_cycles: float) -> tuple[float, float]:
+    """Calculate computing latency and energy for a UAV processing request."""
+    assert uav._current_service_request_count > 0
+    computing_capacity_per_request: float = config.UAV_COMPUTING_CAPACITY[uav.id] / uav._current_service_request_count
+    latency: float = cpu_cycles / computing_capacity_per_request
+    energy: float = config.K_CPU * cpu_cycles * (computing_capacity_per_request**2)
+    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+    return latency, energy
+
+
+# 函数 _try_add_file_to_cache：关键函数，承载本模块的一段可复用实验逻辑，主要参数：uav, file_id。
+def _try_add_file_to_cache(uav: "UAV", file_id: int) -> None:
+    """Register file fetch in uav's pending cache.
+    Actual admission is evaluated deterministically at end of slot in commit_pending_cache().
+    """
+    if hasattr(uav, "pending_cache"):
+        uav.pending_cache.add(int(file_id))
+    if hasattr(uav, "_working_cache") and int(file_id) < len(uav._working_cache):
+        uav._working_cache[file_id] = True
+
+
+# 类 UAV：无人机对象，包含位置、电量、计算资源和缓存服务。
+class UAV:
+    _policy_cache: dict[tuple[str, str | None, float | None], dict[str, object | None]] = {}
+
+    # 函数 __init__：关键函数，承载本模块的一段可复用实验逻辑，主要参数：uav_id。
+    def __init__(self, uav_id: int, rng=None, rank_map=None) -> None:
+        rng = np.random if rng is None else rng
+        self._rank_map = dict(UE.id_to_rank_map if rank_map is None else rank_map)
+        self.id: int = uav_id
+        min_bound: float = config.UAV_COVERAGE_RADIUS / 2.0
+        self.pos: np.ndarray = np.array(
+            [
+                rng.uniform(min_bound, config.AREA_WIDTH - min_bound),
+                rng.uniform(min_bound, config.AREA_HEIGHT - min_bound),
+                config.UAV_ALTITUDE,
+            ],
+            dtype=np.float32,
+        )
+
+        self._dist_moved: float = 0.0
+        self._current_covered_ues: list[UE] = []
+        self._neighbors: list[UAV] = []
+        self._current_service_request_count: int = 0
+        self._energy_current_slot: float = 0.0
+        self.collision_violation: bool = False
+        self.boundary_violation: bool = False
+
+        # Energy component instrumentation (ENV-R9)
+        self.flight_energy: float = 0.0
+        self.hover_energy: float = 0.0
+        self.wpt_energy: float = 0.0
+        self.service_compute_energy: float = 0.0
+        self.service_comm_energy: float = 0.0
+        self.service_fetch_or_backhaul_energy: float = 0.0
+        self.content_related_energy: float = 0.0
+
+        # Cache lifecycle (ENV-R5)
+        self.cache: np.ndarray = np.zeros(config.NUM_FILES, dtype=bool)
+        self.cache_snapshot: np.ndarray = np.zeros(config.NUM_FILES, dtype=bool)
+        self.pending_cache: set[int] = set()
+        self._working_cache: np.ndarray = np.zeros(config.NUM_FILES, dtype=bool)
+        self._freq_counts: np.ndarray = np.zeros(config.NUM_FILES, dtype=np.float32)
+        self._ema_scores: np.ndarray = np.zeros(config.NUM_FILES, dtype=np.float32)
+
+        # Per-step service-request statistics
+        self._service_request_count: int = 0
+        self._service_offload_local_count: int = 0
+        self._service_offload_cooperative_count: int = 0
+        self._service_offload_mbs_count: int = 0
+        self._service_learned_decision_count: int = 0
+        self._service_heuristic_decision_count: int = 0
+        self._service_fallback_count: int = 0
+        self._service_predict_exception_fallback_count: int = 0
+
+        self._uav_mbs_rate: float = 0.0
+        self.assignment_causal_energy: float = 0.0
+        policy_entry = self._get_service_offload_policy()
+        self._service_offload_policy = policy_entry["policy"]
+        self._service_offload_policy_requested: str = str(policy_entry["requested_policy"])
+        self._service_offload_policy_loaded: bool = bool(policy_entry["loaded"])
+        self._service_offload_policy_checkpoint_path: str | None = (
+            str(policy_entry["checkpoint_path"]) if policy_entry["checkpoint_path"] is not None else None
+        )
+        self._service_offload_policy_feature_family: str | None = (
+            str(policy_entry["feature_family"]) if policy_entry["feature_family"] is not None else None
+        )
+        self._service_offload_policy_load_error: str | None = (
+            str(policy_entry["load_error"]) if policy_entry["load_error"] is not None else None
+        )
+
+    # 函数 _get_service_offload_policy：关键函数，承载本模块的一段可复用实验逻辑，主要参数：cls。
+    @classmethod
+    def _get_service_offload_policy(cls) -> dict[str, object | None]:
+        policy_name: str = getattr(config, "SERVICE_OFFLOAD_POLICY", "heuristic")
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if policy_name == "heuristic":
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+            return {
+                "policy": None,
+                "requested_policy": policy_name,
+                "loaded": False,
+                "checkpoint_path": None,
+                "feature_family": None,
+                "load_error": None,
+            }
+        checkpoint_path: str | None = getattr(config, "SERVICE_OFFLOAD_POLICY_CHECKPOINT", None)
+        resolved_checkpoint_path: str | None = None
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if checkpoint_path is not None:
+            resolved_checkpoint_path = str(Path(checkpoint_path).expanduser().resolve())
+        checkpoint_mtime: float | None = None
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if checkpoint_path is not None:
+            checkpoint_file = Path(checkpoint_path)
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+            if checkpoint_file.exists():
+                checkpoint_mtime = checkpoint_file.stat().st_mtime
+        cache_key: tuple[str, str | None, float | None] = (policy_name, checkpoint_path, checkpoint_mtime)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if cache_key not in cls._policy_cache:
+            # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
+            try:
+                policy = build_offload_policy(policy_name, checkpoint_path=checkpoint_path)
+                checkpoint_used: str | None = resolved_checkpoint_path or str(getattr(policy, "checkpoint_path", checkpoint_path))
+                feature_family: str | None = str(getattr(policy, "feature_family", None))
+                cls._policy_cache[cache_key] = {
+                    "policy": policy,
+                    "requested_policy": policy_name,
+                    "loaded": True,
+                    "checkpoint_path": checkpoint_used,
+                    "feature_family": feature_family,
+                    "load_error": None,
+                }
+                print(
+                    "[offload-audit] Loaded learned service offload policy "
+                    f"checkpoint='{checkpoint_used}' feature_family='{feature_family}'."
+                )
+            except Exception as exc:
+                cls._policy_cache[cache_key] = {
+                    "policy": None,
+                    "requested_policy": policy_name,
+                    "loaded": False,
+                    "checkpoint_path": resolved_checkpoint_path,
+                    "feature_family": None,
+                    "load_error": str(exc),
+                }
+                warnings.warn(
+                    "[offload-audit] Service offload policy "
+                    f"'{policy_name}' failed to load from checkpoint='{resolved_checkpoint_path}'. "
+                    f"Falling back to heuristic. Details: {exc}",
+                    RuntimeWarning,
+                )
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return cls._policy_cache[cache_key]
+
+    # 函数 energy：执行、移动或通信过程产生的能耗。
+    @property
+    def energy(self) -> float:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._energy_current_slot
+
+    # 函数 current_covered_ues：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def current_covered_ues(self) -> list[UE]:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._current_covered_ues
+
+    # 函数 neighbors：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def neighbors(self) -> list["UAV"]:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._neighbors
+
+    # 函数 service_request_count：用户设备产生的任务请求。
+    @property
+    def service_request_count(self) -> int:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_request_count
+
+    # 函数 service_offload_local_count：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_offload_local_count(self) -> int:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_offload_local_count
+
+    # 函数 service_offload_cooperative_count：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_offload_cooperative_count(self) -> int:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_offload_cooperative_count
+
+    # 函数 service_offload_mbs_count：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_offload_mbs_count(self) -> int:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_offload_mbs_count
+
+    # 函数 service_offload_policy_requested：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_offload_policy_requested(self) -> str:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_offload_policy_requested
+
+    # 函数 service_offload_policy_loaded：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_offload_policy_loaded(self) -> bool:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_offload_policy_loaded
+
+    # 函数 service_offload_policy_checkpoint_path：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_offload_policy_checkpoint_path(self) -> str | None:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_offload_policy_checkpoint_path
+
+    # 函数 service_offload_policy_feature_family：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_offload_policy_feature_family(self) -> str | None:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_offload_policy_feature_family
+
+    # 函数 service_offload_policy_load_error：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_offload_policy_load_error(self) -> str | None:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_offload_policy_load_error
+
+    # 函数 service_learned_decision_count：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_learned_decision_count(self) -> int:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_learned_decision_count
+
+    # 函数 service_heuristic_decision_count：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_heuristic_decision_count(self) -> int:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_heuristic_decision_count
+
+    # 函数 service_fallback_count：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_fallback_count(self) -> int:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_fallback_count
+
+    # 函数 service_predict_exception_fallback_count：关键函数，承载本模块的一段可复用实验逻辑。
+    @property
+    def service_predict_exception_fallback_count(self) -> int:
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return self._service_predict_exception_fallback_count
+
+    # 函数 reset_for_next_step：重置环境或对象状态，开始新的回合。
+    def reset_for_next_step(self) -> None:
+        """Reset UAV state for a new step."""
+        self._current_covered_ues = []
+        self._neighbors = []
+        self._current_service_request_count = 0
+        self._freq_counts = np.zeros(config.NUM_FILES, dtype=np.float32)
+        # Note: self._energy_current_slot and component energies persist until S0 of next step
+        self._service_request_count = 0
+        self._service_offload_local_count = 0
+        self._service_offload_cooperative_count = 0
+        self._service_offload_mbs_count = 0
+        self._service_learned_decision_count = 0
+        self._service_heuristic_decision_count = 0
+        self._service_fallback_count = 0
+        self._service_predict_exception_fallback_count = 0
+        self.collision_violation = False
+        self.boundary_violation = False
+
+    def commit_pending_cache(self) -> None:
+        """Deterministically commit pending cache files at end of slot.
+        Priority: score = EMA / size descending, tie-breaker: file_id ascending.
+        """
+        if not hasattr(self, "pending_cache") or not self.pending_cache:
+            return
+
+        def _candidate_key(fid: int):
+            score = float(self._ema_scores[fid]) / max(float(config.FILE_SIZES[fid]), float(config.EPSILON))
+            return (-score, fid)
+
+        sorted_pending = sorted(self.pending_cache, key=_candidate_key)
+        used_space = int(np.sum(self.cache * config.FILE_SIZES))
+        cap = int(config.UAV_STORAGE_CAPACITY[self.id])
+        for fid in sorted_pending:
+            if self.cache[fid]:
+                continue
+            fsize = int(config.FILE_SIZES[fid])
+            if used_space + fsize <= cap:
+                self.cache[fid] = True
+                used_space += fsize
+        self.pending_cache.clear()
+        self._working_cache = self.cache.copy()
+
+    # 函数 update_position：更新模型、环境或统计量的状态，主要参数：next_pos。
+    def update_position(self, next_pos: np.ndarray) -> None:
+        """Update the UAV's position to the new location chosen by the MARL agent."""
+        new_pos: np.ndarray = np.append(next_pos, config.UAV_ALTITUDE)
+        self._dist_moved = float(np.linalg.norm(new_pos - self.pos))
+        self.pos = new_pos
+
+    # 函数 set_neighbors：关键函数，承载本模块的一段可复用实验逻辑，主要参数：all_uavs。
+    def set_neighbors(self, all_uavs: list["UAV"]) -> None:
+        """Set neighboring UAVs within sensing range for this UAV."""
+        self._neighbors = []
+        # 循环处理：遍历 other_uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+        for other_uav in all_uavs:
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+            if other_uav.id != self.id:
+                distance = float(np.linalg.norm(self.pos - other_uav.pos))
+                # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+                if distance <= config.UAV_SENSING_RANGE:
+                    self._neighbors.append(other_uav)
+
+    # 函数 calculate_initial_load：加载模型参数或实验数据。
+    def calculate_initial_load(self) -> None:
+        # 循环处理：遍历 ue 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+        for ue in self._current_covered_ues:
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+            if ue.current_request.is_service:
+                self._current_service_request_count += 1
+
+    # 函数 process_requests：当前环境中的任务请求集合，主要参数：sample_recorder。
+    def process_requests(
+        self,
+        sample_recorder: Callable[[ServiceOffloadContext, int], None] | None = None,
+        offload_actions: np.ndarray | None = None,
+    ) -> None:
+        """Execute an isolated source batch. Multi-UAV slots use Env.step."""
+        service, others = self.resolve_requests(sample_recorder, offload_actions)
+        self.execute_request_batch([(self, service, others)])
+
+    def resolve_requests(
+        self,
+        sample_recorder: Callable[[ServiceOffloadContext, int], None] | None = None,
+        offload_actions: np.ndarray | None = None,
+    ) -> tuple[list[tuple[UE, float, int, "UAV" | None]], list[UE]]:
+        """Resolve assignments without changing any UAV's load or executing tasks."""
+        if not hasattr(self, "cache_snapshot") or self.cache_snapshot is None:
+            self.cache_snapshot = self.cache.copy()
+        self._uav_mbs_rate = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(self.pos, config.MBS_POS))
+
+        service_ues = [ue for ue in self._current_covered_ues if ue.current_request.is_service]
+        other_ues = [ue for ue in self._current_covered_ues if not ue.current_request.is_service]
+
+        if offload_actions is not None:
+            if (np.asarray(offload_actions).ndim != 1
+                    or len(offload_actions) < len(service_ues)
+                    or len(service_ues) > config.MAX_OFFLOAD_REQUESTS_PER_UAV):
+                raise ValueError("External lower actions must cover every admitted service request")
+            service_ues = sorted(
+                service_ues,
+                key=lambda ue: float(np.linalg.norm(self.pos[:2] - ue.pos[:2])),
+            )
+
+        # --- PHASE A: Resolve Target Offloading Choices (ENV-R3) ---
+        resolved_service: list[tuple[UE, float, int, "UAV" | None]] = []
+        service_action_cursor: int = 0
+
+        for ue in service_ues:
+            current_req: Request = ue.current_request
+            ue_uav_rate: float = comms.calculate_ue_uav_rate(
+                comms.calculate_channel_gain(ue.pos, self.pos),
+                max(len(self._current_covered_ues), 1),
+            )
+            service_context, cooperative_uav = self._build_service_offload_context(current_req, ue_uav_rate)
+            heuristic_target_idx, heuristic_target_uav = self._select_service_target_from_context(service_context, cooperative_uav)
+            if sample_recorder is not None:
+                sample_recorder(service_context, heuristic_target_idx)
+
+            if offload_actions is not None:
+                requested_target_idx = int(offload_actions[service_action_cursor])
+                best_target_idx, best_target_uav = self._resolve_external_service_offload_action(
+                    requested_target_idx,
+                    service_context,
+                    cooperative_uav,
+                    heuristic_target_idx,
+                    heuristic_target_uav,
+                )
+                self._service_learned_decision_count += 1
+                service_action_cursor += 1
+            else:
+                best_target_idx, best_target_uav = self._select_service_offloading_target(
+                    current_req,
+                    ue_uav_rate,
+                    context=service_context,
+                    cooperative_uav=cooperative_uav,
+                    heuristic_target_idx=heuristic_target_idx,
+                    heuristic_target_uav=heuristic_target_uav,
+                )
+            self._service_request_count += 1
+            self._record_service_offload_choice(best_target_idx)
+            resolved_service.append((ue, ue_uav_rate, best_target_idx, best_target_uav))
+
+        return resolved_service, other_ues
+
+    @staticmethod
+    def execute_request_batch(plans) -> None:
+        """Freeze fleet-wide final compute loads before executing any request.
+
+        Each plan is (source UAV, resolved service tasks, other requests).
+        MBS tasks never enter a UAV's denominator. Incoming tasks cannot be
+        overwritten when their destination subsequently executes its own plan.
+        """
+        destinations = {source for source, _, _ in plans}
+        for source, service, _ in plans:
+            for _, _, target, neighbor in service:
+                if target == OFFLOAD_TARGET_COOPERATIVE:
+                    assert neighbor is not None
+                    destinations.add(neighbor)
+        for uav in destinations:
+            uav._current_service_request_count = 0
+        for source, service, _ in plans:
+            for _, _, target, neighbor in service:
+                if target == OFFLOAD_TARGET_LOCAL:
+                    source._current_service_request_count += 1
+                elif target == OFFLOAD_TARGET_COOPERATIVE:
+                    neighbor._current_service_request_count += 1
+        for source, service, others in plans:
+            source._execute_resolved_requests(service, others)
+
+    def _execute_resolved_requests(self, resolved_service, other_ues) -> None:
+        # --- PHASE B: Execute Service and Content Requests (ENV-R4) ---
+        for (ue, ue_uav_rate, best_target_idx, best_target_uav) in resolved_service:
+            current_req = ue.current_request
+            self._freq_counts[current_req.req_id] += 1
+            if best_target_idx == OFFLOAD_TARGET_COOPERATIVE and best_target_uav is not None:
+                best_target_uav._freq_counts[current_req.req_id] += 1
+            self._process_service_request(ue, ue_uav_rate, best_target_idx, best_target_uav)
+            assert ue.latency_current_request >= 0.0
+
+        for ue in other_ues:
+            current_req = ue.current_request
+            if current_req.is_energy:
+                self._process_energy_request(ue)
+                continue
+            ue_uav_rate = comms.calculate_ue_uav_rate(
+                comms.calculate_channel_gain(ue.pos, self.pos),
+                max(len(self._current_covered_ues), 1),
+            )
+            best_target_idx, best_target_uav = self._decide_offloading_target_heuristic(current_req, ue_uav_rate)
+            self._freq_counts[current_req.req_id] += 1
+            if best_target_idx == OFFLOAD_TARGET_COOPERATIVE and best_target_uav is not None:
+                best_target_uav._freq_counts[current_req.req_id] += 1
+            self._process_content_request(ue, ue_uav_rate, best_target_idx, best_target_uav)
+            assert ue.latency_current_request >= 0.0
+
+    def _resolve_external_service_offload_action(
+        self,
+        target_idx: int,
+        context: ServiceOffloadContext,
+        cooperative_uav: "UAV" | None,
+        heuristic_target_idx: int,
+        heuristic_target_uav: "UAV" | None,
+    ) -> tuple[int, "UAV" | None]:
+        """Resolve a lower-layer MARL offloading action into an executable target."""
+        del cooperative_uav
+        if target_idx == int(getattr(config, "OFFLOAD_ACTION_LOCAL", OFFLOAD_TARGET_LOCAL)):
+            return OFFLOAD_TARGET_LOCAL, None
+        if target_idx == int(getattr(config, "OFFLOAD_ACTION_MBS", OFFLOAD_TARGET_MBS)):
+            return OFFLOAD_TARGET_MBS, None
+        coop_base = int(getattr(config, "OFFLOAD_ACTION_COOP_BASE", 2))
+        if target_idx >= coop_base:
+            requested_uav_id = int(target_idx - coop_base)
+            for neighbor in self._neighbors:
+                if neighbor.id == requested_uav_id:
+                    return OFFLOAD_TARGET_COOPERATIVE, neighbor
+            self._service_fallback_count += 1
+            if context.local_latency <= context.deadline or context.local_latency <= context.mbs_latency:
+                return OFFLOAD_TARGET_LOCAL, None
+            return OFFLOAD_TARGET_MBS, None
+        self._service_fallback_count += 1
+        return heuristic_target_idx, heuristic_target_uav
+
+    # 函数 _record_service_offload_choice：关键函数，承载本模块的一段可复用实验逻辑，主要参数：target_idx。
+    def _record_service_offload_choice(self, target_idx: int) -> None:
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if target_idx == OFFLOAD_TARGET_LOCAL:
+            self._service_offload_local_count += 1
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        elif target_idx == OFFLOAD_TARGET_COOPERATIVE:
+            self._service_offload_cooperative_count += 1
+        else:
+            self._service_offload_mbs_count += 1
+
+    # 函数 _build_service_offload_context：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
+    def _build_service_offload_context(self, current_req: Request, ue_uav_rate: float) -> tuple[ServiceOffloadContext, "UAV" | None]:
+        """Build the normalized policy context from the exact runtime heuristic state."""
+        req_id: int = current_req.req_id
+        service_load: int = max(self._current_service_request_count, 1)
+        local_compute_share: float = float(config.UAV_COMPUTING_CAPACITY[self.id]) / float(service_load)
+        local_latency: float = self._estimate_local_service_latency(current_req, ue_uav_rate)
+        (
+            cooperative_latency,
+            cooperative_uav,
+            best_uav_uav_rate,
+            best_neighbor_mbs_rate,
+            best_neighbor_compute_share,
+            best_neighbor_cache_belief,
+        ) = self._estimate_best_cooperative_service_candidate(current_req, ue_uav_rate)
+        mbs_latency: float = self._estimate_mbs_service_latency(current_req, ue_uav_rate)
+
+        context = ServiceOffloadContext(
+            local_latency=local_latency,
+            cooperative_latency=cooperative_latency,
+            mbs_latency=mbs_latency,
+            deadline=current_req.deadline,
+            priority=current_req.priority,
+            local_cache_hit=bool(self.cache[current_req.req_id]),
+            cooperative_available=cooperative_uav is not None,
+            local_queue_length=self._current_service_request_count,
+            request_size=current_req.req_size,
+            service_file_size=int(config.FILE_SIZES[req_id]),
+            cpu_cycles_per_byte=float(config.CPU_CYCLES_PER_BYTE[req_id]),
+            neighbor_count=len(self._neighbors),
+            ue_uav_rate=ue_uav_rate,
+            uav_mbs_rate=self._uav_mbs_rate,
+            best_uav_uav_rate=best_uav_uav_rate,
+            best_neighbor_mbs_rate=best_neighbor_mbs_rate,
+            local_compute_share=local_compute_share,
+            best_neighbor_compute_share=best_neighbor_compute_share,
+            best_neighbor_cache_belief=best_neighbor_cache_belief,
+        )
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return context, cooperative_uav
+
+    # 函数 _select_service_target_from_context：关键函数，承载本模块的一段可复用实验逻辑，主要参数：context, cooperative_uav。
+    def _select_service_target_from_context(
+        self, context: ServiceOffloadContext, cooperative_uav: "UAV" | None
+    ) -> tuple[int, "UAV" | None]:
+        """Resolve the original latency-minimizing heuristic target from a precomputed context."""
+        best_target_idx: int = OFFLOAD_TARGET_LOCAL
+        best_target_uav: UAV | None = None
+        best_exp_latency: float = context.local_latency
+
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if context.mbs_latency < best_exp_latency:
+            best_exp_latency = context.mbs_latency
+            best_target_idx = OFFLOAD_TARGET_MBS
+
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if cooperative_uav is not None and context.cooperative_latency < best_exp_latency:
+            best_target_idx = OFFLOAD_TARGET_COOPERATIVE
+            best_target_uav = cooperative_uav
+
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return best_target_idx, best_target_uav
+
+    # 函数 _select_service_offloading_target：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
+    def _select_service_offloading_target(
+        self,
+        current_req: Request,
+        ue_uav_rate: float,
+        *,
+        context: ServiceOffloadContext | None = None,
+        cooperative_uav: "UAV" | None = None,
+        heuristic_target_idx: int | None = None,
+        heuristic_target_uav: "UAV" | None = None,
+    ) -> tuple[int, "UAV" | None]:
+        """Choose a service offload category, then resolve a cooperative UAV heuristically."""
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if context is None or heuristic_target_idx is None:
+            context, cooperative_uav = self._build_service_offload_context(current_req, ue_uav_rate)
+            heuristic_target_idx, heuristic_target_uav = self._select_service_target_from_context(context, cooperative_uav)
+
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if getattr(config, "SERVICE_OFFLOAD_POLICY", "heuristic") == "heuristic":
+            self._service_heuristic_decision_count += 1
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+            return heuristic_target_idx, heuristic_target_uav
+
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if self._service_offload_policy is None:
+            self._service_heuristic_decision_count += 1
+            self._service_fallback_count += 1
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+            return heuristic_target_idx, heuristic_target_uav
+
+        # 异常与收尾保护：确保关键流程出错时仍能执行清理、恢复或错误处理逻辑。
+        try:
+            target_idx: int = int(self._service_offload_policy.predict(context))
+        except Exception as exc:
+            self._service_heuristic_decision_count += 1
+            self._service_fallback_count += 1
+            self._service_predict_exception_fallback_count += 1
+            warnings.warn(
+                "[offload-audit] Learned service offload predict() failed on "
+                f"UAV={self.id} checkpoint='{self._service_offload_policy_checkpoint_path}' "
+                f"feature_family='{self._service_offload_policy_feature_family}'. "
+                f"Falling back to heuristic. Details: {exc}",
+                RuntimeWarning,
+            )
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+            return heuristic_target_idx, heuristic_target_uav
+
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if target_idx == OFFLOAD_TARGET_LOCAL:
+            self._service_learned_decision_count += 1
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+            return OFFLOAD_TARGET_LOCAL, None
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if target_idx == OFFLOAD_TARGET_COOPERATIVE and cooperative_uav is not None:
+            self._service_learned_decision_count += 1
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+            return OFFLOAD_TARGET_COOPERATIVE, cooperative_uav
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if target_idx == OFFLOAD_TARGET_MBS:
+            self._service_learned_decision_count += 1
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+            return OFFLOAD_TARGET_MBS, None
+
+        self._service_heuristic_decision_count += 1
+        self._service_fallback_count += 1
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return heuristic_target_idx, heuristic_target_uav
+
+    # 函数 _decide_offloading_target_heuristic：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
+    def _decide_offloading_target_heuristic(self, current_req: Request, ue_uav_rate: float) -> tuple[int, "UAV" | None]:
+        """Original latency-based heuristic preserved as baseline and fallback."""
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if current_req.is_service:
+            context, cooperative_uav = self._build_service_offload_context(current_req, ue_uav_rate)
+            # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+            return self._select_service_target_from_context(context, cooperative_uav)
+
+        best_exp_latency = self._estimate_local_content_latency(current_req, ue_uav_rate)
+        best_target_idx = OFFLOAD_TARGET_LOCAL
+        best_target_uav = None
+
+        exp_mbs_latency = self._estimate_mbs_content_latency(current_req, ue_uav_rate)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if exp_mbs_latency < best_exp_latency:
+            best_exp_latency = exp_mbs_latency
+            best_target_idx = OFFLOAD_TARGET_MBS
+
+        exp_neighbor_latency, neighbor_uav = self._estimate_best_cooperative_content_latency(current_req, ue_uav_rate)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if neighbor_uav is not None and exp_neighbor_latency < best_exp_latency:
+            best_target_idx = OFFLOAD_TARGET_COOPERATIVE
+            best_target_uav = neighbor_uav
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return best_target_idx, best_target_uav
+
+    # 函数 _estimate_local_service_latency：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
+    def _estimate_local_service_latency(self, current_req: Request, ue_uav_rate: float) -> float:
+        req_size: int = current_req.req_size
+        req_id: int = current_req.req_id
+        file_size: int = int(config.FILE_SIZES[req_id])
+        cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[req_id]) * float(req_size)
+        p_local: float = 1.0 if self.cache[req_id] else 0.0
+        ue_uav_upload_latency: float = _tx_latency_bytes(req_size, ue_uav_rate)
+        exp_fetch_latency: float = (1.0 - p_local) * _tx_latency_bytes(file_size, self._uav_mbs_rate)
+        service_load: int = max(self._current_service_request_count, 1)
+        est_comp_latency: float = cpu_cycles / (config.UAV_COMPUTING_CAPACITY[self.id] / service_load)
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return ue_uav_upload_latency + exp_fetch_latency + est_comp_latency
+
+    # 函数 _estimate_mbs_service_latency：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
+    def _estimate_mbs_service_latency(self, current_req: Request, ue_uav_rate: float) -> float:
+        cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[current_req.req_id]) * float(current_req.req_size)
+        ue_uav_upload_latency: float = _tx_latency_bytes(current_req.req_size, ue_uav_rate)
+        uav_mbs_upload_latency: float = _tx_latency_bytes(current_req.req_size, self._uav_mbs_rate)
+        mbs_compute_latency: float = cpu_cycles / float(config.MBS_COMPUTING_CAPACITY)
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return ue_uav_upload_latency + uav_mbs_upload_latency + mbs_compute_latency
+
+    # 函数 _estimate_best_cooperative_service_candidate：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
+    def _estimate_best_cooperative_service_candidate(
+        self,
+        current_req: Request,
+        ue_uav_rate: float,
+    ) -> tuple[float, "UAV" | None, float, float, float, float]:
+        """Estimate the best cooperative UAV and expose its raw runtime state for learned policies."""
+        req_size: int = current_req.req_size
+        req_id: int = current_req.req_id
+        file_size: int = int(config.FILE_SIZES[req_id])
+        cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[req_id]) * float(req_size)
+        ue_uav_upload_latency: float = _tx_latency_bytes(req_size, ue_uav_rate)
+
+        best_latency: float = np.inf
+        best_neighbor: UAV | None = None
+        best_uav_uav_rate: float = 0.0
+        best_neighbor_mbs_rate: float = 0.0
+        best_neighbor_compute_share: float = 0.0
+        best_neighbor_cache_belief: float = 0.0
+        # 循环处理：遍历 neighbor 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+        for neighbor in self._neighbors:
+            belief_prob: float = _get_belief_probability(req_id, neighbor.id, self._rank_map)
+            uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, neighbor.pos))
+            neighbor_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(neighbor.pos, config.MBS_POS))
+            exp_neighbor_fetch_latency: float = (1.0 - belief_prob) * _tx_latency_bytes(file_size, neighbor_mbs_rate)
+            neigh_load: int = max(neighbor._current_service_request_count + 1, 1)
+            neighbor_compute_share: float = float(config.UAV_COMPUTING_CAPACITY[neighbor.id]) / float(neigh_load)
+            est_comp_latency: float = cpu_cycles / neighbor_compute_share
+            uav_uav_upload_latency: float = _tx_latency_bytes(req_size, uav_uav_rate)
+            exp_neighbor_latency: float = ue_uav_upload_latency + uav_uav_upload_latency + exp_neighbor_fetch_latency + est_comp_latency
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+            if exp_neighbor_latency < best_latency:
+                best_latency = exp_neighbor_latency
+                best_neighbor = neighbor
+                best_uav_uav_rate = uav_uav_rate
+                best_neighbor_mbs_rate = neighbor_mbs_rate
+                best_neighbor_compute_share = neighbor_compute_share
+                best_neighbor_cache_belief = belief_prob
+
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return (
+            best_latency,
+            best_neighbor,
+            best_uav_uav_rate,
+            best_neighbor_mbs_rate,
+            best_neighbor_compute_share,
+            best_neighbor_cache_belief,
+        )
+
+    def _get_service_neighbor_cache_belief(self, req_id: int, neighbor: "UAV") -> float:
+        return _get_belief_probability(req_id, neighbor.id, self._rank_map)
+
+    # 函数 _estimate_best_cooperative_service_latency：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
+    def _estimate_best_cooperative_service_latency(self, current_req: Request, ue_uav_rate: float) -> tuple[float, "UAV" | None]:
+        best_latency, best_neighbor, _, _, _, _ = self._estimate_best_cooperative_service_candidate(current_req, ue_uav_rate)
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return best_latency, best_neighbor
+
+    # 函数 _estimate_local_content_latency：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
+    def _estimate_local_content_latency(self, current_req: Request, ue_uav_rate: float) -> float:
+        req_id: int = current_req.req_id
+        file_size: int = int(config.FILE_SIZES[req_id])
+        p_local: float = 1.0 if self.cache[req_id] else 0.0
+        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)
+        exp_fetch_latency: float = (1.0 - p_local) * _tx_latency_bytes(file_size, self._uav_mbs_rate)
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return exp_fetch_latency + ue_uav_download_latency
+
+    # 函数 _estimate_mbs_content_latency：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
+    def _estimate_mbs_content_latency(self, current_req: Request, ue_uav_rate: float) -> float:
+        file_size: int = int(config.FILE_SIZES[current_req.req_id])
+        uav_mbs_download_latency: float = _tx_latency_bytes(file_size, self._uav_mbs_rate)
+        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return uav_mbs_download_latency + ue_uav_download_latency
+
+    # 函数 _estimate_best_cooperative_content_latency：关键函数，承载本模块的一段可复用实验逻辑，主要参数：current_req, ue_uav_rate。
+    def _estimate_best_cooperative_content_latency(self, current_req: Request, ue_uav_rate: float) -> tuple[float, "UAV" | None]:
+        req_id: int = current_req.req_id
+        file_size: int = int(config.FILE_SIZES[req_id])
+        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)
+
+        best_latency: float = np.inf
+        best_neighbor: UAV | None = None
+        # 循环处理：遍历 neighbor 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+        for neighbor in self._neighbors:
+            belief_prob: float = _get_belief_probability(req_id, neighbor.id, self._rank_map)
+            uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, neighbor.pos))
+            uav_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(neighbor.pos, config.MBS_POS))
+            uav_uav_download_latency: float = _tx_latency_bytes(file_size, uav_uav_rate)
+            exp_neighbor_fetch_latency: float = (1.0 - belief_prob) * _tx_latency_bytes(file_size, uav_mbs_rate)
+            exp_neighbor_latency: float = exp_neighbor_fetch_latency + uav_uav_download_latency + ue_uav_download_latency
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+            if exp_neighbor_latency < best_latency:
+                best_latency = exp_neighbor_latency
+                best_neighbor = neighbor
+
+        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
+        return best_latency, best_neighbor
+
+    # 函数 _process_service_request：用户设备产生的任务请求，主要参数：ue, ue_uav_rate, target_idx, target_uav。
+    def _process_service_request(self, ue: UE, ue_uav_rate: float, target_idx: int, target_uav: "UAV" | None) -> None:
+        current_req: Request = ue.current_request
+        req_size: int = current_req.req_size
+        req_id: int = current_req.req_id
+        assert req_id < config.NUM_SERVICES
+        cpu_cycles: float = float(config.CPU_CYCLES_PER_BYTE[req_id]) * float(req_size)
+        file_size: int = int(config.FILE_SIZES[req_id])
+
+        ue_uav_upload_latency: float = _tx_latency_bytes(req_size, ue_uav_rate)
+        ue.update_battery(0.0, ue_uav_upload_latency)
+        rx_energy: float = _comm_energy(config.UAV_COMM_RX_POWER, ue_uav_upload_latency)
+        self._energy_current_slot += rx_energy
+        self.service_comm_energy += rx_energy
+
+        read_cache = getattr(self, "cache_snapshot", self.cache)
+        if target_idx == OFFLOAD_TARGET_LOCAL:
+            fetch_latency: float = 0.0
+            if not read_cache[req_id]:
+                fetch_latency = _tx_latency_bytes(file_size, self._uav_mbs_rate)
+                f_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
+                self._energy_current_slot += f_energy
+                self.service_fetch_or_backhaul_energy += f_energy
+                self.assignment_causal_energy += f_energy
+                _try_add_file_to_cache(self, req_id)
+
+            comp_latency, comp_energy = _get_computing_latency_and_energy(self, cpu_cycles)
+            ue.latency_current_request = ue_uav_upload_latency + fetch_latency + comp_latency
+            self._energy_current_slot += comp_energy
+            self.service_compute_energy += comp_energy
+            self.assignment_causal_energy += comp_energy
+
+        elif target_idx == OFFLOAD_TARGET_COOPERATIVE:
+            assert target_uav is not None
+            uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, target_uav.pos))
+            uav_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(target_uav.pos, config.MBS_POS))
+            uav_uav_upload_latency: float = _tx_latency_bytes(req_size, uav_uav_rate)
+            tx_energy: float = _comm_energy(config.UAV_COMM_TX_POWER, uav_uav_upload_latency)
+            target_rx_energy: float = _comm_energy(config.UAV_COMM_RX_POWER, uav_uav_upload_latency)
+            self._energy_current_slot += tx_energy
+            self.service_comm_energy += tx_energy
+            self.assignment_causal_energy += tx_energy
+            target_uav._energy_current_slot += target_rx_energy
+            target_uav.service_comm_energy += target_rx_energy
+            target_uav.assignment_causal_energy += target_rx_energy
+
+            fetch_latency = 0.0
+            target_read_cache = getattr(target_uav, "cache_snapshot", target_uav.cache)
+            if not target_read_cache[req_id]:
+                fetch_latency = _tx_latency_bytes(file_size, uav_mbs_rate)
+                t_f_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
+                target_uav._energy_current_slot += t_f_energy
+                target_uav.service_fetch_or_backhaul_energy += t_f_energy
+                target_uav.assignment_causal_energy += t_f_energy
+                _try_add_file_to_cache(target_uav, req_id)
+
+            comp_latency, comp_energy = _get_computing_latency_and_energy(target_uav, cpu_cycles)
+            ue.latency_current_request = ue_uav_upload_latency + uav_uav_upload_latency + fetch_latency + comp_latency
+            target_uav._energy_current_slot += comp_energy
+            target_uav.service_compute_energy += comp_energy
+            target_uav.assignment_causal_energy += comp_energy
+
+        else:
+            uav_mbs_upload_latency: float = _tx_latency_bytes(req_size, self._uav_mbs_rate)
+            mbs_compute_latency: float = cpu_cycles / float(config.MBS_COMPUTING_CAPACITY)
+            mbs_tx_energy: float = _comm_energy(config.UAV_BACKHAUL_TX_POWER, uav_mbs_upload_latency)
+            self._energy_current_slot += mbs_tx_energy
+            self.service_fetch_or_backhaul_energy += mbs_tx_energy
+            self.assignment_causal_energy += mbs_tx_energy
+            ue.latency_current_request = ue_uav_upload_latency + uav_mbs_upload_latency + mbs_compute_latency
+
+    # 函数 _process_content_request：用户设备产生的任务请求，主要参数：ue, ue_uav_rate, target_idx, target_uav。
+    def _process_content_request(self, ue: UE, ue_uav_rate: float, target_idx: int, target_uav: "UAV" | None) -> None:
+        current_req: Request = ue.current_request
+        req_id: int = current_req.req_id
+        assert req_id >= config.NUM_SERVICES
+        file_size: int = int(config.FILE_SIZES[req_id])
+
+        ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)
+        ue.update_battery(0.0, 0.0, ue_receive_time=ue_uav_download_latency)
+        downlink_energy: float = _comm_energy(config.UAV_COMM_TX_POWER, ue_uav_download_latency)
+        self._energy_current_slot += downlink_energy
+        self.content_related_energy += downlink_energy
+
+        read_cache = getattr(self, "cache_snapshot", self.cache)
+        if target_idx == OFFLOAD_TARGET_LOCAL:
+            fetch_latency: float = 0.0
+            if not read_cache[req_id]:
+                fetch_latency = _tx_latency_bytes(file_size, self._uav_mbs_rate)
+                f_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
+                self._energy_current_slot += f_energy
+                self.content_related_energy += f_energy
+                _try_add_file_to_cache(self, req_id)
+
+            ue.latency_current_request = fetch_latency + ue_uav_download_latency
+
+        elif target_idx == OFFLOAD_TARGET_COOPERATIVE:
+            assert target_uav is not None
+            uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, target_uav.pos))
+            uav_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(target_uav.pos, config.MBS_POS))
+            uav_uav_download_latency: float = _tx_latency_bytes(file_size, uav_uav_rate)
+            t_tx_energy: float = _comm_energy(config.UAV_COMM_TX_POWER, uav_uav_download_latency)
+            rx_energy: float = _comm_energy(config.UAV_COMM_RX_POWER, uav_uav_download_latency)
+            target_uav._energy_current_slot += t_tx_energy
+            target_uav.content_related_energy += t_tx_energy
+            self._energy_current_slot += rx_energy
+            self.content_related_energy += rx_energy
+
+            fetch_latency = 0.0
+            target_read_cache = getattr(target_uav, "cache_snapshot", target_uav.cache)
+            if not target_read_cache[req_id]:
+                fetch_latency = _tx_latency_bytes(file_size, uav_mbs_rate)
+                t_f_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
+                target_uav._energy_current_slot += t_f_energy
+                target_uav.content_related_energy += t_f_energy
+                _try_add_file_to_cache(target_uav, req_id)
+
+            ue.latency_current_request = fetch_latency + uav_uav_download_latency + ue_uav_download_latency
+            _try_add_file_to_cache(self, req_id)
+
+        else:
+            uav_mbs_download_latency: float = _tx_latency_bytes(file_size, self._uav_mbs_rate)
+            mbs_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, uav_mbs_download_latency)
+            self._energy_current_slot += mbs_energy
+            self.content_related_energy += mbs_energy
+            ue.latency_current_request = uav_mbs_download_latency + ue_uav_download_latency
+            _try_add_file_to_cache(self, req_id)
+
+    # 函数 _process_energy_request：用户设备产生的任务请求，主要参数：ue。
+    def _process_energy_request(self, ue: UE) -> None:
+        """Process an emergency energy request from a UE."""
+        channel_gain: float = comms.calculate_channel_gain(self.pos, ue.pos)
+        harv_energy: float = (
+            config.WPT_EFFICIENCY
+            * config.WPT_TRANSMIT_POWER
+            * config.WPT_HARVEST_GAIN
+            * channel_gain
+            * config.TIME_SLOT_DURATION
+        )
+        ue.update_battery(harv_energy, 0.0)
+        ue.latency_current_request = 0.0
+
+    # 函数 update_ema_and_cache：更新模型、环境或统计量的状态。
+    def update_ema_and_cache(self) -> None:
+        """Update EMA scores and cache reactively."""
+        self._ema_scores = config.GDSF_SMOOTHING_FACTOR * self._freq_counts + (1 - config.GDSF_SMOOTHING_FACTOR) * self._ema_scores
+        self.commit_pending_cache()
+
+    # 函数 gdsf_cache_update：更新模型、环境或统计量的状态。
+    def gdsf_cache_update(self) -> None:
+        """Update cache using the GDSF caching policy at a longer timescale."""
+        priority_scores: np.ndarray = self._ema_scores / np.maximum(config.FILE_SIZES, 1.0)
+        sorted_file_ids: np.ndarray = np.lexsort((np.arange(config.NUM_FILES), -priority_scores))
+        self.cache = np.zeros(config.NUM_FILES, dtype=bool)
+        used_space = 0.0
+        # 循环处理：遍历 file_id 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
+        for file_id in sorted_file_ids:
+            file_size = config.FILE_SIZES[file_id]
+            # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+            if used_space + file_size <= config.UAV_STORAGE_CAPACITY[self.id]:
+                self.cache[file_id] = True
+                used_space += file_size
+            else:
+                break
+        self._working_cache = self.cache.copy()
+
+    # 函数 update_energy_consumption：执行、移动或通信过程产生的能耗。
+    def update_energy_consumption(self, dist_moved: float | None = None) -> None:
+        """Update UAV energy consumption for the current time slot.
+        Calculates flight and hover energy from actual displacement (ENV-R6).
+        """
+        if dist_moved is not None:
+            self._dist_moved = float(dist_moved)
+        max_dist: float = config.UAV_SPEED * config.TIME_SLOT_DURATION
+        effective_dist: float = float(np.clip(self._dist_moved, 0.0, max_dist))
+        time_moving: float = effective_dist / config.UAV_SPEED
+        time_hovering: float = max(0.0, config.TIME_SLOT_DURATION - time_moving)
+        self.flight_energy = float(config.POWER_MOVE * time_moving)
+        self.hover_energy = float(config.POWER_HOVER * time_hovering)
+        self._energy_current_slot += (self.flight_energy + self.hover_energy)
+        has_energy_request: bool = any(ue.current_request.is_energy for ue in self._current_covered_ues)
+        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
+        if has_energy_request:
+            wpt_e: float = float(config.WPT_TRANSMIT_POWER * config.TIME_SLOT_DURATION)
+            self.wpt_energy += wpt_e
+            self._energy_current_slot += wpt_e

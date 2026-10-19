@@ -1,0 +1,26 @@
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/teacher_b8a619593f98/scripts/analysis/sf_hlm_teacher_feasibility.py", line 423, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/teacher_b8a619593f98/scripts/analysis/sf_hlm_teacher_feasibility.py", line 414, in main
+    if a.mode=='inventory':inventory(a,f)
+                           ^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/teacher_b8a619593f98/scripts/analysis/sf_hlm_teacher_feasibility.py", line 98, in inventory
+    parent=runtime_paths(a,f);old=read(parent.results_root/'protocol.json');states=read(a.state_root/'protocol.json')
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/teacher_b8a619593f98/scripts/analysis/sf_hlm_teacher_feasibility.py", line 88, in runtime_paths
+    def runtime_paths(a,f):return f.parent_args(a)
+                                  ^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/scripts/analysis/sf_hlm_learning_feasibility.py", line 64, in parent_args
+    launch = read(args.parent_launch); command = launch['command']; data = {}
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/scripts/analysis/sf_hlm_learning_feasibility.py", line 32, in read
+    def read(path): return json.loads(Path(path).read_text())
+                                      ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/parent_launch.json'

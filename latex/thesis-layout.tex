@@ -1,0 +1,33 @@
+% !TeX root = ./main.tex
+% SYSU 专业硕士论文的项目适配；模板版本见 docs/sysu_typesetting_20261016.md。
+% 正式完成日期待确认，封面不得将构建日期当作完成日期。
+\makeatletter
+\ifdefempty{\thesiscompletiondate}{
+  \renewcommand\sysu@date@zh@short{完成年月待填写}
+}{
+  \sysusetup{date=\thesiscompletiondate}
+}
+% 上游研究生封面委员会表格的末列超出正文宽度；该列为空，仅缩减留白。
+\patchcmd{\sysu@title@page@graduate@zh}{\makebox[4.5cm][c]{}}{\makebox[3cm][c]{}}{}{
+  \ClassError{sysuthesis}{Cover committee layout patch failed}{}
+}
+% 其余四行末列同样收窄，防止表格自然宽度超过封面版心。
+\patchcmd{\sysu@title@page@graduate@zh}{\makebox[4.5cm][c]{}}{\makebox[3cm][c]{}}{}{}
+\patchcmd{\sysu@title@page@graduate@zh}{\makebox[4.5cm][c]{}}{\makebox[3cm][c]{}}{}{}
+\patchcmd{\sysu@title@page@graduate@zh}{\makebox[4.5cm][c]{}}{\makebox[3cm][c]{}}{}{}
+\patchcmd{\sysu@title@page@graduate@zh}{\makebox[4.5cm][c]{}}{\makebox[3cm][c]{}}{}{}
+% 关键词跟随摘要正文；移除上游额外的空白行，避免仅有关键词的孤页。
+\expandafter\patchcmd\csname endabstract*\endcsname
+  {\par\null\par\noindent}{\par\nobreak\smallskip\noindent}{}{
+    \ClassError{sysuthesis}{Abstract keyword layout patch failed}{}
+  }
+% 长英文题名保留原字号；收整题名区空白，给正文和关键词留出连续空间。
+\expandafter\patchcmd\csname abstract*\endcsname
+  {\mbox{ }\\}{}{}{
+    \ClassError{sysuthesis}{Abstract title spacing patch failed}{}
+  }
+\expandafter\patchcmd\csname abstract*\endcsname
+  {\vskip 0.5cm}{\vskip 0.3cm}{}{
+    \ClassError{sysuthesis}{Abstract metadata spacing patch failed}{}
+  }
+\makeatother

@@ -1,0 +1,25 @@
+
+No GPU available, using CPU.
+
+
+No GPU available, using CPU.
+
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/cache_guarded_rerank_82132ec18bc2/scripts/analysis/sf_hlm_cache_guarded_rerank.py", line 126, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/cache_guarded_rerank_82132ec18bc2/scripts/analysis/sf_hlm_cache_guarded_rerank.py", line 123, in main
+    with b.resource(a).CpuLease(a.resources,task=['cache_guarded_rerank'],kind='environment'):run(a,o.out,o.diagnostic,o.diagnostic_validation,o.zero_results)
+                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/cache_guarded_rerank_82132ec18bc2/scripts/analysis/sf_hlm_cache_guarded_rerank.py", line 105, in run
+    blocks[block]=dict(generated=den,admitted=admitted,methods={m:dict(rate={str(ms):sum(s['methods'][m]['success'][str(ms)] for s in rr)/den for ms in (0,10,20,30)},energy=sum(s['methods'][m]['energy'] for s in rr),mbs_share=sum(s['methods'][m]['mbs'] for s in rr)/admitted,fairness=statistics.mean(s['methods'][m]['fairness'] for s in rr)) for m in methods})
+                                                                                                                                                                                                                                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/statistics.py", line 484, in mean
+    T, total, n = _sum(data)
+                  ^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/statistics.py", line 204, in _sum
+    T = reduce(_coerce, types, int)  # or raise TypeError
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/statistics.py", line 284, in _coerce
+    raise TypeError(msg % (T.__name__, S.__name__))
+TypeError: don't know how to coerce float and float32

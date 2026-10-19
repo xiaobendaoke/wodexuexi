@@ -1,0 +1,55 @@
+test_binary_matching_and_mask (test_sf_hlm_calibrated_matching.MatchingNumerics.test_binary_matching_and_mask) ... ERROR
+test_edge_features_equal_local_request_fields (test_sf_hlm_calibrated_matching.MatchingNumerics.test_edge_features_equal_local_request_fields) ... ERROR
+test_learned_edge_objective_and_no_private_fields (test_sf_hlm_calibrated_matching.MatchingNumerics.test_learned_edge_objective_and_no_private_fields) ... ERROR
+test_local_columns_exclude_assignment_context (test_sf_hlm_calibrated_matching.QuotaContracts.test_local_columns_exclude_assignment_context) ... ok
+test_quotas_and_score_ties (test_sf_hlm_calibrated_matching.QuotaContracts.test_quotas_and_score_ties) ... ok
+
+======================================================================
+ERROR: test_binary_matching_and_mask (test_sf_hlm_calibrated_matching.MatchingNumerics.test_binary_matching_and_mask)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/calibrated_matching_515722803ec8/tests/test_sf_hlm_calibrated_matching.py", line 32, in test_binary_matching_and_mask
+    result=solve(self.rows(),[1,0,0,0,0,1],10.,'binary')
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/calibrated_matching_515722803ec8/utils/sf_hlm_calibrated_matching.py", line 62, in solve
+    p=problem_from_rows(rows,5) if problem is None else problem;q=validated_counts(counts,len(rows),5)
+      ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001/utils/sf_hlm_matching.py", line 45, in problem_from_rows
+    raise ValueError('MBS must retain its nonsharing predictor')
+ValueError: MBS must retain its nonsharing predictor
+
+======================================================================
+ERROR: test_edge_features_equal_local_request_fields (test_sf_hlm_calibrated_matching.MatchingNumerics.test_edge_features_equal_local_request_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/calibrated_matching_515722803ec8/tests/test_sf_hlm_calibrated_matching.py", line 27, in test_edge_features_equal_local_request_fields
+    rows=self.rows();a=[0,1];x,_=candidate_features(rows,a,10.,100.);edge,index,_,_=edge_features(rows,[1,0,0,0,0,1],10.)
+                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/calibrated_matching_515722803ec8/utils/sf_hlm_calibrated_matching.py", line 30, in edge_features
+    problem=problem_from_rows(rows,5) if problem is None else problem;counts=validated_counts(counts,len(rows),5)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001/utils/sf_hlm_matching.py", line 45, in problem_from_rows
+    raise ValueError('MBS must retain its nonsharing predictor')
+ValueError: MBS must retain its nonsharing predictor
+
+======================================================================
+ERROR: test_learned_edge_objective_and_no_private_fields (test_sf_hlm_calibrated_matching.MatchingNumerics.test_learned_edge_objective_and_no_private_fields)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/calibrated_matching_515722803ec8/tests/test_sf_hlm_calibrated_matching.py", line 42, in test_learned_edge_objective_and_no_private_fields
+    rows=self.rows();out=solve(rows,[1,0,0,0,0,1],10.,'probability',FixedModel())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/calibrated_matching_515722803ec8/utils/sf_hlm_calibrated_matching.py", line 60, in solve
+    if objective=='probability':x,index,p,q=edge_features(rows,counts,cost_ms,problem=problem)
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/calibrated_matching_515722803ec8/utils/sf_hlm_calibrated_matching.py", line 30, in edge_features
+    problem=problem_from_rows(rows,5) if problem is None else problem;counts=validated_counts(counts,len(rows),5)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001/utils/sf_hlm_matching.py", line 45, in problem_from_rows
+    raise ValueError('MBS must retain its nonsharing predictor')
+ValueError: MBS must retain its nonsharing predictor
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.276s
+
+FAILED (errors=3)

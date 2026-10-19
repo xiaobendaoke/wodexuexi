@@ -1,0 +1,25 @@
+
+No GPU available, using CPU.
+
+
+No GPU available, using CPU.
+
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/runtime_20261017/runtime_profile.py", line 70, in <module>
+    main(ap.parse_args())
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/validation/runtime_20261017/runtime_profile.py", line 37, in main
+    if identity[1]!=last_block:runtime=f.boot(a,identity[1]);last_block=identity[1]
+                                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/output/sf_hlm_learning_feasibility_20261016/assets/releases/d448ad95f9a3/scripts/analysis/sf_hlm_learning_feasibility.py", line 207, in boot
+    followup, runner, old = old_runner.initialize_numerical(a)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/learning_improvement_release_20261003_951dea3274/scripts/analysis/sf_hlm_learning_improvement.py", line 186, in initialize_numerical
+    r = followup.runner(args); old, rollout = followup.initialize(args, r)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/followup_release_20261002/scripts/analysis/sf_hlm_followup.py", line 48, in initialize
+    old,rollout=r.bootstrap(args)
+                ^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/sf-hlm-v2-20261001/extension_release_v2_20261001/scripts/analysis/sf_hlm_v2_experiment.py", line 45, in bootstrap
+    base.np=np;torch.set_num_threads(1);torch.set_num_interop_threads(1)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Error: cannot set number of interop threads after parallel work has started or set_num_interop_threads called

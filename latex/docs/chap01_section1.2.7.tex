@@ -1,0 +1,133 @@
+\subsection{2024--2025 年最新研究进展与本文定位}
+\label{sec:ch1-recent-advances}
+
+UAV-MEC 领域在 2024--2025 年出现了多项与本文高度相关的最新研究。为明确本文相对现有工作的定位，本节系统梳理这些进展，并说明本文的差异性贡献。
+
+\subsubsection{联邦学习与图增强的多 UAV 协同}
+
+Nguyen 等提出的 AirFed 框架\cite{nguyen2024airfed}采用联邦图增强多智能体强化学习，在多 UAV 协同 MEC 中达到了 $99\%$ 的截止期满足率和 $94.2\%$ 的 IoT 设备覆盖率，同时将通信开销降低 $54.5\%$。该工作的核心特点包括：
+\begin{itemize}
+    \item 使用图神经网络（GNN）建模 UAV 与 IoT 设备之间的拓扑关系
+    \item 采用联邦学习范式减少集中式训练的通信需求
+    \item 在 IoT 数据收集场景中验证，侧重周期性感知任务
+\end{itemize}
+
+\textbf{与本文的差异}：
+\begin{enumerate}
+    \item \textbf{问题设置不同}：AirFed 研究周期性 IoT 数据收集任务，设备位置相对固定；本文研究\textbf{动态地面用户的非周期服务请求}，UE 移动且请求随机到达
+    \item \textbf{接纳规则不同}：AirFed 采用预定的 UAV--IoT 关联，优化周期内的访问顺序；本文采用\textbf{自然覆盖接纳}（$100\,\mathrm{m}$ 物理半径），请求在覆盖范围外时不被接纳
+    \item \textbf{DSR 分母不同}：AirFed 的 $99\%$ DSR 以\textbf{预定周期任务}为分母，本文以\textbf{实际生成服务请求}为分母（包含未被覆盖的请求），两者的绝对值不可直接比较
+    \item \textbf{算法架构不同}：AirFed 使用 GNN 聚合邻域信息，本文使用 Transformer 风格的多头交叉注意力；AirFed 采用联邦训练，本文采用集中训练分散执行（CTDE）
+\end{enumerate}
+
+本文的 $34.244\%$ DSR 看似低于 AirFed，但这是\textbf{问题设置差异}的结果：若将本文未覆盖请求排除在分母外（即只计算接纳后完成率），则条件 DSR 约为 $59.8\%$（见第五章表 5.5）。本文保留未接纳请求的设计，使\textbf{空间部署对服务机会的影响}得以显式评价。
+
+\subsubsection{感知受限条件下的截止期优先巡逻}
+
+Lee 等研究了感知受限 UAV-MEC 中的截止期优先巡逻问题\cite{lee2024deadline}，提出目标条件多智能体强化学习（DPP-GCMARL）框架。该工作关注\textbf{初始未知且间歇性工作负载}的场景，核心贡献包括：
+\begin{itemize}
+    \item 基于规则的截止期优先巡逻（DPP）层，将感知得到的小区记忆转化为目标小区
+    \item 学习的目标条件运动（GCM）层，将目标映射为连续运动命令
+    \item 相对 MAPPO 提高了端到端完成工作负载比例和最差簇收集率
+\end{itemize}
+
+\textbf{与本文的联系与区别}：
+\begin{itemize}
+    \item \textbf{共同点}：都关注感知受限条件下的 UAV 服务，使用 MARL 处理动态需求
+    \item \textbf{差异点}：
+    \begin{itemize}
+        \item DPP-GCMARL 研究\textbf{巡逻路径规划}，目标是重复访问未知需求区域；本文研究\textbf{协同轨迹与任务分配}，目标是通过空间部署和跨机卸载提高截止期完成率
+        \item DPP-GCMARL 未显式建模计算任务的执行节点选择与资源竞争；本文第四章专门研究跨机迁移的批量外部影响
+        \item DPP-GCMARL 采用基于规则的目标选择 + 学习运动，本文采用端到端学习的需求感知轨迹 + 学习配额搜索
+    \end{itemize}
+\end{itemize}
+
+本文第三章的需求感知观测设计与 DPP-GCMARL 的"感知受限"动机相似，但本文进一步通过\textbf{固定快照实验与闭环验证的分离}（第四、五章），区分了分配求解质量与长期状态反馈的作用。
+
+\subsubsection{图注意力约束的联合任务卸载与资源分配}
+
+Zhang 等在 UAV 辅助车联网（IoV）场景中使用图注意力约束 DRL 进行联合任务卸载与资源分配\cite{zhang2024graph}。该工作的特点包括：
+\begin{itemize}
+    \item 将车辆与 UAV 之间的关系建模为图，使用图注意力网络（GAT）聚合邻域特征
+    \item 优化时延、能耗和资源利用率的加权组合
+    \item 在城市道路场景中验证，考虑高动态性和频繁切换
+\end{itemize}
+
+\textbf{与本文的关系}：
+\begin{itemize}
+    \item \textbf{注意力机制的不同}：Zhang 等使用 GAT 的图注意力，本文使用 Transformer 风格的多头交叉注意力（第三章第 3.4 节）。GAT 侧重边的权重学习，Transformer 注意力侧重查询-键匹配
+    \item \textbf{问题域不同}：IoV 场景关注车辆高速移动下的频繁切换，本文关注应急场景中相对低速移动的 UE（$1\,\mathrm{m/s}$）
+    \item \textbf{评价指标不同}：Zhang 等使用加权效用函数，本文使用\textbf{截止期满足率的请求计数}，并分解为接纳率与接纳后完成率
+\end{itemize}
+
+本文第三章第 3.6 节的注意力权重可视化（图 5.7）说明了多头注意力在 UAV-UE 和 UAV-UAV 关系中的实际聚合模式，但\textbf{未声称注意力结构本身是独有贡献}——第三章的核心是需求可见性对接纳的影响，注意力是实现观测聚合的工具。
+
+\subsubsection{大模型增强的多智能体任务卸载}
+
+最新的研究开始探索大语言模型（LLM）在 UAV-MEC 中的应用。Zhao 等提出 LLM 增强的多智能体强化学习框架\cite{zhao2025llm}，利用 LLM 的推理能力改善任务卸载决策。该工作的创新点包括：
+\begin{itemize}
+    \item 使用 LLM 作为高层策略生成器，指导低层 RL 智能体
+    \item 在收敛速度和任务完成率上相对传统 DRL 方法提升超过 $10\%$
+    \item 探索预训练知识在特定领域任务中的迁移能力
+\end{itemize}
+
+\textbf{与本文的关系}：
+\begin{itemize}
+    \item \textbf{技术路线不同}：LLM 增强方法属于\textbf{大模型驱动的决策}，本文属于\textbf{传统 MARL + 结构化优化}
+    \item \textbf{训练范式不同}：LLM 方法依赖预训练知识，本文完全从环境交互中学习
+    \item \textbf{计算成本不同}：LLM 推理开销显著高于本文的前向神经网络，机载部署可行性存疑
+\end{itemize}
+
+本文\textbf{未采用 LLM}，是基于以下考虑：（1）应急场景可能无法依赖云端 LLM API；（2）机载嵌入式平台难以部署大模型；（3）从零训练的 MARL 方法在特定环境中可能更高效。LLM 增强方法是值得探索的未来方向，但不是本文当前的技术选择。
+
+\subsubsection{三维避障约束下的 MARL 基准测试}
+
+Kim 等针对 UAV-MEC 提出了包含\textbf{真实三维避障导航约束}的 MARL 基准测试\cite{kim2024benchmarking}，填补了现有研究忽略动力学约束的空白。该工作的贡献包括：
+\begin{itemize}
+    \item 集成真实的三维碰撞避免、转弯半径限制和速度约束
+    \item 比较多种 MARL 算法（MAPPO、QMIX、MADDPG 等）在周期任务卸载中的表现
+    \item 发现简化模型与真实约束下的性能排序可能不同
+\end{itemize}
+
+\textbf{对本文的启示}：
+\begin{itemize}
+    \item Kim 等的发现\textbf{验证了本文第 1.6 节"运动模型简化假设"的必要性}：真实动力学约束确实会改变方法排序
+    \item 本文第五章第 5.11 节图 5.20 的发现（加入软件费用后排序改变）与 Kim 等的观察一致：\textbf{简化假设对结论有显著影响}
+    \item 本文明确声明"轨迹规划效果应在所用简化运动与信息条件下解释"（第一章第 21 页），与 Kim 等强调的基准真实性理念一致
+\end{itemize}
+
+本文\textbf{未实现三维避障}，是受限于研究范围与实现成本。第 1.6 节已明确这一局限，并建议实际部署时结合飞控系统的轨迹跟踪与局部避障模块。
+
+\subsubsection{本文相对最新研究的定位总结}
+
+综合上述 2024--2025 年最新进展，本文的独特定位可总结为：
+
+\begin{enumerate}
+    \item \textbf{问题层面}：
+    \begin{itemize}
+        \item 研究\textbf{自然覆盖接纳 + 动态非周期请求}，区别于周期 IoT 采集（AirFed）和预定关联（多数文献）
+        \item 以\textbf{实际生成服务请求}为 DSR 分母，使空间部署对服务机会的影响得以显式评价
+        \item 同时建模\textbf{跨机资源竞争}（第四章 MC-ITR）与\textbf{长期状态反馈}（第五章闭环验证），区分固定快照质量与闭环性能
+    \end{itemize}
+    \item \textbf{方法层面}：
+    \begin{itemize}
+        \item 采用\textbf{分层协同决策}：冻结需求感知轨迹上层 + 学习配额搜索下层，而非端到端单一网络
+        \item 使用\textbf{配额条件化匹配}：先学习配额向量，再由确定性指派生成完整分配，区别于逐请求独立采样
+        \item 通过\textbf{共享强框架对照}（强配额随机、启发式配额）区分学习增量与优化框架贡献，避免把整个收益归给 PPO
+    \end{itemize}
+    \item \textbf{证据层面}：
+    \begin{itemize}
+        \item 使用\textbf{十个独立训练块 + 五个配对工作负载}的统计设计，明确区分模型随机性、工作负载变化与评估回合抽样
+        \item 进行\textbf{多层次比较}：主对照（贪心、冻结下层、适配下层）、机制对照（启发式、强随机）、补充对照（全随机、逐请求随机），形成完整证据链
+        \item 报告\textbf{边际增益的统计敏感性}（学习 vs. 强随机 $0.143$ 个百分点，$p$ 值在不同检验下有差异），而非选择性呈现有利结果
+    \end{itemize}
+\end{enumerate}
+
+\textbf{与 AirFed 等高 DSR 工作的公平比较}：本文 $34.244\%$ DSR 与 AirFed $99\%$ DSR 的差距，主要来自\textbf{分母定义不同}：
+\begin{itemize}
+    \item AirFed 的分母是预定周期任务（设备已关联，只优化访问顺序）
+    \item 本文的分母包含\textbf{未被覆盖的请求}（约 $42.7\%$，见第五章图 5.10）
+    \item 若只看本文的接纳后完成率（$59.8\%$），仍低于 AirFed，但这是\textbf{任务特性差异}：本文的截止期更紧（$3\,\mathrm{s}$）、计算负载更重（$\omega=2000$ 周期/字节）、UE 移动更快
+\end{itemize}
+
+本文\textbf{不声称优于}这些最新工作，而是在\textbf{不同问题设置}下提供了可复现的基线方法与严格的统计证据。跨协议、跨场景的性能排序需要统一基准环境（如 Kim 等的三维避障基准），这是未来工作的方向。
