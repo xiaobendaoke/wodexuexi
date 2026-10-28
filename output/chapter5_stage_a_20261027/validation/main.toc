@@ -1,0 +1,234 @@
+\contentsline {chapter}{\numberline {第1章}绪论}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}研究背景与意义}{1}{section.1.1}%
+\contentsline {subsection}{\numberline {1.1.1}无人机集群协同任务规划与空地服务需求}{1}{subsection.1.1.1}%
+\contentsline {subsection}{\numberline {1.1.2}自然覆盖条件下的服务评价问题}{2}{subsection.1.1.2}%
+\contentsline {subsection}{\numberline {1.1.3}集群空间部署与计算任务分工的研究意义}{3}{subsection.1.1.3}%
+\contentsline {section}{\numberline {1.2}国内外研究现状}{4}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}集群协同覆盖与需求驱动的空间规划}{4}{subsection.1.2.1}%
+\contentsline {subsection}{\numberline {1.2.2}协同计算任务分配与模型驱动资源优化}{4}{subsection.1.2.2}%
+\contentsline {subsection}{\numberline {1.2.3}动态机动与资源决策中的深度强化学习}{6}{subsection.1.2.3}%
+\contentsline {subsection}{\numberline {1.2.4}多智能体协作与集中训练分散执行}{7}{subsection.1.2.4}%
+\contentsline {subsection}{\numberline {1.2.5}注意力聚合与结构化优化的作用}{8}{subsection.1.2.5}%
+\contentsline {subsection}{\numberline {1.2.6}最接近研究与本文的具体增量}{9}{subsection.1.2.6}%
+\contentsline {subsection}{\numberline {1.2.7}本文比较口径与相关方法的关系}{10}{subsection.1.2.7}%
+\contentsline {section}{\numberline {1.3}关键研究问题与技术路线}{11}{section.1.3}%
+\contentsline {section}{\numberline {1.4}研究内容与主要贡献}{11}{section.1.4}%
+\contentsline {section}{\numberline {1.5}论文组织结构}{12}{section.1.5}%
+\contentsline {section}{\numberline {1.6}研究假设与适用范围}{13}{section.1.6}%
+\contentsline {subsection}{\numberline {1.6.1}场景与运动模型}{13}{subsection.1.6.1}%
+\contentsline {subsection}{\numberline {1.6.2}资源、信息与费用模型}{13}{subsection.1.6.2}%
+\contentsline {subsection}{\numberline {1.6.3}统计范围与推广条件}{14}{subsection.1.6.3}%
+\contentsline {section}{\numberline {1.7}本章小结}{14}{section.1.7}%
+\contentsline {chapter}{\numberline {第2章}相关技术与理论基础}{15}{chapter.2}%
+\contentsline {section}{\numberline {2.1}核心术语与概念的操作性定义}{15}{section.2.1}%
+\contentsline {subsection}{\numberline {2.1.1}自然覆盖接纳 (Natural Coverage-Based Admission)}{15}{subsection.2.1.1}%
+\contentsline {subsection}{\numberline {2.1.2}端到端截止期满足率 (End-to-End Deadline Satisfaction Rate, DSR)}{16}{subsection.2.1.2}%
+\contentsline {subsection}{\numberline {2.1.3}配额 (Quota) 与分配 (Allocation)}{17}{subsection.2.1.3}%
+\contentsline {subsection}{\numberline {2.1.4}需求感知 (Demand-Aware) 与预接纳观测 (Pre-Admission Observation)}{18}{subsection.2.1.4}%
+\contentsline {subsection}{\numberline {2.1.5}批量算力均分 (Batch-Shared Equal Computation)}{19}{subsection.2.1.5}%
+\contentsline {subsection}{\numberline {2.1.6}术语表总结}{20}{subsection.2.1.6}%
+\contentsline {section}{\numberline {2.2}无人机集群任务规划与协同服务基础}{20}{section.2.2}%
+\contentsline {subsection}{\numberline {2.2.1}任务分工、轨迹规划与飞行执行的层次关系}{20}{subsection.2.2.1}%
+\contentsline {subsection}{\numberline {2.2.2}二维机动模型与离散空间可行性}{21}{subsection.2.2.2}%
+\contentsline {subsection}{\numberline {2.2.3}服务覆盖、邻机关系与空间资源耦合}{22}{subsection.2.2.3}%
+\contentsline {subsection}{\numberline {2.2.4}分散式轨迹决策与集中任务调度}{22}{subsection.2.2.4}%
+\contentsline {section}{\numberline {2.3}无人机辅助移动边缘计算基础}{23}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}网络层次与请求执行位置}{23}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}位置相关的无线通信与量纲转换}{24}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.3.3}批量计算共享与缓存代价}{25}{subsection.2.3.3}%
+\contentsline {subsection}{\numberline {2.3.4}覆盖、接纳与端到端指标}{26}{subsection.2.3.4}%
+\contentsline {section}{\numberline {2.4}马尔可夫决策过程与长期目标}{27}{section.2.4}%
+\contentsline {subsection}{\numberline {2.4.1}状态、动作与转移的定义}{27}{subsection.2.4.1}%
+\contentsline {subsection}{\numberline {2.4.2}折扣回报与值函数}{28}{subsection.2.4.2}%
+\contentsline {subsection}{\numberline {2.4.3}动态规划性质与函数近似的边界}{29}{subsection.2.4.3}%
+\contentsline {section}{\numberline {2.5}策略梯度与 Actor--Critic 推导}{29}{section.2.5}%
+\contentsline {subsection}{\numberline {2.5.1}轨迹概率与似然比求导}{29}{subsection.2.5.1}%
+\contentsline {subsection}{\numberline {2.5.2}因果性与回报到达估计}{30}{subsection.2.5.2}%
+\contentsline {subsection}{\numberline {2.5.3}基线不偏性与优势形式}{31}{subsection.2.5.3}%
+\contentsline {section}{\numberline {2.6}时序差分与广义优势估计}{32}{section.2.6}%
+\contentsline {subsection}{\numberline {2.6.1}一步时序差分与多步自举}{32}{subsection.2.6.1}%
+\contentsline {subsection}{\numberline {2.6.2}GAE 的加权推导}{32}{subsection.2.6.2}%
+\contentsline {subsection}{\numberline {2.6.3}终止掩码与递推实现}{33}{subsection.2.6.3}%
+\contentsline {section}{\numberline {2.7}近端策略优化与动作概率一致性}{34}{section.2.7}%
+\contentsline {subsection}{\numberline {2.7.1}重要性比率与旧策略采样}{34}{subsection.2.7.1}%
+\contentsline {subsection}{\numberline {2.7.2}裁剪目标及其分段含义}{34}{subsection.2.7.2}%
+\contentsline {subsection}{\numberline {2.7.3}连续提案、执行映射与离散掩码}{35}{subsection.2.7.3}%
+\contentsline {section}{\numberline {2.8}多智能体协作与 MAPPO}{36}{section.2.8}%
+\contentsline {subsection}{\numberline {2.8.1}联合状态与局部观测}{36}{subsection.2.8.1}%
+\contentsline {subsection}{\numberline {2.8.2}CTDE 与联合观测价值网络}{37}{subsection.2.8.2}%
+\contentsline {subsection}{\numberline {2.8.3}MAPPO 的局部比率与更新流程}{37}{subsection.2.8.3}%
+\contentsline {section}{\numberline {2.9}注意力聚合与图表示}{38}{section.2.9}%
+\contentsline {subsection}{\numberline {2.9.1}查询、键和值的计算}{38}{subsection.2.9.1}%
+\contentsline {subsection}{\numberline {2.9.2}局部查询、掩码与排列性质}{38}{subsection.2.9.2}%
+\contentsline {subsection}{\numberline {2.9.3}请求--节点二部图与消息传递}{39}{subsection.2.9.3}%
+\contentsline {section}{\numberline {2.10}指派匹配与配额条件化优化}{40}{section.2.10}%
+\contentsline {subsection}{\numberline {2.10.1}不可拆分请求的指派形式}{40}{subsection.2.10.1}%
+\contentsline {subsection}{\numberline {2.10.2}截止期优先的代价编码}{40}{subsection.2.10.2}%
+\contentsline {subsection}{\numberline {2.10.3}配额搜索、最好保留与有限预算}{41}{subsection.2.10.3}%
+\contentsline {section}{\numberline {2.11}随机实验与证据解释基础}{41}{section.2.11}%
+\contentsline {section}{\numberline {2.12}本章小结}{42}{section.2.12}%
+\contentsline {chapter}{\numberline {第3章}自然覆盖约束下无人机集群的需求感知协同轨迹决策}{43}{chapter.3}%
+\contentsline {section}{\numberline {3.1}研究动机与评价口径}{43}{section.3.1}%
+\contentsline {subsection}{\numberline {3.1.1}从集群空间部署到可接纳需求}{43}{subsection.3.1.1}%
+\contentsline {subsection}{\numberline {3.1.2}统一计数与乘积分解}{43}{subsection.3.1.2}%
+\contentsline {subsection}{\numberline {3.1.3}电池定型与实际分母}{44}{subsection.3.1.3}%
+\contentsline {section}{\numberline {3.2}系统几何、动作应用与单时隙时序}{45}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}集群协同对象与规划层次}{45}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}网络与自然覆盖模型}{45}{subsection.3.2.2}%
+\contentsline {subsection}{\numberline {3.2.3}原始概率动作与可执行位移}{47}{subsection.3.2.3}%
+\contentsline {subsection}{\numberline {3.2.4}请求执行先于轨迹移动}{48}{subsection.3.2.4}%
+\contentsline {section}{\numberline {3.3}请求、通信、缓存与能量模型}{49}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}业务抽样与量纲约定}{49}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}信道增益与带宽分配}{50}{subsection.3.3.2}%
+\contentsline {subsection}{\numberline {3.3.3}最终负载均分与三类服务路径}{51}{subsection.3.3.3}%
+\contentsline {subsection}{\numberline {3.3.4}分配能耗与完整机队能耗}{52}{subsection.3.3.4}%
+\contentsline {subsection}{\numberline {3.3.5}内容服务与缓存状态更新}{52}{subsection.3.3.5}%
+\contentsline {subsection}{\numberline {3.3.6}UE 电池、无线补能与 UAV 机动能耗}{53}{subsection.3.3.6}%
+\contentsline {subsection}{\numberline {3.3.7}公平性、时延与参数口径}{54}{subsection.3.3.7}%
+\contentsline {section}{\numberline {3.4}上层 Dec-POMDP 与注意力策略实现}{55}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}分散观测与集中训练的职责}{55}{subsection.3.4.1}%
+\contentsline {subsection}{\numberline {3.4.2}定长观测与两个不同容量}{55}{subsection.3.4.2}%
+\contentsline {subsection}{\numberline {3.4.3}共享奖励及归一化}{56}{subsection.3.4.3}%
+\contentsline {subsection}{\numberline {3.4.4}多头交叉注意力的实际前向计算}{57}{subsection.3.4.4}%
+\contentsline {subsection}{\numberline {3.4.5}正态策略、原始动作概率与 PPO}{57}{subsection.3.4.5}%
+\contentsline {section}{\numberline {3.5}预接纳需求观测设计}{59}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}缺失需求与局部可辨识性}{59}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}确定性槽位填充与容量约束}{60}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}从观测信息到可实现收益}{61}{subsection.3.5.3}%
+\contentsline {section}{\numberline {3.6}瓶颈诊断、独立确认与机制解释}{62}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}由失败来源确定干预方向}{62}{subsection.3.6.1}%
+\contentsline {subsection}{\numberline {3.6.2}探索与确认使用不同种子}{63}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}确认结果及训练曲线的用途}{63}{subsection.3.6.3}%
+\contentsline {subsection}{\numberline {3.6.4}接纳扩展与接纳后质量的联合解释}{64}{subsection.3.6.4}%
+\contentsline {subsection}{\numberline {3.6.5}观测设计效果与适用条件}{66}{subsection.3.6.5}%
+\contentsline {section}{\numberline {3.7}本章小结}{66}{section.3.7}%
+\contentsline {chapter}{\numberline {第4章}考虑跨机资源竞争的截止期优先计算任务分配}{67}{chapter.4}%
+\contentsline {section}{\numberline {4.1}固定快照问题与受控比较范围}{67}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}变量、候选域与实际节点映射}{68}{subsection.4.1.1}%
+\contentsline {section}{\numberline {4.2}全批次执行、缓存与分配代价}{68}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}通信与真实缓存路径}{68}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}节点最终负载与计算推导}{69}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}迁移对未移动请求的外部影响}{69}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}自身改善不等于系统改善的构造例}{71}{subsection.4.2.4}%
+\contentsline {subsection}{\numberline {4.2.5}分配因果能耗与共同项排除}{72}{subsection.4.2.5}%
+\contentsline {section}{\numberline {4.3}严格字典序目标与共同基线}{72}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}为何优先比较超时请求数}{72}{subsection.4.3.1}%
+\contentsline {subsection}{\numberline {4.3.2}边际目标如何包含批量外部性}{73}{subsection.4.3.2}%
+\contentsline {subsection}{\numberline {4.3.3}四种方法保持相同问题与初值}{74}{subsection.4.3.3}%
+\contentsline {section}{\numberline {4.4}MC-ITR 搜索过程与可证性质}{75}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}完整单请求迁移邻域}{75}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}严格下降、有限终止及初值保证}{76}{subsection.4.4.2}%
+\contentsline {paragraph}{\numberline {\relax {\symbol {\numexpr \c@paragraph + "245F\relax }}}命题一：每项接受迁移使系统字典序目标严格下降。}{76}{paragraph.4.4.2.0.1}%
+\contentsline {paragraph}{\numberline {\relax {\symbol {\numexpr \c@paragraph + "245F\relax }}}命题二：无预算限制且评价确定时，搜索在有限次接受后终止。}{76}{paragraph.4.4.2.0.2}%
+\contentsline {paragraph}{\numberline {\relax {\symbol {\numexpr \c@paragraph + "245F\relax }}}命题三：无改善出口认证单请求邻域的弱局部最优。}{77}{paragraph.4.4.2.0.3}%
+\contentsline {subsection}{\numberline {4.4.3}局部最优为何仍可不同于全局最优}{77}{subsection.4.4.3}%
+\contentsline {subsection}{\numberline {4.4.4}评价量、复杂度与实际调用开销}{77}{subsection.4.4.4}%
+\contentsline {section}{\numberline {4.5}Exact-Small 与反事实评价协议}{78}{section.4.5}%
+\contentsline {subsection}{\numberline {4.5.1}完整穷举参照的定义}{78}{subsection.4.5.1}%
+\contentsline {subsection}{\numberline {4.5.2}快照冻结与无副作用执行}{79}{subsection.4.5.2}%
+\contentsline {subsection}{\numberline {4.5.3}评价的确定性与实现一致性}{79}{subsection.4.5.3}%
+\contentsline {section}{\numberline {4.6}实验设计、主结果与代价解释}{79}{section.4.6}%
+\contentsline {subsection}{\numberline {4.6.1}410 个评估单元的组成}{79}{subsection.4.6.1}%
+\contentsline {subsection}{\numberline {4.6.2}主配置的截止期优势}{80}{subsection.4.6.2}%
+\contentsline {subsection}{\numberline {4.6.3}第二、第三目标的联合报告}{80}{subsection.4.6.3}%
+\contentsline {subsection}{\numberline {4.6.4}搜索时间与在线预算}{82}{subsection.4.6.4}%
+\contentsline {section}{\numberline {4.7}敏感性、精确检查与搜索完成情况}{82}{section.4.7}%
+\contentsline {subsection}{\numberline {4.7.1}负载与算力变化}{82}{subsection.4.7.1}%
+\contentsline {subsection}{\numberline {4.7.2}Exact-Small 的结果与问题规模}{84}{subsection.4.7.2}%
+\contentsline {subsection}{\numberline {4.7.3}搜索完成标记与规模代价}{85}{subsection.4.7.3}%
+\contentsline {section}{\numberline {4.8}学习轨迹下的快照分配比较与本章小结}{85}{section.4.8}%
+\contentsline {subsection}{\numberline {4.8.1}桥接设计与来源限定}{85}{subsection.4.8.1}%
+\contentsline {subsection}{\numberline {4.8.2}质量余量与完整调用时间}{86}{subsection.4.8.2}%
+\contentsline {subsection}{\numberline {4.8.3}本章结论与后续在线方法的关系}{87}{subsection.4.8.3}%
+\contentsline {chapter}{\numberline {第5章}计及决策开销的无人机集群分层服务决策}{88}{chapter.5}%
+\contentsline {section}{\numberline {5.1}研究问题与总体思路}{88}{section.5.1}%
+\contentsline {subsection}{\numberline {5.1.1}上下层分工与执行时序}{89}{subsection.5.1.1}%
+\contentsline {section}{\numberline {5.2}分层结构与批量任务模型}{90}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}请求集合、执行节点与质量掩码}{90}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}通信路径与预测量的分离}{90}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}最终负载共享下的时延与能耗}{91}{subsection.5.2.3}%
+\contentsline {section}{\numberline {5.3}缓存混合评分与条件匹配}{92}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}从平均时延阈值到命中分支评分}{92}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}固定配额与容量槽展开}{93}{subsection.5.3.2}%
+\contentsline {subsection}{\numberline {5.3.3}实际标量成本及其条件性质}{94}{subsection.5.3.3}%
+\contentsline {section}{\numberline {5.4}有限匹配预算与能耗价格}{95}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}共同初始化与公开配额提议}{95}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}预算内匹配、筛选与候选选择}{95}{subsection.5.4.2}%
+\contentsline {subsection}{\numberline {5.4.3}输出合法性与计算范围}{96}{subsection.5.4.3}%
+\contentsline {section}{\numberline {5.5}实验协议与独立确认设计}{97}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}新训练基座与数据隔离}{97}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}九个完整方法及比较层次}{97}{subsection.5.5.2}%
+\contentsline {subsection}{\numberline {5.5.3}软件计时、注入与硬件条件}{98}{subsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.5.4}块聚合、主检验与预定门槛}{99}{subsection.5.5.4}%
+\contentsline {section}{\numberline {5.6}服务收益、资源取舍与学习增量边界}{99}{section.5.6}%
+\contentsline {subsection}{\numberline {5.6.1}两项预定比较的计费服务收益}{99}{subsection.5.6.1}%
+\contentsline {subsection}{\numberline {5.6.2}全部九方法与接纳后质量}{100}{subsection.5.6.2}%
+\contentsline {subsection}{\numberline {5.6.3}机队能耗、MBS与公平性的取舍}{101}{subsection.5.6.3}%
+\contentsline {subsection}{\numberline {5.6.4}软件时间尾部与预定代价门槛}{102}{subsection.5.6.4}%
+\contentsline {subsection}{\numberline {5.6.5}替代分母与组件归因的边界}{102}{subsection.5.6.5}%
+\contentsline {subsection}{\numberline {5.6.6}已有开发诊断对组件解释的约束}{103}{subsection.5.6.6}%
+\contentsline {section}{\numberline {5.7}本章小结}{103}{section.5.7}%
+\contentsline {chapter}{\numberline {第6章}总结与展望}{104}{chapter.6}%
+\contentsline {section}{\numberline {6.1}研究总结}{104}{section.6.1}%
+\contentsline {subsection}{\numberline {6.1.1}需求感知的集群空间部署与服务接纳}{104}{subsection.6.1.1}%
+\contentsline {subsection}{\numberline {6.1.2}跨机计算任务分工与批量资源耦合}{105}{subsection.6.1.2}%
+\contentsline {subsection}{\numberline {6.1.3}计及决策开销的分层服务决策}{105}{subsection.6.1.3}%
+\contentsline {section}{\numberline {6.2}综合认识与适用范围}{106}{section.6.2}%
+\contentsline {section}{\numberline {6.3}后续研究方向}{107}{section.6.3}%
+\contentsline {section}{\numberline {6.4}本章小结}{107}{section.6.4}%
+\contentsline {chapter}{参考文献}{108}{chapter*.57}%
+\contentsline {chapter}{\numberline {附录 A}原学习配额变体的模型与训练}{112}{appendix.A}%
+\contentsline {section}{\numberline {A.1}配额分解与条件化字典序匹配}{112}{section.A.1}%
+\contentsline {subsection}{\numberline {A.1.1}配额空间与分配空间的关系}{112}{subsection.A.1.1}%
+\contentsline {subsection}{\numberline {A.1.2}容量槽展开与合法指派}{112}{subsection.A.1.2}%
+\contentsline {subsection}{\numberline {A.1.3}字典序目标的标量化与严格等价性}{113}{subsection.A.1.3}%
+\contentsline {subsection}{\numberline {A.1.4}预测能耗参照与保底方案}{114}{subsection.A.1.4}%
+\contentsline {section}{\numberline {A.2}有限预算配额搜索与二部图策略}{114}{section.A.2}%
+\contentsline {subsection}{\numberline {A.2.1}当前状态、最好状态与动作空间}{114}{subsection.A.2.1}%
+\contentsline {subsection}{\numberline {A.2.2}请求、边与节点特征}{115}{subsection.A.2.2}%
+\contentsline {subsection}{\numberline {A.2.3}两层消息传递与置换结构}{117}{subsection.A.2.3}%
+\contentsline {subsection}{\numberline {A.2.4}搜索奖励与最好方案不变量}{118}{subsection.A.2.4}%
+\contentsline {subsection}{\numberline {A.2.5}计算量、终止条件与实现校验}{119}{subsection.A.2.5}%
+\contentsline {section}{\numberline {A.3}教师初始化、配额 PPO 与分层训练}{119}{section.A.3}%
+\contentsline {subsection}{\numberline {A.3.1}从训练轨迹采集请求图}{119}{subsection.A.3.1}%
+\contentsline {subsection}{\numberline {A.3.2}即时教师与独立监督损失}{119}{subsection.A.3.2}%
+\contentsline {subsection}{\numberline {A.3.3}有限搜索轨迹的优势估计}{121}{subsection.A.3.3}%
+\contentsline {subsection}{\numberline {A.3.4}裁剪策略目标与概率一致性}{121}{subsection.A.3.4}%
+\contentsline {subsection}{\numberline {A.3.5}共同基座与交互、教师计算预算}{122}{subsection.A.3.5}%
+\contentsline {chapter}{\numberline {附录 B}原十块确认、冻结九格及事后费用诊断}{124}{appendix.B}%
+\contentsline {section}{\numberline {B.1}独立确认设计与统计方法}{124}{section.B.1}%
+\contentsline {subsection}{\numberline {B.1.1}场景、种子分割与最后检查点}{124}{subsection.B.1.1}%
+\contentsline {subsection}{\numberline {B.1.2}六个核心对照与两种补充随机策略}{125}{subsection.B.1.2}%
+\contentsline {subsection}{\numberline {B.1.3}请求计数聚合与十个独立统计单位}{125}{subsection.B.1.3}%
+\contentsline {subsection}{\numberline {B.1.4}配对区间、多重比较与预定门槛}{126}{subsection.B.1.4}%
+\contentsline {subsection}{\numberline {B.1.5}能耗、公平性、MBS 与完整软件计时}{127}{subsection.B.1.5}%
+\contentsline {section}{\numberline {B.2}主场景性能与完整下层优化包的收益}{128}{section.B.2}%
+\contentsline {subsection}{\numberline {B.2.1}代表轨迹与实际注意力记录}{128}{subsection.B.2.1}%
+\contentsline {subsection}{\numberline {B.2.2}八种方法的截止期满足表现}{130}{subsection.B.2.2}%
+\contentsline {subsection}{\numberline {B.2.3}接纳与接纳后质量的请求计数分解}{132}{subsection.B.2.3}%
+\contentsline {subsection}{\numberline {B.2.4}UAV 能耗与 MBS 依赖}{133}{subsection.B.2.4}%
+\contentsline {subsection}{\numberline {B.2.5}公平性、计算费用与可执行性}{134}{subsection.B.2.5}%
+\contentsline {section}{\numberline {B.3}完整框架与学习机制的分层解释}{135}{section.B.3}%
+\contentsline {subsection}{\numberline {B.3.1}完整系统与完整下层优化包}{135}{subsection.B.3.1}%
+\contentsline {subsection}{\numberline {B.3.2}相同强框架上的学习配额增量}{136}{subsection.B.3.2}%
+\contentsline {subsection}{\numberline {B.3.3}预测误差与实际服务验证}{137}{subsection.B.3.3}%
+\contentsline {subsection}{\numberline {B.3.4}固定潜在服务请求分母复核}{137}{subsection.B.3.4}%
+\contentsline {subsection}{\numberline {B.3.5}教师初始化与 PPO 的开发证据}{137}{subsection.B.3.5}%
+\contentsline {section}{\numberline {B.4}冻结策略的负载与算力稳健性}{138}{section.B.4}%
+\contentsline {subsection}{\numberline {B.4.1}九格设置与冻结评价}{138}{subsection.B.4.1}%
+\contentsline {subsection}{\numberline {B.4.2}相对三个主对手的格点差值}{139}{subsection.B.4.2}%
+\contentsline {subsection}{\numberline {B.4.3}强框架机制的场景依赖}{140}{subsection.B.4.3}%
+\contentsline {section}{\numberline {B.5}固定快照、共同 MBS 与时间预算诊断}{140}{section.B.5}%
+\contentsline {subsection}{\numberline {B.5.1}相同状态下的真实执行复核}{140}{subsection.B.5.1}%
+\contentsline {subsection}{\numberline {B.5.2}保持共同 MBS 请求数量}{141}{subsection.B.5.2}%
+\contentsline {subsection}{\numberline {B.5.3}软墙钟预算下的质量与超限}{142}{subsection.B.5.3}%
+\contentsline {subsection}{\numberline {B.5.4}匹配调用与停止行为}{142}{subsection.B.5.4}%
+\contentsline {subsection}{\numberline {B.5.5}调度延迟敏感性与软件费用事后复核}{143}{subsection.B.5.5}%
+\contentsline {chapter}{\numberline {附录 C}计费闭环确认与开发诊断的补充材料}{145}{appendix.C}%
+\contentsline {section}{\numberline {C.1}数据划分、参数与运行条件}{145}{section.C.1}%
+\contentsline {section}{\numberline {C.2}全部参照与固定潜在分母}{145}{section.C.2}%
+\contentsline {section}{\numberline {C.3}复现入口与核验覆盖}{146}{section.C.3}%
+\contentsline {section}{\numberline {C.4}历史缓存学习开发诊断与停止依据}{146}{section.C.4}%
+\contentsline {chapter}{致谢}{148}{appendix*.90}%
+\contentsline {chapter}{在读期间取得的科研成果}{149}{appendix*.91}%
+\contentsfinish 
