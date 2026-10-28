@@ -1,0 +1,30 @@
+Traceback (most recent call last):
+  File "/home/pyh/Lunwen/chapter5_entry_gate_20261028/scripts/analysis/chapter5_entry_gate_select.py", line 128, in <module>
+    main()
+  File "/home/pyh/Lunwen/chapter5_entry_gate_20261028/scripts/analysis/chapter5_entry_gate_select.py", line 121, in main
+    write(a.output/'threshold_grid.json', all_grid)
+  File "/home/pyh/Lunwen/chapter5_entry_gate_20261028/scripts/analysis/chapter5_oracle_gate.py", line 32, in write
+    Path(path).write_text(json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + '\n')
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/json/__init__.py", line 238, in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/json/encoder.py", line 202, in encode
+    chunks = list(chunks)
+             ^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/json/encoder.py", line 432, in _iterencode
+    yield from _iterencode_dict(o, _current_indent_level)
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/json/encoder.py", line 326, in _iterencode_list
+    yield from chunks
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/json/encoder.py", line 406, in _iterencode_dict
+    yield from chunks
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/json/encoder.py", line 439, in _iterencode
+    o = _default(o)
+        ^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/json/encoder.py", line 180, in default
+    raise TypeError(f'Object of type {o.__class__.__name__} '
+TypeError: Object of type bool is not JSON serializable

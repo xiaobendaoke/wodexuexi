@@ -1,0 +1,28 @@
+% !TeX root = ../main.tex
+\sysusetup{
+  keywords  = {无人机集群，协同轨迹规划，计算任务分配，多智能体强化学习，负载匹配},
+  keywords* = {UAV swarm, cooperative trajectory planning, computation task allocation, multi-agent reinforcement learning, load matching},
+}
+\keywords{无人机集群，协同轨迹规划，计算任务分配，\\多智能体强化学习，负载匹配}
+\enkeywords{UAV swarm, cooperative trajectory planning, computation task allocation,\\
+multi-agent reinforcement learning, load matching}
+
+\begin{abstract}
+无人机（UAV）集群为动态地面请求提供时限计算服务时，需要协调空中平台的空间部署与机载资源分工。单机覆盖与计算、缓存能力有限，协同机动增加的接纳需求又可能加剧执行节点的资源竞争。本文以应急场景中的临时空地服务为应用动机，采用动态请求驱动的逐决策步批次移动边缘计算模型，研究“集群飞向哪里、任务交给谁执行、如何连接机动与分配”三个任务规划问题。自然覆盖条件下，请求须先进入物理服务范围，再经过计算任务分配按时完成。本文以全部实际生成服务请求为分母定义端到端截止期满足率（DSR），并报告接纳率、接纳后质量、UAV 能耗、公平性、宏基站（MBS）依赖与计算开销。
+
+首先，在保持 $100\,\mathrm{m}$ 物理服务半径不变的条件下，将感知范围内未覆盖需求纳入上层 Attention-MAPPO 的预动作观测，结合邻机与用户信息形成需求感知轨迹决策。独立确认中，DSR 从 $0.2444$ 提高至 $0.2793$，接纳扩展同时伴随条件完成率下降。其次，针对跨机迁移通过批量算力共享影响其他请求的现象，提出固定快照下整体重评估的 MC-ITR 分配方法。主配置每快照平均超时数从迭代对照的 $2.228$ 降至 $2.055$；需求感知上层与无注意力学习式下层产生的轨迹快照也显示分配余量，但伴随更高能耗与求解时间。MC-ITR 据此用于离线分析，在线系统采用有限预算的配额匹配。
+
+在此基础上，提出计及决策开销的分层服务决策方法，以上层新训练后冻结的需求感知Attention-MAPPO形成轨迹动作，下层采用解析缓存混合评分、有限预算条件匹配与开发阶段冻结的能耗价格组织已接纳任务。固定配额后，以容量槽指派处理批量共享算力与请求身份的关系；价格只用于已生成候选间的选择，包含初始化在内最多10次匹配。每步完整软件耗时进入当前请求时延，并在指标、奖励及下一观测形成前生效，随后继续闭环演化。五架UAV、100 UE主场景的20个全新上层训练块确认中，计费DSR为$33.76188\%$，相对贪心修复和同框架二值价格策略分别提高$1.02828$和$0.26243$个百分点，95\%配对$t$区间分别为$[0.93660,1.11997]$与$[0.16518,0.35968]$，两项预定主比较均通过Holm双侧校正。
+
+候选相对贪心的平均块机队能耗增加约$1.87\%$，MBS占接纳比例从$4.06670\%$增至$5.94387\%$；完整调用均值$17.72\,\mathrm{ms}$、合并逐次p95为$24.69\,\mathrm{ms}$，通过预定相对贪心能耗及块内时间门槛。该时间来自高并发服务器条件，不是硬实时或机载部署保证。候选与未加价混合及两个冷启动近似参照的DSR差区间跨零，原SF-HLM学习配额变体的PPO独有增量仍未确认。本轮主张限于公开预测信息、规定批次模型与100 UE仿真主场景；连续队列、真实控制网络、软件CPU物理能耗以及新解析方法的跨场景确认仍待研究。
+\end{abstract}
+
+\begin{abstract*}
+An unmanned aerial vehicle (UAV) swarm providing deadline-constrained computation services must coordinate spatial deployment with the use of onboard resources. Individual coverage, computation, and caching capacity are limited, while admitting more demand through cooperative movement can increase execution-node contention. Motivated by temporary air--ground services in emergency settings, this thesis uses a dynamic-request, decision-step batch model of mobile edge computing to study three task-planning questions: where the swarm should move, which nodes should execute the tasks, and how to connect movement with allocation. Under natural coverage-based admission, requests must enter the physical service area before they can be allocated for timely completion. The end-to-end deadline satisfaction rate (DSR) uses all actually generated service requests as its denominator. Admission, conditional completion, UAV energy, fairness, macro base station (MBS) dependence, and computation cost are also reported.
+
+First, uncovered demand within the sensing range is added to the pre-action observations of an Attention-MAPPO upper layer while retaining the 100-m physical service radius. Neighbor and user features support demand-aware trajectory decisions. Independent confirmation increases DSR from 0.2444 to 0.2793, with higher admission accompanied by lower conditional completion. Second, the fixed-snapshot MC-ITR method reevaluates complete assignments to account for the effects of task migration on other requests through batch-shared computation. It reduces the main-setting mean deadline misses per snapshot from 2.228 for an iterative comparator to 2.055. Snapshots from a demand-aware upper policy with a non-attention learned lower layer also reveal assignment-quality headroom, accompanied by higher energy and computation costs. MC-ITR provides an offline allocation reference; the online system uses quota matching within a finite budget.
+
+Building on these findings, a cost-aware hierarchical service-decision method combines a newly trained and then frozen demand-aware Attention-MAPPO upper layer with analytical cache-mixture scoring, budgeted conditional matching, and an energy price frozen on development data. Capacity-slot assignment accounts for batch-shared computation under a given quota vector. Pricing selects among already generated candidates, with at most ten matching calls including initialization. Each full software-call time is added to the current request latency before metrics, rewards, and the next observation are formed, after which closed-loop evolution continues. In the main setting with five UAVs and 100 UEs, confirmation across 20 fresh upper-policy training blocks yields a paid DSR of 33.76188\%. Gains over greedy repair and a binary-scoring priced strategy within the same framework are 1.02828 and 0.26243 percentage points, with paired 95\% t intervals of [0.93660, 1.11997] and [0.16518, 0.35968], respectively. Both prespecified primary comparisons pass two-sided Holm correction.
+
+Relative to greedy repair, the mean block-level fleet-energy ratio increases by approximately 1.87\%, and the MBS share of admitted requests rises from 4.06670\% to 5.94387\%. Full calls average 17.72 ms with a pooled per-call p95 of 24.69 ms, meeting the prespecified energy and block-level time criteria. These times were measured on a loaded server and do not establish hard real-time or onboard deployment guarantees. DSR contrast intervals against the unpriced mixture and two cold-start approximations cross zero, while a PPO-specific increment from the original SF-HLM learned-quota variant remains unconfirmed. The claims apply to public prediction inputs, the specified batch model, and the 100-UE simulation setting. Continuous queues, real control networks, physical software-CPU energy, and cross-scenario confirmation of the new analytical method remain open.
+\end{abstract*}

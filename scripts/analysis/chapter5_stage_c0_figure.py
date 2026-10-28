@@ -30,7 +30,7 @@ def main():
         'axes.spines.right':False,'axes.linewidth':.7,'svg.fonttype':'none','pdf.fonttype':42,'legend.frameon':False})
     a.output.mkdir(parents=True,exist_ok=True)
     fig,axes=plt.subplots(1,3,figsize=(183/25.4,88/25.4))
-    fig.subplots_adjust(left=.085,right=.98,bottom=.29,top=.82,wspace=.63)
+    fig.subplots_adjust(left=.085,right=.98,bottom=.35,top=.82,wspace=.63)
     methods=['G','B2','B4','B6','B10','native_B10'];positions=[0,2,4,6,10,12.5];labels=['G','2','4','6','10','N10']
     panels=[('dsr_difference_pp','Paid DSR difference (pp)',-.1,'Paid quality'),
         ('full_time_ratio','Full-call mean ratio',.8,'Complete software time'),
