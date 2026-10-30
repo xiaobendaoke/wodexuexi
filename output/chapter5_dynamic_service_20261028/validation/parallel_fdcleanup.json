@@ -1,0 +1,139 @@
+{
+  "status": "PASS",
+  "scientific_claims": false,
+  "torch": "2.6.0+cpu",
+  "worker_cpus": [
+    119,
+    120,
+    121,
+    122,
+    123,
+    124,
+    125,
+    126
+  ],
+  "comparisons": [
+    {
+      "mode": "autoregressive",
+      "status": "PASS",
+      "maximum_parameter_difference": 0.0002815723419189453,
+      "maximum_identifiable_parameter_difference": 5.401670932769775e-07,
+      "softmax_common_bias_difference": 0.0002815723419189453,
+      "maximum_probability_difference": 8.940696716308594e-08,
+      "maximum_value_difference": 1.1920928955078125e-07,
+      "serial_loss": -0.5830856326379275,
+      "parallel_loss": -0.5830856338143349,
+      "optimizer_steps": 12,
+      "rng_identical": true,
+      "sampled_assignments_identical": true,
+      "equivalence": "functional/numerical; softmax-common bias gauge explicitly reported, not bitwise weights"
+    },
+    {
+      "mode": "parallel",
+      "status": "PASS",
+      "maximum_parameter_difference": 9.290874004364014e-05,
+      "maximum_identifiable_parameter_difference": 2.0174775272607803e-07,
+      "softmax_common_bias_difference": 9.290874004364014e-05,
+      "maximum_probability_difference": 8.940696716308594e-08,
+      "maximum_value_difference": 5.960464477539063e-08,
+      "serial_loss": -0.583085467156611,
+      "parallel_loss": -0.583085469509426,
+      "optimizer_steps": 12,
+      "rng_identical": true,
+      "sampled_assignments_identical": true,
+      "equivalence": "functional/numerical; softmax-common bias gauge explicitly reported, not bitwise weights"
+    },
+    {
+      "mode": "independent",
+      "status": "PASS",
+      "maximum_parameter_difference": 0.0005221739411354065,
+      "maximum_identifiable_parameter_difference": 2.5890767574310303e-07,
+      "softmax_common_bias_difference": 0.0005221739411354065,
+      "maximum_probability_difference": 8.940696716308594e-08,
+      "maximum_value_difference": 5.960464477539063e-08,
+      "serial_loss": -0.5751877823158315,
+      "parallel_loss": -0.5751877834922389,
+      "optimizer_steps": 12,
+      "rng_identical": true,
+      "sampled_assignments_identical": true,
+      "equivalence": "functional/numerical; softmax-common bias gauge explicitly reported, not bitwise weights"
+    }
+  ],
+  "benchmark": [
+    {
+      "workers": 1,
+      "seconds": [
+        4.966421915218234,
+        4.923522925004363
+      ],
+      "startup_seconds": 1.0521521978080273,
+      "speedup": 0.9390513942382944
+    },
+    {
+      "workers": 2,
+      "seconds": [
+        2.7780621740967035,
+        2.7082522958517075
+      ],
+      "startup_seconds": 2.237958198413253,
+      "speedup": 1.6927878527601399
+    },
+    {
+      "workers": 4,
+      "seconds": [
+        1.6663343757390976,
+        1.5945510361343622
+      ],
+      "startup_seconds": 4.529462918639183,
+      "speedup": 2.848050550115819
+    },
+    {
+      "workers": 8,
+      "seconds": [
+        1.0879804249852896,
+        0.9982565753161907
+      ],
+      "startup_seconds": 9.05663499981165,
+      "speedup": 4.4516354037478845
+    }
+  ],
+  "environment_cache": {
+    "status": "PASS_EXACT",
+    "baseline_seconds": 0.4219241440296173,
+    "cached_seconds": 0.3696335665881634,
+    "steps": 40
+  },
+  "last_parameter_differences": {
+    "request_embed.0.weight": 2.9802322387695312e-08,
+    "request_embed.0.bias": 2.9802322387695312e-08,
+    "node_embed.0.weight": 2.9802322387695312e-08,
+    "node_embed.0.bias": 1.862645149230957e-09,
+    "edge_embed.0.weight": 2.9802322387695312e-08,
+    "edge_embed.0.bias": 2.9802322387695312e-08,
+    "messages.0.weight": 0.0,
+    "messages.0.bias": 0.0,
+    "messages.1.weight": 0.0,
+    "messages.1.bias": 0.0,
+    "node_updates.0.weight": 0.0,
+    "node_updates.0.bias": 0.0,
+    "node_updates.1.weight": 0.0,
+    "node_updates.1.bias": 0.0,
+    "request_updates.0.weight": 0.0,
+    "request_updates.0.bias": 0.0,
+    "request_updates.1.weight": 0.0,
+    "request_updates.1.bias": 0.0,
+    "score.0.weight": 2.5890767574310303e-07,
+    "score.0.bias": 8.568167686462402e-08,
+    "score.2.weight": 7.450580596923828e-09,
+    "score.2.bias": 0.0005221739411354065,
+    "value.0.weight": 1.1175870895385742e-08,
+    "value.0.bias": 7.450580596923828e-09,
+    "value.2.weight": 3.725290298461914e-09,
+    "value.2.bias": 0.0
+  },
+  "serial_update_seconds": [
+    4.6663561929017305,
+    4.6208102982491255
+  ],
+  "selected_workers": 8
+}
