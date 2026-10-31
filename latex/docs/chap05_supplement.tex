@@ -34,8 +34,9 @@
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.95\textwidth]{../docs/figures/图5-2_配额与容量槽匹配}
- \bicaption{固定配额的容量槽展开与请求匹配。示意图用于解释算法结构，不是实测任务分配}{Capacity-slot expansion and request assignment under fixed quotas; a conceptual illustration}
+ \bicaption{固定配额容量槽展开与请求匹配示意图}{Schematic of Capacity Slot Expansion and Request Assignment under Fixed Quotas}
  \label{legacy:fig:ch5-slots}
+ \vspace{0.5ex}\par{\footnotesize 注：示意图用于解释容量槽构造与匹配机理，非实际环境测试分配结果。}
 \end{figure}
 
 配额可行性由完整指派确认。各节点的合法边数只是必要条件：若多节点依赖同一小部分请求，仍可能无法同时填满容量槽。非法边设无穷成本，使用 SciPy 线性指派接口\cite{virtanen2020scipy}求解，其修改的 Jonker--Volgenant 方法背景见文献\cite{crouse2016assignment}。返回后检查边合法性与节点数量守恒；不可行调用同样计入预算，并保留已有最好方案。
@@ -125,7 +126,7 @@ $\mathcal V_\ell$ 为已尝试配额集合，$B_\ell$ 为剩余调用预算，�
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-3_二部图网络与搜索状态}
- \bicaption{请求--执行节点二部图、当前与最好状态编码及配额动作头。非法边和填充请求在消息聚合中屏蔽}{Request--execution-node graph, current/best state encoding and quota action heads}
+ \bicaption{请求--执行节点二部图与网络状态编码结构图}{Request--Execution-Node Bipartite Graph and State Encoding Architecture}
  \label{legacy:fig:ch5-graph}
 \end{figure}
 
@@ -245,7 +246,7 @@ $0$ 对应完成共同保底与初始匹配后的状态，初始匹配本身不�
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-4_训练确认数据划分}
- \bicaption{共同基座、下层训练图与独立确认的数据划分。图中回合是环境交互，配额 PPO 更新是固定训练图上的搜索训练}{Data split for shared foundations, lower-layer training graphs and independent confirmation}
+ \bicaption{基座模型、下层训练图与独立确认数据集划分图}{Dataset Partition for Foundation Model, Lower-Layer Training, and Independent Confirmation}
  \label{legacy:fig:ch5-split}
 \end{figure}
 
@@ -320,7 +321,7 @@ PPO 的概率一致性在带访问去重的搜索中尤为重要。同一个配�
 
 \begin{table}[!htbp]
  \centering
- \bicaption{已确认配额策略的训练设置}{Training settings of the confirmed quota policy}
+ \bicaption{配额策略训练超参数配置}{Training Hyperparameter Settings of Quota Policy}
  \label{legacy:tab:ch5-learning-settings}
  \begin{tabular}{lrlr}
   \toprule
@@ -351,8 +352,9 @@ PPO 的概率一致性在带访问去重的搜索中尤为重要。同一个配�
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-5_基座与配额训练曲线}
- \bicaption{共同基座与配额策略的实际训练记录。前四面板依次为基座平均步奖励、基座DSR、配额PPO损失和价值损失：细线为十块原始曲线，粗线和带分别为块间均值与正负一个标准差；未平滑。后两面板为每块一次教师监督损失记录和样本数；未保存逐轮损失，故不绘制教师收敛曲线。环境回合、优化更新与训练块横轴分别对应不同阶段}{Actual training records of the foundation and quota policy; curves show ten blocks, and teacher panels show one recorded summary per block}
+ \bicaption{基座模型与配额策略训练收敛曲线}{Training Convergence Curves of Foundation Model and Quota Policy}
  \label{legacy:fig:ch5-training}
+ \vspace{0.5ex}\par{\footnotesize 注：前四幅图细线为各训练块原始曲线，粗线与阴影带为均值与标准差；后两幅图为逐块记录的教师监督损失与样本量。}
 \end{figure}
 
 
@@ -370,7 +372,7 @@ PPO 的概率一致性在带访问去重的搜索中尤为重要。同一个配�
 
 \begin{table}[!htbp]
  \centering
- \bicaption{SF-HLM 独立确认的数据与模型分割}{Data and model split for independent SF-HLM confirmation}
+ \bicaption{SF-HLM 独立确认实验数据与模型划分}{Data and Model Partitioning for SF-HLM Independent Confirmation}
  \label{legacy:tab:ch5-seeds}
  \begin{tabular}{lp{0.65\textwidth}}
   \toprule
@@ -399,7 +401,7 @@ PPO 的概率一致性在带访问去重的搜索中尤为重要。同一个配�
 
 \begin{table}[!htbp]
  \centering
- \bicaption{完整下层与学习机制对照的组成}{Components of complete lower-layer and learning-mechanism controls}
+ \bicaption{下层与学习机制对照实验方法构成}{Composition of Lower-Layer and Learning-Mechanism Baselines}
  \label{legacy:tab:ch5-controls}
  \small
  \begin{tabularx}{\textwidth}{p{0.29\textwidth}Y}
@@ -499,8 +501,9 @@ $t_{0.975,9}$ 约为 $2.262$，配对检验以十个训练块差值为数据。D
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-6_UAV轨迹与覆盖}
- \bicaption{预选首确认回合的集群空间机动记录。上排为两方法五机轨迹，灰点仅表示初始 UE 位置，虚线为终点 $100\,\mathrm{m}$ 服务圆；下排为逐机实际水平航程与最小机间距。$200\,\mathrm{m}$ 间距线是既定几何约束；本图只描述各方法一个回合}{Swarm trajectories, per-UAV horizontal path lengths and minimum separation in one preselected episode per method; UE markers show initial positions only}
+ \bicaption{典型确认回合无人机集群空间机动轨迹图}{Spatial Trajectories and Flight Metrics of UAV Swarm in Representative Confirmation Episode}
  \label{legacy:fig:ch5-trajectories}
+ \vspace{0.5ex}\par{\footnotesize 注：上排灰点表示终端初始位置，虚线表示终点服务范围；下排展示航程与最小机间距（参考线为 $200\,\mathrm{m}$ 防撞约束）。}
 \end{figure}
 
 逐机航程由实际位置差累加，即 $\ell_u=\sum_{t=0}^{T-1}\|\mathbf q_u(t+1)-\mathbf q_u(t)\|_2$，其中 $T=1000$，$\ell_u$ 的单位为 m；它不使用网络原始动作模长代替执行位移。该回合中，SF-HLM 五机航程之和约为 $41.664\,\mathrm{km}$，贪心修复约为 $42.291\,\mathrm{km}$。这些数值描述预选实例的机动分工，不代表全评估总体中的航程差异。最小机间距按 $d_*(t)=\min_{u<v}\|\mathbf q_u(t)-\mathbf q_v(t)\|_2$ 逐步计算；两方法的实际位置记录连续，最大单步位移不超过 $15\,\mathrm{m}$，最小间距为 $200\,\mathrm{m}$，核验采用 $10^{-6}\,\mathrm{m}$ 浮点容差。该结果检查的是修复后的离散位置，而不是学习策略独立提供的连续飞行避碰能力。
@@ -510,7 +513,7 @@ $t_{0.975,9}$ 约为 $2.262$，配对检验以十个训练块差值为数据。D
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-7_实际前向注意力}
- \bicaption{代表确认回合第 $500$ 步上层 Actor 的实际前向注意力记录。权重说明该状态下的信息聚合，不作为注意力贡献的独立因果证明}{Actual upper-Actor attention at step 500 of the representative episode; a descriptive forward-pass diagnostic}
+ \bicaption{典型时步上层网络注意力权重热力图}{Attention Weights of Upper-Layer Actor at Representative Step}
  \label{legacy:fig:ch5-actual-attention}
 \end{figure}
 
@@ -522,7 +525,7 @@ $t_{0.975,9}$ 约为 $2.262$，配对检验以十个训练块差值为数据。D
 
 \begin{table}[!htbp]
  \centering
- \bicaption[原十块主场景服务指标]{一百 UE 主场景的服务指标（先合并块内请求计数，再跨块平均）}{Service metrics in the 100-UE setting, obtained from within-block request counts and between-block averaging}
+ \bicaption{100 用户主场景下各方法服务性能指标对比}{Service Performance Metrics in 100-UE Main Setting}
  \label{legacy:tab:ch5-main-quality}
  \begin{tabular}{lrrr}
   \toprule
@@ -544,7 +547,7 @@ $t_{0.975,9}$ 约为 $2.262$，配对检验以十个训练块差值为数据。D
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.97\textwidth]{../docs/figures/图5-8_八方法DSR比较}
- \bicaption{主场景八种方法的 DSR 比较。六种核心方法与两种补充随机对照分别标识；统计单位为十个模型或随机流配对块}{DSR comparison of eight methods in the main setting, with core and supplementary controls identified; ten paired model or random-stream blocks}
+ \bicaption{主场景下八种方法 DSR 性能对比}{DSR Comparison of Eight Methods in Main Setting}
  \label{legacy:fig:ch5-eight-dsr}
 \end{figure}
 
@@ -552,7 +555,7 @@ $t_{0.975,9}$ 约为 $2.262$，配对检验以十个训练块差值为数据。D
 
 \begin{table}[!htbp]
  \centering
- \bicaption[原三主对照的DSR差与能耗比]{三个预定主对照的配对 DSR 差值与仿真环境记录的 UAV 能耗比}{Paired DSR effects and simulated UAV energy ratios for the three prespecified primary controls}
+ \bicaption{三个主对照方法的 DSR 配对差值与能耗比对比}{Paired DSR Differences and Energy Ratios for Three Primary Controls}
  \label{legacy:tab:ch5-primary}
  \small
  \begin{tabular}{lrrrr}
@@ -569,7 +572,7 @@ $t_{0.975,9}$ 约为 $2.262$，配对检验以十个训练块差值为数据。D
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.97\textwidth]{../docs/figures/图5-9_主比较训练块配对差}
- \bicaption{SF-HLM 相对三个主对手的十训练块配对差。每个块先合并五工作负载、六回合的请求计数}{Per-training-block DSR differences against the three primary controls, based on pooled requests within each block}
+ \bicaption{SF-HLM 相对三个主对照方法的逐块 DSR 配对差值}{Per-Block Paired DSR Differences of SF-HLM Against Three Primary Controls}
  \label{legacy:fig:ch5-primary-blocks}
 \end{figure}
 
@@ -584,7 +587,7 @@ $t_{0.975,9}$ 约为 $2.262$，配对检验以十个训练块差值为数据。D
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-10_请求结果与接纳后质量}
- \bicaption{生成请求的互斥结果分解与接纳后完成率。三种结果按同块计数计算后平均，条件完成率以接纳请求为分母}{Mutually exclusive request outcomes and deadline completion conditional on admission}
+ \bicaption{服务请求执行结果分解与条件完成率对比}{Decomposition of Request Outcomes and Conditional Completion Rate}
  \label{legacy:fig:ch5-outcomes}
 \end{figure}
 
@@ -596,7 +599,7 @@ $t_{0.975,9}$ 约为 $2.262$，配对检验以十个训练块差值为数据。D
 
 \begin{table}[!htbp]
  \centering
- \bicaption{主场景 UAV 资源代价、公平性和完整软件时间}{UAV resource costs, fairness and full-policy software timing in the main setting}
+ \bicaption{主场景下各方法资源开销、公平性与软件耗时对比}{Comparison of Resource Costs, Fairness, and Software Time in Main Setting}
  \label{legacy:tab:ch5-main-cost}
  \small
  \begin{tabular}{lrrrr}
@@ -618,8 +621,9 @@ $t_{0.975,9}$ 约为 $2.262$，配对检验以十个训练块差值为数据。D
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-11_UAV能耗与MBS依赖}
- \bicaption{仿真环境记录的 UAV 机队能耗与 MBS 依赖。图中能耗为 kJ/步，MBS 比例为 MBS 请求数除以接纳请求数；未计 MBS 全网费用}{Simulated UAV fleet energy in kJ per step and MBS fraction among admitted requests, excluding whole-network MBS costs}
+ \bicaption{无人机机队能耗与宏基站依赖度对比}{Comparison of UAV Fleet Energy and MBS Dependence}
  \label{legacy:fig:ch5-energy-mbs}
+ \vspace{0.5ex}\par{\footnotesize 注：能耗单位为 kJ/步，宏基站比例为分派至宏基站的请求在已接纳请求中的占比。}
 \end{figure}
 
 SF-HLM 送往 MBS 的接纳请求比例为 $9.83\%$，高于贪心的 $2.92\%$ 和启发式的 $2.42\%$。在 MBS 单请求算力不共享的设置下，任务转移释放 UAV 算力并改变其计算与转发能耗。因此，UAV 能耗下降需结合 MBS 依赖解释，其统计范围未包含地面计算和完整网络能源。
@@ -628,7 +632,7 @@ SF-HLM 送往 MBS 的接纳请求比例为 $9.83\%$，高于贪心的 $2.92\%$ �
 
 \begin{table}[!htbp]
  \centering
- \bicaption{主场景仿真机队能耗构成（每步及等权块占比）}{Simulated fleet energy components per step and equal-block shares}
+ \bicaption{主场景下机队飞行与计算能耗构成}{Components of Fleet Flight and Computation Energy in Main Setting}
  \label{legacy:tab:ch5-energy-components}
  \small
  \setlength{\tabcolsep}{4pt}
@@ -657,7 +661,7 @@ SF-HLM公平性均值为 $0.9239$，核心六方法约在 $0.9207$ 至 $0.9239$ 
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-12_公平性与隔离软件耗时}
- \bicaption{块级公平性与隔离完整软件 p95。p95先在每块全部调用上计算，再展示十块分布及其均值}{Block-level fairness and isolated full-policy p95, computed within each block before summarizing}
+ \bicaption{服务公平性与软件决策延迟分布对比}{Comparison of Service Fairness and Software Latency Distribution}
  \label{legacy:fig:ch5-fairness-time}
 \end{figure}
 
@@ -685,7 +689,7 @@ SF-HLM 的完整时间高于强配额随机的 $73.47\,\mathrm{ms}$、启发式�
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.97\textwidth]{../docs/figures/图5-13_强框架机制配对差}
- \bicaption{学习相对启发式和强配额随机的机制差。强随机共享初始化、修复、匹配、最好保留和相同调用预算}{Mechanism differences against heuristic and strong random quota search sharing the same optimization framework}
+ \bicaption{学习机制相对启发式与随机搜索的配对性能差值}{Paired Performance Differences of Learning Mechanism Against Heuristic and Random Search}
  \label{legacy:fig:ch5-mechanism-blocks}
 \end{figure}
 
@@ -710,7 +714,7 @@ SF-HLM每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个�
 
 \begin{table}[!htbp]
  \centering
- \bicaption{五训练块开发评价中的 PPO 相对 BC 差值}{PPO-minus-BC effects in the five-block development evaluation}
+ \bicaption{开发评估中 PPO 相对行为克隆算法的性能差值}{Performance Differences of PPO Against Behavior Cloning in Development Evaluation}
  \label{legacy:tab:ch5-bc-ppo-development}
  \small
  \begin{tabular}{lrrr}
@@ -737,7 +741,7 @@ SF-HLM每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个�
 
 \begin{table}[!htbp]
  \centering
- \bicaption{学习配额SF-HLM 在九格冻结评价中的 DSR}{DSR of the learned quota method across the nine frozen-policy settings}
+ \bicaption{不同用户规模与算力配置下 SF-HLM 的 DSR 表现}{DSR Performance of SF-HLM Across Different User Scales and Compute Capacities}
  \label{legacy:tab:ch5-nine-grid}
  \begin{tabular}{lrrr}
   \toprule
@@ -753,7 +757,7 @@ SF-HLM每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个�
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-14_九格冻结策略DSR}
- \bicaption{SF-HLM 冻结策略在 UE 数量与 UAV 算力九格中的 DSR（左）和接纳后按时完成率（右）。主格引用独立确认，其他格不重新训练；数值为十块均值}{DSR and conditional completion rate of the frozen SF-HLM policy across nine UE/compute settings; cells show ten-block means}
+ \bicaption{九种参数配置下 SF-HLM 的服务指标表现}{Service Metrics of SF-HLM Across Nine Parameter Configurations}
  \label{legacy:fig:ch5-grid-dsr}
 \end{figure}
 
@@ -766,7 +770,7 @@ SF-HLM每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个�
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-15_九格主对手DSR差}
- \bicaption{九格学习相对三个主对手的 DSR 差。八个新格的二十四项比较统一 Holm 校正，主格保留原确认族}{DSR differences against three primary controls across nine settings, with the new 24-comparison Holm family separated from nominal confirmation}
+ \bicaption{九种参数配置下 SF-HLM 相对主对照方法的 DSR 差值}{DSR Differences of SF-HLM Against Primary Controls Across Nine Configurations}
  \label{legacy:fig:ch5-grid-differences}
 \end{figure}
 
@@ -798,8 +802,9 @@ SF-HLM每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个�
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-16_自由与固定MBS快照诊断}
- \bicaption{四百固定快照的自由与共同 MBS 数量诊断。两面板分别报告自由和固定共同 MBS 数量下每快照的实际超时均值；反事实分配不回写环境，描述性均值未画误差线}{Mean actual deadline misses with free and common MBS counts on 400 snapshots; descriptive means without closed-loop write-back}
+ \bicaption{宏基站协同模式对任务超时影响诊断图}{Diagnostic Comparison of Deadline Misses under Different MBS Coordination Modes}
  \label{legacy:fig:ch5-fixed-mbs}
+ \vspace{0.5ex}\par{\footnotesize 注：基于 400 个固定快照测试；描述性均值对比，反事实分配不回写环境状态。}
 \end{figure}
 
 固定 MBS 配额时，学习的环境分配能耗为每快照 $29619.2\,\mathrm{J}$，强随机为 $29202.0\,\mathrm{J}$，贪心为 $31637.5\,\mathrm{J}$。相对贪心，学习在相同 MBS 数量下仍减少超时和分配能耗；相对强随机，自由 MBS 时的小幅质量差在固定配额下未保留。该诊断控制单步资源使用，结果适用于相同快照，固定 MBS 约束下的长期 DSR 尚需闭环评价。
@@ -813,7 +818,7 @@ SF-HLM每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个�
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-17_墙钟预算质量时间与超限}
- \bicaption{软墙钟预算的真实质量、时间与超限率。原子匹配与完整路径开销可能越界，所有越界样本均保留}{Actual quality, time and overrun rates under soft wall-clock budgets, with all overruns retained}
+ \bicaption{软时限预算下算法求解质量与超时率分析}{Solution Quality and Overrun Rates under Soft Wall-Clock Budgets}
  \label{legacy:fig:ch5-wall-budget}
 \end{figure}
 
@@ -826,7 +831,7 @@ SF-HLM每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个�
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-18_匹配调用与停止行为}
- \bicaption{确认评估环境步中的匹配调用与终止行为。调用包含初始匹配及失败候选，空批次纳入统计，停止不消耗一次匹配调用}{Matching-call usage and termination behavior across confirmation evaluation steps, including initialization, failed candidates and empty batches}
+ \bicaption{算法匹配调用次数与终止行为统计图}{Statistics of Matching Calls and Termination Behavior in Confirmation Steps}
  \label{legacy:fig:ch5-calls}
 \end{figure}
 
@@ -841,7 +846,7 @@ SF-HLM每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个�
 
 \begin{table}[!htbp]
  \centering
- \bicaption[原轨迹的延迟及费用事后评分]{附加延迟及逐次软件费用事后评分（DSR为百分比，差值及区间为百分点）}{Post-hoc scoring with added delay and per-call software costs}
+ \bicaption{附加调度延迟及软件决策开销事后评估}{Post-Hoc Evaluation with Added Scheduling Delay and Software Overhead}
  \label{legacy:tab:ch5-delay-audit}
  \footnotesize
  \setlength{\tabcolsep}{3pt}
@@ -862,8 +867,9 @@ SF-HLM每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个�
 \begin{figure}[!htbp]
  \centering
  \includegraphics[width=0.98\textwidth]{../docs/figures/图5-20_调度延迟敏感性}
- \bicaption{原确认轨迹的调度延迟敏感性。左面板为DSR，右面板为学习相对强随机和贪心的配对差；菱形单独表示逐次软件费用评分，与共同延迟曲线分开。阴影与误差线为十块逐项95\% t区间，状态不回写}{Scheduling-delay sensitivity on original confirmation trajectories; diamonds denote per-call software scoring, with pointwise ten-block t intervals and no state write-back}
+ \bicaption{调度延迟对算法服务性能影响的灵敏度分析}{Sensitivity of Service Performance to Scheduling Delays on Confirmation Trajectories}
  \label{legacy:fig:ch5-delay-audit}
+ \vspace{0.5ex}\par{\footnotesize 注：阴影与误差棒表示 10 个训练块的 95\% $t$ 置信区间；菱形标记表示计入单次软件决策开销的事后评估结果。}
 \end{figure}
 
 零附加延迟精确复现原三方法DSR。共同等待增大后，各方法DSR下降，但差值并非固定平移：100 ms时学习减贪心为 $-0.329$ 个百分点，150 ms时为 $-0.728$，说明原学习分配的截止期余量对等待更敏感。学习对强随机的差仍较小，20和50 ms逐项区间跨零；该探索性分析不构成独立确认。
@@ -885,7 +891,7 @@ SF-HLM每步预测超时数减实际接纳后超时数的均值为 $-0.304$ 个�
 \section{全部参照与固定潜在分母}
 \begin{table}[!htbp]
 \centering
-\bicaption{新确认全部参照的配对差与能耗比}{All paired contrasts and energy ratios in the new confirmation}
+\bicaption{计费确认实验全部参照方法的配对差值与能耗比}{All Paired Differences and Energy Ratios in Cost Confirmation Experiment}
 \label{tab:cost-all-contrasts}
 \small
 \begin{tabular}{lrrr}
@@ -920,7 +926,7 @@ R16 & $0.69841\ [0.63499,0.76183]$ & 20/20 & 1.13630\\
 
 \begin{table}[!htbp]
 \centering
-\bicaption{历史开发快照中的分配关系与服务差贡献}{Assignment relationships and service-difference contributions in historical development snapshots}
+\bicaption{历史开发快照任务分配关系与性能差异分解}{Task Assignment Relationships and Performance Contributions in Development Snapshots}
 \label{tab:cost-development-decomposition}
 \small
 \begin{tabular}{lrr}
@@ -938,7 +944,7 @@ R16 & $0.69841\ [0.63499,0.76183]$ & 20/20 & 1.13630\\
 
 \begin{table}[!htbp]
 \centering
-\bicaption{已完成的缓存学习开发支线及停止依据}{Completed cache-learning development branches and their stopping criteria}
+\bicaption{缓存学习开发支线状态与终止准则}{Completed Cache-Learning Development Branches and Termination Criteria}
 \label{tab:cost-development-stops}
 \small
 \begin{tabularx}{\textwidth}{p{0.16\textwidth}YY}
@@ -973,7 +979,7 @@ G和解析方法各15个1000步源回合，每回合分40个等长区间，各�
 
 \begin{table}[!htbp]
 \centering
-\bicaption{共同价格下的开发组件比较；差值单位为百分点}{Development module comparisons under a common price; differences in percentage points}
+\bicaption{基准价格下各开发模块性能对比}{Performance Comparison of Development Modules under Benchmark Pricing}
 \label{tab:cost-stage-b-components}
 \small
 \begin{tabular}{lrrr}
@@ -1001,8 +1007,9 @@ $M_\lambda-M_0$ & $-0.085\ [-0.125,-0.045]$ & $-0.009\ [-0.721,0.703]$ & 0.9356\
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.98\textwidth]{../docs/figures/chapter5_stage_b_20261027/stage_b_transfer.pdf}
-\bicaption{冻结策略的五场景开发迁移。小点为五个历史块配对差，大点及线为均差与逐项95\%配对$t$区间；各块合并三个新负载回合}{Five-setting development transfer of frozen policies; paired historical blocks, means and marginal 95\% paired t intervals}
+\bicaption{冻结策略在五种开发场景下的迁移性能}{Transfer Performance of Frozen Policies Across Five Development Settings}
 \label{fig:cost-stage-b-transfer}
+\vspace{0.5ex}\par{\footnotesize 注：小点表示 5 个历史块配对差，大点与线段表示均差及 95\% 配对 $t$ 置信区间。}
 \end{figure}
 
 \clearpage
@@ -1018,7 +1025,7 @@ $M_\lambda-M_0$ & $-0.085\ [-0.125,-0.045]$ & $-0.009\ [-0.721,0.703]$ & 0.9356\
 
 \begin{table}[!htbp]
 \centering
-\bicaption[固定预算前缀的计费闭环开发取舍]{固定预算前缀的计费闭环开发取舍；差值为百分点及95\%描述区间}{Paid closed-loop development trade-offs of fixed budget prefixes}
+\bicaption{固定预算前缀下的计费闭环性能权衡}{Performance Trade-Offs of Fixed Budget Prefixes in Cost-Aware Closed-Loop Evaluation}
 \label{tab:cost-stage-c0-prefix}
 \small
 \setlength{\tabcolsep}{4pt}
@@ -1047,6 +1054,7 @@ B10 & $0.000\ [0.000,0.000]$ & 19.850 & 1.0000 & 1.0000\\
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.98\textwidth]{../results/chapter5_followup_20261027/c0_20261028/development_v2/figures/c0_tradeoff.pdf}
-\bicaption[固定预算的质量、完整时间与能耗取舍]{固定预算的开发取舍。小点为五个历史块，大点及线为均值和逐项95\%配对$t$描述区间；虚线为开发限值，N10为原生批量B10}{Development trade-offs of fixed budgets; five historical blocks and marginal paired t intervals, with dashed screening limits and N10 denoting native B10}
+\bicaption{固定预算下求解质量、计算时间与能耗权衡分析}{Trade-Offs of Solution Quality, Computation Time, and Energy under Fixed Budgets}
 \label{fig:cost-stage-c0-tradeoff}
+\vspace{0.5ex}\par{\footnotesize 注：小点表示历史块数据，大点与线段表示均值及 95\% 配对 $t$ 描述区间；虚线表示开发筛选限值。}
 \end{figure}

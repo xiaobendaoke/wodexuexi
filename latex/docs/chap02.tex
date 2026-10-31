@@ -2,936 +2,313 @@
 \chapter{相关技术与理论基础}
 \label{cha:related-technologies}
 
-本章为无人机集群协同轨迹规划与计算任务分配建立共同的系统概念与数学基础。首先从集群任务规划的层次关系出发，说明简化机动约束、空间部署和机载资源分工如何连接，再介绍 UAV-MEC 中通信、计算、缓存和自然接纳的联系。随后从有限时域马尔可夫决策过程推导值函数与策略梯度，给出带终止处理的广义优势估计和近端策略优化，并介绍多智能体协作、MAPPO、注意力聚合，以及第五章使用的二部图与条件化指派。通用理论说明算法形式及成立条件；本文的网络结构、超参数和性能结论分别由后续章节的实现与实验证据确定。
+本章为无人机集群协同轨迹规划与机载计算任务分配建立系统物理模型与数学优化基础。面向空地协同边缘计算场景，首先界定多无人机协同任务规划的层次关系与二维运动学约束，阐明覆盖接纳与空间资源耦合的基本特征；随后系统介绍无人机辅助移动边缘计算（UAV-MEC）的分层架构，建立视距无线传输、批量算力共享、动态计算能耗及服务镜像缓存模型；接着系统阐述部分可观测马尔可夫决策过程（Dec-POMDP）、多智能体近端策略优化（MAPPO）及用于状态特征聚合的交叉注意力机制；最后介绍不可拆分计算任务指派模型、二部图匹配与字典序优化理论。本章重点阐述通用数学形式与物理成立条件，具体网络槽位结构、动作修复规则与求解算法分别由后续章节结合具体问题展开。
 
-% 原外接术语草稿保留；以下沿用其结构，仅同步覆盖几何、MBS例外及新方法指代。
-\section{核心术语与概念的操作性定义}
-\label{sec:ch2-core-terminology}
-
-为确保研究问题、方法设计和实验结果得到准确理解，本节对本文使用的若干核心术语给出操作性定义（operational definition）。操作性定义明确术语在本研究中的具体含义、测量方式或计算方法，使读者能够在相同条件下复现或验证相关结论。
-
-\subsection{自然覆盖接纳 (Natural Coverage-Based Admission)}
-\label{sec:ch2-term-natural-admission}
-
-\textbf{定义}：当且仅当服务请求产生时，发出该请求的 UE 位于至少一架 UAV 的物理服务半径 $R_{\mathrm{cov}}$ 内，该请求被系统\textbf{自然接纳}（admitted）；否则该请求不被接纳（not admitted）。
-
-\textbf{形式化表述}：设请求 $m$ 在时隙 $t$ 由 UE $i$ 产生，UE $i$ 的水平位置为 $\mathbf{w}_i(t)$，UAV $u$ 的水平位置为 $\mathbf{q}_u(t)$，高度为 $H$。定义用于覆盖判定的水平距离
-\begin{equation}
-    d_{iu}(t) = \|\mathbf{w}_i(t) - \mathbf{q}_u(t)\|_2.
-    \label{eq:ch2-term-distance}
-\end{equation}
-则请求 $m$ 的接纳状态为
-\begin{equation}
-    \text{admitted}(m) =
-    \begin{cases}
-        \text{true}, & \text{if } \exists u \in \{1,\ldots,N\}: d_{iu}(t) \leq R_{\mathrm{cov}}, \\
-        \text{false}, & \text{otherwise}.
-    \end{cases}
-    \label{eq:ch2-term-admission}
-\end{equation}
-本文主场景采用 $R_{\mathrm{cov}} = 100\,\mathrm{m}$，$H = 100\,\mathrm{m}$。
-
-\textbf{"自然"的含义}：
-\begin{itemize}
-    \item \textbf{基于物理距离的自动接纳}：无需人工指定 UE--UAV 关联关系，系统根据几何条件自动确定哪些请求可被服务
-    \item \textbf{区别于强制关联}：某些文献采用预先分配的 UE--UAV 关联（如 Voronoi 划分或优化关联），所有 UE 的请求均被强制接纳；本文允许请求因覆盖外而不被接纳
-    \item \textbf{区别于主动申请}：UE 不需要发送关联请求并等待 UAV 批准，覆盖范围内的请求即刻进入服务流程
-\end{itemize}
-
-\textbf{与传统 MEC 术语的关系}：自然覆盖接纳对应传统蜂窝网络中的"接入"（access）环节，但强调空中平台位置可变性对接入机会的影响。本文使用"接纳"而非"关联"，是为了突出请求级别的服务接入，而非持续的设备级别连接。
-
-\subsection{端到端截止期满足率 (End-to-End Deadline Satisfaction Rate, DSR)}
-\label{sec:ch2-term-dsr}
-
-\textbf{定义}：在一个评估单元（evaluation unit）内，\textbf{端到端截止期满足率}（DSR）定义为在截止时间前完成的服务请求数量占实际生成服务请求总数的比例。
-
-\textbf{形式化表述}：设评估单元内实际生成的服务请求总数为 $G$（Generated），其中被自然接纳的请求数为 $A$（Admitted），在截止时间前成功完成的请求数为 $S$（Satisfied）。则
-\begin{equation}
-    \mathrm{DSR} = \frac{S}{G} = \frac{A}{G} \times \frac{S}{A} = \text{接纳率} \times \text{接纳后按时完成率},
-    \label{eq:ch2-term-dsr}
-\end{equation}
-其中 $0 \leq S \leq A \leq G$。当 $G = 0$ 或 $A = 0$ 时，相应比率不定义。
-
-\textbf{评估单元的选择}：
-\begin{itemize}
-    \item \textbf{单个回合}：一次完整的环境交互序列（如 1000 个时隙）
-    \item \textbf{训练块}：一个独立训练种子产生的模型，在多个评估回合上的性能
-    \item \textbf{工作负载}：一组共享外生随机流的配对评估
-\end{itemize}
-
-\textbf{与传统 QoS 指标的区别}：
-\begin{itemize}
-    \item \textbf{任务成功率}（Task Success Rate）：通常以\textbf{已接纳任务}为分母，不反映覆盖失败
-    \item \textbf{截止期违反率}（Deadline Violation Rate）：$1 - S/A$，仅评价已接纳请求的执行质量
-    \item \textbf{系统吞吐量}（System Throughput）：单位时间内完成的请求数或数据量，不体现截止期约束
-\end{itemize}
-
-本文选择 DSR 的理由：
-\begin{enumerate}
-    \item \textbf{端到端视角}：同时评价空间部署（影响 $A/G$）和执行质量（影响 $S/A$）
-    \item \textbf{请求级公平性}：每个请求等权计入分母，避免只服务少量易完成请求
-    \item \textbf{与应急场景对应}：应急服务需要最大化成功服务的请求比例，而非仅优化已连接设备的条件质量
-\end{enumerate}
-
-\textbf{分母的策略依赖性}：由于 UE 电池状态会影响实际生成服务请求与能量请求的类别，不同策略的 $G$ 可能有轻微差异。本文以实际生成服务请求为主评价分母，并在第五章第~\ref{sec:ch5-results}~节及附录~\ref{app:cost-evidence}中报告固定潜在分母复核。第五章的计费DSR将当次完整软件调用时间加入当前请求时延；名义10 ms只用于决策评分，不能替代逐次实测费用。
-
-\subsection{配额 (Quota) 与分配 (Allocation)}
-\label{sec:ch2-term-quota-allocation}
-
-\textbf{配额（Quota）}：执行节点任务数向量，记为 $\mathbf{q} \in \mathbb{N}^{|\mathcal{J}|}$，其中 $q_j$ 表示节点 $j \in \mathcal{J}$ 被分配的请求数量。
-
-\textbf{形式化表述}：设当前时隙已接纳的服务请求集合为 $\mathcal{M}_t$，执行节点集合为 $\mathcal{J} = \{\text{UAV}_1, \ldots, \text{UAV}_N, \text{MBS}\}$。配额向量 $\mathbf{q} = (q_1, \ldots, q_{|\mathcal{J}|})$ 满足
-\begin{equation}
-    \sum_{j \in \mathcal{J}} q_j = |\mathcal{M}_t|, \quad q_j \in \mathbb{N}_{\geq 0}.
-    \label{eq:ch2-term-quota}
-\end{equation}
-
-\textbf{分配（Allocation）}：请求到执行节点的具体映射，记为二元矩阵 $\mathbf{a} \in \{0,1\}^{|\mathcal{M}_t| \times |\mathcal{J}|}$，其中 $a_{mj} = 1$ 表示请求 $m$ 被分配到节点 $j$。
-
-\textbf{形式化表述}：分配矩阵 $\mathbf{a}$ 满足
-\begin{equation}
-    \sum_{j \in \mathcal{J}} a_{mj} = 1, \quad \forall m \in \mathcal{M}_t \quad \text{（每个请求恰好分配到一个节点）},
-    \label{eq:ch2-term-allocation-row}
-\end{equation}
-\begin{equation}
-    \sum_{m \in \mathcal{M}_t} a_{mj} = q_j, \quad \forall j \in \mathcal{J} \quad \text{（节点任务数与配额一致）}.
-    \label{eq:ch2-term-allocation-col}
-\end{equation}
-
-\textbf{配额与分配的关系}：
-\begin{itemize}
-    \item \textbf{配额是分配的汇总}：给定分配 $\mathbf{a}$，可唯一确定配额 $\mathbf{q}$
-    \item \textbf{配额不唯一确定分配}：给定配额 $\mathbf{q}$，可能存在多个满足式~\eqref{eq:ch2-term-allocation-row}--\eqref{eq:ch2-term-allocation-col} 的分配 $\mathbf{a}$
-    \item \textbf{决策层次}：本文第五章主方法由公开规则提出配额候选，再以条件化指派生成完整分配；原学习配额变体见附录~\ref{app:legacy-learning}
-\end{itemize}
-
-\textbf{配额的作用}：
-\begin{enumerate}
-    \item \textbf{决定节点负载}：配额 $q_j$ 确定了UAV节点 $j$ 的最终请求数，在批量算力均分模型下，每个请求的计算频率为 $f_{mj} = F_j / q_j$
-    \item \textbf{压缩动作空间}：配额向量的维度为 $|\mathcal{J}|$（通常为 6--7），远小于分配矩阵的维度 $|\mathcal{M}_t| \times |\mathcal{J}|$（可达数百）
-    \item \textbf{支持条件化优化}：固定配额后，最优分配可通过条件化指派（Assignment Problem）求解
-\end{enumerate}
-
-\textbf{与传统卸载术语的区别}：
-\begin{itemize}
-    \item \textbf{卸载决策}（Offloading Decision）：通常指单个请求的目标节点选择，对应本文的 $a_{mj}$
-    \item \textbf{负载均衡}（Load Balancing）：通常指使各节点负载接近，对应本文配额向量的分布特性
-    \item \textbf{配额搜索}（Quota Search）：本文特有术语，指在配额空间中搜索改进方向的学习过程
-\end{itemize}
-
-\subsection{需求感知 (Demand-Aware) 与预接纳观测 (Pre-Admission Observation)}
-\label{sec:ch2-term-demand-aware}
-
-\textbf{需求感知（Demand-Aware）}：策略的观测包含\textbf{未被当前覆盖的需求信息}，使轨迹决策能够依据潜在服务机会调整空间部署。
-
-\textbf{预接纳观测（Pre-Admission Observation）}：在物理服务半径 $R_{\mathrm{cov}}$ 之外、感知半径 $R_{\mathrm{sense}}$ 之内的 UE 及其请求特征，可被上层 Actor 观测但不被自然接纳。
-
-\textbf{形式化表述}：设 UAV $u$ 在时隙 $t$ 的位置为 $\mathbf{q}_u(t)$，UE $i$ 的位置为 $\mathbf{w}_i(t)$，覆盖判定的水平距离为 $d_{iu}(t)$。定义
-\begin{equation}
-    \text{覆盖集合} \quad \mathcal{C}_u(t) = \{i : d_{iu}(t) \leq R_{\mathrm{cov}}\},
-    \label{eq:ch2-term-covered}
-\end{equation}
-\begin{equation}
-    \text{感知集合} \quad \mathcal{S}_u(t) = \{i : d_{iu}(t) \leq R_{\mathrm{sense}}\}.
-    \label{eq:ch2-term-sensed}
-\end{equation}
-预接纳观测对应集合差 $\mathcal{S}_u(t) \setminus \mathcal{C}_u(t)$ 中的 UE特征（位置、电量、当前请求等）；实际输入按既定排序和槽数截断。
-
-\textbf{本文配置}：$R_{\mathrm{cov}} = 100\,\mathrm{m}$，$R_{\mathrm{sense}} = 460\,\mathrm{m}$，使感知范围约为服务半径的 4.6 倍。
-
-\textbf{需求感知 vs. 覆盖优化}：
-\begin{itemize}
-    \item \textbf{传统覆盖优化}：通常以最大化覆盖面积或覆盖 UE 数为目标，假设所有 UE 位置已知
-    \item \textbf{需求感知}：强调未覆盖需求对轨迹决策的影响，使空间部署服务于\textbf{接纳率与截止期完成率的联合提升}
-\end{itemize}
-
-\textbf{信息条件的明确性}：
-\begin{enumerate}
-    \item 预接纳观测\textbf{不等于}全局信息：UAV 仍然只能观测感知范围内的 UE，范围外的需求不进入决策
-    \item 预接纳观测\textbf{不改变}物理接纳规则：$R_{\mathrm{sense}}$ 的扩大不会使 $R_{\mathrm{cov}}$ 之外的请求被接纳
-    \item 实际获取预接纳信息需要\textbf{上报机制}（如 UE 定期广播位置与电量），本文假设该信息可得，但未建模上报延迟与通信成本
-\end{enumerate}
-
-\textbf{第三章的研究问题}：在相同物理接纳规则（$R_{\mathrm{cov}} = 100\,\mathrm{m}$）下，扩展观测从仅已覆盖UE到按规定排序和槽数纳入感知范围内未覆盖UE，对端到端 DSR 有何影响。
-
-\subsection{批量算力均分 (Batch-Shared Equal Computation)}
-\label{sec:ch2-term-batch-shared}
-
-\textbf{定义}：在一个时隙内，分配到同一UAV执行节点的所有请求\textbf{平等均分}该节点的计算能力，每个请求获得的计算频率为节点总算力除以最终请求数。
-
-\textbf{形式化表述}：设UAV节点 $j$ 的计算能力为 $F_j$（单位：周期/秒），该节点在当前时隙被分配的请求集合为 $\mathcal{M}_j \subseteq \mathcal{M}_t$，最终请求数为 $N_j = |\mathcal{M}_j|$。则每个请求 $m \in \mathcal{M}_j$ 获得的计算频率为
-\begin{equation}
-    f_{mj} = \frac{F_j}{N_j}, \quad \forall m \in \mathcal{M}_j.
-    \label{eq:ch2-term-batch-shared}
-\end{equation}
-
-\textbf{计算时延的计算}：请求 $m$ 的计算时延为
-\begin{equation}
-    T_m^{\mathrm{cmp}} = \frac{C_m}{f_{mj}} = \frac{C_m \cdot N_j}{F_j},
-    \label{eq:ch2-term-comp-delay}
-\end{equation}
-其中 $C_m = \omega_m L_m$ 为请求 $m$ 所需的 CPU 总周期。MBS沿用规定的非批量共享单请求计算能力，不适用上述UAV均分公式。
-
-\textbf{批量外部影响}：迁移一个请求会改变\textbf{迁出节点和迁入节点上所有其他请求}的计算频率和完成时间，这称为\textbf{跨机资源竞争}或\textbf{批量外部影响}。
-
-\textbf{示例}：假设 UAV 1 初始有 3 个请求，UAV 2 有 1 个请求，$F_1 = F_2 = 60\,\mathrm{GHz}$。若将 UAV 1 的一个请求迁移到 UAV 2：
-\begin{itemize}
-    \item UAV 1 上剩余 2 个请求，每个获得 $60 / 2 = 30\,\mathrm{GHz}$（原为 $60 / 3 = 20\,\mathrm{GHz}$），计算时延\textbf{减少}
-    \item UAV 2 上变为 2 个请求，每个获得 $60 / 2 = 30\,\mathrm{GHz}$（原为 $60 / 1 = 60\,\mathrm{GHz}$），计算时延\textbf{增加}
-\end{itemize}
-
-\textbf{与其他资源模型的区别}：
-\begin{itemize}
-    \item \textbf{独占式}：每个请求获得节点全部算力直至完成，后续请求排队等待（本文未采用）
-    \item \textbf{优先级调度}：不同请求获得不同计算频率，高优先级任务优先完成（本文未采用）
-    \item \textbf{部分卸载}：单个请求可拆分到多个节点并行执行（本文未采用，请求不可拆分）
-\end{itemize}
-
-本文采用批量均分的理由：
-\begin{enumerate}
-    \item \textbf{简化模型}：避免引入额外的调度策略参数
-    \item \textbf{公平性}：所有请求平等共享资源，无需人工设定优先级
-    \item \textbf{突出批量影响}：使跨机迁移的外部效应清晰可见，便于分析 MC-ITR 的整体重评估必要性（第四章）
-\end{enumerate}
-
-\subsection{术语表总结}
-\label{sec:ch2-term-summary}
-
-表~\ref{tab:ch2-terminology} 汇总本文核心术语的简明定义与对应章节。
-
-\begin{table}[htbp]
-    \centering
-    \bicaption{核心术语操作性定义汇总}{Summary of operational definitions for core terminology}
-    \label{tab:ch2-terminology}
-    \small
-    \begin{tabularx}{\textwidth}{p{0.18\textwidth}Yp{0.12\textwidth}}
-        \toprule
-        术语 & 操作性定义 & 主要章节 \\
-        \midrule
-        自然覆盖接纳 & 请求产生时 UE 在任一 UAV 的 $R_{\mathrm{cov}}$ 内即被接纳 & 第三章 \\
-        端到端 DSR & $S/G$，按时完成请求数除以实际生成请求数 & 全文 \\
-        配额 & 节点任务数向量 $\mathbf{q} \in \mathbb{N}^{|\mathcal{J}|}$ & 第五章 \\
-        分配 & 请求-节点二元矩阵 $\mathbf{a} \in \{0,1\}^{|\mathcal{M}| \times |\mathcal{J}|}$ & 第四、五章 \\
-        需求感知 & 策略观测包含未覆盖需求信息 & 第三章 \\
-        预接纳观测 & $R_{\mathrm{sense}}$ 内但 $R_{\mathrm{cov}}$ 外的 UE 特征 & 第三章 \\
-        批量算力均分 & $f_{mj} = F_j / N_j$，同UAV节点请求平等共享算力 & 第四、五章 \\
-        \bottomrule
-    \end{tabularx}
-\end{table}
-
-这些操作性定义为理解本文的问题建模、方法设计和实验结果提供了明确的语义基础，也为后续研究提供了可对照的术语规范。
-
-
-\section{无人机集群任务规划与协同服务基础}
+\section{无人机集群协同规划基础}
 \label{sec:ch2-swarm-planning}
 
-\subsection{任务分工、轨迹规划与飞行执行的层次关系}
+\subsection{多无人机协同任务规划}
 \label{sec:ch2-swarm-levels}
 
-无人机集群通过多个空中平台共同承担任务，研究内容包括任务分配、轨迹规划、信息交互和飞行控制等相互联系的环节\cite{chung2018swarm}。任务分配确定哪些平台承担哪些工作，轨迹规划确定平台如何到达或保持有利位置，飞行执行将规划指令转化为实际运动。各层面对的时间尺度、状态信息和可行性条件不同：任务分配需要理解任务价值及资源需求，轨迹规划需要处理空间关系和机动限制，飞行执行还需要满足飞行器动力学与控制约束。区分这些层次有助于准确界定算法解决的航空集群问题。
+无人机集群系统通过多个空中自主平台协同作业，能够在复杂与突发环境中执行大范围、高动态的信息保障与边缘计算服务。经典多无人机协同任务规划文献通常将系统逻辑划分为任务分配、轨迹规划与飞行控制三个基本层次\cite{chung2018swarm}：
+\begin{enumerate}
+    \item 任务分配层：面向宏观业务需求，综合考虑任务优先级、数据量、时延容限及平台执行能力，确定各空中节点承担的任务集合与资源配额\cite{skaltsis2023allocation}；
+    \item 轨迹规划层：在已知或预测的任务分布与环境约束下，为各无人机规划无碰撞、运动学可行且利于任务执行的空间位移路径；
+    \item 飞行控制层：依据轨迹规划层输出的位置或速度指令，通过底层飞控系统调节旋翼转速或舵面偏角，实现对期望轨迹的高精度动力学跟踪。
+\end{enumerate}
 
-本文聚焦任务层与规划层之间的协同。空中平台通过改变服务位置接纳地面计算请求，再通过机载计算、跨 UAV 协作和 MBS 支持完成请求。任务具有输入数据量、服务类别、截止时间和执行资源需求；其分配是在已接纳请求与执行节点之间建立对应关系。无人机任务分配文献包含多种任务类型和约束\cite{skaltsis2023allocation}，本文采用其中明确的计算服务任务，未把地面请求改写为需要无人机实体到访的侦察目标或运输订单。因此，服务覆盖承担任务接入功能，执行节点选择承担资源分工功能，两者共同决定集群的时限服务能力。
+上述三个层次面对不同的物理时间尺度与信息粒度：飞行控制关注毫秒级的连续姿态与气动稳定性；轨迹规划面向秒级或分秒级的空间位移与几何拓扑重构；任务分配则在离散决策时隙内依据即时到达的业务负载实施离散资源调度。若将底层复杂的非线性飞行动力学直接与高层离散任务调度联合求解，将导致求解空间产生维度灾难。
 
-从规划对象看，第三章研究多机如何依据需求选择下一时隙的空间部署，第四章研究给定空间部署下如何调整任务执行分工，第五章连接这两个决策过程并检验闭环服务表现。这里的“集群协同”体现为多个 UAV 的位置与资源决策服务于共同的请求完成目标。任务层的协同无需预设固定编队形状；本文没有为 UAV 指定领航者、队形参考或编队稳定性目标，后续分析也不以保持特定队形作为性能指标。
+因此，本文聚焦于任务分配层与轨迹规划层之间的双向协同。空中无人机通过动态调整水平几何位置接纳地面突发计算请求，再通过机载计算、跨机协作或基站卸载完成任务。地面服务请求包含输入数据量、服务类别、截止时间与资源需求，属于计算密集型任务。服务覆盖构成请求接纳的前提，执行节点决策承担计算资源的分工，两者共同决定集群的时限服务能力。
 
-\subsection{二维机动模型与离散空间可行性}
+针对这种时空耦合特性，本文采用上层分散式轨迹决策与下层集中式任务调度的分层协同架构。上层各机依据自身与局部感知信息自主决定机动位移，下层则在时隙内汇总接纳请求并统一优化任务分配。在应急或战术通信边缘计算场景中，空中节点间的连续通信带宽极为宝贵，分散式的上层轨迹决策允许无人机在有限的局部邻居通信下实现敏捷反应；而下层的集中任务分配则在接纳请求批次形成后，在有限的协作节点间进行全局时延与能耗的精细化折中。这里的“集群协同”体现为多个空中平台的位置与资源决策服务于共同的时限任务完成目标，无需预设固定编队形状，亦不设定领航者与刚性队形保持约束。
+
+\subsection{无人机轨迹规划与运动约束}
 \label{sec:ch2-swarm-kinematics}
 
-为了把注意力集中在任务需求与空间部署之间的联系，本文采用固定高度下的二维运动描述。UAV $u$ 的水平位置为 $\mathbf q_u(t)\in\mathbb R^2$，高度保持 $H=100\,\mathrm{m}$；时隙长度为 $\Delta t=1\,\mathrm{s}$，最大运动速度为 $v_{\max}=15\,\mathrm{m/s}$。在 $700\times700\,\mathrm{m}^2$ 场地中，环境保留 $50\,\mathrm{m}$ 的边界距离，因而离散水平位置范围为 $\mathcal Q=[50\,\mathrm{m},650\,\mathrm{m}]^2$。五架 UAV 的位置更新满足
+为把研究重心聚焦于地面服务需求分布与空间机动选择之间的内在关联，本文采用固定飞行高度下的离散时隙二维运动学描述。考虑平坦开阔的任务区域，设定所有无人机保持在统一的安全巡航高度 $H$。该高度设定在工程上具有两方面合理性：一方面大幅简化了三维防撞搜索空间，消除了因垂直机动引起的气压与姿态剧烈扰动；另一方面在保证视距通信仰角的前提下，解耦了垂直升降能耗与水平服务覆盖机动。
+
+设系统部署 $N$ 架配备边缘计算服务器的旋翼无人机，无人机 $u \in \{1,\ldots,N\}$ 在离散时隙 $t$ 的水平几何坐标记为 $\mathbf{q}_u(t) = [x_u(t), y_u(t)]^{\mathsf{T}} \in \mathbb{R}^2$。离散决策时隙长度为 $\Delta t$，无人机的最大允许水平飞行速度为 $v_{\max}$。在边长为 $L_{\mathrm{area}}$ 的正方形应急任务区域内，考虑周边障碍物及信号覆盖边界缓冲，定义无人机的水平可行几何空间为闭集 $\mathcal{Q} = [x_{\min}, x_{\max}] \times [y_{\min}, y_{\max}] \subset \mathbb{R}^2$。各无人机的位置更新方程满足
 \begin{equation}
-    \mathbf q_u(t+1)=\mathbf q_u(t)+\boldsymbol\delta_u(t),\qquad
-    \|\boldsymbol\delta_u(t)\|_2\leq v_{\max}\Delta t=15\,\mathrm{m},\qquad
-    \mathbf q_u(t+1)\in\mathcal Q.
+    \mathbf{q}_u(t+1) = \mathbf{q}_u(t) + \boldsymbol{\delta}_u(t), \qquad
+    \|\boldsymbol{\delta}_u(t)\|_2 \leq v_{\max}\Delta t, \qquad
+    \mathbf{q}_u(t+1) \in \mathcal{Q},
     \label{eq:ch2-swarm-motion}
 \end{equation}
-$\boldsymbol\delta_u(t)$ 的单位为 m，表示修复后的实际位移。它与网络输出的无量纲动作提案不同；时隙平均速度模长是 $\|\boldsymbol\delta_u(t)\|_2/\Delta t$。这一量纲关系使轨迹长度、单步机动与能耗结算可以使用同一实际位移。
+其中 $\boldsymbol{\delta}_u(t)$ 为时隙内无人机实际执行的水平位移矢量。位移矢量的模长 $\|\boldsymbol{\delta}_u(t)\|_2$ 直接反映了时隙平均飞行速度 $\|\boldsymbol{\delta}_u(t)\|_2 / \Delta t$，并决定了该时隙内的机动飞行能耗。
 
-环境另要求离散位置之间满足最小水平间距 $d_{\min}=200\,\mathrm{m}$。以联合位置集合表示，可行区域为
+为空中防撞与空域运行安全，系统要求任意两架无人机在任意时隙的水平投影之间必须保持最小安全间距 $d_{\min}$。整个集群的联合位置可行配置集定义为
 \begin{equation}
-    \mathcal Q_{\mathrm{joint}}=
-    \left\{(\mathbf q_1,\ldots,\mathbf q_N):\mathbf q_u\in\mathcal Q,
-    \ \|\mathbf q_u-\mathbf q_v\|_2\geq d_{\min},\ \forall u\neq v\right\}.
+    \mathcal{Q}_{\mathrm{joint}} = \left\{(\mathbf{q}_1,\ldots,\mathbf{q}_N): \mathbf{q}_u \in \mathcal{Q}, \ \|\mathbf{q}_u - \mathbf{q}_v\|_2 \geq d_{\min}, \ \forall u \neq v\right\}.
     \label{eq:ch2-joint-geometry}
 \end{equation}
-各机独立输出提案并不保证联合位置属于该集合。实际执行先限制提案位移并裁剪边界，再有限次调整冲突位置，同时重新检查运动预算；若仍有间距冲突，则把相应 UAV 回退至原位置，并继续传播回退直至得到可行离散状态。由此产生的悬停属于执行映射的一部分，需要保留在轨迹和能耗记录中。实现对最终离散状态采用 $10^{-3}\,\mathrm{m}$ 数值容差。该过程是对离散位置的环境可行性修复，不是对非凸可行集求最近点的精确投影，也不构成连续飞行轨迹上的避碰或稳定性证明。
+在分散式决策架构中，各无人机独立根据神经网络策略输出连续动作提案。由于各机未执行集中式航迹仲裁，独立的动作提案组合并不天然保证联合位置落入可行集 $\mathcal{Q}_{\mathrm{joint}}$ 中。实际系统必须在网络输出与物理执行之间构建环境可行性映射：先对越界的单机提案实施边界截断，再通过冲突消解规则对间距小于 $d_{\min}$ 的无人机执行位移衰减或位置回退。由此产生的悬停与实际位移严格记录于无人机飞行轨迹与能耗账本中。该过程确保了仿真物理状态的严谨性，具体的防撞修正算法将在第三章结合上层策略实现展开。
 
-模型没有显式描述加速度、转弯半径、姿态和风场。式~\eqref{eq:ch2-swarm-motion} 所能支持的是具有位移预算的空间部署决策，而非满足完整飞行动力学的控制器。保持高度并限制步长，可以简化需求变化与机动选择的关系；若面向真实飞行执行，还需把规划位移交给满足具体飞行器约束的轨迹生成与跟踪模块，并重新评估执行误差对覆盖和截止期服务的影响。
-
-\subsection{服务覆盖、邻机关系与空间资源耦合}
+\subsection{协同覆盖与任务分工}
 \label{sec:ch2-spatial-resource-coupling}
 
-服务覆盖与需求观测具有不同作用。本文的物理服务半径为 $R_{\mathrm{cov}}=100\,\mathrm{m}$，请求只有进入 UAV 的服务范围才被自然接纳；允许的感知范围为 $R_{\mathrm{sense}}=460\,\mathrm{m}$，使轨迹策略可以使用服务范围之外的部分需求信息。邻机关系也按该感知距离筛选，由
-\begin{equation}
-    \mathcal N_u(t)=\{v\neq u:\|\mathbf q_u(t)-\mathbf q_v(t)\|_2\leq R_{\mathrm{sense}}\}
-    \label{eq:ch2-sensing-neighbors}
-\end{equation}
-形成随位置变化的邻居集合。各 UAV 高度相同，因此 UAV 间三维距离等于水平距离。式~\eqref{eq:ch2-sensing-neighbors} 定义模型允许进入观测的邻机关系，不包含消息排队、丢包或链路连通性保证；这些信息如何在实际系统中获取仍取决于通信协议。
+在移动计算网络中，无人机的物理服务覆盖半径与信息感知范围承担完全不同的系统职能：
+\begin{enumerate}
+    \item \textbf{物理服务覆盖半径 $R_c$}：取决于机载下行无线发射功率、地面终端天线增益与信道接收门限。仅当发出计算请求的地面终端位于至少一架无人机的水平覆盖圆域内（即水平距离小于等于 $R_c$）时，该请求才能被系统\textbf{自然接纳}（Natural Admission）；位于所有无人机覆盖范围外的请求因缺乏无线接入链路而直接判定未被接纳。
+    \item \textbf{最大感知半径 $R_s$}：反映了无人机通过周期性无线信标广播或低频控制信道所能感知的最大环境跨度。无人机 $u$ 在时隙 $t$ 的感知邻机集合定义为
+    \begin{equation}
+        \mathcal{N}_u(t) = \left\{v \neq u: \|\mathbf{q}_u(t) - \mathbf{q}_v(t)\|_2 \leq R_s\right\}.
+        \label{eq:ch2-sensing-neighbors}
+    \end{equation}
+    此外，感知范围内的未覆盖终端状态（如位置、能量、待处理任务特征）允许被无人机的上层观测槽位捕获，为轨迹决策提供前瞻性指引。
+\end{enumerate}
 
-最小机间距满足 $d_{\min}=2R_{\mathrm{cov}}$，使不同 UAV 的圆形覆盖内部在规定离散状态下不重叠。因此，本文轨迹优化的重点是把有限服务区域部署到有需求的位置，而不是通过学习消除本已受几何约束限制的覆盖重叠。某架 UAV 移动会改变其后续可接纳需求、与其他 UAV 的协作距离以及相应传输代价；其他 UAV 的移动也会改变整个机群的空间服务配置。评价时必须保留未覆盖请求，才能衡量这类空间协同是否转化为任务接纳改善。
+当系统设定的安全机间距满足 $d_{\min} \geq 2R_c$ 时，任意两架无人机在离散可行配置下的圆形物理服务覆盖区域在几何上严格不重叠。这一几何约束使得无人机集群的轨迹协同无法依赖“重叠覆盖以增强可靠性”的冗余模式，而必须将优化重心转向\textbf{如何引导有限的离散覆盖圆域在广阔任务区域内动态捕捉高密度的地面需求热点}。
 
-空间部署的收益还取决于执行资源。服务位置更接近高需求区域，可能接纳更多请求，同时让接纳节点的共享算力承担更大批量。跨 UAV 转移能够重新分担计算负载，却需要额外传输，并可能因目标节点缺少服务文件而增加准备时间。于是，集群规划面对的是位置、任务集合和资源分工的时序耦合：机动改变可服务请求集合，任务分配改变节点负载与缓存状态，后续状态再影响下一次机动决策。本文用“接纳率 $\times$ 接纳后按时完成率”解释这一服务链条，具体计数与推导在第三章展开。
+空间部署收益与机载执行资源深度耦合：无人机移动接近高需求区域能够接纳更多地面请求，但也会使本地共享计算单元承担更高的并发负荷；跨机任务协同可以均衡负载，但引入了额外的机间传输时延与能耗开销。因此，集群规划面对的是空间机动、任务接入与计算分工的多阶段时序耦合过程，需要统一权衡空间覆盖质量与端到端任务执行质量。
 
-\subsection{分散式轨迹决策与集中任务调度}
-\label{sec:ch2-swarm-coordination-architecture}
-
-本文采用上层分散式 Actor 与下层集中批量调度。各 UAV 根据自身、邻机和用户特征产生动作提案，训练时由联合观测 Critic 提供价值估计。共享参数使各机使用同一决策规则，不同局部观测则产生不同机动提案。局部信息由仿真按规定范围提供，实际获取这些信息所需的上报与通信成本属于进一步研究的系统条件。
-
-下层的MC-ITR快照求解与第五章解析配额匹配均需要汇总当前请求和执行节点资源，评价完整分配。原SF-HLM学习配额变体对请求--节点图执行集中搜索，与上层多个 UAV 分别采样动作的主体不同。因而本文的集群协同需要集中任务协调条件，尚未实现所有环节完全分布式自治。该架构利用两类决策的结构差异：位置规划适合通过多智能体局部输入输出组织，批量任务分配则通过共同负载状态识别跨请求影响。
-
-当前决策步先依据已有位置接纳请求，评价当前批次的路径时延和费用，再应用机动动作形成后续位置。任务的解析完成时间用于截止期评分，未完成工作不保留为跨步队列；缓存按批次结束规则更新，未模拟下载完成事件。上层面向未来接纳与状态变化作出机动决策，下层处理当前已接纳批次。第五章保持训练后的上层参数固定，采用解析评分与有限预算条件匹配；两层通过该抽象环境中的状态反馈联系。强化学习、注意力和匹配分别承担空间决策、信息聚合与资源分配的作用。
-
-\section{无人机辅助移动边缘计算基础}
+\section{无人机辅助移动边缘计算技术}
 \label{sec:uav-mec-technology}
 
-\subsection{网络层次与请求执行位置}
+\subsection{UAV-MEC 系统架构}
 \label{subsec:mec-overview}
 
-移动边缘计算把部分计算与存储能力部署在接近用户的位置，形成终端、边缘节点与中心服务之间的协作\cite{mao2017survey}。请求的完成过程包含数据进入、必要程序准备、计算执行和结果返回。改变计算位置可以减少某些处理环节的时间，也可能增加无线传输或回传成本。因此，“边缘更近”与“请求更快完成”不是同义关系，需要把完整路径上的代价写入评价。图~\ref{fig:mec_architecture} 给出通用层次关系；本文进一步用移动 UAV 作为可接纳请求的空中边缘节点。
+移动边缘计算（Mobile Edge Computing, MEC）通过在网络边缘部署具备计算、存储与通信能力的微型服务器，显著缩短了计算任务的端到端交互延迟\cite{mao2017survey}。在自然灾害救援或突发应急保障等地面基站退化场景中，无人机搭载轻量化低功耗边缘计算模块组成空中移动服务器集群（UAV-MEC），具备广域机动部署、按需覆盖与灵活拓扑配置的独特优势。图~\ref{fig:mec_architecture} 给出了端、空、地三层协同的系统架构示意。
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.82\textwidth]{../docs/figures/图2-1_MEC三层架构示意图}
-    \caption{终端、边缘与中心服务之间的通用层次关系示意}
+    \bicaption{端--空--地三层协同移动边缘计算系统架构示意图}{Three-Layer Cooperative UAV-MEC Architecture}
     \label{fig:mec_architecture}
 \end{figure}
 
-本研究中的“本地执行”具有明确含义。通用 MEC 文献中的本地常指 UE 在自身处理器上计算，本文请求被 UAV 自然接纳之后，下层动作中的本地指\emph{接纳 UAV 本地计算}。另两个类别是转移给协作 UAV 和卸载到 MBS。三类执行位置共享同一接纳前提，不能把选择 MBS 解释为 UE 无需进入 UAV 覆盖范围便直接得到服务。后续卸载比较均以已接纳请求为输入，而端到端 DSR 仍保留未接纳请求在分母中的影响。
-
-设一个时隙的接纳服务请求集合为 $\mathcal M_t$，执行节点集合为 $\mathcal J$。请求 $m$ 的输入字节数为 $L_m$，所需 CPU 总周期为 $C_m$，截止时间为 $D_m$，服务类别为 $s(m)$。若服务类型决定每字节所需周期数 $\omega_m$，则
+在任一离散时隙 $t$ 内，设地面被无人机集群自然接纳的计算服务请求集合为 $\mathcal{M}_t$，系统可调配的执行节点集合记为 $\mathcal{J} = \{\text{UAV}_1, \ldots, \text{UAV}_N, \text{MBS}\}$，其中包含 $N$ 架机载边缘计算节点及一个保留有限回传连通性的远端地面宏基站（MBS）。每个服务请求 $m \in \mathcal{M}_t$ 可形式化描述为四元组：
 \begin{equation}
-    C_m=\omega_m L_m.
+    \text{Req}_m = (L_m, C_m, D_m, s(m)),
+\end{equation}
+其中 $L_m$ 为任务输入数据量（单位：字节 Byte），$C_m$ 为完成该计算任务所需的 CPU 总计算周期数，$D_m$ 为任务的端到端最大容忍截止时间（Deadline），$s(m)$ 为执行该任务所需的服务程序镜像类别。若服务类型决定了单位数据量所需的计算密度为 $\omega_m$（CPU 周期/字节），则任务总计算量满足
+\begin{equation}
+    C_m = \omega_m L_m.
     \label{eq:ch2-cycles}
 \end{equation}
-$L_m$ 与 $C_m$ 分别描述传输数据量和计算负担，其比例影响执行节点选择。本文采用不可拆分任务模型，每个请求选择一个执行节点；允许数据切分或并行子任务的部分卸载问题具有不同的可行域。
 
-\subsection{位置相关的无线通信与量纲转换}
+在实际边缘计算业务中，考虑任务强耦合性与通信重传开销，本文采用\textbf{不可拆分任务模型}（Atomic Task Model），即每个被接纳的请求必须完整地分配至单一计算节点独立执行，不允许跨节点细粒度切分或多机并行流水。根据任务分配目标，执行路径可分为三类：
+\begin{enumerate}
+    \item \textbf{接入 UAV 本地执行}：请求直接在接入该终端的无人机处理器上运行，仅产生接入无线传输与机载计算时延，无需跨机转发；
+    \item \textbf{协作 UAV 协同执行}：接入无人机通过机间高速无线链路将任务转发至算力较充裕或已预载相应镜像的邻近无人机执行，计算结果原路或经短报文返回；
+    \item \textbf{地面 MBS 远程执行}：接入无人机通过长距离无线回传链路将任务卸载至地面宏基站执行。基站算力充沛且预载全量镜像，但面临较长的无线回传往返时延。
+\end{enumerate}
+所有执行路径的前提是请求首先被空中覆盖网络成功接纳。
+
+\subsection{无线通信与计算卸载模型}
 \label{subsec:uav-mec}
 
-UAV 的水平位置记为 $\mathbf q_u(t)$，地面 UE 的水平位置记为 $\mathbf w_m(t)$。在 UAV 高度为 $H_u$ 的几何模型下，UE 与 UAV 的三维距离为
+无人机与地面设备及基站之间的无线信道质量直接受三维空间几何拓扑主导\cite{mozaffari2019tutorial}。设在时隙 $t$ 内，无人机 $u$ 的水平位置为 $\mathbf{q}_u(t) \in \mathbb{R}^2$，地面终端 $m$ 的水平位置为 $\mathbf{w}_m(t) \in \mathbb{R}^2$，无人机飞行高度恒为 $H$。地面设备与无人机之间的三维空间直线欧氏距离为
 \begin{equation}
-    d_{mu}(t)=\sqrt{\|\mathbf w_m(t)-\mathbf q_u(t)\|_2^2+H_u^2}.
+    d_{mu}(t) = \sqrt{\|\mathbf{w}_m(t) - \mathbf{q}_u(t)\|_2^2 + H^2}.
     \label{eq:ch2-distance}
 \end{equation}
-距离变化会影响信道功率增益，进而影响数据进入与任务转移的时延。UAV 辅助通信可以采用不同的传播模型\cite{mozaffari2019tutorial}；本文后续仿真使用明确的自由空间路径损耗假设，不把地形遮挡、实测衰落或现实部署可靠性自动包含在该模型中。
-
-在一个理想噪声受限链路中，带宽为 $B$、发送功率为 $P$、信道功率增益为 $g$、接收噪声功率为 $\sigma^2$ 时，常用速率表达为
-\begin{equation}
-    R=B\log_2\left(1+\frac{Pg}{\sigma^2}\right).
-    \label{eq:ch2-link-rate}
-\end{equation}
-这里 $B$ 的单位为 Hz，$R$ 的单位为 bit/s。若输入数据以 byte 记录，数据传输时间必须使用
-\begin{equation}
-    T^{\mathrm{tx}}_m=\frac{8L_m}{R},\qquad
-    E^{\mathrm{tx}}_m=P T^{\mathrm{tx}}_m.
-    \label{eq:ch2-byte-bit}
-\end{equation}
-因子 $8$ 来自一个字节包含八个比特。遗漏该转换会把传输时间缩小八倍，从而同时改变截止期判断、能耗和卸载偏好。本文所有请求大小与链路速率均按此量纲关系处理；程序下载的字节数同样需要转换。
-
-式~\eqref{eq:ch2-link-rate} 给出瞬时链路速率，共享带宽时还需由调度规则确定各请求的有效速率。顺序传输的总时间为各段时间之和：协作卸载包含接入、机间传输和结果返回，MBS 卸载还包含回传。后续章节按完整执行路径计算请求时延。
-
-移动带来的通信改善与飞行成本也需要共同考虑。UAV 更接近某一热点可能提高接入速率和接纳比例，但移动同时消耗能量，并改变与其他节点的距离。一个位置对当前请求有利，不一定对后续请求或协作链路有利。轨迹控制因此具有跨时隙性质，而不仅是逐时隙寻找最短通信距离。图~\ref{fig:uav_scenarios} 用通用示意说明 UAV 的通信角色；本文具体关注其中移动边缘服务和多节点协作的部分。
+图~\ref{fig:uav_scenarios} 展示了无人机作为空中接入、中继协同与计算服务器的通信应用场景。
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.82\textwidth]{../docs/figures/图2-2_UAV辅助通信应用场景}
-    \caption{UAV 作为覆盖节点、中继与移动边缘服务器的应用关系示意}
+    \bicaption{无人机辅助通信与计算卸载典型应用场景示意图}{Typical Application Scenarios of UAV-Assisted Edge Computing}
     \label{fig:uav_scenarios}
 \end{figure}
 
-\subsection{批量计算共享与缓存代价}
+在飞行高度较高且地表建筑遮挡有限的开阔环境中，空地信道具有显著的视距传输（Line-of-Sight, LoS）主导特性。考虑自由空间路径损耗模型，信道参考功率增益与传输距离的平方成反比。根据香农定理，在信道带宽为 $B$、发射端发送功率为 $P$、等效信道增益为 $g$、加性高斯白噪声（AWGN）功率为 $\sigma^2$ 时，理想链路的最大无差错传输速率（单位：bit/s）表达为
+\begin{equation}
+    R = B \log_2\left(1 + \frac{P g}{\sigma^2}\right).
+    \label{eq:ch2-link-rate}
+\end{equation}
+
+在计算网络卸载模型中，任务数据量通常以字节（Byte）度量。为确保物理量纲严格一致，必须进行字节到信道传输比特（$1\,\text{Byte} = 8\,\text{bit}$）的量纲转换。任务输入数据 $L_m$ 对应的链路无线传输时延 $T^{\mathrm{tx}}_m$ 与发射能耗 $E^{\mathrm{tx}}_m$ 为
+\begin{equation}
+    T^{\mathrm{tx}}_m = \frac{8 L_m}{R}, \qquad E^{\mathrm{tx}}_m = P T^{\mathrm{tx}}_m.
+    \label{eq:ch2-byte-bit}
+\end{equation}
+式~\eqref{eq:ch2-byte-bit} 中的系数 8 具有关键的物理量纲意义：若忽略该量纲转换，将导致通信时延被机械低估 8 倍，严重失真地扭曲算法对本地计算与远程卸载的能耗及截止期取舍偏好。
+
+\subsection{计算资源共享与服务缓存}
 \label{subsec:offloading}
 
-计算节点的等效处理能力记为 $F_j$，单位为 CPU 周期每秒。对于分给节点 $j$ 的最终批量请求数 $N_j$，若该节点采用等份共享，则每个请求获得的等效计算服务速率为 $f_{mj}=F_j/N_j$。该服务份额不直接对应物理处理器的单核时钟。请求 $m$ 在节点 $j$ 的计算时间为
+对于机载计算节点，设无人机 $j$ 的总计算处理能力为 $F_j$（CPU 周期/秒）。当一个时隙内分配给无人机 $j$ 的并发执行任务数为 $N_j$ 时，本文采用批量算力均分模型（Batch-Shared Equal Computation），各任务均分节点的处理器算力资源，获得的等效服务频率为 $f_{mj} = F_j / N_j$。因此，任务 $m$ 在节点 $j$ 的实际计算时延为
 \begin{equation}
-    T^{\mathrm{cmp}}_{mj}=\frac{C_m}{f_{mj}}
-    =\frac{C_m N_j}{F_j},\qquad N_j\geq 1.
+    T^{\mathrm{cmp}}_{mj} = \frac{C_m}{f_{mj}} = \frac{C_m N_j}{F_j}, \quad N_j \geq 1.
     \label{eq:ch2-shared-computation}
 \end{equation}
-该式仅用于实际分配到节点的请求，不对 $N_j=0$ 的空节点进行除法。本文 UAV 使用最终批量共享语义；MBS 的计算能力按环境协议处理，并不套用 UAV 的 $F_j/N_j$ 规则。不同类型节点的差别需要在成本模型中显式保留。
-
-本文以等效频率形式构造简化计算能耗，将任务服务速率 $f$ 代入 $P^{\mathrm{cmp}}=\kappa f^3$，其中 $\kappa$ 为模型系数。完成 $C_m$ 个周期需要 $C_m/f$ 的时间，故
+采用动态 CMOS 功耗模型，处理器能耗正比于计算频率的平方。任务 $m$ 在无人机 $j$ 上的计算能耗表达为
 \begin{equation}
-    E^{\mathrm{cmp}}_{mj}
-    =\kappa f_{mj}^{3}\frac{C_m}{f_{mj}}
-    =\kappa C_m f_{mj}^{2}
-    =\kappa C_m\left(\frac{F_j}{N_j}\right)^2.
+    E^{\mathrm{cmp}}_{mj} = \kappa f_{mj}^3 \frac{C_m}{f_{mj}} = \kappa C_m f_{mj}^2 = \kappa C_m \left(\frac{F_j}{N_j}\right)^2,
     \label{eq:ch2-computation-energy}
 \end{equation}
-共享请求增多时，单请求计算时间随 $N_j$ 增长，模型计算能耗随 $N_j^{-2}$ 下降。这一关系依赖等份服务速率与等效功耗的共同假设，不表示真实硬件会随请求数量执行同样的频率调节。后续能耗比较据此评价规定参数下的策略费用，而非机载平台的实测节能。
+其中 $\kappa$ 为与硬件芯片体系相关的有效电容系数。式~\eqref{eq:ch2-shared-computation} 与~\eqref{eq:ch2-computation-energy} 表明，节点并发任务数 $N_j$ 增加会导致单任务时延线性上升，但计算能耗随之按二次方衰减。这一特性使单个任务的迁移产生跨机外部性（Migration Externality），影响目标节点上所有已有任务的完成时间。
 
-设一个请求从 UAV $i$ 迁往 UAV $j$。迁移不仅改变该请求的链路和处理时间，还把 $N_i$ 减一、$N_j$ 加一，因此改变两个节点上其他请求的 $f_{mi}$ 或 $f_{mj}$。若这些请求接近截止时间，单次迁移可能使多个请求同时成功或失败。于是，整个分配的代价一般不能表示为一组与其他分配无关的固定单请求代价。这一批量外部影响是第四章整体重评估与第五章配额条件化匹配的共同动机。
-
-缓存引入另一项执行条件。设服务程序 $s$ 的字节数为 $B_s$，节点 $j$ 对该程序的缓存指示为 $z_{js}\in\{0,1\}$。当 $z_{js}=0$ 时，执行请求可能需要获取程序，典型顺序下载时间为 $8B_s/R^{\mathrm{fetch}}_j$。如果程序已缓存，则相应获取环节可以减少。缓存容量约束可以一般地表示为
+服务缓存缓解了由于频繁向地面基站请求下载服务镜像所造成的时延瓶颈。设服务类型 $s$ 的镜像大小为 $B_s$，节点 $j$ 的缓存状态指示为 $z_{js} \in \{0,1\}$。机载存储容量约束满足
 \begin{equation}
-    \sum_s z_{js}B_s\leq K_j,
+    \sum_s z_{js} B_s \leq K_j,
     \label{eq:ch2-cache-capacity}
 \end{equation}
-其中 $K_j$ 是节点存储容量。该式描述通用容量限制；后续实际缓存替换与提交规则以仿真实现为准。当前请求使用的缓存状态与本时隙末更新后的状态不能混淆，否则相当于提前使用未来信息。
+其中 $K_j$ 为无人机 $j$ 的机载缓存容量上限。命中缓存的任务无需产生回传检索时延，未命中任务则需计入镜像下载等待时间。
 
-\subsection{覆盖、接纳与端到端指标}
-\label{sec:ch2-service-metrics}
-
-在水平服务半径 $R_c$ 的模型下，请求所在 UE 满足 $\|\mathbf w_m(t)-\mathbf q_u(t)\|_2\leq R_c$，才可能由 UAV $u$ 接纳。感知半径 $R_s$ 则决定策略允许获得哪些需求信息，两者承担不同作用。扩大 $R_s$ 可以改变观测，不能自动把 $R_c$ 之外的请求纳入执行。本文使用 $R_c=100\,\mathrm{m}$ 与 $R_s=460\,\mathrm{m}$，后续观测实验保持物理接纳半径不变。
-
-设评估单元的成功数为 $S$、接纳数为 $A$、实际生成数为 $G$。当分母非零时，DSR、接纳率与条件完成率分别为 $S/G$、$A/G$ 和 $S/A$。聚合多个时隙时，应先合并相应计数，再计算这些比值。例如，$\sum_t S_t/\sum_t G_t$ 一般不等于 $\frac{1}{T}\sum_t S_t/G_t$，因为后者给予每个时隙相同权重，前者给予每个请求相同权重。按训练块合并请求后再跨块平均，也与直接把全部块请求混为一个比值不同。本文根据预定协议使用对应聚合方式，并在图表中说明统计单位。
-
-公平性需要说明它评价的是哪一种累计量。对于非负的每 UE 累计服务覆盖量 $c_m$，Jain 指数为
+此外，为评估集群对不同地面用户服务机会的均衡性，采用 Jain 公平性指数：
 \begin{equation}
-    J=\frac{\left(\sum_{m=1}^{M}c_m\right)^2}
-    {M\sum_{m=1}^{M}c_m^2}.
+    J = \frac{\left(\sum_{m=1}^{M} c_m\right)^2}{M \sum_{m=1}^{M} c_m^2},
     \label{eq:ch2-jain}
 \end{equation}
-当所有 $c_m$ 相同且至少一个非零时，$J=1$；服务集中到少数 UE 时，该值下降。全部为零时采用环境规定的零分母处理。该指标刻画所定义累计服务量的均衡程度，具体计数规则在第三章给出。
+其中 $c_m$ 为地面终端 $m$ 获得的累计服务覆盖量。当所有设备获得均等服务时 $J=1$，服务出现严重倾斜时该值显著下降。
 
-能源统计也必须保持主体一致。UAV 总能耗可以包含飞行、悬停、无线充电、服务计算、通信、回传或程序获取，以及内容处理等环节。分配能耗只覆盖其中与任务执行位置有关的非飞行部分。比较固定快照求解器时，位置固定，分配能耗便于观察卸载代价；比较闭环方法时，则应报告 UAV 总能耗。用前者替代后者，或把未计入的 MBS 能耗当作已经包含，会改变评价含义。
+\section{多智能体深度强化学习基础}
+\label{sec:marl-technology}
 
-\section{马尔可夫决策过程与长期目标}
+\subsection{马尔可夫决策过程与部分可观测性}
 \label{sec:ch2-mdp}
 
-\subsection{状态、动作与转移的定义}
-\label{subsec:rl}
-
-强化学习通过环境交互优化行为策略，其核心是动作对未来状态与回报的影响\cite{sutton2018reinforcement}。在离散时隙 $t$，智能体获得输入，选择动作 $a_t$，环境产生奖励 $r_t$ 并转移到下一状态。图~\ref{fig:rl_framework} 展示基本交互关系。这里的奖励是训练信号，评价指标则是研究要报告的量；二者可以相关，但一个多项加权奖励的改善不自动证明每一项评价指标均改善。
+强化学习通过智能体与动态环境的交互试错来寻找最优序贯决策策略\cite{sutton2018reinforcement}。图~\ref{fig:rl_framework} 给出了基本交互框架。针对多无人机集群协同，环境可建模为有限时域分散式部分可观测马尔可夫决策过程（Dec-POMDP），由元组 $(\mathcal{S}, \mathcal{A}, P, r, \rho_0, \gamma, T)$ 定义。其中 $\mathcal{S}$ 为全局环境状态空间，$\mathcal{A} = \prod_{u=1}^N \mathcal{A}_u$ 为联合动作空间，$P(s' \mid s, \mathbf{a})$ 为状态转移概率，$r$ 为奖励函数，$\rho_0$ 为初始状态分布，$\gamma \in [0, 1)$ 为折扣因子，$T$ 为单幕（Episode）时域长度。
 
 \begin{figure}[htbp]
     \centering
     \includegraphics[width=0.56\textwidth]{../docs/figures/图2-3_强化学习智能体环境交互框架}
-    \caption{强化学习中的状态、动作、奖励与环境转移关系}
+    \bicaption{强化学习智能体与环境交互框架示意图}{Interaction Framework between Reinforcement Learning Agent and Environment}
     \label{fig:rl_framework}
 \end{figure}
 
-一个有限时域 MDP 可记为 $(\mathcal S,\mathcal A,P,r,\rho_0,\gamma,T)$：$\mathcal S$ 为状态空间，$\mathcal A$ 为动作空间，$P(s'\mid s,a)$ 为转移分布，$r$ 为奖励机制，$\rho_0$ 为初始状态分布，$\gamma\in[0,1)$ 为折扣因子，$T$ 为时域长度。状态包含预测下一步所需的信息，马尔可夫条件为
+环境全局状态转移满足马尔可夫性：
 \begin{equation}
-    P(s_{t+1}\mid s_0,a_0,\ldots,s_t,a_t)
-    =P(s_{t+1}\mid s_t,a_t).
+    P(s_{t+1} \mid s_0, \mathbf{a}_0, \ldots, s_t, \mathbf{a}_t) = P(s_{t+1} \mid s_t, \mathbf{a}_t).
     \label{eq:ch2-markov-property}
 \end{equation}
-若请求过程显式依赖时隙序号，有限时域状态还可包含时间。该条件属于环境状态层面，并不要求每个 UAV 的局部观测都能恢复完整状态。
-
-策略 $\pi_\theta(a\mid s)$ 给出状态下的动作概率或概率密度，参数为 $\theta$。离散动作满足概率和为一，连续动作密度在动作空间上积分为一。为简化记号，本章写作 $\sum_a$ 的表达在连续情形对应积分。需要动作合法性掩码时，策略的有效支持集随状态改变；只要在相同状态上比较旧、新策略，并正确保存采样时掩码，仍可以按相同支持计算概率比。若修改了动作语义或合法集合，则不能不加检查地复用原有比率。
-
-UAV-MEC 的完整状态包括位置、能量、缓存、当前请求及运行阶段，而策略使用经筛选与定长编码的局部观测 $o_{u,t}$。相同观测可以对应不同完整状态，因此上层属于部分可观测决策。历史 $h_{u,t}=(o_{u,0},a_{u,0},\ldots,o_{u,t})$ 可提供额外信息，有限窗口或循环网络是相应近似处理方式。本文采用当前预动作观测，其信息范围见第三章。
-
-\subsection{折扣回报与值函数}
-\label{sec:ch2-return-value}
-
-为避免与请求生成计数 $G$ 混淆，本章用 $\mathcal G_t$ 表示从时隙 $t$ 开始的折扣回报：
+在部分可观测场景下，单架无人机 $u$ 仅能获得局部观测 $o_{u,t} = \mathcal{O}_u(s_t)$。从时隙 $t$ 开始的未来累计折扣回报定义为
 \begin{equation}
-    \mathcal G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k,
-    \qquad \mathcal G_T=0.
+    \mathcal{G}_t = \sum_{k=t}^{T-1} \gamma^{k-t} r_k, \qquad \mathcal{G}_T = 0.
     \label{eq:ch2-return}
 \end{equation}
-折扣因子决定未来奖励的相对权重。$\gamma$ 接近一时，较远未来对当前动作更重要；较小的 $\gamma$ 更强调近期效果。有限时域目标可在 $\gamma=1$ 时定义，但后文涉及无限时域有界值与收缩性质时使用 $\gamma<1$。本文实际超参数属于实验配置，不从数学定义推导其最优数值。
-
-有限时域状态值与动作值分别为
+在策略 $\pi$ 下，状态值函数 $V_t^\pi(s)$ 与动作值函数 $Q_t^\pi(s, \mathbf{a})$ 分别为回报在状态及动作下的条件期望：
 \begin{align}
-    V_t^\pi(s)&=\mathbb E_\pi[\mathcal G_t\mid s_t=s],
-    \label{eq:ch2-state-value}\\
-    Q_t^\pi(s,a)&=\mathbb E_\pi[\mathcal G_t\mid s_t=s,a_t=a].
-    \label{eq:ch2-action-value}
+    V_t^\pi(s) &= \mathbb{E}_\pi[\mathcal{G}_t \mid s_t = s], \label{eq:ch2-state-value} \\
+    Q_t^\pi(s, \mathbf{a}) &= \mathbb{E}_\pi[\mathcal{G}_t \mid s_t = s, \mathbf{a}_t = \mathbf{a}]. \label{eq:ch2-action-value}
 \end{align}
-$V_t^\pi$ 对策略实际选择的动作取平均，$Q_t^\pi$ 则固定当前动作后再遵循策略。有限时域下，即使状态相同，剩余时间不同也可以使价值不同，因此保留下标 $t$。若把时间并入状态，可使用不带显式时间下标的记号。神经网络 Critic 的输出是这些量的估计，不能预先当作真实期望。
-
-从式~\eqref{eq:ch2-return} 分离第一项得到 $\mathcal G_t=r_t+\gamma\mathcal G_{t+1}$。对下一状态和下一动作依次取条件期望，得到 Bellman 关系
+依据动态规划原理，二者满足 Bellman 期望方程：
 \begin{align}
-    Q_t^\pi(s,a)&=\bar r(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V_{t+1}^\pi(s'),
-    \label{eq:ch2-bellman-q}\\
-    V_t^\pi(s)&=\sum_a\pi(a\mid s)Q_t^\pi(s,a),
-    \qquad V_T^\pi(s)=0,
-    \label{eq:ch2-bellman-v}
+    Q_t^\pi(s, \mathbf{a}) &= \bar{r}(s, \mathbf{a}) + \gamma \sum_{s'} P(s' \mid s, \mathbf{a}) V_{t+1}^\pi(s'), \label{eq:ch2-bellman-q} \\
+    V_t^\pi(s) &= \sum_{\mathbf{a}} \pi(\mathbf{a} \mid s) Q_t^\pi(s, \mathbf{a}). \label{eq:ch2-bellman-v}
 \end{align}
-其中 $\bar r(s,a)$ 为给定状态与动作的奖励期望。若奖励同时依赖下一状态，该期望包含对 $s'$ 的积分。Bellman 关系连接当前奖励和未来价值，不要求即时奖励就是最终性能指标，也不意味着可以忽略请求执行后的状态变化。
-
-优势函数定义为
+优势函数度量了特定动作相对于当前策略平均表现的超额收益：
 \begin{equation}
-    A_t^\pi(s,a)=Q_t^\pi(s,a)-V_t^\pi(s).
+    A_t^\pi(s, \mathbf{a}) = Q_t^\pi(s, \mathbf{a}) - V_t^\pi(s).
     \label{eq:ch2-advantage}
 \end{equation}
-它表示相对于当前策略在该状态的平均行为，特定动作的长期回报差异。由 $V_t^\pi$ 的定义可得
-\begin{equation}
-    \sum_a\pi(a\mid s)A_t^\pi(s,a)=0.
-    \label{eq:ch2-advantage-zero}
-\end{equation}
-正优势动作相对平均更好，负优势动作相对平均更差；“更好”是给定奖励与策略的比较，不能直接翻译成每个物理指标都变好。后续 Actor 更新使用估计优势，需要考虑 Critic 误差和采样波动。
 
-\subsection{动态规划性质与函数近似的边界}
-\label{sec:ch2-bellman-boundary}
-
-在已知模型的有限时域问题中，最优值可从终端条件向前递推：
-\begin{equation}
-    V_t^*(s)=\max_a\left\{\bar r(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V_{t+1}^*(s')\right\}.
-    \label{eq:ch2-bellman-optimal}
-\end{equation}
-该关系要求能够表示和计算状态、动作及转移。当联合动作数量巨大或转移模型复杂时，递推本身并不提供低成本的实际求解途径。深度强化学习通过样本与函数近似处理这些难点，其性质与已知有限表格模型中的精确动态规划不同。
-
-对于有界奖励、平稳策略和无限折扣时域，定义策略 Bellman 算子 $\mathcal T^\pi$。任取两个有界函数 $V,W$，由于概率加权不会放大最大绝对差，有
-\begin{align}
-    |(\mathcal T^\pi V)(s)-(\mathcal T^\pi W)(s)|
-    &\leq\gamma\sum_a\pi(a\mid s)\sum_{s'}P(s'\mid s,a)|V(s')-W(s')|\\
-    &\leq\gamma\|V-W\|_\infty,
-    \label{eq:ch2-bellman-contraction}
-\end{align}
-从而 $\|\mathcal T^\pi V-\mathcal T^\pi W\|_\infty\leq\gamma\|V-W\|_\infty$。该收缩性质保证精确策略评价的唯一固定点。采用神经网络近似、有限样本和多智能体策略更新时，还存在估计与优化误差，训练行为由相应实验评价。
-
-实际 Actor--Critic 训练会改变策略，因此 Critic 的目标也随之变化。即使网络在某次更新中更贴近采样目标，也不等于接近全局最优策略。对 UAV-MEC，还存在部分可观测、环境状态编码、奖励尺度和随机需求等因素。本文采用固定预算、最后检查点、独立训练块与配对评估来检验最终行为，不用一条看似平滑的回报曲线替代最终策略验证。
-
-\section{策略梯度与 Actor--Critic 推导}
-\label{sec:ch2-policy-gradient}
-
-\subsection{轨迹概率与似然比求导}
-\label{sec:ch2-score-function}
-
-策略梯度直接优化参数化动作分布，适用于无法方便枚举全部动作的情形\cite{williams1992simple}。记一条交互轨迹为 $\xi=(s_0,a_0,r_0,\ldots,s_T)$，策略目标为
-\begin{equation}
-    J(\theta)=\mathbb E_{\xi\sim p_\theta}\left[\sum_{t=0}^{T-1}\gamma^t r_t\right].
-    \label{eq:ch2-objective}
-\end{equation}
-假设初始分布和环境转移不直接依赖 $\theta$，且可交换求导与积分。轨迹概率中与策略相关的部分来自各时隙动作概率，因此
-\begin{align}
-    p_\theta(\xi)&=\rho_0(s_0)\prod_{t=0}^{T-1}\pi_\theta(a_t\mid s_t)P(s_{t+1},r_t\mid s_t,a_t),
-    \label{eq:ch2-trajectory-density}\\
-    \nabla_\theta\log p_\theta(\xi)&=\sum_{t=0}^{T-1}\nabla_\theta\log\pi_\theta(a_t\mid s_t).
-    \label{eq:ch2-trajectory-score}
-\end{align}
-第二式利用了环境项导数为零的条件。若环境本身也由同一参数控制，需要加入相应导数，不能沿用这里的简单形式。仿真奖励可以是随机量，只要其生成分布属于固定的环境条件即可。
-
-令 $R(\xi)=\sum_t\gamma^t r_t$。使用 $\nabla p_\theta=p_\theta\nabla\log p_\theta$，得到
-\begin{align}
-    \nabla_\theta J(\theta)
-    &=\int \nabla_\theta p_\theta(\xi)R(\xi)\,\mathrm d\xi\\
-    &=\mathbb E_{p_\theta}\left[R(\xi)\sum_{t=0}^{T-1}\nabla_\theta\log\pi_\theta(a_t\mid s_t)\right].
-    \label{eq:ch2-reinforce-full}
-\end{align}
-这一表达不需要对环境转移求导。即使动作执行包含离散请求分配、位置裁剪或缓存更新，只要轨迹来自已定义的参数化策略和环境映射，也可以通过采样概率的导数构造估计。神经网络的可微性用于计算策略参数导数，并不要求仿真物理过程本身可微。
-
-\subsection{因果性与回报到达估计}
-\label{sec:ch2-reward-to-go}
-
-完整轨迹回报包含动作之前的奖励，但当前动作不可能改变已经发生的事件。为形式化这一点，记动作前历史为 $\mathcal H_t$，对于 $k<t$，$r_k$ 在给定 $\mathcal H_t$ 后已确定。对当前动作的条件期望满足
-\begin{equation}
-    \mathbb E_{a_t\sim\pi_\theta}\left[\nabla_\theta\log\pi_\theta(a_t\mid s_t)\mid\mathcal H_t\right]
-    =\sum_a\nabla_\theta\pi_\theta(a\mid s_t)
-    =\nabla_\theta 1=0.
-    \label{eq:ch2-score-zero}
-\end{equation}
-所以式~\eqref{eq:ch2-reinforce-full} 中每个动作之前的奖励项，其梯度期望为零。删去这些只增加估计波动的项后，有
-\begin{align}
-    \nabla_\theta J(\theta)
-    &=\mathbb E_{p_\theta}\left[\sum_{t=0}^{T-1}
-       \nabla_\theta\log\pi_\theta(a_t\mid s_t)
-       \sum_{k=t}^{T-1}\gamma^k r_k\right]\\
-    &=\mathbb E_{p_\theta}\left[\sum_{t=0}^{T-1}\gamma^t
-       \nabla_\theta\log\pi_\theta(a_t\mid s_t)\mathcal G_t\right].
-    \label{eq:ch2-reward-to-go-gradient}
-\end{align}
-式中 $\gamma^t$ 对应从时隙零开始的折扣，$\mathcal G_t$ 则从当前时隙开始累计。这一因子保持有限时域目标与梯度推导的定义一致。
-
-再对固定 $s_t,a_t$ 之后的未来轨迹取期望，可将 $\mathcal G_t$ 替换为 $Q_t^{\pi_\theta}(s_t,a_t)$：
-\begin{equation}
-    \nabla_\theta J(\theta)
-    =\mathbb E_{p_\theta}\left[\sum_t\gamma^t
-    \nabla_\theta\log\pi_\theta(a_t\mid s_t)Q_t^{\pi_\theta}(s_t,a_t)\right].
-    \label{eq:ch2-policy-gradient}
-\end{equation}
-由此得到有限时域策略梯度。对于部分可观测策略，将策略条件改为可用历史或观测，仍可从轨迹概率推导得分函数估计，动作价值也取相应条件下的期望。
-
-该推导给出期望梯度，而实际训练只拥有有限条轨迹。估计的方差可能来自随机请求、初始位置、策略采样和长期状态传播。UAV 轨迹的一个动作可能影响多个未来时隙的接纳条件，直接用整段回报更新会较为嘈杂。Actor--Critic 因此引入价值网络和优势估计，以在可控偏差与方差之间构造更有效的训练信号。
-
-\subsection{基线不偏性与优势形式}
-\label{sec:ch2-baseline-proof}
-
-取一个只依赖动作前信息、而不依赖当前采样动作的基线 $b_t(s_t)$。利用式~\eqref{eq:ch2-score-zero}，其对梯度的期望贡献为
-\begin{align}
-    &\mathbb E\left[\nabla_\theta\log\pi_\theta(a_t\mid s_t)b_t(s_t)\mid s_t\right]\\
-    &\quad=b_t(s_t)\sum_a\pi_\theta(a\mid s_t)\nabla_\theta\log\pi_\theta(a\mid s_t)\\
-    &\quad=b_t(s_t)\nabla_\theta\sum_a\pi_\theta(a\mid s_t)=0.
-    \label{eq:ch2-baseline-unbiased}
-\end{align}
-因此，减去动作无关基线保持理想策略梯度的期望，连续动作积分得到相同结论。神经网络基线在 Actor 更新中作为固定训练信号；动作相关基线则需要额外校正才能保持该性质。
-
-选择 $b_t(s)=V_t^\pi(s)$，可以把动作值换成优势：
-\begin{equation}
-    \nabla_\theta J(\theta)
-    =\mathbb E\left[\sum_t\gamma^t
-    \nabla_\theta\log\pi_\theta(a_t\mid s_t)A_t^\pi(s_t,a_t)\right].
-    \label{eq:ch2-advantage-gradient}
-\end{equation}
-Actor 由此依据相对于状态平均表现的差异更新策略，减少状态差异带来的波动。价值函数提供常用的不偏基线，其方差削减效果还取决于梯度尺度和价值估计精度。
-
-Critic 用参数 $\phi$ 近似 $V_t^\pi$，训练目标可以来自实际回报或多步自举。若目标记为 $\widehat V_t$，基本均方损失为
-\begin{equation}
-    L_V(\phi)=\frac{1}{2}\mathbb E\left[(V_\phi(s_t)-\widehat V_t)^2\right].
-    \label{eq:ch2-value-loss}
-\end{equation}
-Actor 与 Critic 的作用不同：前者优化动作概率，后者拟合用于估计的目标。Critic 损失降低可以意味着拟合更好，但不保证 Actor 的最终 DSR 上升；反过来，价值目标随策略变化时，损失短期升高也不必然代表策略性能恶化。后续训练图须按各自物理含义解释。
-
-\section{时序差分与广义优势估计}
-\label{sec:ch2-gae}
-
-\subsection{一步时序差分与多步自举}
-\label{sec:ch2-td}
-
-一步时序差分（Temporal Difference，TD）将当前奖励与下一状态价值组成目标。对非终止转移定义
-\begin{equation}
-    \delta_t=r_t+\gamma V_\phi(s_{t+1})-V_\phi(s_t).
-    \label{eq:ch2-td-error}
-\end{equation}
-如果 $V_\phi$ 等于真实策略值，给定当前状态和动作的 $\delta_t$ 条件期望就是 $A_t^\pi$，因为式~\eqref{eq:ch2-bellman-q} 的未来期望恰好给出动作值。若 Critic 不准确，TD 目标会包含自举误差；其代价是偏差，优点是无需等待完整回合结束即可获得训练信号。
-
-在不存在中间终止的 $n$ 步窗口内，多步目标与优势估计可以写成
-\begin{align}
-    \widehat V_t^{(n)}&=\sum_{l=0}^{n-1}\gamma^l r_{t+l}
-          +\gamma^n V_\phi(s_{t+n}),
-    \label{eq:ch2-nstep-target}\\
-    \widehat A_t^{(n)}&=\widehat V_t^{(n)}-V_\phi(s_t)
-          =\sum_{l=0}^{n-1}\gamma^l\delta_{t+l}.
-    \label{eq:ch2-nstep-advantage}
-\end{align}
-最后一个等号来自相邻价值项的消去：$\gamma V(s_{t+1})$ 与下一项中的 $-\gamma V(s_{t+1})$ 相抵，依次只留下窗口末端的自举值。$n$ 增大时使用更多真实奖励，通常减少对近端 Critic 的依赖，但也引入更多随机未来变化；这构成多步估计的基本取舍。
-
-真正终止和采样截断不能混为一类。真正终止表示目标任务已经结束，之后没有应计入回报的状态价值；采样截断只表示当前缓冲区或记录窗口到此结束，环境过程可能继续。如果为了收集固定长度 rollout 而截断，却把后续价值强行设为零，会系统性改变窗口末端的估计。另一方面，若一个回合按任务定义在第 $T$ 步结束，则该有限时域终点本身可以是真正终止，不应因为代码称其为 time limit 就机械地自举。
-
-\subsection{GAE 的加权推导}
-\label{sec:ch2-gae-derivation}
-
-广义优势估计（Generalized Advantage Estimation，GAE）将多步优势进行指数加权\cite{schulman2015high}。设当前非终止窗口剩余 $K$ 步，$\lambda_{\mathrm{GAE}}\in[0,1]$，有限窗口的加权形式为
-\begin{equation}
-    \widehat A_t^{\mathrm{GAE}}
-    =(1-\lambda_{\mathrm{GAE}})\sum_{n=1}^{K-1}
-       \lambda_{\mathrm{GAE}}^{n-1}\widehat A_t^{(n)}
-       +\lambda_{\mathrm{GAE}}^{K-1}\widehat A_t^{(K)}.
-    \label{eq:ch2-gae-mixture}
-\end{equation}
-最后一项吸收窗口之后的剩余权重，使有限混合的权重和为一。若遗漏这一项，估计在有限窗口中会发生额外缩放。$\lambda_{\mathrm{GAE}}=0$ 时只保留一步估计，$\lambda_{\mathrm{GAE}}=1$ 时只保留最长窗口的多步估计，端点按相应极限理解。
-
-将式~\eqref{eq:ch2-nstep-advantage} 代入上述混合，观察 $\delta_{t+l}$ 的系数：它出现在所有 $n\geq l+1$ 的估计中，因此对应权重为
-\begin{align}
-    &\gamma^l\left[(1-\lambda_{\mathrm{GAE}})
-       \sum_{n=l+1}^{K-1}\lambda_{\mathrm{GAE}}^{n-1}
-       +\lambda_{\mathrm{GAE}}^{K-1}\right]\\
-    &\qquad=\gamma^l\lambda_{\mathrm{GAE}}^l.
-    \label{eq:ch2-gae-coefficient}
-\end{align}
-从而得到常用的残差和形式
-\begin{equation}
-    \widehat A_t^{\mathrm{GAE}}
-    =\sum_{l=0}^{K-1}(\gamma\lambda_{\mathrm{GAE}})^l\delta_{t+l}.
-    \label{eq:ch2-gae-residual-sum}
-\end{equation}
-GAE 的衰减由两个因素决定：$\gamma$ 表示目标对未来的折扣，$\lambda_{\mathrm{GAE}}$ 表示较长残差链的估计权重。二者分别属于优化目标与估计器参数。
-
-若 $\lambda_{\mathrm{GAE}}=1$，窗口内残差累加后得到实际折扣奖励加末端自举值，再减当前价值；若窗口在真实终端结束，末端价值为零，便得到回报减基线。若 $\lambda_{\mathrm{GAE}}<1$，中间价值估计更明显地进入结果，可能降低方差，也可能保留价值近似偏差。因而，GAE 不是无条件消除偏差的技巧，应与 Critic 精度、窗口长度和任务随机性一起理解。
-
-\subsection{终止掩码与递推实现}
-\label{sec:ch2-terminal-masks}
-
-为兼容不同边界，定义自举掩码 $b_t$ 与递推连接掩码 $c_t$。$b_t=0$ 表示该转移真正终止，否则为一；$c_t=1$ 表示缓冲区下一条记录属于同一连续轨迹、可以继续累计其优势，否则为零。相应 TD 残差与反向递推为
-\begin{align}
-    \delta_t&=r_t+\gamma b_t V_\phi(s_{t+1})-V_\phi(s_t),
-    \label{eq:ch2-masked-td}\\
-    \widehat A_t&=\delta_t+\gamma\lambda_{\mathrm{GAE}}c_t\widehat A_{t+1}.
-    \label{eq:ch2-masked-gae}
-\end{align}
-在真实终端，$b_t=c_t=0$；在仅因采样长度而截断的末端，可以取 $b_t=1,c_t=0$，用截断前的实际后继状态估计价值，但不跨到下一批未知记录递推；在正常连续转移中二者均为一。价值自举与优势连接的分工避免了跨回合泄漏。
-
-递推展开为
-\begin{equation}
-    \widehat A_t=\sum_{l=0}^{K-1}(\gamma\lambda_{\mathrm{GAE}})^l
-    \left(\prod_{i=0}^{l-1}c_{t+i}\right)\delta_{t+l},
-    \label{eq:ch2-gae-products}
-\end{equation}
-空乘积取一。只要某个连接掩码为零，后续残差对当前优势的贡献就停止。实现时通常从缓冲区末端向前扫描，维护一个累计量；真正终止状态的后继值为零，截断状态则应使用结束前真实 observation，而不是 reset 之后的新回合初始 observation。
-
-GAE 计算后，用 $\widehat V_t=V_{\phi_{\mathrm{old}}}(s_t)+\widehat A_t$ 形成 Critic 目标，并在同一批次的多个 PPO epoch 中保持固定。优势标准化用于调整策略优化的数值尺度，价值目标仍保留原回报尺度。
-
-\section{近端策略优化与动作概率一致性}
-\label{sec:ch2-ppo}
-
-\subsection{重要性比率与旧策略采样}
-\label{sec:ch2-importance-ratio}
-
-策略梯度的期望由当前策略产生，但一次交互采样后，策略更新会使缓冲区来自旧策略 $\pi_{\theta_{\mathrm{old}}}$。对于固定状态 $s$，若新策略支持集包含于旧策略有效支持集，则
-\begin{equation}
-    \mathbb E_{a\sim\pi_\theta}[f(s,a)]
-    =\mathbb E_{a\sim\pi_{\theta_{\mathrm{old}}}}
-       \left[\rho_\theta(s,a)f(s,a)\right],\qquad
-    \rho_\theta(s,a)=\frac{\pi_\theta(a\mid s)}{\pi_{\theta_{\mathrm{old}}}(a\mid s)}.
-    \label{eq:ch2-importance}
-\end{equation}
-该恒等式只校正固定状态下动作分布的变化，并未自动校正新策略产生的状态分布。因此，直接在旧 rollout 上使用一次动作比率，是局部代理目标的构造，不是完整新策略回报的无偏估计。若对整条轨迹做完全重要性校正，需要多个时隙比率乘积，通常会产生较大方差。
-
-PPO 使用旧策略状态动作样本与固定优势，构造可重复优化的目标\cite{schulman2017proximal}。为了数值稳定，概率比率通常由 log probability 之差计算：
-\begin{equation}
-    \rho_t(\theta)=\exp\left[\log\pi_\theta(a_t\mid s_t)
-                         -\log\pi_{\theta_{\mathrm{old}}}(a_t\mid s_t)\right].
-    \label{eq:ch2-log-ratio}
-\end{equation}
-旧动作概率由采样时的参数、观测、动作和掩码确定，并在更新中保持固定。首次更新前新旧网络相同，合法样本的概率比应接近一，可用于检查概率记录的一致性。
-
-\subsection{裁剪目标及其分段含义}
-\label{sec:ch2-clip-objective}
-
-设裁剪系数为 $\varepsilon>0$，PPO 的裁剪代理目标为
-\begin{equation}
-    L_{\mathrm{clip}}(\theta)=\mathbb E_{\mathrm{old}}\left[
-       \min\left(\rho_t(\theta)\widehat A_t,
-       \operatorname{clip}(\rho_t(\theta),1-\varepsilon,1+\varepsilon)\widehat A_t\right)\right].
-    \label{eq:ch2-ppo-clip}
-\end{equation}
-优势在 Actor 更新时视为固定。取最小值的目的，是在动作概率朝有利方向变化过多时移除进一步增加代理收益的激励，而不是把所有比率数值直接投影到指定区间。
-
-对于单个样本，令 $\ell(\rho,\widehat A)$ 为括号内的量。根据优势符号，有
-\begin{equation}
-    \ell(\rho,\widehat A)=
-    \begin{cases}
-       \widehat A\min(\rho,1+\varepsilon),&\widehat A\geq0,\\
-       \widehat A\max(\rho,1-\varepsilon),&\widehat A<0.
-    \end{cases}
-    \label{eq:ch2-ppo-piecewise}
-\end{equation}
-当 $\widehat A>0$ 时，增加动作概率能提高代理收益，但比率超过 $1+\varepsilon$ 后这一项进入平台；当 $\widehat A<0$ 时，降低动作概率有利，但比率低于 $1-\varepsilon$ 后平台阻止该项继续受益。若变化方向使样本表现更差，目标仍保留惩罚。这是裁剪和最小操作必须共同出现的原因。
-
-PPO 裁剪限制单个样本继续增加代理收益的方向，属于软优化机制。共享参数、其他样本及熵项仍可改变已进入平台区的动作概率，因此实际训练需结合近似 KL、裁剪比例和梯度范数观察更新幅度。
-
-策略熵可以作为探索项。离散分布的熵为
-\begin{equation}
-    \mathcal H(\pi)=-\sum_{a\in\mathcal A(s)}\pi(a\mid s)\log\pi(a\mid s).
-    \label{eq:ch2-entropy}
-\end{equation}
-Actor 通常最大化 $L_{\mathrm{clip}}+c_H\mathbb E[\mathcal H]$，其中 $c_H\geq0$，Critic 最小化均方或裁剪值损失。熵项保持训练动作的分散度，评价阶段则采用预定的动作选择规则。
-
-\subsection{连续提案、执行映射与离散掩码}
-\label{sec:ch2-action-consistency}
-
-对于二维轨迹，Actor 可输出均值 $\boldsymbol\mu_\theta(o)$ 与标准差 $\boldsymbol\sigma_\theta(o)$，从对角 Gaussian 分布采样原始动作 $a$。其 log probability 为
-\begin{equation}
-    \log\pi_\theta(a\mid o)
-    =-\frac{1}{2}\sum_{d=1}^{2}\left[
-        \frac{(a_d-\mu_d)^2}{\sigma_d^2}+2\log\sigma_d+\log(2\pi)\right].
-    \label{eq:ch2-gaussian-logprob}
-\end{equation}
-如果环境把原始动作裁剪、缩放或进行边界与碰撞消解，实际执行动作是 $a^{\mathrm{exec}}=\mathcal E(s,a)$。该映射可以多对一，并不保持 Gaussian 密度。策略梯度仍可针对原始提案策略定义，把执行映射视为环境的一部分；前提是 PPO 保存并比较同一个原始 $a$ 的采样概率。
-
-将裁剪后的 $a^{\mathrm{exec}}$ 重新代入原始 Gaussian 密度，并把它当作原始动作概率，会改变采样对象。特别是多个超出边界的提案被映射到同一边界值时，执行动作分布不再是原 Gaussian。本文后续算法描述以原始提案和原始 log probability 为准，执行可行性由环境映射处理。这种记录方法确保概率比率的含义一致，但不说明策略网络本身满足所有几何约束。
-
-对于离散卸载或配额迁移，设网络 logits 为 $z_a$，状态对应的合法动作掩码为 $M_a\in\{0,1\}$，则掩码后的分布为
-\begin{equation}
-    \pi_\theta(a\mid s,M)
-    =\frac{M_a\exp(z_a)}{\sum_b M_b\exp(z_b)}.
-    \label{eq:ch2-masked-policy}
-\end{equation}
-实现需要保证至少存在一个合法动作，例如协议允许的保底动作或停止动作，否则分母为零。非法动作概率为零，合法动作之间重新归一化。训练使用采样时的 $M$，不能在一个已改变负载的搜索状态上重建掩码后拿来比较原动作概率。
-
-动作掩码屏蔽物理或协议不可行选择，而能耗筛选、最好方案保留或普通修复是另外的操作。它们可以改变最终执行分配，却不应事后改写策略曾采样的配额动作或其概率。附录~\ref{app:legacy-learning}中的原学习变体因此区分当前搜索状态、策略提案、候选分配和最好保留分配；这一分工既有利于处理有限预算搜索，也使 PPO rollout 对应明确的训练过程。
-
-\section{多智能体协作与 MAPPO}
-\label{sec:marl-technology}
-
-\subsection{联合状态与局部观测}
-\label{subsec:marl}
-
-协作多智能体问题可以用分散式部分可观测马尔可夫决策过程描述。设智能体集合为 $\mathcal U=\{1,\ldots,N\}$，联合状态为 $s_t$，局部观测由 $o_{u,t}=\mathcal O_u(s_t)$ 或对应观测分布生成，联合动作为 $\boldsymbol a_t=(a_{1,t},\ldots,a_{N,t})$。环境根据整个联合动作转移，并返回团队奖励或各智能体奖励。全局转移满足马尔可夫性时，从局部观测出发的单个智能体仍可能面对部分可观测问题；如果其他策略同步更新，其经验的生成过程还会出现训练非平稳性\cite{gronauer2022multi}。
-
-条件独立的分散式 Actor 可以把联合策略因子化为
-\begin{equation}
-    \boldsymbol\pi_\theta(\boldsymbol a_t\mid\boldsymbol h_t)
-    =\prod_{u=1}^{N}\pi_{\theta_u}(a_{u,t}\mid h_{u,t}),
-    \label{eq:ch2-factorized-policy}
-\end{equation}
-其中 $h_{u,t}$ 是各智能体允许使用的历史，当前观测策略是其特例。条件独立指给定各自输入后的动作采样方式，并不意味着动作对环境的影响独立。多架 UAV 的动作可以通过覆盖边界、最小间距和共享计算资源发生强耦合。
-
-联合动作空间随智能体数量变化。若每个智能体有 $K$ 个离散动作，联合动作数是 $K^N$；连续动作则形成更高维联合空间。参数共享不改变这种环境组合结构，但可以减少模型中重复的可训练参数。同类型 UAV 共享 $\theta$ 时，不同局部状态仍产生不同分布；其经验共同贡献梯度。若异质节点承担不同功能，是否共享、是否引入身份或能力特征需要根据具体实现决定，而不是将参数共享作为所有 MARL 方法的必选条件。
-
-训练非平稳性的原因可以写得更具体。对固定智能体 $u$，其看到的有效转移包含其他智能体策略的平均：
-\begin{equation}
-    P_u^{\pi_{-u}}(s'\mid s,a_u)
-    =\sum_{\boldsymbol a_{-u}}\pi_{-u}(\boldsymbol a_{-u}\mid\boldsymbol h_{-u})
-       P(s'\mid s,a_u,\boldsymbol a_{-u}).
-    \label{eq:ch2-effective-transition}
-\end{equation}
-当 $\pi_{-u}$ 变化时，该有效过程变化。全局状态转移模型未必因此失去马尔可夫性，但单个策略从旧样本中估计当前环境的难度增加。集中训练能够使用更多信息缓解估计困难，却不能保证完全消除这种变化或信用分配问题。
-
-\subsection{CTDE 与联合观测价值网络}
-\label{sec:ch2-ctde}
-
-CTDE 允许训练时 Critic 使用联合观测、全局状态或规定协作信息，执行时 Actor 使用其可获得的局部输入。MADDPG 与 MAPPO 展示了集中价值估计的不同实现\cite{lowe2017multi,yu2022surprising}。本文轨迹策略按局部观测执行，下层汇总请求作中央分配，两者具有不同的在线信息与协调需求。
-
-本文上层的联合观测记为 $O_t=(o_{1,t},\ldots,o_{N,t})$，共享 Critic 的输出形式为
-\begin{equation}
-    \boldsymbol V_\phi(O_t)
-    =(V_{\phi,1}(O_t),\ldots,V_{\phi,N}(O_t))\in\mathbb R^N.
-    \label{eq:ch2-joint-critic}
-\end{equation}
-每个 UAV 获得对应价值估计，网络通过联合输入建模相互关系。共享参数不要求输出只有一个全局标量，也不要求每个输出使用完全相同的局部回报。实际奖励是否共享、价值目标如何生成，需要与 rollout 数据结构一致。第三章说明本文上层输入和训练设置，原学习配额变体则以一个完整请求图作为集中搜索状态（见附录~\ref{app:legacy-learning}），其动作主体与上层多 UAV Actor 不同。
-
-团队奖励下，因子化策略的 log probability 满足
-\begin{equation}
-    \nabla_\theta\log\boldsymbol\pi_\theta(\boldsymbol a\mid\boldsymbol h)
-    =\sum_{u=1}^{N}\nabla_\theta\log\pi_\theta(a_u\mid h_u)
-    \label{eq:ch2-shared-score}
-\end{equation}
-（共享参数时）。代入策略梯度，可把各 UAV 的得分函数贡献相加。价值基线可以利用动作之前的联合信息，只要在对应条件下不依赖当前被求导动作，就保留基线不偏性的基本逻辑。实际按智能体划分的优势是近似估计，集中 Critic 提供训练信号，不构成对个体因果贡献的精确分解。
-
-\subsection{MAPPO 的局部比率与更新流程}
+\subsection{近端策略优化与多智能体 PPO}
 \label{subsec:mappo}
 
-MAPPO 采用 PPO 类代理目标训练协作策略\cite{yu2022surprising}。对于每个 UAV 的样本，定义局部比率
+策略梯度方法通过参数化策略网络 $\pi_\theta$ 直接优化期望回报 $J(\theta) = \mathbb{E}[\mathcal{G}_0]$\cite{williams1992simple}。引入状态值函数作为动作无关基线，策略梯度标准形式为
 \begin{equation}
-    \rho_{u,t}(\theta)=
-    \frac{\pi_\theta(a_{u,t}\mid o_{u,t})}
-         {\pi_{\theta_{\mathrm{old}}}(a_{u,t}\mid o_{u,t})}.
-    \label{eq:ch2-mappo-ratio}
+    \nabla_\theta J(\theta) = \mathbb{E}\left[\sum_{t=0}^{T-1} \gamma^t \nabla_\theta \log \pi_\theta(a_t \mid s_t) A_t^\pi(s_t, a_t)\right].
+    \label{eq:ch2-advantage-gradient}
 \end{equation}
-常用的共享 Actor 代理目标在智能体与时隙上平均：
+Actor--Critic 架构利用参数为 $\phi$ 的 Critic 网络 $V_\phi$ 拟合状态值，训练目标为最小化均方估计误差：
 \begin{equation}
-    L_{\mathrm{MAPPO}}(\theta)=\frac{1}{NT}
-    \sum_{u,t}\min\left(\rho_{u,t}\widehat A_{u,t},
-      \operatorname{clip}(\rho_{u,t},1-\varepsilon,1+\varepsilon)\widehat A_{u,t}\right).
+    L_V(\phi) = \frac{1}{2}\mathbb{E}\left[(V_\phi(s_t) - \widehat{V}_t)^2\right].
+    \label{eq:ch2-value-loss}
+\end{equation}
+为权衡优势估计的偏差与方差，广义优势估计（GAE）\cite{schulman2015high} 基于一步时序差分（TD）误差
+\begin{equation}
+    \delta_t = r_t + \gamma V_\phi(s_{t+1}) - V_\phi(s_t),
+    \label{eq:ch2-td-error}
+\end{equation}
+通过参数 $\lambda_{\mathrm{GAE}} \in [0, 1]$ 对多步残差进行指数衰减加权，得到优势估计量：
+\begin{equation}
+    \widehat{A}_t^{\mathrm{GAE}} = \sum_{l=0}^{K-1} (\gamma \lambda_{\mathrm{GAE}})^l \delta_{t+l}.
+    \label{eq:ch2-gae-residual-sum}
+\end{equation}
+
+近端策略优化（PPO）\cite{schulman2017proximal} 为防止策略单步更新步长过大导致训练崩塌，引入重要性采样比率
+\begin{equation}
+    \rho_t(\theta) = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{\mathrm{old}}}(a_t \mid s_t)} = \exp\left[\log \pi_\theta(a_t \mid s_t) - \log \pi_{\theta_{\mathrm{old}}}(a_t \mid s_t)\right],
+    \label{eq:ch2-log-ratio}
+\end{equation}
+并构建带裁剪因子的悲观代理目标函数：
+\begin{equation}
+    L_{\mathrm{clip}}(\theta) = \mathbb{E}_{\mathrm{old}}\left[\min\left(\rho_t(\theta)\widehat{A}_t, \ \operatorname{clip}(\rho_t(\theta), 1-\varepsilon, 1+\varepsilon)\widehat{A}_t\right)\right],
+    \label{eq:ch2-ppo-clip}
+\end{equation}
+其中 $\varepsilon \in (0, 1)$ 为裁剪阈值。该目标在优势为正时限制策略概率过增，在优势为负时限制策略概率过降，有效约束了新旧策略的分布偏离。
+
+在多智能体协同领域，多智能体 PPO（MAPPO）\cite{yu2022surprising} 采用集中训练分散执行（CTDE）框架\cite{lowe2017multi,gronauer2022multi}。执行时，各无人机仅依据局部观测 $o_{u,t}$ 通过参数共享的 Actor 独立生成机动动作；训练时，中央 Critic 网络获取全局联合观测 $O_t = (o_{1,t}, \ldots, o_{N,t})$，输出各无人机的联合价值估计：
+\begin{equation}
+    \boldsymbol{V}_\phi(O_t) = (V_{\phi,1}(O_t), \ldots, V_{\phi,N}(O_t)) \in \mathbb{R}^N.
+    \label{eq:ch2-joint-critic}
+\end{equation}
+MAPPO 共享 Actor 的全局训练代理损失为所有智能体与批次时隙的平均：
+\begin{equation}
+    L_{\mathrm{MAPPO}}(\theta) = \frac{1}{NT} \sum_{u=1}^N \sum_{t=0}^{T-1} \min\left(\rho_{u,t}(\theta)\widehat{A}_{u,t}, \ \operatorname{clip}(\rho_{u,t}(\theta), 1-\varepsilon, 1+\varepsilon)\widehat{A}_{u,t}\right),
     \label{eq:ch2-mappo-loss}
 \end{equation}
-其中 $T$ 在此表示采样批次包含的时隙数，实际实现还会对批次和有效样本作平均。各智能体价值目标来自对应回报和联合 Critic，Actor 则分别以局部观测重算提案概率。
+其中 $\rho_{u,t}(\theta) = \pi_\theta(a_{u,t} \mid o_{u,t}) / \pi_{\theta_{\mathrm{old}}}(a_{u,t} \mid o_{u,t})$。CTDE 机制在训练期有效缓解了部分可观测性与环境非平稳性，而在执行期保持了完全去中心化的敏捷性。
 
-联合策略概率比为 $\rho_{\mathrm{joint},t}=\prod_u\rho_{u,t}$，逐智能体裁剪与联合比率裁剪具有不同目标。共享参数更新同时影响所有 UAV，局部比率的变化还会通过乘积累积。因此，训练通过 epoch、学习率和小批量设置控制更新，并观察实际优化行为。
-
-完整训练循环先固定策略采集 rollout，保存各机观测、原始动作、对数概率、价值估计、奖励和终止标记；由该批样本计算 GAE 与 Critic 目标，再在旧概率固定的条件下执行多个优化 epoch。更新后重新采样。本文上层先完成训练，再在下层配额学习与评价中保持参数固定。
-
-\section{注意力聚合与图表示}
+\subsection{注意力机制与特征聚合}
 \label{sec:attention}
 
-\subsection{查询、键和值的计算}
-\label{sec:ch2-attention-definition}
-
-注意力把元素间的相关性转化为聚合权重\cite{vaswani2017attention}。设查询、键和值矩阵分别为 $Q\in\mathbb R^{n_q\times d_k}$、$K\in\mathbb R^{n_k\times d_k}$ 和 $V\in\mathbb R^{n_k\times d_v}$，缩放点积注意力为
+注意力机制通过动态计算输入元素间的相关性生成加权聚合表征\cite{vaswani2017attention}。设查询、键与值矩阵分别为 $Q \in \mathbb{R}^{n_q \times d_k}$、$K \in \mathbb{R}^{n_k \times d_k}$ 和 $V \in \mathbb{R}^{n_k \times d_v}$，加性掩码为 $M$，缩放点积注意力定义为
 \begin{equation}
-    \operatorname{Att}(Q,K,V)
-    =\operatorname{softmax}\left(\frac{QK^{\mathsf T}}{\sqrt{d_k}}+M\right)V.
+    \operatorname{Att}(Q,K,V) = \operatorname{softmax}\left(\frac{QK^{\mathsf{T}}}{\sqrt{d_k}} + M\right) V.
     \label{eq:ch2-scaled-attention}
 \end{equation}
-$M$ 为加性掩码，合法项为零，非法项在数学表达中为负无穷；softmax 沿键的维度计算。每一行权重非负且和为一，因此输出是值向量的加权组合。查询与键决定权重，值承担被聚合的信息，三者的功能不同。
-
-缩放因子的作用可以从点积方差说明。假设各 $q_i,k_i$ 零均值、方差为一，同一维度内 $q_i$ 与 $k_i$ 相互独立，且不同维度的变量对 $(q_i,k_i)$ 相互独立，则
-\begin{equation}
-    \operatorname{Var}(q^{\mathsf T}k)
-    =\operatorname{Var}\left(\sum_{i=1}^{d_k}q_i k_i\right)=d_k.
-    \label{eq:ch2-attention-variance}
-\end{equation}
-因此除以 $\sqrt{d_k}$ 后，点积标准差的量级不再随维度平方根增大。对于 softmax 权重 $\alpha_i$，其导数 $\partial\alpha_i/\partial z_j=\alpha_i(\mathbb I\{i=j\}-\alpha_j)$；若 logits 差距过大，权重可能过早接近零或一，导数变小。缩放改善这种数值量级，但真实特征并不必然独立同分布，故它是合理的结构设计，不是避免所有饱和的保证。
-
-多头注意力使用不同投影建立多个表示子空间：
+通过缩放因子 $1/\sqrt{d_k}$ 消除高维点积导致的梯度饱和。多头注意力（MHA）通过并行投影捕获不同子空间的特征关联：
 \begin{align}
-    H_h&=\operatorname{Att}(QW_h^Q,KW_h^K,VW_h^V),\\
-    \operatorname{MHA}(Q,K,V)&=\operatorname{Concat}(H_1,\ldots,H_H)W^O.
+    H_h &= \operatorname{Att}(QW_h^Q, KW_h^K, VW_h^V), \nonumber \\
+    \operatorname{MHA}(Q,K,V) &= \operatorname{Concat}(H_1, \ldots, H_H) W^O.
     \label{eq:ch2-multihead}
 \end{align}
-$H$ 在本小节表示注意力头数，几何高度记为 $H_u$。总隐空间为 $d$、各头等宽时，单头键维度为 $d_k=d/H$，缩放分母为 $\sqrt{d/H}$。本文上层 $d=64$、头数为 $8$，单头宽度为 $8$，对应缩放因子 $\sqrt8$。
 
-\subsection{局部查询、掩码与排列性质}
-\label{sec:ch2-cross-attention}
+在多无人机集群中，各无人机感知的邻机数量及地表用户数量随时间动态变化。交叉注意力为非定长拓扑观测的定长表征提供了理想架构：无人机将自身物理状态嵌入作为 Query，将感知范围内的邻居无人机及地面用户特征槽位分别作为 Key 与 Value，通过掩码 $M$ 屏蔽未占用的无效填充槽位，实现对动态局部环境信息的排列不变性自适应聚合。
 
-在 UAV 上层观测中，自身状态经过嵌入后可作为查询，邻居 UAV 和 UE 槽位分别提供键和值。邻居表示包含协作几何关系，UE 表示包含位置、请求和能量等允许信息，两个聚合结果再与自身特征融合。固定槽位中的空元素需要掩码，否则补零槽位也会参与归一化，影响有效元素权重。注意力改变的是聚合方式，并未自动减少原始观测维度，也没有自动增加感知范围。
-
-全空键集合是一个必须处理的边界。若一行所有 logits 都为负无穷，softmax 的归一化不再有有效分母。实现可以为这种情况定义零上下文或专门空状态，并让后续网络识别“没有可见元素”。该约定应与训练和执行一致，避免出现 NaN 后再把结果无条件修成任意数值。实际 UAV 的邻居或 UE 槽位数量变化时，掩码和有效计数同样需要对应，不应把填充容量误认为实际用户数量。
-
-对于固定查询的纯加权聚合，若键和值同时按同一置换矩阵 $P$ 重排，$K'=PK,V'=PV$，则
-\begin{equation}
-    \operatorname{softmax}(QK'^{\mathsf T})V'
-    =\operatorname{softmax}(QK^{\mathsf T})P^{\mathsf T}PV
-    =\operatorname{softmax}(QK^{\mathsf T})V.
-    \label{eq:ch2-permutation-invariance}
-\end{equation}
-这里省略缩放和同步重排的掩码以突出排列关系。该性质要求不额外引入与序号相关的编码；完整系统还包含排序、截断、分组和其他特征，因此不能从这一局部式子推断整个策略对所有观测处理均排列不变。UE 选择规则本身可能决定哪些需求进入有限槽位，是第三章观测研究的重要部分。
-
-自身查询聚合 $n$ 个元素时，权重计算约为 $O(nd_k)$；全元素自注意力的点积关系约为 $n^2$。线性投影、网络宽度、头数与批次进一步影响计算成本，第五章因此测量完整策略调用时间。权重热图用于描述特定输入下的聚合分布，组件对 DSR 的贡献则通过对照实验评价。
-
-\subsection{请求--节点二部图与消息传递}
-\label{sec:ch2-bipartite-graph}
-
-请求卸载可以表示成二部图 $\mathcal G=(\mathcal M,\mathcal J,\mathcal E)$。请求节点携带数据大小、计算周期和截止时间等特征，执行节点携带能力、当前负载和配额等特征；边 $(m,j)$ 描述请求与节点之间的合法性、通信条件、缓存信念和预测处理代价。与把全部信息平铺成一个长向量相比，二部关系保留了“某个请求在哪个节点执行”的具体结构，但其性能仍取决于特征与训练。
-
-一种通用消息传递写法为
-\begin{align}
-    \boldsymbol h_m^{(l+1)}&=f_{\mathcal M}\left(\boldsymbol h_m^{(l)},
-       \sum_{j:(m,j)\in\mathcal E}g_{\mathcal M}(\boldsymbol h_m^{(l)},\boldsymbol h_j^{(l)},\boldsymbol e_{mj})\right),\\
-    \boldsymbol h_j^{(l+1)}&=f_{\mathcal J}\left(\boldsymbol h_j^{(l)},
-       \sum_{m:(m,j)\in\mathcal E}g_{\mathcal J}(\boldsymbol h_m^{(l)},\boldsymbol h_j^{(l)},\boldsymbol e_{mj})\right).
-    \label{eq:ch2-message-passing}
-\end{align}
-$f$ 与 $g$ 是可学习映射，聚合可采用均值或注意力。附录~\ref{app:legacy-learning}在这一表示基础上保留原学习配额变体CompleteQuotaPPO对请求、节点、边及当前与最好搜索状态的编码；第五章主方法采用解析评分与公开配额候选。
-
-配额搜索中的当前分配决定下一次迁移的起点，最好分配决定最终执行方案，二者承担不同作用。剩余预算、已访问配额和有效动作集合也影响后续转移。因此，完整搜索状态需要联合表示请求图与搜索进度，原学习变体的策略观测及其与完整状态的关系见附录~\ref{app:legacy-learning}。
-
-\section{指派匹配与配额条件化优化}
+\section{计算任务指派与组合优化基础}
 \label{sec:ch2-matching}
 
-\subsection{不可拆分请求的指派形式}
+\subsection{任务指派模型与容量约束}
 \label{sec:ch2-assignment}
 
-设 $x_{mj}\in\{0,1\}$ 表示请求 $m$ 是否分配给节点 $j$，每个已接纳请求必须有一个目的地，且只能使用合法边。对于给定节点配额 $N_j$，约束为
+在特定时隙内，给定已接纳服务请求集合 $\mathcal{M}$ 与执行节点集合 $\mathcal{J}$，计算卸载决策可形式化为广义任务指派问题（Generalized Assignment Problem）。定义二元决策变量 $x_{mj} \in \{0, 1\}$，表示请求 $m$ 是否指派至节点 $j$ 执行。
+
+由于任务不可拆分且必须被处理，每个请求必须且仅能指派给一个合法目的地。对于给定的节点负载配额向量 $\mathbf{N} = (N_1, \ldots, N_{|\mathcal{J}|})$，系统需满足指派唯一性约束与节点容量约束：
 \begin{equation}
-    \sum_{j\in\mathcal C_m}x_{mj}=1,\qquad
-    \sum_{m\in\mathcal M}x_{mj}=N_j,\qquad
-    \sum_jN_j=|\mathcal M|.
+    \sum_{j \in \mathcal{C}_m} x_{mj} = 1, \quad \forall m \in \mathcal{M}, \qquad
+    \sum_{m \in \mathcal{M}} x_{mj} = N_j, \quad \forall j \in \mathcal{J}, \qquad
+    \sum_{j \in \mathcal{J}} N_j = |\mathcal{M}|,
     \label{eq:ch2-assignment-constraints}
 \end{equation}
-$\mathcal C_m$ 表示请求的合法目的地集合，与 CPU 周期 $C_m$ 区分。若某配额导致合法边无法形成完整指派，则该条件化问题不可行，需要按搜索协议拒绝候选或使用保底方案；不能用丢弃难请求的方式悄然恢复可行性。
-
-在 $N_j$ 固定后，式~\eqref{eq:ch2-shared-computation} 的节点共享频率已经确定，可将预测时延与能耗写成给定条件下的边代价 $c_{mj}(\boldsymbol N)$。把节点 $j$ 展开成 $N_j$ 个槽位，每个槽位继承相同的合法边及成本，问题转化为请求与槽位的一一指派：
+其中 $\mathcal{C}_m \subseteq \mathcal{J}$ 表示请求 $m$ 的物理合法执行节点集合。当节点配额向量 $\mathbf{N}$ 固定时，各执行节点的算力分配与能耗模型随之确定，边指派代价记为 $c_{mj}(\mathbf{N})$。此时组合优化子问题转化为条件化线性指派模型：
 \begin{equation}
-    \min_x\sum_{m,j}c_{mj}(\boldsymbol N)x_{mj}
-    \quad\text{满足式~\eqref{eq:ch2-assignment-constraints}}.
+    \min_{x} \sum_{m \in \mathcal{M}} \sum_{j \in \mathcal{J}} c_{mj}(\mathbf{N}) x_{mj} \quad \text{满足式~\eqref{eq:ch2-assignment-constraints}}.
     \label{eq:ch2-linear-assignment}
 \end{equation}
-该转化解决的是给定配额、给定预测模型下的子问题。原完整分配还需要选择配额，其边成本随配额改变；因此，条件化指派的精确性不能直接升级成原组合问题的全局最优性。
 
-\subsection{截止期优先的代价编码}
+\subsection{二部图匹配与最小代价指派}
+\label{sec:ch2-bipartite-matching}
+
+条件化线性指派模型具有特殊的图论对偶结构。将每个计算节点 $j \in \mathcal{J}$ 逻辑展开为 $N_j$ 个虚拟执行槽位，每个槽位继承节点 $j$ 的通信信道特征与共享算力单价。原问题等价转化为请求集合 $\mathcal{M}$ 与虚拟槽位集合 $\mathcal{S}$ 之间的赋权二部图完全匹配问题（Weighted Bipartite Matching）。
+
+由于二部图指派约束矩阵具有全单模性（Totally Unimodular），线性规划松弛的最优解天然满足整数性条件。因此，该问题可在多项式时间复杂度内通过 Kuhn-Munkres（KM）算法、逐次最短路径法或拍卖算法（Auction Algorithm）严格求解全局最优指派方案，为大规模并发请求的快速精确分配奠定了算法基础。
+
+\subsection{字典序优化基础}
 \label{sec:ch2-lexicographic-matching}
 
-若首要目标是减少预测超时，其次降低预测能耗，可以构造有界的字典序编码。设请求数为 $n$，每条合法边的缩放能耗 $\widetilde E_{mj}\in[0,1]$，定义
+在应急边缘计算场景中，任务的截止时间满足具有最高业务优先级，节能降耗属于次级优化目标。两类目标量纲不同且重要性呈严格层级关系，适用多目标字典序优化（Lexicographic Optimization）。
+
+为将严格字典序优先级无缝嵌入线性指派模型中，本文构建基于大 $M$ 尺度的有界复合代价编码。设当前已接纳请求总数为 $n = |\mathcal{M}|$，将各边预测执行能耗归一化为 $\widetilde{E}_{mj} \in [0, 1]$，定义指派边权重为
 \begin{equation}
-    c_{mj}=(n+1)\mathbb I\{\widehat T_{mj}>D_m\}+\widetilde E_{mj}.
+    c_{mj} = (n + 1)\,\mathbb{I}\{\widehat{T}_{mj} > D_m\} + \widetilde{E}_{mj},
     \label{eq:ch2-matching-cost}
 \end{equation}
-任意完整指派的缩放总能耗介于零与 $n$ 之间。若一种指派比另一种少一个预测超时，其超时代价至少减少 $n+1$；即使能耗项增加到允许最大差 $n$，总编码代价仍下降至少一。因此，最小化该代价先最小化预测超时数，再在相同超时数中比较缩放能耗。
+其中 $\mathbb{I}\{\cdot\}$ 为示性函数，$\widehat{T}_{mj}$ 为预测完成时延。
 
-上述优先性依赖缩放区间确实有界，而且同一条件化问题内保持一致。若改用无界能耗或为不同候选任意更换尺度，就不能继续使用同一证明。真实截止期成功还可能受缓存信念与实际执行差异影响，因此 $\widehat T$ 的优先优化不等于真实成功数必然改善。本文在快照与闭环评价中核对预测和实际结果，并报告偏差，而不把预测目标当作实验成功的替代指标。
-
-共同贪心参照下的能耗上限属于候选筛选条件。先对某配额求出无能耗约束的最佳指派，再检查其是否低于上限，并不等价于直接求解带能耗约束的全局最优指派；如果该指派被拒绝，仍可能存在该配额下另一种较高超时代价但满足能耗上限的方案。第五章因此把匹配求解与能耗筛选分别说明，不赋予二者组合未经证明的最优保证。
-
-\subsection{配额搜索、最好保留与有限预算}
-\label{sec:ch2-quota-search}
-
-配额迁移保持总请求数不变。若从节点 $i$ 向节点 $j$ 转移 $k$ 个任务，候选满足
-\begin{equation}
-    N'_i=N_i-k,\qquad N'_j=N_j+k,\qquad
-    N'_h=N_h\ (h\ne i,j),\qquad N'_i\geq0.
-    \label{eq:ch2-quota-transfer}
-\end{equation}
-策略只提出负载数量的变化，实际请求身份由条件化匹配决定。这比直接枚举每个请求的全部目的地组合紧凑，但并未消除配额组合空间，也不保证有限预算能找到最优配额。不同的步长、入口、去重和停止条件决定搜索行为，应通过同预算对照评价。
-
-最好方案保留允许访问较差的合法中间状态，同时保留已找到的执行方案。当前状态用于探索，最好状态按预定规则更新，搜索结束后执行保留方案。若初值合法，且更新仅接受合法、满足筛选条件的完整分配，该规则维持最终输出的可行性。
-
-固定请求图内的搜索训练与长期环境训练的回报不同。搜索可以用候选预测目标或快照真实评价构造信号，长期闭环则还包含电池、缓存与未来轨迹变化。学习配额策略的额外收益必须在完整环境中确认；同时，它与随机配额策略共享的匹配、修复和保留框架应固定。这样才能把完整下层优化包有效与学习搜索有效分别检验，而不是让较弱随机动作承担所有机制解释。
-
-\section{随机实验与证据解释基础}
-\label{sec:ch2-statistical-evidence}
-
-强化学习实验的随机性来自模型初始化、策略采样和外生需求。独立训练块是不同训练过程产生的模型重复；同一模型上的多个工作负载、回合、时隙和请求则属于嵌套评价。增加这些评价可以更准确地估计该模型的行为，但不能把它们都视为独立训练样本。非学习方法没有训练模型，其随机流重复也需要按实际含义命名。本文以这种区分组织后续图表中的 $n$。
-
-在预定配对设计中，先在训练块内聚合各方法对应的工作负载与回合，得到块级指标 $Y_{b,1}$ 和 $Y_{b,0}$，再计算差值 $d_b=Y_{b,1}-Y_{b,0}$。均值差与样本标准差为
-\begin{equation}
-    \bar d=\frac{1}{n}\sum_{b=1}^{n}d_b,\qquad
-    s_d^2=\frac{1}{n-1}\sum_{b=1}^{n}(d_b-\bar d)^2.
-    \label{eq:ch2-paired-difference}
-\end{equation}
-训练块配对 $t$ 区间为 $\bar d\pm t_{0.975,n-1}s_d/\sqrt n$。其解释依赖独立块与相应统计假设；小样本或临界结果还可以使用预定的符号翻转等敏感性检查。区间跨零表示当前数据未确认所述差异，不等于两个方法在所有条件下相同。
-
-多个预定比较通过 Holm 校正控制家族错误率：将 $p$ 值升序排列，依次与 $\alpha/(m-i+1)$ 比较，并在首次未通过时停止拒绝。主性能、机制和补充随机对照分别回答不同问题，各自的检验族在对应评价前确定。
-
-本文预先规定评价负载和模型选择规则，采用训练结束时的检查点。开发数据用于方法选择，独立确认用于主要性能评价，两阶段保持分离。训练曲线描述优化过程，固定快照评价求解能力，闭环指标评价长期服务效果。
+由于归一化后的总分配能耗严格满足 $\sum_{m} \widetilde{E}_{mj} \in [0, n]$，任何减少一个超时任务所获得的代价降低（至少 $n+1$）都严格大于系统可能出现的最大总能耗增加量（至多 $n$）。因此，最小化式~\eqref{eq:ch2-matching-cost} 保证在数学上严格优先最小化截止期违约任务数，仅在超时任务数相同的指派方案中寻优最低能耗解。
 
 \section{本章小结}
 \label{sec:summary-chap02}
 
-本章建立任务规划、简化机动与集中协调的系统基础。通信、缓存、最终批量算力和自然接纳连接空间部署与执行质量；有限时域值函数、策略梯度和动作无关基线提供学习基础，GAE 通过多步残差与终止掩码构造优势估计，PPO 以固定采样概率和优势形成局部裁剪目标。后续方法在这些假设和优化条件下展开。
-
-多智能体部分区分全局状态、局部观测与集中价值估计，说明共享 Actor 和联合观测多输出 Critic 的作用。注意力提供输入元素的加权聚合，二部图与条件化指派提供请求分配的结构表示，两者都需要通过具体协议与对照判断收益。以上基础为第三章需求观测、第四章批量迁移和第五章有限预算解析配额匹配及附录中的原学习变体提供了统一的理论语言，也为解释训练曲线、主比较与机制证据明确了条件。
+本章系统建立了支撑无人机集群空地协同轨迹决策与计算任务分配的理论与方法基础，回答了三个核心理论问题：
+\begin{enumerate}
+    \item \textbf{研究系统是什么}：界定了多无人机任务协同层次与二维离散机动边界，建立了兼具视距无线传输、批量算力均分外部性、动态计算能耗与服务缓存的 UAV-MEC 物理模型；
+    \item \textbf{上层轨迹策略基于什么算法}：阐明了部分可观测马尔可夫决策过程（Dec-POMDP）、广义优势估计（GAE）与近端策略优化（PPO）的基本数学推导，确立了集中训练分散执行（CTDE）下的多智能体 PPO（MAPPO）协同学习机制与自适应多头交叉注意力特征聚合结构；
+    \item \textbf{下层任务分配基于什么数学工具}：提出了不可拆分任务的广义指派模型与二部图匹配等价转化形式，给出了截止期严格优先的大 $M$ 尺度字典序优化编码。
+\end{enumerate}
+上述基础构成了全文学术分析的统一符号与数学语言，为第三章需求感知协同轨迹规划、第四章跨机资源竞争下的任务迁移以及第五章兼顾软件开销的分层协同设计提供了严密支撑。

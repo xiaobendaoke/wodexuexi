@@ -28,8 +28,9 @@
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.98\textwidth]{../docs/figures/ch5_cost_aware_architecture}
-\bicaption{解析分层方法与软件费用进入反馈的时序。概念图中的闭环表示状态反馈，不表示上下层联合梯度}{Analytical hierarchy and timing of software-cost feedback; the loop denotes state feedback}
+\bicaption{解析分层决策架构与软件费用反馈时序图}{Analytical Hierarchical Architecture and Software Cost Feedback Timeline}
 \label{fig:cost-architecture}
+\vspace{0.5ex}\par{\footnotesize 注：闭环路径表示动态状态反馈机制，非上下层联合反向传播梯度。}
 \end{figure}
 
 图~\ref{fig:cost-architecture}给出从需求观测到任务执行的关系。每步采用规定批次模型，未完成任务不形成持续队列，下载事件也不持续占用后续时隙的资源。实际完整调用时间在物理执行之后、指标与奖励及下一观测形成之前加入当前请求时延，随后继续状态演化。该安排评价简化批次系统中的计费闭环收益，并未建立真实控制网络或连续队列模型。
@@ -176,7 +177,7 @@ $\delta_0$是开发阶段固定的名义软件费用，仅用于决策目标；�
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=0.94\textwidth]{../docs/figures/ch5_cost_aware_slots}
-\bicaption{固定配额的容量槽示意。边成本为混合失败分数与能耗微扰；节点配额固定后再选择请求身份}{Illustrative quota slots with mixture-failure costs and a small energy perturbation}
+\bicaption{基于固定配额的容量槽分配示意图}{Schematic of Capacity Slot Allocation under Fixed Quotas}
 \label{fig:cost-slots}
 \end{figure}
 
@@ -271,7 +272,7 @@ $\epsilon_E$为浮点最小正正规数。实际混合指派使用
 
 \begin{table}[!htbp]
 \centering
-\bicaption{新计费闭环确认的九个方法}{Nine methods in the new cost-aware closed-loop confirmation}
+\bicaption{计费闭环确认实验评估方法对比}{Evaluation Methods in Cost-Aware Closed-Loop Confirmation Experiment}
 \label{tab:cost-methods}
 \small
 \begin{tabularx}{\textwidth}{l c Y}
@@ -333,7 +334,7 @@ R16 & 16 & 较高匹配预算强随机\\
 
 \begin{table}[!htbp]
 \centering
-\bicaption{计费DSR两项预定主比较（差与区间单位为百分点）}{Two prespecified primary comparisons of paid DSR}
+\bicaption{计费 DSR 预定主比较结果}{Prespecified Primary Comparisons of Paid DSR}
 \label{tab:cost-primary}
 \small
 \begin{tabular}{lrrcr}
@@ -349,8 +350,9 @@ G & 1.02828 & $[0.93660,1.11997]$ & 20/20 & $3.40157\times10^{-15}$\\
 \begin{figure}[!htbp]
 \centering
 \includegraphics[width=\textwidth]{../docs/figures/ch5_cost_aware_paired}
-\bicaption{主候选相对全部八参照的二十块计费DSR配对差。小点为训练块，大点及线为均差和逐项95\%配对$t$区间；蓝色两项为预定主比较，其余为描述性比较}{Paid DSR differences across all twenty training blocks and eight controls; blue denotes the two primary comparisons}
+\bicaption{主候选相对各参照方法的计费 DSR 配对差值}{Paired Differences in Paid DSR between Proposed Candidate and Control Methods}
 \label{fig:cost-paired}
+\vspace{0.5ex}\par{\footnotesize 注：小点表示逐训练块结果，大点及线段表示均差与 95\% 配对 $t$ 置信区间；蓝色标记对应预定主比较。}
 \end{figure}
 
 图~\ref{fig:cost-paired}保留八个参照和全部二十块。相对二值的效应小于相对G，且存在两块非正差，说明模型目标细化是在强结构化框架上的进一步改善。原十块的$34.244\%$与本轮$33.76188\%$不能用于跨方法优劣判断，旧事后贪心$32.161\%$也不能被拿来计算本轮效应：它们的方法、样本、费用处理和硬件条件不同。
@@ -360,7 +362,7 @@ G & 1.02828 & $[0.93660,1.11997]$ & 20/20 & $3.40157\times10^{-15}$\\
 
 \begin{table}[!htbp]
 \centering
-\bicaption{九方法服务质量与MBS依赖（率为百分比）}{Service quality and MBS dependence of all nine methods}
+\bicaption{各方法服务质量与宏基站依赖度对比}{Comparison of Service Quality and MBS Dependence Across Methods}
 \label{tab:cost-quality}
 \small
 \setlength{\tabcolsep}{5pt}
@@ -390,7 +392,7 @@ R16 & 33.06347 & 60.06877 & 55.19397 & 9.70156\\
 
 \begin{table}[!htbp]
 \centering
-\bicaption{九方法的机队能耗、公平性与完整软件耗时}{Fleet energy, fairness and full software-call times}
+\bicaption{各方法机队能耗、公平性与计算耗时对比}{Comparison of Fleet Energy, Fairness, and Computation Time Across Methods}
 \label{tab:cost-resources}
 \small
 \begin{tabular}{lrrrr}
