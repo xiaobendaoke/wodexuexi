@@ -1,0 +1,74 @@
+附录C
+计费闭环确认与开发诊断的补充材料
+共同实现B10 的完整路径中，修复及二值初始化为4.5202 ms，冻结提议构
+造为5.1553 ms，分支解码为0.1888 ms，访问矩阵评分为0.7008 ms，条件匹配
+为1.5103 ms，候选选择为0.0282 ms，其他完整路径为7.7461 ms，均为五块均
+值。评分与匹配占完整调用的平均块内比例约11.14%，是本实现、硬件和开发
+分布下的事后解释，不是理论速度下界。
+固定状态另外对每方法每状态重测三次完整调用，再按封存分配、原物理时
+延与每次费用评分；1200 状态来自G 和解析两种源轨迹，未重复加入额外step0。
+B6 相对B10 的固定状态计费DSR 差为0.034 [−0.063, 0.131] 个百分点，闭环差
+则为负，二者不能互换。图C.2 保留全部方法的开发取舍。本轮据联合筛选停在
+C0，未实施C1 门控、学习器或新训练，也不推出其他自适应决策均无效。
+全部90000 步完成逐次费用、请求计数、前缀预算及预测筛选记账核验；1200
+个固定状态另完成原环境物理核验，不能称90 回合全部物理重放。协议、统计及
+原始记录位于results/chapter5_followup_20261027/c0_20261
+028/development_v2/，完整包为其上级的c0_evidence_full.tar.
+gz；详细报告见docs/reports/chapter5_stage_c0_20261028.md。
+G
+2
+4
+6
+10
+N10
+Matching budget
+−1.5
+−1.0
+−0.5
+0.0
+0.5
+Paid DSR difference (pp)
+a
+Paid quality
+G
+2
+4
+6
+10
+N10
+Matching budget
+0.5
+0.6
+0.7
+0.8
+0.9
+1.0
+Full-call mean ratio
+b
+Complete software time
+G
+2
+4
+6
+10
+N10
+Matching budget
+0.98
+1.00
+1.02
+1.04
+1.06
+Fleet-energy ratio
+c
+Energy constraint
+C0 fixed prefixes: joint development screen
+Five historical blocks; means and marginal 95% paired t intervals. All methods use current full-call charges.
+Dashed lines: predeclared development limits. N10: original batched B10; blue budgets share the lazy implementation.
+Budget includes initialization and failed matches. This development screen does not establish formal noninferiority.
+图C.2
+固定预算下求解质量、计算时间与能耗权衡分析
+Figure C.2
+Trade-Offs of Solution Quality, Computation Time, and Energy under Fixed Bud-
+gets
+注：小点表示历史块数据，大点与线段表示均值及95% 配对𝑡描述区间；虚线表示开发筛选限值。
+133
