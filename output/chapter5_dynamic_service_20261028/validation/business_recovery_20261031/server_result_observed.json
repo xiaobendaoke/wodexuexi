@@ -1,0 +1,106 @@
+{
+  "origin": "Authenticated SSH read of server business_recovery_20261031/analysis.json and completion.json, observed in this task",
+  "status": "SERVER_RESULTS_AND_LOCAL_RAW_AUDIT_COMPLETED",
+  "scientific_gate": "PASS_NEW_WORKLOAD_RECOVERY",
+  "source_contract": "42409b2fd4f63d2ff6a6d1a1a9f2c08008b800758ceee415866cb5425e44dcfb",
+  "server_completed": "2026-10-31T19:21:53.610488+08:00",
+  "raw_sync_complete": true,
+  "application": "Synthetic non-control-loop image-event workload, not measured real application SLA",
+  "selected": {
+    "input_MB": [
+      1.5,
+      3
+    ],
+    "cycles_per_bit": [
+      500,
+      1000
+    ],
+    "deadline_s": [
+      2,
+      3
+    ],
+    "burst_mean_tasks_per_s": [
+      15,
+      60,
+      15
+    ],
+    "light_mean": 7.5,
+    "steady_mean": 30,
+    "high_mean": 90,
+    "original_hardware": true
+  },
+  "holdout_workloads": [
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47
+  ],
+  "holdout_burst": [
+    {
+      "method": "history_balance",
+      "generated": 63276,
+      "admitted": 29858,
+      "success": 25971,
+      "dsr": 0.41043997724255643,
+      "conditional": 0.869817134436332,
+      "service_crossed": 0.46047960345636013,
+      "cpu_wait_per_admitted": 0.7904345393776787,
+      "cohort_size": 423,
+      "cohort_completion": 0.6997635933806147,
+      "gate": true
+    },
+    {
+      "method": "history_queue",
+      "generated": 63276,
+      "admitted": 29858,
+      "success": 26031,
+      "dsr": 0.41138820405841076,
+      "conditional": 0.8718266461249916,
+      "service_crossed": 0.4619197534998995,
+      "cpu_wait_per_admitted": 0.791726782688481,
+      "cohort_size": 420,
+      "cohort_completion": 0.7,
+      "gate": true
+    },
+    {
+      "method": "rolling_joint",
+      "generated": 63276,
+      "admitted": 29963,
+      "success": 26490,
+      "dsr": 0.41864213919969656,
+      "conditional": 0.8840903781330307,
+      "service_crossed": 0.4799919901211494,
+      "cpu_wait_per_admitted": 0.7949035679572413,
+      "cohort_size": 442,
+      "cohort_completion": 0.7194570135746606,
+      "gate": true
+    }
+  ],
+  "interventions": {
+    "states": 192,
+    "nonzero_interactions": 31,
+    "ranking_reversals": 2
+  },
+  "reversal_precision": {
+    "states": 2,
+    "runs": 6,
+    "steps": [
+      0.1,
+      0.05,
+      0.025
+    ],
+    "all_counts_identical": true
+  },
+  "fixed_action_precision_max_dsr_change": 0,
+  "changed_old_server_files": [],
+  "initial_observation_status": "SERVER_EXPERIMENT_COMPLETED_LOCAL_RAW_SYNC_PENDING",
+  "local_audit": "local_result_audit.json"
+}

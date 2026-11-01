@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/output/chapter5_dynamic_service_20261028/validation/queued_shared_budget_20261101/post_audit_review.py", line 189, in <module>
+    else:review(task)
+         ^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/output/chapter5_dynamic_service_20261028/validation/queued_shared_budget_20261101/post_audit_review.py", line 171, in review
+    log=layout.stdout.decode('utf-8');assert layout.returncode==1 and len([s for s in log.splitlines() if 'unexpected root files' in s])==2
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
+
+Validation attempt after isolated-layout handling
+{"status": "PASS_LOCAL_SHARED_BUDGET_RAW_AND_METADATA_REVIEW", "client_date": "2026-11-01", "source_contract": "15ea668d0efc613157c85b6b761b1741c7e35f4a371f918a5785586210c61257", "server_tests": 65, "training_update_records": 36, "actual_training_episodes": 288, "optimizer_steps_per_learner": 156, "evaluation_episodes": 672, "csv_rows": 84, "value_fit_cases": 6, "value_fit_steps_per_case": 156, "value_fit_source_episodes": 144, "value_fit_no_warmstart": true, "value_fit_gate": "PASS_VALUE_FIT_CHECK", "learning_gate": {"joint": false, "decomposed": false}, "local_raw_episode_files": 960, "local_raw_audit_complete": true, "server_raw_audit": true, "logical_cpus": 256, "peak_active": 256, "protected_files": 31906, "changed_old_files": [], "layout_exit_code": null, "report_links_checked": 5, "review_script_sha256": "755c33b6d1296fb4736c3724430700e277ae80028306c0037c70a5b933230a48", "independent_review": false, "budget_boundary": "Equal actual rollout and policy optimizer-step budgets; separate offline critic fitting and model-prediction inference compute"}

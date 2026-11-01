@@ -1,0 +1,122 @@
+Traceback (most recent call last):
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/numpy/_core/__init__.py", line 23, in <module>
+    from . import multiarray
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/numpy/_core/multiarray.py", line 10, in <module>
+    from . import overrides
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/numpy/_core/overrides.py", line 8, in <module>
+    from numpy._core._multiarray_umath import (
+ImportError: /lib64/libstdc++.so.6: version `CXXABI_1.3.9' not found (required by /home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/numpy/__init__.py", line 114, in <module>
+    from numpy.__config__ import show as show_config
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/numpy/__config__.py", line 4, in <module>
+    from numpy._core._multiarray_umath import (
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/numpy/_core/__init__.py", line 49, in <module>
+    raise ImportError(msg)
+ImportError: 
+
+IMPORTANT: PLEASE READ THIS FOR ADVICE ON HOW TO SOLVE THIS ISSUE!
+
+Importing the numpy C-extensions failed. This error can happen for
+many reasons, often due to issues with your setup or how NumPy was
+installed.
+
+We have compiled some common reasons and troubleshooting tips at:
+
+    https://numpy.org/devdocs/user/troubleshooting-importerror.html
+
+Please note and check the following:
+
+  * The Python version is: Python3.12 from "/home/PengYanghan/miniconda3/envs/drone/bin/python"
+  * The NumPy version is: "2.0.1"
+
+and make sure that they are the versions you expect.
+Please carefully study the documentation linked above for further help.
+
+Original error was: /lib64/libstdc++.so.6: version `CXXABI_1.3.9' not found (required by /home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/numpy/_core/_multiarray_umath.cpython-312-x86_64-linux-gnu.so)
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_joint_f55f9b56/scripts/analysis/queued_service_joint_short.py", line 411, in <module>
+    if __name__ == '__main__': main()
+                               ^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_joint_f55f9b56/scripts/analysis/queued_service_joint_short.py", line 406, in main
+    elif args.command == 'validate': raise SystemExit(0 if validate(task) else 1)
+                                                           ^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_joint_f55f9b56/scripts/analysis/queued_service_joint_short.py", line 194, in validate
+    configure(); os.environ['QUEUED_TORCH_TESTS'] = '1'; stream = io.StringIO()
+    ^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_joint_f55f9b56/scripts/analysis/queued_service_joint_short.py", line 81, in configure
+    import torch
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/torch/__init__.py", line 1798, in <module>
+    from torch import storage as storage  # usort: skip
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/torch/storage.py", line 36, in <module>
+    import numpy as np
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/site-packages/numpy/__init__.py", line 119, in <module>
+    raise ImportError(msg) from e
+ImportError: Error importing numpy: you should not try to import numpy from
+        its source directory; please exit the numpy source tree, and relaunch
+        your python interpreter from there.
+
+Conda library path configured for this process only
+test_allocation_masks_and_dimensions (tests.test_queued_service_learning.LearningContract.test_allocation_masks_and_dimensions) ... ok
+test_candidates_are_safe_and_have_hover (tests.test_queued_service_learning.LearningContract.test_candidates_are_safe_and_have_hover) ... ok
+test_credit_does_not_cross_episodes (tests.test_queued_service_learning.LearningContract.test_credit_does_not_cross_episodes) ... ok
+test_future_completion_credits_earlier_allocation (tests.test_queued_service_learning.LearningContract.test_future_completion_credits_earlier_allocation) ... ok
+test_history_updates_once_per_physical_slot (tests.test_queued_service_learning.LearningContract.test_history_updates_once_per_physical_slot) ... ok
+test_illegal_and_repeated_prefix_are_rejected (tests.test_queued_service_learning.LearningContract.test_illegal_and_repeated_prefix_are_rejected) ... ok
+test_plan_changes_motion_features_but_preserves_bank (tests.test_queued_service_learning.LearningContract.test_plan_changes_motion_features_but_preserves_bank) ... ok
+test_prefix_does_not_mutate_observation (tests.test_queued_service_learning.LearningContract.test_prefix_does_not_mutate_observation) ... ok
+test_virtual_cooperation_records_future_transmission (tests.test_queued_service_learning.LearningContract.test_virtual_cooperation_records_future_transmission) ... ok
+test_motion_conditioning_and_critic_are_explicit (tests.test_queued_service_learning.TorchContract.test_motion_conditioning_and_critic_are_explicit) ... ok
+test_ppo_update_and_empty_allocation (tests.test_queued_service_learning.TorchContract.test_ppo_update_and_empty_allocation) ... ok
+test_sample_replay_and_both_future_gradients (tests.test_queued_service_learning.TorchContract.test_sample_replay_and_both_future_gradients) ... ok
+test_assignment_cannot_target_out_of_range_collaborator (tests.test_queued_service.QueueContract.test_assignment_cannot_target_out_of_range_collaborator) ... ok
+test_compute_cannot_start_before_complete_upload (tests.test_queued_service.QueueContract.test_compute_cannot_start_before_complete_upload) ... ok
+test_disconnect_pauses_retains_then_resumes (tests.test_queued_service.QueueContract.test_disconnect_pauses_retains_then_resumes) ... ok
+test_edf_preempts_old_work (tests.test_queued_service.QueueContract.test_edf_preempts_old_work) ... ok
+test_empty_slot_valid_and_reward_is_new_completions (tests.test_queued_service.QueueContract.test_empty_slot_valid_and_reward_is_new_completions) ... ok
+test_expiration_removes_all_work_once (tests.test_queued_service.QueueContract.test_expiration_removes_all_work_once) ... ok
+test_fractional_deadline_not_rounded_to_grid (tests.test_queued_service.QueueContract.test_fractional_deadline_not_rounded_to_grid) ... ok
+test_global_inter_and_backhaul_pools_are_shared (tests.test_queued_service.QueueContract.test_global_inter_and_backhaul_pools_are_shared) ... ok
+test_hidden_future_not_needed_by_controller (tests.test_queued_service.QueueContract.test_hidden_future_not_needed_by_controller) ... ok
+test_invisible_waiting_tasks_are_not_in_policy_observation (tests.test_queued_service.QueueContract.test_invisible_waiting_tasks_are_not_in_policy_observation) ... ok
+test_mid_slot_contact_does_not_transfer_outside_range (tests.test_queued_service.QueueContract.test_mid_slot_contact_does_not_transfer_outside_range) ... ok
+test_rejected_batch_add_is_atomic (tests.test_queued_service.QueueContract.test_rejected_batch_add_is_atomic) ... ok
+test_safe_endpoints_can_have_unsafe_intermediate_path (tests.test_queued_service.QueueContract.test_safe_endpoints_can_have_unsafe_intermediate_path) ... ok
+test_same_ue_has_one_upload_at_a_time (tests.test_queued_service.QueueContract.test_same_ue_has_one_upload_at_a_time) ... ok
+test_shared_cpu_and_exact_deadline (tests.test_queued_service.QueueContract.test_shared_cpu_and_exact_deadline) ... ok
+test_speed_boundary_and_nonfinite_rejected (tests.test_queued_service.QueueContract.test_speed_boundary_and_nonfinite_rejected) ... ok
+test_tail_drain_and_waiting_expiration (tests.test_queued_service.QueueContract.test_tail_drain_and_waiting_expiration) ... ok
+test_transfer_before_remote_compute (tests.test_queued_service.QueueContract.test_transfer_before_remote_compute) ... ok
+test_transmission_then_compute_within_slot (tests.test_queued_service.QueueContract.test_transmission_then_compute_within_slot) ... ok
+test_uncovered_waits_and_can_be_admitted_later (tests.test_queued_service.QueueContract.test_uncovered_waits_and_can_be_admitted_later) ... ok
+test_unique_ids_and_assignment_immutability (tests.test_queued_service.QueueContract.test_unique_ids_and_assignment_immutability) ... ok
+test_upload_airtime_shared_and_same_ue_edf (tests.test_queued_service.QueueContract.test_upload_airtime_shared_and_same_ue_edf) ... ok
+test_zero_work_completion_is_in_current_reward_once (tests.test_queued_service.QueueContract.test_zero_work_completion_is_in_current_reward_once) ... ok
+test_batch_replay_does_not_mutate_the_tape (tests.test_queued_service_business.BusinessWorkload.test_batch_replay_does_not_mutate_the_tape) ... ok
+test_cycle_unit_and_size_bounds (tests.test_queued_service_business.BusinessWorkload.test_cycle_unit_and_size_bounds) ... ok
+test_explicit_validation_and_new_namespace (tests.test_queued_service_business.BusinessWorkload.test_explicit_validation_and_new_namespace) ... ok
+test_frozen_matrix_has_complete_balanced_cells (tests.test_queued_service_business.BusinessWorkload.test_frozen_matrix_has_complete_balanced_cells) ... ok
+test_poisson_sampler_mean_variance_and_validation (tests.test_queued_service_business.BusinessWorkload.test_poisson_sampler_mean_variance_and_validation) ... ok
+test_rate_thinning_preserves_potential_task_attributes (tests.test_queued_service_business.BusinessWorkload.test_rate_thinning_preserves_potential_task_attributes) ... ok
+test_same_requests_and_marks_across_slas (tests.test_queued_service_business.BusinessWorkload.test_same_requests_and_marks_across_slas) ... ok
+test_same_ue_can_generate_multiple_and_hotspot_not_capped (tests.test_queued_service_business.BusinessWorkload.test_same_ue_can_generate_multiple_and_hotspot_not_capped) ... ok
+test_selection_does_not_choose_the_highest_dsr_setting (tests.test_queued_service_business.BusinessWorkload.test_selection_does_not_choose_the_highest_dsr_setting) ... ok
+test_common_profiles_keep_their_rates (tests.test_queued_service_business_refinement.RecoveryWorkload.test_common_profiles_keep_their_rates) ... ok
+test_data_units_and_unique_ids (tests.test_queued_service_business_refinement.RecoveryWorkload.test_data_units_and_unique_ids) ... ok
+test_explicit_business_boundary (tests.test_queued_service_business_refinement.RecoveryWorkload.test_explicit_business_boundary) ... ok
+test_matrix_uses_new_workloads_and_no_common_profile_duplicates (tests.test_queued_service_business_refinement.RecoveryWorkload.test_matrix_uses_new_workloads_and_no_common_profile_duplicates) ... ok
+test_only_the_peak_changes (tests.test_queued_service_business_refinement.RecoveryWorkload.test_only_the_peak_changes) ... ok
+
+----------------------------------------------------------------------
+Ran 49 tests in 4.295s
+
+OK
+

@@ -1,0 +1,144 @@
+{
+  "namespace": "chapter5/business_recovery_20261031/v1",
+  "physics": {
+    "capacity": [
+      75000000000.0,
+      60000000000.0,
+      70000000000.0,
+      85000000000.0,
+      50000000000.0,
+      200000000000.0
+    ],
+    "altitude": 100.0,
+    "mbs": [
+      350.0,
+      350.0,
+      30.0
+    ],
+    "separation": 200.0,
+    "boundary": [
+      50.0,
+      650.0
+    ],
+    "coverage": 100.0,
+    "sensing": 460.0,
+    "inter_range": 460.0,
+    "speed": 15.0,
+    "dt": 0.1,
+    "uplink_bandwidth": 40000000.0,
+    "inter_bandwidth": 20000000.0,
+    "backhaul_bandwidth": 750000.0,
+    "power": 0.5,
+    "gain": 0.0003244132,
+    "noise": 1e-13,
+    "uplink_bps": null,
+    "inter_bps": null,
+    "backhaul_bps": null
+  },
+  "input_bytes": [
+    1500000,
+    3000000
+  ],
+  "cycles_per_bit": [
+    500,
+    1000
+  ],
+  "sla_seconds": [
+    2,
+    3
+  ],
+  "baseline_burst_rate": 15,
+  "candidate_peaks": [
+    45,
+    60
+  ],
+  "reference_peak": 75,
+  "common_rates": {
+    "light": 7.5,
+    "steady": 30,
+    "overload": 90
+  },
+  "prior_failed_revision": "business_calibration_20261031",
+  "development_workloads": [
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35
+  ],
+  "holdout_workloads": [
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47
+  ],
+  "selection": "Prefer45 if all physical gates pass, otherwise60;75 reference only",
+  "screen_criteria": {
+    "dsr": [
+      0.05,
+      0.8
+    ],
+    "conditional": [
+      0.4,
+      0.95
+    ],
+    "service_crossed_min": 0.1,
+    "cpu_wait_per_admitted_min": 0.05,
+    "transfer_nonempty_min": 0.05,
+    "mbs_fraction_max": 0.8,
+    "late_backlog": "<=1.2*before+1 task",
+    "burst_boundary_cohort_completion_min": 0.5
+  },
+  "screen_jobs": 432,
+  "holdout_jobs": 144,
+  "precision_jobs": 48,
+  "no_rl": true,
+  "automatic_further_revision": false,
+  "source_contract": "42409b2fd4f63d2ff6a6d1a1a9f2c08008b800758ceee415866cb5425e44dcfb",
+  "source_files": {
+    "paths.py": "7b87832d7a9258b143b3a64add52383a787a24c6af336c14f46b4b36ef13a7b4",
+    "tests/__init__.py": "6710a8a56c0d6307d01f5d7920625a2c1774cc77b4a9f94b9825b45d0d4ab55d",
+    "environment/queued_service.py": "2ecb8b37105c7bb53a2afe0e44e74e2ca4f71e375547b28d1422996f9c3504cb",
+    "utils/queued_service_controllers.py": "e3f05d6f2509a37ee32a60d3c25ab4b25894e6fa623f10f73afbf2b3849e6676",
+    "utils/queued_service_scenarios.py": "00e2ac6b29168c7a93738c100c53911bb836123ba6663a3b9cbe254656ea4fec",
+    "utils/dynamic_service_scenarios.py": "4dfb450ff4bc1d79490d400a1d03d3c7ff7a6dfb570a7f946c9baa55be0ccd23",
+    "tests/test_queued_service.py": "c29de9bba63c29b8119041cd592b02322bc1e7d572fd2e2d61d465eb5bc76ace",
+    "scripts/analysis/queued_service_validation.py": "4e8096da2c12de312a96ad97857ecf0829e7595c7155bf2afcd90548f0bfd145",
+    "scripts/analysis/queued_service_coupling.py": "ca1ed1f9ecec6324d9a5cd397ec5562fd542bbd8f7f76ffa9c46f4af0917d7c5",
+    "utils/queued_service_business.py": "e4f3c9499df874ab1d2a98c123f512447c0fd660fdf2806e81aa9b4162240c50",
+    "scripts/analysis/queued_service_business.py": "652501eff057d49f13d70a609d4046305ed1e006ee2bff88a36a4aa891dfbc89",
+    "tests/test_queued_service_business.py": "f267822aaf2659513f29985084b73e0d545f7ff91a27c3f0d20a440db8fce13c",
+    "output/chapter5_dynamic_service_20261028/deliverables/queued_business_sources.json": "cda2127f5497603cdce988aa51b3ac58a5d6c6d5dd10f42c7d5f6b79a0bd2ea8",
+    "utils/queued_service_business_refinement.py": "3ec5368f2dccf80ed1338762868c5938be30b845d225299f4cc966c224291a9d",
+    "scripts/analysis/queued_service_business_refinement.py": "ab57eebd50572a2e0ab33ac3490575ac162a98e11a25246e5c2a412804321cc7",
+    "tests/test_queued_service_business_refinement.py": "89ae90da673fd1251b9739708688ee5f7319df8b149739bd0d3b364587cfb5a6",
+    "scripts/analysis/queued_service_business_precision.py": "748835596ff3682db93d611b05ff86f02599807cba6488b8739aaa750a42ef7c"
+  }
+}
