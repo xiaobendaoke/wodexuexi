@@ -1,33 +1,250 @@
 % !TeX root = ./main.tex
-% SYSU 专业硕士论文的项目适配；模板版本见 docs/sysu_typesetting_20261016.md。
-% 正式完成日期待确认，封面不得将构建日期当作完成日期。
+% 项目排版覆盖：把 sysuthesis 输出对齐《中山大学航空航天学院学位论文撰写模板（2026年11月更新）》。
+% 不改动 sysuthesis.cls；本文件由 main.tex 在 sysusetup.tex 之后载入，用于覆盖文档类默认值。
 \makeatletter
-\ifdefempty{\thesiscompletiondate}{
-  \renewcommand\sysu@date@zh@short{完成年月待填写}
-}{
-  \sysusetup{date=\thesiscompletiondate}
+
+% =====================================================================
+% 一、章节标题
+%   一级（第1章）  ：黑体小二(18bp)加粗、居中，段前段后各 1 行
+%   二级（1.1）    ：黑体小三(15bp)加粗、左对齐，段前段后各 0.5 行
+%   三级（1.1.1）  ：黑体四号(14bp)加粗、左对齐，段前段后各 0.5 行
+%   四级（1.1.1.1）：宋体小四(12bp)加粗、左对齐，段前段后 0
+% =====================================================================
+\ctexset{
+  chapter = {
+    format      = \centering\heiti\bfseries\fontsize{18bp}{21.6bp}\selectfont,
+    nameformat  = {},
+    titleformat = {},
+    number      = \thechapter,
+    aftername   = \quad,
+    beforeskip  = 24bp,
+    afterskip   = 24bp,
+    fixskip     = true,
+  },
+  section = {
+    format     = \heiti\bfseries\fontsize{15bp}{21bp}\selectfont,
+    aftername  = \quad,
+    beforeskip = 12bp,
+    afterskip  = 12bp,
+  },
+  subsection = {
+    format     = \heiti\bfseries\fontsize{14bp}{21bp}\selectfont,
+    aftername  = \quad,
+    beforeskip = 12bp,
+    afterskip  = 12bp,
+  },
+  subsubsection = {
+    format     = \rmfamily\bfseries\fontsize{12bp}{20bp}\selectfont,
+    number     = \thesubsection.\arabic{subsubsection},
+    aftername  = \quad,
+    indent     = 0em,
+    beforeskip = 0bp,
+    afterskip  = 0bp,
+    runin      = false,
+  },
 }
-% 上游研究生封面委员会表格的末列超出正文宽度；该列为空，仅缩减留白。
-\patchcmd{\sysu@title@page@graduate@zh}{\makebox[4.5cm][c]{}}{\makebox[3cm][c]{}}{}{
-  \ClassError{sysuthesis}{Cover committee layout patch failed}{}
+
+% 目录：列出到三级标题（1.1.1），并在中文目录之后另附英文目录 Contents。
+% 说明：\@starttoc 读取后会清空 .toc，故这里改用 \@input 读取上一轮生成的 .toc，
+%       连续排版两遍，最后再打开写流供正文写入（等价于 \@starttoc 的写流部分）。
+\renewcommand\tableofcontents{%
+  \cleardoublepage
+  \pagestyle{plain}%
+  \sysu@chapter{\contentsname}%
+  \setcounter{tocdepth}{2}%
+  \begingroup\makeatletter\@input{\jobname.toc}\endgroup
+  \cleardoublepage
+  \pagestyle{plain}%
+  \sysu@chapter{Contents}%
+  \setcounter{tocdepth}{2}%
+  \begingroup\makeatletter\@input{\jobname.toc}\endgroup
+  \begingroup
+    \makeatletter
+    \if@filesw
+      \expandafter\newwrite\csname tf@toc\endcsname
+      \immediate\openout\csname tf@toc\endcsname\jobname.toc\relax
+    \fi
+    \@nobreakfalse
+  \endgroup
 }
-% 其余四行末列同样收窄，防止表格自然宽度超过封面版心。
-\patchcmd{\sysu@title@page@graduate@zh}{\makebox[4.5cm][c]{}}{\makebox[3cm][c]{}}{}{}
-\patchcmd{\sysu@title@page@graduate@zh}{\makebox[4.5cm][c]{}}{\makebox[3cm][c]{}}{}{}
-\patchcmd{\sysu@title@page@graduate@zh}{\makebox[4.5cm][c]{}}{\makebox[3cm][c]{}}{}{}
-\patchcmd{\sysu@title@page@graduate@zh}{\makebox[4.5cm][c]{}}{\makebox[3cm][c]{}}{}{}
-% 关键词跟随摘要正文；移除上游额外的空白行，避免仅有关键词的孤页。
-\expandafter\patchcmd\csname endabstract*\endcsname
-  {\par\null\par\noindent}{\par\nobreak\smallskip\noindent}{}{
-    \ClassError{sysuthesis}{Abstract keyword layout patch failed}{}
-  }
-% 长英文题名保留原字号；收整题名区空白，给正文和关键词留出连续空间。
-\expandafter\patchcmd\csname abstract*\endcsname
-  {\mbox{ }\\}{}{}{
-    \ClassError{sysuthesis}{Abstract title spacing patch failed}{}
-  }
-\expandafter\patchcmd\csname abstract*\endcsname
-  {\vskip 0.5cm}{\vskip 0.3cm}{}{
-    \ClassError{sysuthesis}{Abstract metadata spacing patch failed}{}
-  }
+
+% =====================================================================
+% 二、正文行距：固定 20 磅（Word 模板“正文”样式为宋体小四、固定 20 磅）
+% =====================================================================
+\renewcommand\normalsize{%
+  \@setfontsize\normalsize{12bp}{20bp}%
+  \abovedisplayskip 6bp \@plus3bp \@minus3bp%
+  \abovedisplayshortskip 6bp \@plus3bp \@minus3bp%
+  \belowdisplayshortskip \abovedisplayshortskip
+  \belowdisplayskip \abovedisplayskip
+  \let\@listi\@listI}%
+\normalsize
+\ifx\MakeRobust\@undefined \else \MakeRobust\normalsize \fi
+
+% =====================================================================
+% 三、图表题注与目录名称
+% =====================================================================
+% 题注：五号宋体 / Times New Roman，不加粗（覆盖文档类中研究生图题的 font+=bf）。
+\captionsetup{font=sysu}
+% 英文图题标签用“Fig.”，表格仍用“Table”。
+\renewcommand\sysu@set@names{%
+  \ifsysu@language@chinese
+    \def\figurename{图}%
+    \def\tablename{表}%
+  \else
+    \def\figurename{Fig.}%
+    \def\tablename{Table}%
+  \fi
+}
+\sysu@set@names
+% 图表目录名称：图目录 / 表目录。
+\def\listfigurename{图目录}
+\def\listtablename{表目录}
+
+% =====================================================================
+% 四、摘要与英文摘要
+%   标题随章标题（小二）；正文固定行距 20 磅；移除抬头信息块；
+%   关键词标签黑体加粗、词间以分号分隔；英文标签为“Keywords”。
+% =====================================================================
+\renewenvironment{abstract}{%
+  \sysusetup{language=chinese}%
+  \let\clearpage\relax
+  \sysu@chapter{摘\hspace{2em}要}%
+  \fontsize{12bp}{20bp}\selectfont
+}{%
+  \par\nobreak\smallskip\noindent\hangindent=4em\relax
+  \textbf{\heiti 关键词}：\sysu@keywords@text\par
+  \sysu@reset@main@language
+  \newpage
+}
+
+\renewenvironment{abstract*}{%
+  \sysusetup{language=english}%
+  \let\clearpage\relax
+  \ctexset{chapter/format=\centering\heiti\bfseries\fontsize{18bp}{21.6bp}\selectfont}%
+  \sysu@chapter{ABSTRACT}%
+  \fontsize{12bp}{20bp}\selectfont
+}{%
+  \par\nobreak\smallskip\noindent\hangindent=4em\relax
+  \textbf{Keywords}: \sysu@keywords@en@text\par
+  \newpage
+  \sysu@reset@main@language
+}
+
+% =====================================================================
+% 五、页眉名称（Word 模板为“中山大学工学博士学位论文”，此处按工学硕士填写）
+% =====================================================================
+\renewcommand\sysu@thesis@name{中山大学工学硕士学位论文}
+
+% =====================================================================
+% 七、封面与扉页
+%   封面：密级/编号、校徽、学位论文类型、中英文题目、学位申请人/导师姓名及职称/专业名称、日期
+%   扉页：中英文题目、专业/学位申请人/指导教师/学位、答辩委员会、日期
+% =====================================================================
+
+% 未设置密级时按公开处理。
+\newcommand\sysu@secret@level@zh{%
+  \ifdefined\sysu@secret@level
+    \ifx\sysu@secret@level\@empty 公开\else\sysu@secret@level\fi
+  \else
+    公开
+  \fi
+}
+
+% 封面正中的学位论文类型（Word 模板为“硕/博士学位论文”）。
+\newcommand\sysu@cover@degree@name{%
+  \ifsysu@degree@doctor 博士学位论文\else 硕士学位论文\fi
+}
+
+% 扉页日期格式：二〇二六年X月（汉字、无日）。
+\newcommand\sysu@date@format@zh@cn[3]{\zhdigits{#1}年\zhnumber{#2}月}
+\newcommand\sysu@date@zh@cn{\sysu@format@date{\sysu@date@format@zh@cn}{\sysu@date}}
+
+% 研究生中文封面
+\renewcommand\sysu@title@page@graduate@zh{%
+  \sysusetup{language=chinese}%
+  \begin{titlepage}%
+    \sysu@pdfbookmark{封面}%
+    \centering
+    \parbox[t][0.6cm][t]{\textwidth}{%
+      \raggedleft\heiti\fontsize{12bp}{12bp}\selectfont
+      密级：\sysu@secret@level@zh\hspace{2em}编号：\sysu@student@id\par}\par
+    \vskip 1.8cm%
+    \includegraphics[width=8cm]{\sysu@logo@path/SYSULogo}\par
+    \vskip 1.0cm%
+    {\heiti\bfseries\fontsize{26bp}{30bp}\selectfont \sysu@cover@degree@name\par}
+    \vskip 2.4cm%
+    {\heiti\fontsize{22bp}{32bp}\selectfont \sysu@title\par}
+    \vskip 0.8cm%
+    {\rmfamily\fontsize{22bp}{30bp}\selectfont \sysu@title@en\par}
+    \vskip 2.4cm%
+    {\zihao{4}\sffamily
+      \begin{tabular}{@{}l@{\hspace{0.6em}}l@{}}
+        学位申请人：     & \sysu@author \\
+        导师姓名及职称： & \sysu@supervisor@names \\
+        专业名称：       & \sysu@speciality \\
+      \end{tabular}\par}
+    \vfill
+    {\zihao{-4}\centering \sysu@date@zh@small\par}
+  \end{titlepage}%
+  \sysu@reset@main@language
+}
+
+% 研究生中文扉页（含答辩委员会表格）
+\newcommand\sysu@title@page@graduate@zh@inner{%
+  \sysusetup{language=chinese}%
+  \begin{titlepage}%
+    \sysu@pdfbookmark{扉页}%
+    \centering
+    \vspace*{1.2cm}%
+    {\heiti\fontsize{18bp}{30bp}\selectfont \sysu@title\par}
+    \vskip 0.8cm%
+    {\rmfamily\fontsize{18bp}{28bp}\selectfont \sysu@title@en\par}
+    \vskip 2.2cm%
+    {\zihao{4}\sffamily
+      \begin{tabular}{@{}l@{\hspace{0.6em}}l@{}}
+        专\hspace{2\ccwd}业： & \sysu@speciality \\
+        学位申请人：          & \sysu@author \\
+        指导教师：            & \sysu@supervisor@names \\
+        学\hspace{2\ccwd}位： & \thesisdegreename \\
+      \end{tabular}\par}
+    \vskip 2.2cm%
+    {\zihao{4}
+      \begin{tabular}{ccc}
+        论文答辩委员会主席：& \raisebox{-1.5ex}{\underline{\makebox[6cm][c]{}}}& \makebox[3cm][c]{}\\
+        &~\\
+        论文答辩委员会成员：& \raisebox{-1.5ex}{\underline{\makebox[6cm][c]{}}}& \makebox[3cm][c]{}\\
+        &~\\
+        {}& \raisebox{-1.5ex}{\underline{\makebox[6cm][c]{}}}& \makebox[3cm][c]{}\\
+        &~\\
+        {}& \raisebox{-1.5ex}{\underline{\makebox[6cm][c]{}}}& \makebox[3cm][c]{}\\
+        &~\\
+        {}& \raisebox{-1.5ex}{\underline{\makebox[6cm][c]{}}}& \makebox[3cm][c]{}
+      \end{tabular}\par}
+    \vfill
+    {\zihao{-5}\centering \sysu@date@zh@cn\par}
+  \end{titlepage}%
+  \sysu@reset@main@language
+}
+
+% 研究生封面输出“封面 + 扉页”两页。
+% 直接重定义 \maketitle（与文档类一致，仅追加扉页）。
+\renewcommand\maketitle{%
+  \newgeometry{margin=2.54cm}%
+  \pagenumbering{Alph}%
+  \pagestyle{empty}%
+  \sysu@title@pagetrue
+  \ifsysu@degree@graduate
+    \sysu@title@page@graduate@zh
+    \sysu@title@page@graduate@zh@inner
+  \else
+    \sysu@cover
+    \sysu@title@page@bachelor
+  \fi
+  \cleardoublepage
+  \restoregeometry
+  \pagestyle{plain}%
+  \sysu@title@pagefalse
+}
+
 \makeatother

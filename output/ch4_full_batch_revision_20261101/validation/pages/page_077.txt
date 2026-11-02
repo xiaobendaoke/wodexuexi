@@ -1,0 +1,73 @@
+第 4 章 考虑跨机资源竞争的无人机集群截止期优先计算任务分配
+H G I MC
+0
+1
+2
+3
+4
+5
+(a) 每快照平均超时数
+H G I MC
+0.0
+0.5
+1.0
+1.5
+2.0
+2.5
+(b) 归一化分配能耗
+H G I MC
+0
+1
+2
+3
+4
+(c) 搜索耗时 / s
+H：Heuristic-Control；G：Greedy-Single-Pass；I：Iterative-Base；MC：MC-ITR
+柱：均值；散点：10 工作负载；迭代计时不含共享贪心初值
+图 4.3 固定快照主配置下四种任务分配方法性能对比
+Figure 4.3 Task Allocation Performance on Shared Snapshots
+注：柱高为 10 个工作负载种子的均值，散点为种子内聚合值；时间为各方法的归档记录路径，见
+第 4.3.4 节。
+少 0.173 个，约为后者的 7.8%。在所有 10 个工作负载种子上，MC-ITR 减 Iterative￾Base 的超时数配对差均为负，95% Bootstrap 区间为 [−0.217, −0.127]。这一结果
+支持在所测试快照分布与共享邻域下，采用系统级迁移判决改善平均截止期结
+果。
+S1 S2 S3 S4 S5 S6 S7 S8 S9 S10
+工作负载种子（排序）
+-0.2
+0.0
+0.2
+0.4
+0.6
+0.8
+1.0
+1.2
+1.4
+超
+时
+数
+差
+值（方
+法
+− Iterative-Base）
+S1-S10：42、84、126、168、210、252、294、336、378、420；阴影：5000 次 bootstrap 的95%区间
+Heuristic-Control
+均值 +0.680
+95% CI [+0.500, +0.880]
+S1 S2 S3 S4 S5 S6 S7 S8 S9 S10
+工作负载种子（排序）
+Greedy-Single-Pass
+均值 +0.015
+95% CI [+0.005, +0.025]
+S1 S2 S3 S4 S5 S6 S7 S8 S9 S10
+工作负载种子（排序）
+MC-ITR
+均值 -0.173
+95% CI [-0.217, -0.127]
+图 4.4 相对 Iterative-Base 的种子内平均超时数配对差值
+Figure 4.4 Paired Seed-Averaged Deadline-Miss Differences Against Iterative-Base
+注：方向为各方法减 Iterative-Base，点为种子内平均差，虚线为种子均值，阴影为按 10 个种子重抽样
+5000 次得到的 95% Bootstrap 区间。
+图 4.4 同时展示其他方法相对 Iterative-Base 的差值。相对 Heuristic-Control，
+MC-ITR 的平均超时数减少约 29.3%；相对 Greedy-Single-Pass 减少约 8.4%。这两
+项比较展示完整方法相对初始规则和单轮贪心的效果，其中也包含迭代过程的
+59
