@@ -1,0 +1,755 @@
+% !TeX root = ../main.tex
+\chapter{无人机集群需求感知协同轨迹规划}
+\label{cha:upper-trajectory}
+
+\section{引言}
+\label{sec:ch3-intro}
+
+本章研究自然覆盖约束下无人机集群的需求感知协同轨迹规划。在时限边缘计算中，地面用户设备产生的计算请求只有在落入无人机物理覆盖范围时才能被接纳，因此集群的空间部署直接决定后续服务的机会规模。然而，当上层策略仅依据已关联用户的局部观测进行决策时，覆盖范围外的潜在需求无法进入其动作依据，容易形成空间部署盲区，使未覆盖请求成为端到端服务失败的重要来源。针对这一问题，本章在保持物理服务半径不变的条件下，研究将感知范围内尚未接纳的需求纳入上层预动作观测的作用：首先建立动态请求、几何运动约束与自然覆盖接纳模型，并给出服务失败的计数分解；随后设计基于预接纳需求槽位填充与多头交叉注意力的协同决策方法，结合运动可行性修复输出协同机动指令；最后通过独立确认实验与固定案例轨迹分析，评价需求可见性对集群接纳、端到端服务与能耗的影响。本章内容为第四章跨机计算任务分配与第五章分层服务决策提供轨迹侧的服务条件基础。
+
+\section{系统模型与问题描述}
+\label{sec:system-model}
+\label{sec:upper-problem}
+
+\subsection{系统场景与自然覆盖接纳模型}
+\label{sec:upper-motivation}
+\label{sec:system-scenario}
+
+在无人机辅助移动边缘计算（UAV-assisted Mobile Edge Computing, UAV-MEC）系统中，无人机作为机动空中计算基站，能够快速部署到地面通信基础设施受限或动态高负荷的区域，为具有严格时限约束的地面用户设备（User Equipment, UE）提供计算任务卸载与内容分发服务。如图~\ref{fig:ch3-overview} 所示，考虑由 $N=5$ 架四旋翼无人机组成的无人机集群、固定位置的地面宏基站（Macro Base Station, MBS）以及分布于服务区域内的 $M=100$ 个地面移动用户构成的分层边缘计算系统。地面服务区域设定为水平跨度为 $[0, 700]\times[0, 700]\,\mathrm{m}^2$ 的二维正方形区域，宏基站固定部署于该区域的中心坐标处，其三维空间坐标为 $\mathbf p_{\mathrm M}=(350, 350, 30)\,\mathrm{m}$。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.72\textwidth]{../docs/figures/图3-1_系统与自然覆盖示意图}
+    \bicaption{无人机集群自然覆盖与需求感知示意图}{Schematic of Swarm Natural Coverage and Demand Sensing}
+    \label{fig:ch3-overview}
+    \vspace{0.5ex}\par{\footnotesize 注：实线圆表示 $100\,\mathrm{m}$ 服务覆盖范围，虚线圆表示 $460\,\mathrm{m}$ 感知范围；绿色圆点表示被接纳终端，红色叉号表示未接纳终端。}
+\end{figure}
+
+系统采用以 $\tau=1\,\mathrm{s}$ 为离散时隙周期的同步控制与决策框架，总调度时限划分为 $T=1000$ 个决策时隙，记时隙集合为 $\mathcal T = \{1, 2, \dots, T\}$。在飞行高度层面，假定机群采用高度分层或防撞高度保持策略，五架无人机统一巡航在固定高度 $H=100\,\mathrm{m}$ 的水平空域。在时隙 $t$，以 $\mathbf q_u(t) = (x_u(t), y_u(t))\in\mathbb R^2$ 表示无人机 $u \in \mathcal N = \{1, \dots, N\}$ 的水平坐标，其对应的三维空间坐标为 $\mathbf p_u(t) = (\mathbf q_u(t), H)$；地面用户 $m \in \mathcal M = \{1, \dots, M\}$ 的水平坐标记为 $\mathbf w_m(t) = (x_m(t), y_m(t))\in\mathbb R^2$，其三维空间坐标为 $\mathbf p_m(t) = (\mathbf w_m(t), 0)$。
+
+地面用户的空间运动采用高斯随机航点模型（Random Waypoint Model）。主场景中 $85\%$ 的用户围绕两个热点区域聚集分布，各热点半径为 $100\,\mathrm{m}$，两热点中心间距不小于 $400\,\mathrm{m}$，其余 $15\%$ 的用户稀疏离散地分布在空域其他部分。在每个时隙内，用户向当前目标航点推进，时隙水平位移不超过 $15\,\mathrm{m}$；到达当前航点后，用户在设定时长内保持原地驻留，随后重新生成下一个目标航点。
+
+地面用户在每个时隙内均具有潜在的服务需求。为真实刻画边缘应用特征，文件库中预设 25 类计算服务与 50 个内容文件，共计 75 个离散业务标识。总体流行度服从偏度系数为 $\beta=0.8$ 的 Zipf 分布，各业务标识 $s \in \{1, \dots, 75\}$ 的请求概率模型为：
+\begin{equation}
+    \Pr(s) = \frac{r_s^{-\beta}}{\sum_{k=1}^{75} r_k^{-\beta}}, \qquad \beta=0.8,
+    \label{eq:ch3-zipf}
+\end{equation}
+其中 $r_s$ 为业务标识 $s$ 在流行度降序排列中的名次。每个地面用户在每个时隙预先独立抽取潜在请求标识 $s_m(t)$、任务输入数据量 $L_m(t)\in [10^6, 5\times 10^6)\,\text{字节}$、任务执行截止时间 $D_m(t)\in [0.65, 2.10]\,\mathrm{s}$ 以及请求优先级 $p_m(t)\in \{1, 2, 3\}$。
+
+在请求生成与类型定型层面，用户设备的电池能量状态决定实际产生的业务类别。设用户 $m$ 在时隙 $t$ 开始时的剩余电池电量为 $B_m^{\mathrm{bat}}(t)$。当用户剩余电量不低于设定的安全能量阈值 $B_{\mathrm{low}}=50\,\mathrm{J}$ 时，若抽取的业务标识属于计算服务类，则生成计算卸载请求；若属于内容文件类，则生成内容分发请求。当剩余电量低于 $50\,\mathrm{J}$ 时，出于终端续航保护机制，用户当前时隙的潜在业务请求自动转变为能量补充请求，等待来自空中的无线能量传输（Wireless Power Transfer, WPT）服务。
+
+在无线接入层面，本文设定了严密的自然覆盖接纳（Natural-coverage Admission）准则：无人机向地面辐射的有效通信覆盖范围由机载天线的主瓣波束与物理发射功率决定，抽象为以无人机水平投影为圆心、半径为 $R_c=100\,\mathrm{m}$ 的水平覆盖圆。地面用户必须在物理上处于至少一架无人机的覆盖圆内部，其业务请求方可被该无人机物理层接收并纳入本时隙的接入与计算流程；若用户处于所有无人机的物理覆盖圆之外，则其请求在当前时隙直接被视为无法进入服务流程的未接纳请求。对于时隙 $t$ 的用户 $m$，其在几何上可关联的候选无人机集合 $\mathcal U_m(t)$ 以及唯一确定的服务接入无人机 $u_m(t)$ 形式化定义为：
+\begin{equation}
+    \mathcal U_m(t) = \left\{u\in\mathcal N : \|\mathbf w_m(t) - \mathbf q_u(t)\| \leq R_c\right\},
+    \qquad
+    u_m(t) = \underset{u\in\mathcal U_m(t)}{\arg\min}\, \|\mathbf w_m(t) - \mathbf q_u(t)\|,
+    \label{eq:ch3-natural-association}
+\end{equation}
+当 $\mathcal U_m(t) = \varnothing$ 时，用户未被覆盖，记 $u_m(t) = \varnothing$。在重叠覆盖区域，用户依据水平欧氏距离就近接入最近的无人机。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{../docs/figures/图3-3_单时隙决策时序图}
+    \bicaption{单时隙任务执行与轨迹更新时序图}{Execution and Trajectory Update Timeline within a Single Slot}
+    \label{fig:ch3-timeline}
+\end{figure}
+
+图~\ref{fig:ch3-timeline} 详细阐明了单时隙内部各阶段的严格执行因果与时序逻辑：
+\begin{enumerate}
+    \item \textbf{时隙初状态冻结与观测装配}：在时隙 $t$ 开始时，各节点维持上一时隙末的位置 $\mathbf q_u(t)$ 与缓存状态 $h_{u,s}(t)$，系统依据当前几何空间分布更新用户自然覆盖接纳关系 $\mathcal U_m(t)$；随后，上层轨迹规划策略与下层任务卸载策略基于该当前时隙信息装配各自观测并输出决策动作。
+    \item \textbf{移动前几何下的任务批次执行}：在进入物理步进执行阶段后，首先冻结移动前的通信几何拓扑与网络信道，下层策略确立全部已接纳任务的最终执行目标 $\mathbf b(t)$，并统一结算数据上传时延、协作回传时延、计算排队完成时延以及对应的通信与计算能耗。
+    \item \textbf{上层轨迹位移执行与状态演化}：在当前批次任务执行与能耗结算完成后，环境应用上层轨迹规划策略生成的动作指令，实施运动位移并更新无人机坐标至 $\mathbf q_u(t+1)$；随后结算平台飞行与悬停能耗，并在时隙末提交缓存替换项、驱动用户移动与电量更新，最终生成面向 $t+1$ 时隙的全新观测输入。
+\end{enumerate}
+
+上述决策时序建立了明确的双层动作因果关系：
+\begin{equation}
+    \mathbf b(t)\longrightarrow\{T_m(t), E_m^{\mathrm{assign}}(t)\},\qquad
+    \mathbf a(t)\longrightarrow\mathbf q(t+1)\longrightarrow\mathcal U_m(t+1),
+    \label{eq:ch3-two-action-timing}
+\end{equation}
+其中 $\mathbf b(t)$ 为当前批次服务任务的执行目标分配决策，$\mathbf a(t)$ 为机群协同轨迹位移指令。由此可见，上层轨迹动作并不追溯改变当前时隙已经确定的自然接纳集合 $\mathcal U_m(t)$，其核心物理功能在于驱动机群主动向地面高密度需求演化区域机动，从而直接优化下一时隙乃至长期的可接纳用户规模与空间信道增益。
+
+\subsection{无人机移动与通信模型}
+\label{sec:network-trajectory-model}
+\label{sec:channel-model}
+
+为实现机群的安全、平稳机动与协同覆盖，建立离散时间无人机运动学模型。在时隙 $t$，无人机 $u$ 施加规划水平位移向量 $\Delta\mathbf q_u(t)$，其水平坐标演化方程为：
+\begin{equation}
+    \mathbf q_u(t+1) = \mathbf q_u(t) + \Delta\mathbf q_u(t).
+    \label{eq:ch3-position-update}
+\end{equation}
+受机载动力学与驱动推力限制，无人机在单个时隙时长 $\tau=1\,\mathrm{s}$ 内的移动距离严格受限于最大平飞速度 $v_{\max} = 15\,\mathrm{m/s}$，即满足速度模长约束 $\|\Delta\mathbf q_u(t)\| \leq v_{\max}\tau$。同时，为保障机载通信天线对地覆盖的主瓣增益并预留边界保护带，机群的可行飞行空域限制为 $\mathcal Q = [50\,\mathrm{m}, 650\,\mathrm{m}]^2$。此外，为空中防撞与飞行安全，任意两架无人机之间的最小水平防撞间距设定为 $d_{\min}=200\,\mathrm{m}$。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.62\textwidth]{../docs/figures/图3-2_覆盖与感知几何示意图}
+    \bicaption{服务覆盖半径与需求感知半径示意图}{Geometric Relationship between Coverage Radius and Sensing Radius}
+    \label{fig:ch3-geometry}
+\end{figure}
+
+如图~\ref{fig:ch3-geometry} 所示，由于防撞间距 $d_{\min} = 200\,\mathrm{m}$ 恰好等于单个无人机的物理覆盖直径 $2R_c$，这表明满足防撞安全约束的任意两架无人机的物理覆盖圆在空间上互不重叠，在边界处至多相切。这一物理约束从根本上避免了多架无人机盲目聚集于同一局部热点造成覆盖重叠与无线干扰，促使机群必须在空间拓扑上开展协同发散与多热点协同覆盖。
+
+给定当前时隙的可行空间坐标 $\mathbf q(t) = \{\mathbf q_u(t)\}_{u=1}^N$，机群在下一时隙的联合物理可行部署集合 $\mathcal F(\mathbf q(t))$ 形式化定义为：
+\begin{equation}
+    \mathcal F(\mathbf q(t))=
+    \left\{\{\mathbf q_u'\}_{u=1}^{N}:\ 
+    \mathbf q_u'\in\mathcal Q,\ 
+    \|\mathbf q_u'-\mathbf q_u(t)\|\leq v_{\max}\tau,\ 
+    \|\mathbf q_u'-\mathbf q_v'\|\geq d_{\min}\ (\forall u\ne v)\right\}.
+    \label{eq:ch3-motion-feasible}
+\end{equation}
+
+在空天地无线通信层面，空对地（UAV-UE）、空对空（UAV-UAV）以及空对地回传（UAV-MBS）链路均建模为大尺度自由空间路径损耗模型。对于三维空间中位置坐标分别为 $\mathbf p_i$ 与 $\mathbf p_j$ 的两个通信收发端点，链路信道功率增益为：
+\begin{equation}
+    g_{ij}(t) = \frac{G_0 g_0}{\|\mathbf p_i(t) - \mathbf p_j(t)\|^2 + \epsilon_0},
+    \qquad G_0 g_0 = 3.244132\times 10^{-4},
+    \label{eq:channel-gain}
+\end{equation}
+其中 $G_0 g_0$ 为参考距离 $1\,\mathrm{m}$ 处的等效信道衰减系数，$\epsilon_0=10^{-6}$ 为避免分母为零的数值平滑常数。设各发送节点的通信发射功率统一设定为 $P^{\mathrm{comm}} = 0.5\,\mathrm{W}$，接收端加性高斯白噪声功率设定为 $\sigma^2 = 10^{-13}\,\mathrm{W}$。
+
+在无人机对地接入信道层面，系统为每个无人机分配独立且相互正交的接入频段，接入总带宽为 $B^{\mathrm{edge}} = 40\,\mathrm{MHz}$。在时隙 $t$，成功关联至无人机 $u$ 的全部地面用户总数记为 $n_u^{\mathrm{assoc}}(t)$（包含服务请求、内容请求及能量请求）。为保障接入公平性与协议轻量化，接入带宽由该无人机覆盖下的全部关联用户等权时频均分。因此，用户 $m$ 向接入无人机 $u=u_m(t)$ 上传任务数据的等效无线传输速率为：
+\begin{equation}
+    R^{\mathrm{edge}}_{m,u}(t) = 
+    \frac{B^{\mathrm{edge}}}{n_u^{\mathrm{assoc}}(t)}
+    \log_2\left(1 + \frac{P^{\mathrm{comm}}g_{m,u}(t)}{\sigma^2}\right),
+    \qquad B^{\mathrm{edge}}=40\,\mathrm{MHz}.
+    \label{eq:edge-rate}
+\end{equation}
+式~\eqref{eq:edge-rate} 深刻反映了边缘接入中“覆盖扩展”与“通信拥塞”的内在权衡：当无人机通过轨迹机动覆盖更多地面用户时，关联用户数 $n_u^{\mathrm{assoc}}$ 的增加将导致单用户分配到的有效接入带宽反比衰减，进而延长输入数据的无线传输时延。这一通信瓶颈对协同轨迹规划提出了兼顾接入机会与接入质量的严苛要求。
+
+在骨干通信与回传信道层面，无人机之间设有专用高速微波机间通信链路，系统预留机间带宽 $B^{\mathrm{inter}} = 20\,\mathrm{MHz}$，用于支持跨机协同计算任务的数据转发与结果回传；无人机与地面宏基站之间设有专用的无线回传（Backhaul）链路，带宽配置为 $B^{\mathrm{bh}} = 0.75\,\mathrm{MHz}$。对应的香农信道容量分别为：
+\begin{equation}
+    \begin{aligned}
+    R^{\mathrm{inter}}_{u,v}(t) &= B^{\mathrm{inter}} \log_2\left(1 + \frac{P^{\mathrm{comm}}g_{u,v}(t)}{\sigma^2}\right),\\
+    R^{\mathrm{bh}}_{u,\mathrm M}(t) &= B^{\mathrm{bh}} \log_2\left(1 + \frac{P^{\mathrm{comm}}g_{u,\mathrm M}(t)}{\sigma^2}\right).
+    \end{aligned}
+    \label{eq:ch3-other-rates}
+\end{equation}
+
+\subsection{任务执行与计算能耗模型}
+\label{sec:ch3-service-paths}
+\label{sec:ch3-energy-accounting}
+\label{sec:ch3-cache-dynamics}
+\label{sec:ch3-battery-motion}
+
+对于在时隙 $t$ 成功接纳的计算服务请求集合 $\mathcal M(t) = \{m \in \mathcal M: u_m(t) \neq \varnothing \text{ 且 } \text{type}_m = \text{service}\}$，服务标识 $s_m$ 对应的任务计算工作量为：
+\begin{equation}
+    C_m = \omega_{s_m} L_m,
+    \label{eq:ch3-cpu-cycles}
+\end{equation}
+其中 $\omega_s \in [1200, 2800)\,\text{Cycles/Byte}$ 为各服务每字节所需的计算密度参数。
+
+在任务卸载架构中，每个计算请求 $m$ 经由接入无人机 $u = u_m(t)$ 上传后，存在三类互斥的执行路由路径，由卸载决策变量 $b_m \in \{u\} \cup (\mathcal N \setminus \{u\}) \cup \{\mathrm M\}$ 决定：
+\begin{enumerate}
+    \item \textbf{本地接入无人机执行}（$b_m = u$）：任务输入直接在接入节点执行，省去跨机转发时延；
+    \item \textbf{机间协同无人机执行}（$b_m = v \in \mathcal N \setminus \{u\}$）：任务输入经由机间链路转发至临近空闲算力更充裕的无人机 $v$ 执行；
+    \item \textbf{宏基站卸载执行}（$b_m = \mathrm M$）：任务经由无线回传链路发送至地面中心宏基站执行。
+\end{enumerate}
+
+在计算服务执行前，执行节点需具备对应的服务应用程序镜像或环境依赖文件，其大小记为 $B_s$。以二值变量 $h_{j,s}(t) \in \{0, 1\}$ 表示无人机 $j$ 在时隙初是否已成功缓存服务 $s$ 的镜像文件。若缓存命中（$h_{j,s}=1$），则直接调度 CPU 执行；若未命中（$h_{j,s}=0$），该无人机必须首先通过无线回传链路从核心网下载该镜像文件，产生额外的回源时延 $V_{j,s} = 8B_s / R^{\mathrm{bh}}_{j,\mathrm M}$。
+
+在计算资源分配层面，各无人机机载处理器的标称最大计算能力记为 $F_j \in \{40, 45, \dots, 85\}\,\mathrm{GHz}$。在单时隙批次计算框架下，所有分配至无人机 $j$ 执行的任务集合统一共享该处理器的全部算力资源。记在无人机 $j$ 上执行的最终并发任务数为：
+\begin{equation}
+    N_j(\mathbf b) = \sum_{m\in\mathcal M(t)} \mathbf 1[b_m = j].
+    \label{eq:ch3-final-load}
+\end{equation}
+当 $N_j(\mathbf b) \geq 1$ 时，各并发任务均分计算核心资源，分得的等效计算服务速率为 $f_{m,j} = F_j / N_j(\mathbf b)$。对于卸载至宏基站的任务，宏基站配备性能极高的固定边缘服务器集群，总算力设为 $F_{\mathrm M} = 200\,\mathrm{GHz}$，为保障基站高并发处理能力，分配至宏基站的任务均获得等效峰值算力执行。
+
+为简化数学书写，记任务上传时间为 $U_m = 8L_m / R^{\mathrm{edge}}_{m,u_m}$，协作机间数据转发时间为 $I_{m,u,v} = 8L_m / R^{\mathrm{inter}}_{u,v}$。三类执行路径的任务端到端完成时延解析模型表述为：
+\begin{equation}
+    \begin{aligned}
+    T_m^{\mathrm{local}} &= U_m + (1 - h_{u,s_m}) V_{u,s_m} + \frac{C_m N_u}{F_u},\\
+    T_m^{\mathrm{coop}}(v) &= U_m + I_{m,u,v} + (1 - h_{v,s_m}) V_{v,s_m} + \frac{C_m N_v}{F_v},\\
+    T_m^{\mathrm{MBS}} &= U_m + \frac{8L_m}{R^{\mathrm{bh}}_{u,\mathrm M}} + \frac{C_m}{F_{\mathrm M}}.
+    \end{aligned}
+    \label{eq:ch3-service-three-paths}
+\end{equation}
+
+将除计算执行阶段外的通信总时延记为 $T_m^{\mathrm{comm}}$。当任务在无人机 $j$ 上执行时，任务严格满足截止时限约束（$T_m \leq D_m$）的充要条件可解析转化为该节点允许并发承载的负载上限预算：
+\begin{equation}
+    T_m \leq D_m \quad \Longleftrightarrow \quad 
+    N_j \leq \frac{F_j(D_m - T_m^{\mathrm{comm}})}{C_m}, \qquad \text{当且仅当 } D_m \geq T_m^{\mathrm{comm}}.
+    \label{eq:ch3-deadline-load-budget}
+\end{equation}
+式~\eqref{eq:ch3-deadline-load-budget} 直观展现了多维物理状态对服务质量的耦合影响：无人机靠近用户以提升接入速率、机间协同靠近以提升协同带宽，以及本地缓存命中消除回源时延，本质上均是通过大幅压缩通信时延 $T_m^{\mathrm{comm}}$，从而为本地计算环节争取更充裕的时延容限，使节点能够并发容纳更多任务同时满足时限要求。
+
+在系统能耗建模层面，计算与通信的物理能耗紧密关联。遵循 CMOS 芯片的动态功率模型，处理器的动态计算功率可表示为 $P^{\mathrm{cmp}} = \kappa f^3$，其中 $\kappa=10^{-27}$ 为芯片架构决定的开关电容系数。任务分配至无人机 $j$ 执行所产生的动态计算能耗为：
+\begin{equation}
+    E_m^{\mathrm{cmp}} = P^{\mathrm{cmp}} \frac{C_m}{f_{m,j}} = \kappa C_m f_{m,j}^2 = \kappa C_m \left(\frac{F_j}{N_j}\right)^2.
+    \label{eq:ch3-dynamic-compute-energy}
+\end{equation}
+根据卸载决策目标的不同，各计算任务对机群引起的增量分配通信与计算能耗为：
+\begin{equation}
+    \begin{aligned}
+    E_m^{\mathrm{assign,local}} &= (1 - h_{u,s_m}) P^{\mathrm{bh,rx}} V_{u,s_m} + \kappa C_m (F_u / N_u)^2,\\
+    E_m^{\mathrm{assign,coop}} &= (P^{\mathrm{tx}} + P^{\mathrm{rx}}) I_{m,u,v} + (1 - h_{v,s_m}) P^{\mathrm{bh,rx}} V_{v,s_m} + \kappa C_m (F_v / N_v)^2,\\
+    E_m^{\mathrm{assign,MBS}} &= P^{\mathrm{bh,tx}} \frac{8L_m}{R^{\mathrm{bh}}_{u,\mathrm M}},
+    \end{aligned}
+    \label{eq:ch3-assignment-energy-paths}
+\end{equation}
+其中机载无线发送功率为 $P^{\mathrm{tx}} = P^{\mathrm{bh,tx}} = 0.5\,\mathrm{W}$，接收射频功率为 $P^{\mathrm{rx}} = P^{\mathrm{bh,rx}} = 0.1\,\mathrm{W}$。
+
+综合考虑接入数据接收能耗、内容分发能耗 $E^{\mathrm{content}}$、平台机动飞行能耗 $E_u^{\mathrm{motion}}$ 以及无线供能能耗 $E_u^{\mathrm{WPT}}$，机群在时隙 $t$ 的单步完整全局运行能耗模型定义为：
+\begin{equation}
+    E^{\mathrm{fleet}} = 
+    \sum_{m\in\mathcal M(t)} P^{\mathrm{rx}} U_m + 
+    \sum_{m\in\mathcal M(t)} E_m^{\mathrm{assign}} + 
+    E^{\mathrm{content}} + 
+    \sum_{u=1}^N \left(E_u^{\mathrm{motion}} + E_u^{\mathrm{WPT}}\right).
+    \label{eq:ch3-full-fleet-energy}
+\end{equation}
+其中，飞行与悬停机动能耗依据实际机动位移距离 $d_u = \|\mathbf q_u(t+1) - \mathbf q_u(t)\|$ 结算：
+\begin{equation}
+    t_u^{\mathrm{move}} = \frac{d_u}{v_{\max}}, \quad 
+    t_u^{\mathrm{hover}} = \max(\tau - t_u^{\mathrm{move}}, 0), \quad 
+    E_u^{\mathrm{motion}} = 300 t_u^{\mathrm{move}} + 150 t_u^{\mathrm{hover}},
+    \label{eq:ch3-motion-energy}
+\end{equation}
+式中 $300\,\mathrm{W}$ 与 $150\,\mathrm{W}$ 分别为无人机在满速水平机动和定点悬停状态下的基准气动功耗。若无人机当前关联有能量请求用户，机载专用供能天线启动无线充电，单步产生固定能耗 $E_u^{\mathrm{WPT}} = P^{\mathrm W}\tau = 50\,\mathrm{J}$；受供用户据此获得能量补充 $E_m^{\mathrm{harv}} = \eta_{\mathrm W} P^{\mathrm W} G_{\mathrm W} g_{u,m} \tau$，进而驱动用户电池状态按物理充放电方程动态更新。
+
+在缓存更新演化层面，每架无人机以滑动窗口统计各文件的请求频次 $\nu_{u,s}(t)$，按指数移动平均维护热度得分并在时隙末统一执行容量受限的缓存更新：
+\begin{equation}
+    H_{u,s}(t+1) = \beta_c \nu_{u,s}(t) + (1 - \beta_c) H_{u,s}(t), \qquad \beta_c=0.75, \qquad \chi_{u,s}(t+1) = \frac{H_{u,s}(t+1)}{B_s}.
+    \label{eq:ch3-cache-score}
+\end{equation}
+各机依据单位大小热度 $\chi_{u,s}$ 降序贪心缓存高价值文件，直至耗尽机载存储容量上限 $S_u^{\mathrm{cache}}$。
+
+\subsection{评价指标与问题形式化}
+\label{sec:dsr-decomposition}
+\label{sec:fairness-model}
+
+为严谨度量无人机集群对地面时限任务的服务保障能力，定义系统的核心端到端性能评价指标——截止期满足率（Deadline Satisfaction Rate, DSR）。在特定评估时间周期内，设地面用户实际生成的服务请求总数为 $G$，成功进入无人机自然覆盖范围并获得接入的请求总数为 $A$，而在其各自指定时限 $D_m$ 内顺利执行完成的请求总数为 $S$。显然，这三项离散计数满足包含偏序关系 $0 \leq S \leq A \leq G$。据此，定义自然覆盖接纳率 $\alpha$ 以及接纳后按时完成率 $\eta$ 为：
+\begin{equation}
+    \alpha = \frac{A}{G}, \qquad \eta = \frac{S}{A}.
+    \label{eq:alpha-eta-def}
+\end{equation}
+系统的端到端服务成功率 DSR 可以严格展开为接纳率与接纳后完成率的双因子乘积：
+\begin{equation}
+    \mathrm{DSR} = \frac{S}{G} = \frac{A}{G} \cdot \frac{S}{A} = \alpha \cdot \eta.
+    \label{eq:current-dsr-decomp}
+\end{equation}
+式~\eqref{eq:current-dsr-decomp} 的乘积分解表明，端到端任务服务的失败总数 $G-S$ 可以无遗漏地分解为两类性质截然不同的物理成因：
+\begin{equation}
+    G - S = (G - A) + (A - S),
+    \label{eq:ch3-failure-counts}
+\end{equation}
+其中第一项 $G-A$ 代表因空间覆盖盲区导致无法接纳的损失数，第二项 $A-S$ 代表虽然成功接入但因通信拥挤或算力不足导致计算超时的损失数。
+
+除整体成功率外，系统兼顾长期运行中的跨用户服务公平性。引入 Jain 公平性指数（Jain's Fairness Index, JFI）：设 $K_m(t)$ 为用户 $m$ 截止至时隙 $t$ 累计成功获得按时服务的次数，定义相对服务率 $c_m(t) = K_m(t) / t$，则全网服务公平性定义为：
+\begin{equation}
+    J(t) = \begin{cases}
+    \displaystyle \frac{\left(\sum_{m=1}^M c_m(t)\right)^2}{M \sum_{m=1}^M c_m^2(t)}, & \sum_{m=1}^M c_m^2(t) > 0,\\
+    0, & \sum_{m=1}^M c_m^2(t) = 0.
+    \end{cases}
+    \label{eq:jfi}
+\end{equation}
+由柯西--施瓦茨不等式可知 $0 \leq J(t) \leq 1$。
+
+在系统长期运行目标下，研究的核心问题是在保障无人机飞行物理约束的前提下，设计协同轨迹决策策略 $\pi_\theta$，以最大化期望端到端截止期满足率，并兼顾机队运行能耗与服务公平性。该多目标协同优化问题形式化表述为：
+\begin{equation}
+    \begin{aligned}
+    \max_{\pi_\theta}\quad & \mathbb E_{\pi_\theta}\left[\frac{1}{T}\sum_{t=1}^T \left(\mathrm{DSR}(t) - \lambda_E E^{\mathrm{fleet}}(t) + \lambda_J J(t)\right)\right] \\
+    \text{s.t.}\quad 
+    & \mathbf q_u(t+1) = \mathbf q_u(t) + \Delta\mathbf q_u(t), \quad \forall u\in\mathcal N, t\in\mathcal T,\\
+    & \{\mathbf q_u(t+1)\}_{u=1}^N \in \mathcal F(\mathbf q(t)), \quad \forall t\in\mathcal T,\\
+    & \mathcal U_m(t) = \{u\in\mathcal N: \|\mathbf w_m(t) - \mathbf q_u(t)\| \leq R_c\}, \quad \forall m\in\mathcal M, t\in\mathcal T,\\
+    & \Delta\mathbf q(t) \sim \pi_\theta(\cdot \mid \mathbf o(t)),
+    \end{aligned}
+    \label{eq:ch3-problem-formulation}
+\end{equation}
+其中 $\lambda_E, \lambda_J > 0$ 为能耗与公平性的权衡折算系数。
+
+在上述优化框架中必须清楚厘定决策与环境状态边界：
+1. **决策控制量**：上层强化学习策略输出的控制量严格限定为各无人机的水平间歇位移指令 $\Delta\mathbf q_u(t)$；
+2. **环境状态转移**：下层卸载决策 $\mathbf b(t)$ 在移动前网络拓扑下由固定启发式分配策略根据估计通信时延和算力份额独立求得；地面用户的移动、请求到达以及电池充放电属于不可控的外生随机环境演化；
+3. **因果影响路径**：轨迹动作 $\Delta\mathbf q(t)$ 决定无人机下一时隙的位置 $\mathbf q(t+1)$，从而直接改变下一时隙的覆盖集合 $\mathcal U_m(t+1)$ 与空天地信道增益。
+
+由于端到端 DSR 具有复杂的延迟反馈与非线性比值特性，且系统具备部分可观测与多智能体协同特征，难以直接采用传统单步凸优化或离线混合整数非线性规划求解。为此，下一节将该问题转化为分散部分可观测马尔可夫决策过程，并提出基于需求感知注意力的协同轨迹规划方法。
+
+\section{需求感知协同轨迹规划方法}
+\label{sec:upper-dec-pomdp}
+
+\subsection{Dec-POMDP 协同决策建模}
+\label{sec:dec-pomdp-motivation}
+\label{sec:upper-reward}
+
+无人机集群在部分可观测空域中的分布式轨迹协同决策形式化为分散部分可观测马尔可夫决策过程（Decentralized Partially Observable Markov Decision Process, Dec-POMDP），由七元组 $\langle\mathcal I, \mathcal S, \{\mathcal O_u\}, \{\mathcal Z_u\}, P, \{r_u\}, \gamma\rangle$ 描述：
+\begin{itemize}
+    \item $\mathcal I = \{1, \dots, N\}$ 为无人机智能体集合。
+    \item $\mathcal S$ 为环境的全局物理真实状态空间，包含所有无人机与地面用户的三维空间坐标、各机载缓存状态向量、全部用户剩余电量以及全网并发生成的完整请求特征。
+    \item $\mathcal O_u$ 为无人机 $u$ 的局部观测空间，由自身机载传感信息以及局部通信范围内的环境信息组成。
+    \item $\mathcal Z_u = \mathbb R^2$ 为无人机 $u$ 的原始连续动作空间，表征水平面上的未受限机动指令采样向量。
+    \item $P: \mathcal S \times \mathcal Z_1 \times \dots \times \mathcal Z_N \to \Delta(\mathcal S)$ 为环境状态转移概率分布，由任务卸载执行、轨迹动作物理修复、用户自主游走以及新请求泊松到达共同驱动。
+    \item $r_u: \mathcal S \times \mathcal Z \to \mathbb R$ 为智能体 $u$ 接收到的即时强化学习反馈奖励函数。
+    \item $\gamma \in [0, 1)$ 为长期折现因子，本文取 $\gamma = 0.99$。
+\end{itemize}
+
+为引导分散部署的无人机集群在追求端到端 DSR 提升的同时兼顾机队能耗、服务公平性并抑制计算超时，设计了全局共享质量奖励项 $r^{\mathrm{shared}}$：
+\begin{equation}
+    r^{\mathrm{shared}}(t) = 
+    W_{\mathrm{fair}} J(t) - W_{\mathrm{lat}} \bar T(t) - W_{\mathrm{energy}} \bar E(t)
+    - W_{\mathrm{off}} \rho_{\mathrm{off}}(t) + W_{\mathrm{dsr}} \frac{S(t)}{G(t)}
+    - 0.5 \rho_{\mathrm{MBS}}(t),
+    \label{eq:upper-reward}
+\end{equation}
+各归一化因子的物理定义如下：
+\begin{itemize}
+    \item $\bar T(t) = \sum_{m=1}^M T_m^{\mathrm{metric}}(t) / (20M + \epsilon_0)$ 为全网时延惩罚项。对已关联用户 $T_m^{\mathrm{metric}}$ 取为真实完成时延，对未被覆盖的用户则施加 $T^{\mathrm{pen}} = 20\,\mathrm{s}$ 的未接纳超时惩罚；
+    \item $\bar E(t) = E^{\mathrm{fleet}}(t) / (5000N + \epsilon_0)$ 为基于参考基准无量纲化的单步机队总能耗；
+    \item $\rho_{\mathrm{off}}(t)$ 为结算后剩余电量跌破安全阈值 $B_{\mathrm{low}}$ 的低电量终端比例；
+    \item $\rho_{\mathrm{MBS}}(t)$ 为卸载回传至地面宏基站执行的任务占总生成请求的比例，用于抑制由于空中算力协调不力导致对地面骨干网的过度依赖；
+    \item 权重系数经验设定为 $W_{\mathrm{fair}}=1, W_{\mathrm{lat}}=1, W_{\mathrm{energy}}=0.5, W_{\mathrm{off}}=5, W_{\mathrm{dsr}}=1$。
+\end{itemize}
+
+各智能体除了接收全局共享质量信号外，还需对自身的物理空间违例行为承担明确的因果责任。智能体 $u$ 的最终单步执行奖励 $r_u(t)$ 定义为：
+\begin{equation}
+    r_u(t) = 0.1 \left[r^{\mathrm{shared}}(t) - 10\mathbf 1[\mathrm{boundary}_u] - 10\mathbf 1[\mathrm{collision}_u]\right],
+    \label{eq:ch3-final-reward}
+\end{equation}
+其中 $\mathbf 1[\mathrm{boundary}_u]$ 与 $\mathbf 1[\mathrm{collision}_u]$ 分别为指示该智能体原始动作是否发生空域越界或与邻机发生间距冲突的指示函数。该奖励设计既保证了机群围绕全局服务效能开展协同探索，又通过负向惩罚迫使各智能体自主学习满足物理安全边界。
+
+\subsection{预接纳需求观测扩展机制}
+\label{sec:coverage-observation}
+\label{sec:obs-motivation}
+\label{sec:slot-filling}
+\label{sec:obs-action}
+
+在传统的部分可观测设计中，无人机智能体的局部观测仅包含当前已经物理进入自身 $R_c=100\,\mathrm{m}$ 覆盖范围内的用户状态。然而，在自然覆盖机制下，这种输入设计面临着严重的信息盲区与状态混叠（State Aliasing）问题：
+若两个物理场景中无人机覆盖圆内部的已关联用户完全相同，但覆盖圆外部临近区域的需求分布截然不同（例如场景 A 外部存在密集的高负载热点，而场景 B 外部为空闲空域），在传统局部观测下，智能体接收到的特征向量完全一致。对于任何基于该观测的策略网络，其输出的机动动作概率分布必然完全相同。这意味着策略无法感知覆盖范围外的潜在需求分布，丧失了引导无人机主动向高需求聚集区机动的空间引导梯度。
+
+为此，本章提出\textbf{预接纳需求观测扩展机制}。在保持上层策略网络输入维度和神经网络结构完全不变的前提下，利用无人机空空协同感知能力（感知半径 $R_s=460\,\mathrm{m}$），将空间中尚未被任何无人机接纳但处于感知范围内的潜在用户特征前瞻性地注入局部观测中。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{../docs/figures/图3-5_原观测与扩展观测对照示意}
+    \bicaption{原始观测与扩展观测槽位对比图}{Slot-Filling Comparison between Original and Extended Observations}
+    \label{fig:ch3-obs-compare}
+\end{figure}
+
+如图~\ref{fig:ch3-obs-compare} 所示，单智能体的局部观测向量 $\mathbf o_u$ 保持固定 325 维定长格式，由三大结构化特征模块拼接构成：
+\begin{enumerate}
+    \item \textbf{自身状态向量}（$77$ 维）：包含无人机自身归一化二维水平位置 $\mathbf q_u / 700$ 以及 75 维二值机载缓存状态指示向量 $\mathbf h_u$；
+    \item \textbf{邻居拓扑特征}（$4\times 2 = 8$ 维）：感知范围内至多 4 架邻机相对于自身的二维相对水平坐标 $(\mathbf q_v - \mathbf q_u) / R_s$；
+    \item \textbf{用户需求特征槽位}（$30\times 8 = 240$ 维）：固定设置 30 个用户特征槽位。单个槽位向量 $\mathbf x_{u,m}$ 由 8 维归一化特征构成：
+    \begin{equation}
+        \mathbf x_{u,m} = \left[
+        \frac{\mathbf w_m - \mathbf q_u}{700}, \
+        \frac{\mathrm{type}_m}{2}, \
+        \frac{L_m}{5\times 10^6}, \
+        \frac{s_m}{75}, \
+        \frac{D_m}{2.10}, \
+        \frac{p_m}{3}, \
+        \frac{B_m^{\mathrm{bat}}}{500}
+        \right],
+        \label{eq:ch3-ue-slot}
+    \end{equation}
+    涵盖相对坐标、业务类型、数据大小、业务编号、时限要求、优先级以及电池电量。若对应槽位为空，则填充全零，并根据槽位绝对值和是否大于 $10^{-5}$ 构造注意力前向掩码。
+\end{enumerate}
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{上层单智能体观测空间维度构成}{Composition of Upper-Layer Single-Agent Observation Space}
+    \label{tab:ch3-observation}
+    \footnotesize
+    \begin{tabularx}{\textwidth}{lXcX}
+        \toprule
+        观测模块 & 物理特征内容 & 向量维度 & 构造与归一化说明 \\
+        \midrule
+        自身机载状态 & 自身二维水平坐标、机载缓存向量 & $2 + 75 = 77$ & 坐标除以 $700\,\mathrm{m}$，缓存为 0/1 状态 \\
+        邻居拓扑特征 & 协作感知内至多 4 架邻居相对位移 & $4\times 2 = 8$ & 按感知半径 $R_s=460\,\mathrm{m}$ 归一化 \\
+        用户需求槽位 & 关联与预接纳用户需求及电量 & $30\times 8 = 240$ & 固定 30 个槽位，全零填充并置注意力掩码 \\
+        \midrule
+        总计维度 &  & $325$ & 输入形状固定，适配注意力网络 \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+为确保观测构建的严格确定性与可复现性，扩展观测采用如下两阶段确定性排序与槽位填充算子：
+设 $\mathcal A_u$ 为当前物理关联至无人机 $u$ 的用户集合，$\mathcal V_u^{\mathrm{un}}$ 为感知半径 $R_s=460\,\mathrm{m}$ 内部且尚未被全网任何无人机覆盖的未接纳用户集合。最终注入 30 个用户观测槽位的有序列表 $\mathcal L_u$ 定义为：
+\begin{equation}
+    \mathcal L_u = \operatorname{first}_{30}\left[
+    \operatorname{sort}_{(d,\mathrm{id})}(\mathcal A_u) \ \Vert \ \operatorname{sort}_{(d,\mathrm{id})}(\mathcal V_u^{\mathrm{un}})
+    \right],
+    \label{eq:ch3-slot-selection}
+\end{equation}
+其中 $\operatorname{sort}_{(d,\mathrm{id})}$ 表示首先以用户至无人机水平距离 $d = \|\mathbf w_m - \mathbf q_u\|$ 升序排序、距离相同则按用户固有编号递增平局决断的确定性排序算子；$\Vert$ 为列表拼接操作；$\operatorname{first}_{30}$ 截取前 30 个元素，不足 30 个则由空槽零填充。
+
+该机制具有三个关键工程属性：
+\begin{itemize}
+    \item \textbf{在网优先保障}：优先填充自身已关联用户 $\mathcal A_u$，未接纳用户仅使用剩余槽位；若已关联用户超过 30 个，仍按既有距离排序截断，不能据此声称全部已接纳需求均进入观测；
+    \item \textbf{物理覆盖边界严格不变}：预接纳用户的引入仅丰富了策略网络的“感知视野”，并未赋予这些远端用户在当前时隙上传数据的特权，其物理接纳门槛依然严格锁定为 $R_c=100\,\mathrm{m}$；
+    \item \textbf{网络架构严格兼容}：由于槽位数量固定为 30，策略网络输入维度恒定为 325 维，避免了随用户数量动态变化导致的神经网络维度伸缩问题。
+\end{itemize}
+
+\subsection{多头注意力网络与协同决策架构}
+\label{sec:attention-mappo}
+\label{sec:attention-structure}
+
+为聚合邻机空间拓扑与用户需求特征，本章采用基于多头交叉注意力（Multi-Head Cross-Attention, MCA）的 Actor 策略网络，如图~\ref{fig:ch3-architecture} 所示。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.95\textwidth]{../docs/figures/图3-4_Attention-MAPPO网络与训练结构}
+    \bicaption{Attention-MAPPO 网络结构图}{Network Architecture of Attention-MAPPO}
+    \label{fig:ch3-architecture}
+    \vspace{0.5ex}\par{\footnotesize 注：实线表示前向推断信息流，虚线表示训练阶段集中式评价信息流。}
+\end{figure}
+
+在前向特征编码阶段，自身状态 $\mathbf o_u^{\mathrm{self}}$（77维）、各有效邻机状态 $\mathbf o_{u,v}^{\mathrm{uav}}$（2维）以及各有效用户槽位状态 $\mathbf x_{u,m}$（8维）分别通过包含线性映射、层归一化（LayerNorm）与 ReLU 激活函数的独立编码器，映射为统一的 $d_{\mathrm{model}}=64$ 维稠密特征向量，分别记为 $\mathbf e_u, \mathbf e_v, \mathbf e_m$。
+
+以自身状态嵌入 $\mathbf e_u$ 作为查询（Query），分别针对邻机集合与地面用户需求槽位集合执行多头交叉注意力计算。以头数 $H=8$ 为例，单头投影维度为 $d_h = d_{\mathrm{model}} / H = 8$。对于第 $h$ 个注意力头以及目标实体 $i \in \mathcal V_u$（$\mathcal V_u$ 为非空邻机或用户槽位集合），其查询、键（Key）与值（Value）表示为：
+\begin{equation}
+    \mathbf Q_u^h = \mathbf e_u W_Q^h, \qquad 
+    \mathbf K_i^h = \mathbf e_i W_K^h, \qquad 
+    \mathbf V_i^h = \mathbf e_i W_V^h,
+    \label{eq:qkv-proj}
+\end{equation}
+其中 $W_Q^h, W_K^h, W_V^h \in \mathbb R^{64 \times 8}$ 为可学习参数矩阵。实体 $i$ 分得的标量注意力权重 $a_{u,i}^h$ 经由 Scaled Dot-Product 与 Masked Softmax 计算：
+\begin{equation}
+    a_{u,i}^h = \frac{\exp\left(\mathbf Q_u^h (\mathbf K_i^h)^\top / \sqrt{d_h}\right)}{\sum_{k\in\mathcal V_u} \exp\left(\mathbf Q_u^h (\mathbf K_k^h)^\top / \sqrt{d_h}\right)}.
+    \label{eq:ch3-cross-attention}
+\end{equation}
+第 $h$ 头的加权上下文向量汇聚为 $\mathbf c_u^h = \sum_{i\in\mathcal V_u} a_{u,i}^h \mathbf V_i^h$。8 个头的上下文拼接后通过线性投影矩阵，分别输出邻机拓扑上下文表征 $\mathbf c_u^{\mathrm{uav}}$（64维）与用户需求上下文表征 $\mathbf c_u^{\mathrm{ue}}$（64维）。
+
+在物理功能上，两大注意力分支具有清晰的分工：
+\begin{itemize}
+    \item \textbf{邻机拓扑注意力}：聚合邻机相对位置，为协同机动提供几何拓扑特征；离散位置的间距可行性由环境动作修复保证；
+    \item \textbf{用户需求注意力}：对至多 30 个已关联与未覆盖用户槽位进行可学习的加权聚合，使策略能够利用允许观测的需求特征。该结构不保证高优先级、紧迫截止期或热点用户必然获得更高权重，其独立性能贡献仍需同信息条件下的架构对照。
+\end{itemize}
+
+最终，将自身特征 $\mathbf e_u$、邻机上下文 $\mathbf c_u^{\mathrm{uav}}$ 与需求上下文 $\mathbf c_u^{\mathrm{ue}}$ 拼接为 192 维融合特征向量，送入多层感知机（$192 \to 128 \to 64$）进一步提取抽象高层协同特征 $\mathbf f_u$。
+
+在集中式训练评估阶段，为践行集中式训练与分布式执行（Centralized Training with Decentralized Execution, CTDE）范式，Critic 价值网络输入包含全网五架无人机的局部观测联合张量 $\mathbf o = [\mathbf o_1, \dots, \mathbf o_N]$。Critic 采用智能体间交互注意力层，屏蔽自注意力后聚合协同全局特征，输出各机价值函数的标量基准估计 $V_{\phi,u}(\mathbf o)$，作为策略更新的价值基准；本章未通过独立方差对照量化该评价结构的作用。
+
+\subsection{Attention-MAPPO 训练与动作可行性处理}
+\label{sec:ppo-training}
+\label{sec:ch3-motion-repair}
+
+Actor 策略网络基于高层协同特征 $\mathbf f_u$，经由全连接层与 $\tanh$ 激活函数输出连续动作均值向量 $\boldsymbol\mu_\theta(\mathbf o_u) = \tanh(W_\mu \mathbf f_u + \mathbf b_\mu) \in (-1, 1)^2$；同时维护可学习且与状态解耦的对数标准差向量 $\log\boldsymbol\sigma \in [-20, 2]^2$。原始动作变量服从独立二维高斯分布采样：
+\begin{equation}
+    \mathbf z_u \sim \mathcal N\left(\boldsymbol\mu_\theta(\mathbf o_u), \operatorname{diag}(\boldsymbol\sigma^2)\right).
+    \label{eq:ch3-normal-policy}
+\end{equation}
+其对应的原始对数采样概率为：
+\begin{equation}
+    \log\pi_\theta(\mathbf z_u \mid \mathbf o_u) = -\sum_{k=1}^2 \left[\frac{(z_{u,k} - \mu_{u,k})^2}{2\sigma_k^2} + \log\sigma_k + \frac{1}{2}\log(2\pi)\right].
+    \label{eq:log-prob}
+\end{equation}
+
+在实际物理环境中，高斯分布采样的原始未受限动作 $\mathbf z_u \in \mathbb R^2$ 并不能直接作为无人机飞控的位移指令执行。系统通过“坐标截断 $\to$ 径向模长缩放 $\to$ 交替几何投影”三级处理机制，将原始动作确定性地映射至可行位移集合 $\mathcal F(\mathbf q(t))$ 中：
+首先对动作做逐坐标截断 $\mathbf a_u = \operatorname{clip}(\mathbf z_u, -1, 1)$；随后通过径向非线性缩放算子，映射到满足最大平飞速度 $v_{\max}\tau$ 的物理速度圆内：
+\begin{equation}
+    \widetilde{\Delta\mathbf q}_u = v_{\max}\tau \min(\|\mathbf a_u\|, 1) \frac{\mathbf a_u}{\|\mathbf a_u\| + \epsilon_0}.
+    \label{eq:ch3-radial-action}
+\end{equation}
+随后，环境以建议位置 $\mathbf q_u(t) + \widetilde{\Delta\mathbf q}_u$ 为起点，实施多轮交替几何修复：依次执行区域边界框截断 $\mathcal Q=[50, 650]^2$、速度圆投影，并在检测到任意两机间距小于 $d_{\min}=200\,\mathrm{m}$ 时沿中心连线实施对称外推。若交替修复达到 40 轮上限后仍存在潜在间距冲突，则强制冲突无人机回退至原位置保持悬停。修复完成后，记录越界和碰撞标志并计入即时奖励惩罚式~\eqref{eq:ch3-final-reward}，有效反哺策略抑制不可行探索。
+
+在策略更新优化层面，对于各智能体收集的轨迹交互样本序列，计算时间差分（Temporal-Difference, TD）误差以及广义优势估计（Generalized Advantage Estimator, GAE）：
+\begin{equation}
+    \begin{aligned}
+    \delta_{u,t} &= r_{u,t} + \gamma (1 - d_t) V_{\phi,u}(\mathbf o_{t+1}) - V_{\phi,u}(\mathbf o_t),\\
+    \widehat A_{u,t} &= \delta_{u,t} + \gamma \lambda_{\mathrm{GAE}} (1 - d_t) \widehat A_{u,t+1},
+    \end{aligned}
+    \label{eq:gae}
+\end{equation}
+其中 $\lambda_{\mathrm{GAE}} = 0.95$ 为 GAE 折扣衰减参数，$d_t$ 为时隙终止标志掩码。
+
+记重要性采样概率比为 $\rho_{u,t}(\theta) = \exp\left(\log\pi_\theta(\mathbf z_{u,t}\mid\mathbf o_{u,t}) - \log\pi_{\theta_{\mathrm{old}}}(\mathbf z_{u,t}\mid\mathbf o_{u,t})\right)$，Actor 策略网络的裁剪替代优化目标函数为：
+\begin{equation}
+    L^{\mathrm{CLIP}}(\theta) = \widehat{\mathbb E}_{u,t}\left[\min\left(
+    \rho_{u,t}(\theta)\widehat A_{u,t}, \ 
+    \operatorname{clip}(\rho_{u,t}(\theta), 1 - \varepsilon, 1 + \varepsilon)\widehat A_{u,t}
+    \right)\right], \qquad \varepsilon=0.2.
+    \label{eq:ppo-clip}
+\end{equation}
+结合策略熵正则项 $\overline H(\pi_\theta)$，Actor 总体最小化损失为 $-L^{\mathrm{CLIP}}(\theta) - \beta_H \overline H(\pi_\theta)$，其中熵系数取 $\beta_H = 0.005$。Critic 价值网络采用裁剪均方误差损失函数优化更新：
+\begin{equation}
+    \begin{aligned}
+    V_u^{\mathrm{clip}} &= V_u^{\mathrm{old}} + \operatorname{clip}\left(V_{\phi,u}(\mathbf o_t) - V_u^{\mathrm{old}}, -\varepsilon, \varepsilon\right),\\
+    L_V(\phi) &= \frac{1}{2}\widehat{\mathbb E}_{u,t}\left[\max\left(
+    (V_{\phi,u}(\mathbf o_t) - \widehat R_{u,t})^2, \ 
+    (V_u^{\mathrm{clip}} - \widehat R_{u,t})^2
+    \right)\right],
+    \end{aligned}
+    \label{eq:ch3-value-clipping}
+\end{equation}
+其中 $\widehat R_{u,t} = \widehat A_{u,t} + V_{u,t}^{\mathrm{old}}$ 为经验累积折现回报目标。完整的 Attention-MAPPO 算法训练流程如算法~\ref{alg:upper-mappo} 所示。
+
+\begin{algorithm}[!htbp]
+    \caption{基于需求感知注意力的集群协同轨迹规划训练流程}
+    \label{alg:upper-mappo}
+    \KwIn{自然覆盖仿真环境、训练随机种子、最大训练回合数 $E$、采用相同架构与训练规则、分别训练的下层任务卸载策略}
+    \KwOut{Actor 共享策略参数 $\theta$ 与集中式 Critic 参数 $\phi$}
+    初始化 Actor 参数 $\theta$、Critic 参数 $\phi$、Adam 优化器以及经验重放缓冲区 $\mathcal B$\;
+    \For{$e \leftarrow 1$ \KwTo $E$}{
+        重置仿真环境，生成初始用户位置、电量与首时隙服务请求，装配初始观测 $\mathbf o_1$\;
+        \For{$t \leftarrow 1$ \KwTo $1000$}{
+            各机根据局部观测 $\mathbf o_{u,t}$ 前向计算高斯分布参数，采样原始动作 $\mathbf z_{u,t}$ 并记录对数概率 $\log\pi_\theta(\mathbf z_{u,t}\mid\mathbf o_{u,t})$\;
+            Critic 利用联合观测 $\mathbf o_t$ 计算各机价值基准估计 $V_{\phi,u}(\mathbf o_t)$\;
+            固定下层任务卸载策略根据移动前网络拓扑解析已接纳服务分配 $\mathbf b(t)$\;
+            将动作截断值 $\operatorname{clip}(\mathbf z_{u,t}, -1, 1)$ 与卸载分配交付环境底层执行\;
+            环境先执行当前批次计算服务并结算时延能耗，随后执行式~\eqref{eq:ch3-radial-action} 径向缩放与几何交替修复施加物理位移，更新至 $\mathbf q(t+1)$\;
+            环境结算即时奖励 $r_{u,t}$、终止标志 $d_t$，更新用户电量、缓存并生成下一时隙观测 $\mathbf o_{t+1}$\;
+            将交互元组 $\langle\mathbf o_t, \mathbf z_t, r_t, \mathbf o_{t+1}, d_t, V_t\rangle$ 存入样本缓冲区 $\mathcal B$\;
+        }
+        依据式~\eqref{eq:gae} 计算全序列的 GAE 优势值 $\widehat A_{u,t}$ 与回报目标 $\widehat R_{u,t}$，并执行优势归一化\;
+        \For{$k \leftarrow 1$ \KwTo $8$}{
+            从缓冲区 $\mathcal B$ 随机抽取大小为 $256$ 的小批量样本\;
+            以 Adam 优化器分别更新 Actor 损失式~\eqref{eq:ppo-clip} 与 Critic 损失式~\eqref{eq:ch3-value-clipping}\;
+        }
+        清空样本缓冲区 $\mathcal B$\;
+    }
+\end{algorithm}
+
+\section{仿真案例与结果分析}
+\label{sec:upper-evidence}
+
+\subsection{实验环境设置与统计评价方法}
+\label{sec:sim-params}
+\label{sec:ch3-protocol}
+
+为客观验证本文提出的预接纳需求感知协同轨迹规划方法的实际效能，在 Python 仿真平台上构建了高保真多智能体仿真测试环境。主场景的主要仿真参数如表~\ref{tab:ch3-params} 所示，上层 Attention-MAPPO 的核心超参数配置如表~\ref{tab:ch3-ppo} 所示。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{主场景系统与网络仿真参数设置}{Simulation Parameters of Main System Setting}
+    \label{tab:ch3-params}
+    \footnotesize
+    \begin{tabularx}{\textwidth}{XXXX}
+        \toprule
+        参数符号与名称 & 取值 & 参数符号与名称 & 取值 \\
+        \midrule
+        服务空域尺寸 & $700\,\mathrm{m}\times700\,\mathrm{m}$ & 决策时隙步长 $\tau$ & $1\,\mathrm{s}$ \\
+        无人机数量 $N$ / 地面用户数 $M$ & $5$ / $100$ & 单回合运行步数 $T$ & $1000$ \\
+        无人机巡航高度 $H$ & $100\,\mathrm{m}$ & 最大平飞速度 $v_{\max}$ & $15\,\mathrm{m/s}$ \\
+        最小防撞间距 $d_{\min}$ & $200\,\mathrm{m}$ & 用户单时隙最大位移 & $15\,\mathrm{m}$ \\
+        物理覆盖半径 $R_c$ & $100\,\mathrm{m}$ & 协同感知半径 $R_s$ & $460\,\mathrm{m}$ \\
+        无人机算力集合 $F_u$ & $\{40, 45, \dots, 85\}\,\mathrm{GHz}$ & 机载缓存容量集合 & $\{120, 121, \dots, 179\}\,\mathrm{MB}$ \\
+        宏基站中心算力 $F_{\mathrm M}$ & $200\,\mathrm{GHz}$ & 宏基站中心坐标 & $(350, 350, 30)\,\mathrm{m}$ \\
+        满速飞行 / 悬停功耗 & $300\,\mathrm{W}$ / $150\,\mathrm{W}$ & 无线供能功率 / 转换效率 & $50\,\mathrm{W}$ / $0.8$ \\
+        服务 / 内容文件类别数 & $25$ / $50$ & Zipf 流行度偏度 $\beta$ & $0.8$ \\
+        任务输入数据量 $L_m$ & $1\sim 5\,\mathrm{MB}$ & 任务截止时限 $D_m$ & $0.65\sim 2.10\,\mathrm{s}$ \\
+        任务计算密度 $\omega_s$ & $1200\sim 2800\,\text{Cycles/Byte}$ & 任务优先级集合 & $\{1, 2, 3\}$ \\
+        用户电池容量 $B_{\max}$ / 门限 & $500\,\mathrm{J}$ / $50\,\mathrm{J}$ & 用户静态能耗功耗 & $0.01\,\mathrm{W}$ \\
+        接入信道带宽 $B^{\mathrm{edge}}$ & $40\,\mathrm{MHz}$ & 机间协同带宽 $B^{\mathrm{inter}}$ & $20\,\mathrm{MHz}$ \\
+        回传信道带宽 $B^{\mathrm{bh}}$ & $0.75\,\mathrm{MHz}$ & 发射功率 / 噪声功率 & $0.5\,\mathrm{W}$ / $10^{-13}\,\mathrm{W}$ \\
+        热点数量 / 热点服务半径 & $2$ / $100\,\mathrm{m}$ & 热点聚集用户比例 & $85\%$ \\
+        \bottomrule
+    \end{tabularx}
+\end{table}
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{上层 Attention-MAPPO 关键训练超参数配置}{Key Training Hyperparameters of Upper-Layer Attention-MAPPO}
+    \label{tab:ch3-ppo}
+    \footnotesize
+    \begin{tabular}{llll}
+        \toprule
+        超参数名称 & 设定数值 & 超参数名称 & 设定数值 \\
+        \midrule
+        强化学习折扣因子 $\gamma$ & $0.99$ & GAE 方差衰减系数 $\lambda_{\mathrm{GAE}}$ & $0.95$ \\
+        PPO 替代目标裁剪阈值 $\varepsilon$ & $0.2$ & 策略熵正则系数 $\beta_H$ & $0.005$ \\
+        Actor / Critic 初始学习率 & $3\times 10^{-4}$ & 梯度全局范数截断阈值 & $0.5$ \\
+        样本收集 Rollout 步长 & $1000$ 步 & 单次采样更新轮数 Epochs & $8$ \\
+        小批量随机梯度样本大小 & $256$ & 注意力多头数 / 隐藏嵌入维数 & $8$ / $64$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+性能评估采用两层聚合口径：评估单元内部按计数求比值，跨评估单元按等权求均值。评估单元定义为"训练模型检查点 $\times$ 工作负载测试序列"的配对测试实例，记测试集共含 $I$ 个评估单元；共享训练种子或工作负载的单元不作为相互独立的训练重复。在单元 $i \in \{1, \dots, I\}$ 内，对 6 个测试回合的离散任务计数 $G_i, A_i, S_i$ 聚合后，依式~\eqref{eq:current-dsr-decomp} 得到单元级指标 $\alpha_i = A_i / G_i$、$\eta_i = S_i / A_i$ 与 $\mathrm{DSR}_i = \alpha_i \eta_i$。跨单元等权平均端到端成功率为
+\begin{equation}
+    \overline{\mathrm{DSR}} = \frac{1}{I} \sum_{i=1}^I \alpha_i \eta_i = \bar\alpha \bar\eta + \frac{1}{I}\sum_{i=1}^I (\alpha_i - \bar\alpha)(\eta_i - \bar\eta),
+    \label{eq:ch3-mean-decomposition}
+\end{equation}
+其中 $\bar\alpha = \frac{1}{I}\sum_i \alpha_i, \bar\eta = \frac{1}{I}\sum_i \eta_i$ 分别为接纳率与完成率的跨单元算术均值。式~\eqref{eq:ch3-mean-decomposition} 右端第二项为 $\alpha_i$ 与 $\eta_i$ 的经验协方差：当高接纳率单元倾向于伴随较低完成率时，该项为负，使得 $\overline{\mathrm{DSR}} < \bar\alpha\bar\eta$。因此，仅报告 $\bar\alpha$ 与 $\bar\eta$ 的乘积将系统性高估真实平均成功率，本文所有跨单元聚合指标均直接对 $\mathrm{DSR}_i$ 等权平均。
+
+实验评估采用两阶段协议（表~\ref{tab:ch3-protocol}）：探索性阶段以少量种子快速排查候选方案，独立确认阶段以全新种子验证结论的跨种子稳定性。独立确认阶段重新抽取 10 个训练随机种子与 5 个工作负载随机种子（均与探索性阶段无重叠），构成 $10\times5=50$ 个配对评估单元。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{预接纳观测两阶段评估协议对比}{Two-Stage Evaluation Protocol of Coverage Observation Experiments}
+    \label{tab:ch3-protocol}
+    \footnotesize
+    \begin{tabular}{lcc}
+        \toprule
+        实验协议评估要素 & 探索性筛选实验 & 独立确认实验 \\
+        \midrule
+        策略训练独立随机种子 & 5 个 & 10 个（全新抽取，无重叠） \\
+        环境工作负载随机种子 & 5 个 & 5 个（全新抽取，无重叠） \\
+        单检查点测试评估规模 & 5 工作负载 $\times$ 6 episode & 5 工作负载 $\times$ 6 episode \\
+        累计训练与测试规模 & 10 次训练 / 50 评估任务 & 20 次训练 / 100 评估任务 / 600 回合 \\
+        对比方法唯一差异维度 & \multicolumn{2}{c}{仅改变观测填充；上层均为注意力架构，下层同架构、分别训练} \\
+        主统计推断单元 & 5 个训练种子的负载平均差 & 10 个训练种子的负载平均差 \\
+        实验功能定位 & 快速排查与方案筛选 & 论文主要性能结论与统计置信度支撑 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+对于 10 个独立训练种子，记种子 $k$ 在 5 个配对工作负载上的平均 DSR 差值为 $d_k$。以此 10 个差值样本计算均值 $\bar d$ 与样本方差 $s_d^2$，构造双侧配对 $t$ 置信区间：
+\begin{equation}
+    \bar d \ \pm \ t_{0.975, 9} \frac{s_d}{\sqrt{10}}, \qquad 
+    s_d^2 = \frac{1}{9}\sum_{k=1}^{10} (d_k - \bar d)^2.
+    \label{eq:ch3-seed-paired-ci}
+\end{equation}
+
+\subsection{传统局部观测瓶颈诊断}
+\label{sec:bottleneck}
+
+在自然覆盖基准下对传统局部观测方法（强基线）进行瓶颈诊断，共 25 个评估单元。基线方法的端到端平均 DSR 为 $0.2459$。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.8\textwidth]{../docs/figures/图3-6_主场景服务请求结果构成}
+    \bicaption{服务请求执行结果构成}{Composition of Service Request Execution Outcomes}
+    \label{fig:ch3-failure}
+    \vspace{0.5ex}\par{\footnotesize 注：基于强基线瓶颈诊断批次中 25 个评估单元的统计汇总结果。}
+\end{figure}
+
+如图~\ref{fig:ch3-failure} 所示，依据式~\eqref{eq:ch3-failure-counts} 按接纳与完成状态对未成功服务请求进行计数分类：
+在全网生成的全部计算请求中，成功进入服务流程但因通信或算力超时失败的请求数占总请求量的 $27.27\%$；而处于所有无人机物理覆盖圆之外、因未被接纳而直接失败的请求数占比高达 $48.14\%$。更为关键的是，在全网未成功处理的任务总数（即失败请求总量）中，\textbf{由于空间覆盖不足导致的未接纳请求占比高达 $63.84\%$}，成为系统时限服务失败的绝对主导因素。
+
+该诊断说明，在该批次主场景中，未接纳请求是主要的描述性失败来源。在给定接纳集合下，仅优化任务分配不能恢复未接纳请求；但未覆盖占失败的比例并不等于轨迹改进可恢复的收益，也不能据此推出机载算力普遍闲置。将感知范围内尚未接纳的需求纳入轨迹输入，是本章检验空间部署改善的一条途径。
+
+\subsection{独立确认实验结果}
+\label{sec:upper-results}
+\label{sec:ch3-main-results}
+
+基于表~\ref{tab:ch3-protocol} 的独立确认协议，对扩展观测与仅已覆盖观测进行配对比较。两组上层均采用 Attention-MAPPO，下层采用相同的无注意力架构与训练规则，但在各组中分别训练，并非共享同一冻结下层。唯一的干预配置为上层观测槽位填充规则；因此该比较检验需求信息扩展在这一训练系统中的效果，不能分离注意力结构的独立贡献。主场景的独立确认实验统计结果详见表~\ref{tab:upper-confirmation}。
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{独立确认实验核心性能指标对比}{Performance Comparison of Core Metrics in Independent Confirmation Experiment}
+    \label{tab:upper-confirmation}
+    \footnotesize
+    \setlength{\tabcolsep}{6pt}
+    \begin{tabularx}{\textwidth}{p{0.23\textwidth}p{0.19\textwidth}p{0.19\textwidth}X}
+        \toprule
+        核心评估指标 & 传统局部观测（强基线） & 预接纳扩展观测（本文方法） & 配对性能差值 [95\% 置信区间] \\
+        \midrule
+        端到端成功率 $\mathrm{DSR} = S/G$ & $0.2444$ & $0.2793$ & $+0.0349$ [$+0.0244$, $+0.0454$]$^{\mathrm{a}}$ \\
+        自然覆盖接纳率 $\alpha = A/G$ & $0.4996$ & $0.6189$ & $+0.1193$ \\
+        接纳后按时完成率 $\eta = S/A$ & $0.4919$ & $0.4537$ & $-0.0382$ [$-0.0752$, $-0.0012$]$^{\mathrm{a}}$ \\
+        每回合机队总能耗差（单元内均值） & \multicolumn{2}{c}{本文方法相对强基线净节能} & $-3.50\times 10^6\,\mathrm{J}$ \\
+        Jain 服务公平性指数差异 & \multicolumn{2}{c}{本文方法相对强基线净改善} & $+0.0786$ \\
+        \bottomrule
+    \end{tabularx}
+    \begin{minipage}{0.92\textwidth}
+        \vspace{1ex}
+        \footnotesize $^{\mathrm{a}}$ 表示以 10 个独立训练种子均值为统计样本计算的双侧配对 $t$ 检验 $95\%$ 置信区间。表中数据均遵循先在每个评估单元内累计计数求比例、随后跨 50 个配对单元等权平均的严格统计口径。
+    \end{minipage}
+\end{table}
+
+实验数据表明，相较于传统局部观测基线，本文提出的需求感知扩展观测方法实现了端到端服务性能的显著跃升：
+系统的全局平均 DSR 从 $0.2444$ 显著提升至 $0.2793$，取得了 $+3.49$ 个百分点的绝对增益（相对提升幅度达 $14.28\%$）；其以独立训练种子为样本的差值 $95\%$ 置信区间为 $[+2.44, +4.54]$ 个百分点，下界显著远离零点。在全部 10 个独立训练种子中，DSR 差值全部保持严格为正；在全部 50 个细粒度配对评估任务单元中，多达 49 个单元呈现正向性能增益。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.9\textwidth]{../docs/figures/图3-7_确认实验训练曲线}
+    \bicaption{Attention-MAPPO 训练曲线}{Training Curves of Attention-MAPPO}
+    \label{fig:ch3-training}
+    \vspace{0.5ex}\par{\footnotesize 注：曲线与阴影区域分别表示 10 个独立训练种子的均值与标准差；(a) 训练 DSR 曲线；(b) 平均训练奖励曲线。}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.75\textwidth]{../docs/figures/图3-8_确认实验逐种子配对差值}
+    \bicaption{独立确认实验 DSR 配对差值}{Paired DSR Differences across Seeds in Independent Confirmation Experiment}
+    \label{fig:ch3-seed-diff}
+    \vspace{0.5ex}\par{\footnotesize 注：柱高表示各训练种子在 5 个配对工作负载上的平均 DSR 增益，红色虚线为跨种子均值。}
+\end{figure}
+
+图~\ref{fig:ch3-training} 展示了两种方法各 10 个独立训练种子的完整 200 回合训练过程，每回合包含 1000 个时隙。曲线描述两种观测条件下 DSR 与训练奖励随回合的变化，阴影反映跨种子离散程度；本章未单独检验收敛速度或方差差异，不由曲线外观推断显著更快收敛。图~\ref{fig:ch3-seed-diff} 则进一步可视化了 10 个独立训练检查点配对差值的微观分布：10 个种子的配对差值全部为正，分布于约 $+1.5$ 至 $+5.7$ 个百分点之间（均值 $+3.49$ 个百分点），支持需求观测扩展在所测主场景和训练种子中的方向一致性；这些结果不构成跨场景普适性的证明。
+
+\subsection{接纳扩展与接纳后质量机制分析}
+\label{sec:ch3-mechanism}
+
+为观察预接纳需求观测扩展对应的空间部署行为，图~\ref{fig:ch3-trajectory-coverage} 对比了一个固定配对测试回合的实际执行轨迹。补图前固定选择独立确认协议中排列首位的训练种子 $7013$、工作负载种子 $2203$ 的第一个测试回合，不依据性能差值或轨迹外观改选；该案例选择规则不属于原确认实验的预注册检验。两方法使用相同初始部署与外生工作负载，分别加载原冻结模型回放 $1000$ 个时隙，逐时隙核对封存日志中的全部 $45$ 项环境指标，合计 $90000$ 项数值完全一致，外生序列摘要亦一致。图中轨迹由环境完成速度、边界及防碰撞约束处理后的实际位置构成，包含初始位置与全部 $1000$ 段位移。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../docs/figures/ch3_trajectory_comparison}
+    \bicaption{固定配对回合的无人机执行轨迹与需求覆盖对比}{Executed UAV Trajectories and Demand Coverage in a Fixed Paired Episode}
+    \label{fig:ch3-trajectory-coverage}
+    \vspace{0.5ex}\par{\footnotesize 注：上排为两方法的完整执行轨迹与起终点，下排为第 $500$ 时隙移动前的 $100\,\mathrm{m}$ 覆盖圆与服务请求接纳情况。}
+\end{figure}
+
+\begin{table}[!htbp]
+    \centering
+    \bicaption{固定回合与所属评估单元的性能对照}{Performance of the Fixed Episode and Its Evaluation Unit}
+    \label{tab:ch3-trajectory}
+    \footnotesize
+    \setlength{\tabcolsep}{6pt}
+    \begin{tabular}{lrrr}
+        \toprule
+        指标 & 传统局部观测 & 预接纳扩展观测 & 扩展观测减基线 \\
+        \midrule
+        \multicolumn{4}{l}{\textit{固定回合（该单元 $6$ 个测试回合中的第 $1$ 个）}} \\
+        \quad 全局接纳率 $\alpha = A/G$ / $\%$ & $49.50$ & $63.58$ & $+14.07$ pp \\
+        \quad 接纳后按时完成率 $\eta = S/A$ / $\%$ & $54.69$ & $40.96$ & $-13.73$ pp \\
+        \quad 端到端成功率 $\mathrm{DSR} = S/G$ / $\%$ & $27.07$ & $26.04$ & $-1.03$ pp \\
+        \quad 热点服务请求接纳率 / $\%$ & $51.94$ & $67.83$ & $+15.90$ pp \\
+        \quad 平均单机实际航程 / $\mathrm{km}$ & $8.235$ & $9.482$ & $+1.248$ \\
+        \midrule
+        \multicolumn{4}{l}{\textit{同一评估单元 $6$ 回合均值（原独立确认实验封存值）}} \\
+        \quad 全局接纳率 $\alpha$ / $\%$ & $52.31$ & $57.32$ & $+5.00$ pp \\
+        \quad 接纳后按时完成率 $\eta$ / $\%$ & $54.29$ & $53.17$ & $-1.13$ pp \\
+        \quad 端到端成功率 $\mathrm{DSR}$ / $\%$ & $28.40$ & $30.47$ & $+2.07$ pp \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+如表~\ref{tab:ch3-trajectory} 所示，该回合内，两方法均产生 $33778$ 个服务请求，其中位于预设热点区域内的服务请求为 $29417$ 个。扩展观测的热点接纳数由 $15279$ 增至 $19955$，全局接纳数由 $16721$ 增至 $21475$，对应热点与全局接纳率分别增加 $15.90$ 和 $14.07$ 个百分点。轨迹与覆盖快照提供了两种策略空间部署差异的直接案例，完整回合计数则表明该案例的需求覆盖改善。该回合的端到端成功率按 $\mathrm{DSR} = \alpha\eta$ 分解为：接纳率由 $49.50\%$ 升至 $63.58\%$（$+14.07$ 个百分点），而接纳后按时完成率由 $54.69\%$ 降至 $40.96\%$（$-13.73$ 个百分点），抵消项略大于增益项，使单回合 DSR 由 $27.07\%$ 微降至 $26.04\%$，平均单机航程亦由 $8.235\,\mathrm{km}$ 增至 $9.482\,\mathrm{km}$。需要强调的是，该回合仅为其所属评估单元（训练种子 $7013$、工作负载 $2203$）$6$ 个测试回合中的第 $1$ 个，单回合完成率 $\eta$ 的抖动幅度远大于总体：同一单元在 $6$ 回合均值上，DSR 为 $28.40\%\to30.47\%$（$+2.07$ 个百分点）、接纳率为 $52.31\%\to57.32\%$，方向与全量独立确认结论一致。因此该固定案例仅补充行为证据，不能替代全量 $50$ 个配对评估单元、以 $10$ 个训练种子为独立统计单位的总体结果。
+
+\clearpage
+为区分接纳率与条件完成率的变动如何组成 DSR 的 $+3.49$ 个百分点净增益，在配对评估单元内进行精确对称代数分解。
+设候选方法与基线方法在配对单元 $i$ 内的指标差值分别记为 $\Delta\alpha_i = \alpha_{c,i} - \alpha_{b,i}$ 与 $\Delta\eta_i = \eta_{c,i} - \eta_{b,i}$。通过在两方法的算术平均状态点展开，单元 DSR 差值可以精确恒等分解为：
+\begin{equation}
+    \Delta\mathrm{DSR}_i = 
+    \underbrace{\Delta\alpha_i \frac{\eta_{c,i} + \eta_{b,i}}{2}}_{\text{接纳机会变动贡献项}} + 
+    \underbrace{\Delta\eta_i \frac{\alpha_{c,i} + \alpha_{b,i}}{2}}_{\text{条件完成质量变动贡献项}}.
+    \label{eq:ch3-paired-factor-decomp}
+\end{equation}
+展开式~\eqref{eq:ch3-paired-factor-decomp} 右端，交叉乘积项严格抵消，两项代数和无残差恢复单元性能差值 $\alpha_{c,i}\eta_{c,i} - \alpha_{b,i}\eta_{b,i}$。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=0.92\textwidth]{../docs/figures/图3-9_接纳率与接纳后质量配对比较}
+    \bicaption{接纳率与接纳后完成率对比}{Comparison of Admission Rate and Conditional Completion Rate}
+    \label{fig:ch3-admission-quality}
+\end{figure}
+
+依据式~\eqref{eq:ch3-paired-factor-decomp} 在全量 50 个配对评估单元中展开计算并平均，其结果如下；该分解是计数指标之间的恒等关系，不识别因果中介效应：
+\begin{itemize}
+    \item \textbf{接纳率变动项贡献}：平均提供 $+5.62$ 个百分点的正向增益。如表~\ref{tab:upper-confirmation} 所示，机群的物理服务接纳率 $\alpha$ 从 $49.96\%$ 增至 $61.89\%$，净增长 $11.93$ 个百分点。该总体结果与图~\ref{fig:ch3-trajectory-coverage} 中固定案例的热点接纳改善相互补充，支持预接纳需求信息有助于改善机群的需求覆盖与可接纳请求规模；
+    \item \textbf{条件完成率变动项抵消}：平均产生 $-2.13$ 个百分点的负向抵消。在成功接入的请求集合内部，按时完成率 $\eta$ 从 $49.19\%$ 降至 $45.37\%$（净变化 $-3.82$ 个百分点）。
+\end{itemize}
+
+图~\ref{fig:ch3-admission-quality} 展示了接纳率增加与条件完成率下降并存的结果。根据式~\eqref{eq:edge-rate} 与式~\eqref{eq:ch3-final-load}，接入用户或执行节点任务数增加可能降低单用户带宽与单任务算力份额，因此通信和计算资源竞争是可能的解释。但两方法接纳的请求集合并不相同，新增请求的任务大小、截止期、链路及缓存命中条件也可能影响 $\eta$。现有汇总比例与代数分解尚不能区分这些来源，更不能将整个负向变动项归因于拥塞；需在共同接纳请求与各自额外接纳请求上开展请求级诊断。本模型描述当前批次最终任务数下的并发算力共享，不包含持续任务队列。
+
+接纳率变动项（$+5.62$ 个百分点）超过条件完成率变动项（$-2.13$ 个百分点）的抵消，形成 $+3.49$ 个百分点的端到端净增益。该结果说明本章方法主要改善了服务接纳机会，未证明接纳后资源竞争已被解决。第四章分别检验固定快照中的跨机任务分配，第五章检验计及决策开销的分层闭环服务；两章采用各自的对照与协议，其结果不构成本章负向变动项的直接因果修复证据。
+
+\subsection{机队能耗、服务公平性与适用边界}
+\label{sec:ch3-non-claims}
+
+在实现端到端服务率提升的同时，系统在机队能耗控制与全网服务公平性方面亦展现出协同改善效益：
+\begin{enumerate}
+    \item \textbf{机队运行能耗协同降低}：如表~\ref{tab:upper-confirmation} 所示，以各评估单元内 6 个测试回合的每回合均值计，本文方法相比基线平均节省机队总能耗 $3.50\times 10^6\,\mathrm{J}$，相对节能比例约为 $6.37\%$。机队总能耗包含飞行、悬停、通信、计算及回源等分项，不能仅凭总量下降将其归因于航程缩短。图~\ref{fig:ch3-trajectory-coverage} 的固定案例中航程反而增加，因此现有证据支持总体总能耗改善，但尚不足以断言机群普遍减少巡航或加减速机动；
+    \item \textbf{全网服务公平性改善}：全网 Jain 公平性指数由基线水平净提升 $+0.0786$。该结果是主场景的描述性次要指标。扩展观测使感知范围内部分未接纳用户进入输入，但当前未按用户区域或电量分组验证公平性改善的机制，不能据此推断对边缘用户或低电量用户的特定因果作用。
+\end{enumerate}
+
+在实际工程应用中，本文提出的需求感知协同轨迹规划方法具备明确的系统适用边界与前置物理假设：
+首先，该方法要求空域中存在可靠的空空协同通信机制，使无人机能够以一定的广播周期共享感知范围内的未接纳终端位置与请求元数据。主实验将这些信息按即时、完整可得处理，尚未量化需求收集、排序、广播的时延与能耗。固定 325 维输入与相同网络前向结构，不意味着信息获取和观测构建的总成本不变。
+其次，当前独立确认限于 100 个用户、两个热点、$85\%$ 热点聚集比例及 $460\,\mathrm{m}$ 理想需求观测的仿真主场景。用户规模、分布、算力、需求可见范围以及信息延迟或缺失改变后的效果仍需单独检验；均匀或稀疏分布下的收益方向不能由本章结果预先推断。旧方法的敏感性结果与第五章其他方法的迁移结果不替代本章方法的边界测试。
+
+\section{本章小结}
+\label{sec:ch3-summary}
+
+本章围绕时限边缘计算中无人机集群协同轨迹规划的自然覆盖接纳瓶颈，完成了从物理建模、问题形式化到方法设计与严密实验验证的系统性研究。
+
+在建模层面，本章严密界定了由物理覆盖半径决定的自然覆盖接纳模型，明确了未覆盖请求在当前时隙无法被物理接入的根本限制，并确立了单时隙内移动前拓扑执行计算任务、轨迹动作驱动下一时隙覆盖演化的因果时序逻辑。通过细粒度瓶颈诊断，在该诊断批次中观察到：在传统局部观测策略下，覆盖盲区所引发的未接纳请求占全网失败总量的 $63.84\%$，为后续将决策干预聚焦于上层轨迹感知提供了量化依据。
+
+在方法层面，针对局部观测导致的状态混叠与需求盲区问题，本章提出预接纳需求观测扩展机制：在保持 325 维定长输入与相同网络前向结构的条件下，通过确定性槽位填充算子将协同感知范围内的未接纳需求前瞻性编码至决策输入，结合多头交叉注意力网络与交替几何投影动作修复算法，实现了需求感知的协同机动决策。该设计缓解由未覆盖需求不可见引起的观测混叠，尚未建立同信息预算下注意力结构的独立优势，也未量化额外信息获取成本。
+
+在验证层面，本章遵循严密的独立确认实验协议，测试结果证实本章方法将系统端到端 DSR 从 $0.2444$ 显著提升至 $0.2793$，机队运行能耗同步降低 $6.37\%$，服务公平性指数净提升 $0.0786$。逐单元对称代数分解显示，接纳率变动项为 $+5.62$ 个百分点，条件完成率变动项为 $-2.13$ 个百分点。该分解支持收益主要来自接纳机会扩展，但不识别条件完成率下降的原因。结论限定于既定主场景及理想信息假设；同信息架构比较、请求级负载诊断与适用边界仍需补证。第四章与第五章分别在各自协议下研究固定状态分配及分层闭环服务。
+
+

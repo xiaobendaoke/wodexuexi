@@ -1,0 +1,159 @@
+{
+  "plan": {
+    "protocol": "ch3_information_architecture_confirmation_20261103_v2",
+    "date": "2026-11-03",
+    "study_phase": "independent_confirmation",
+    "execution_purpose": "pilot",
+    "execution_note": "Content-addressed source release; pilot is the frozen runner execution enum, not the inferential status.",
+    "training_seeds": [
+      21103001,
+      21103002,
+      21103003,
+      21103004,
+      21103005,
+      21103006,
+      21103007,
+      21103008,
+      21103009,
+      21103010
+    ],
+    "training_workload_seed": 21103101,
+    "workload_seeds": [
+      21103201,
+      21103202,
+      21103203,
+      21103204,
+      21103205
+    ],
+    "boundary_workload_seeds": [
+      21103301,
+      21103302,
+      21103303
+    ],
+    "smoke_training_seeds": [
+      21103401,
+      21103402,
+      21103403,
+      21103404,
+      21103405
+    ],
+    "smoke_workload_seed": 21103501,
+    "train_episodes": 200,
+    "eval_episodes": 6,
+    "steps": 1000,
+    "rollout": 1000,
+    "ppo_epochs": 8,
+    "batch_size": 256,
+    "checkpoint_every": 20,
+    "threads": 1,
+    "workers": 20,
+    "bootstrap_draws": 20000,
+    "bootstrap_seed": 21103601,
+    "primary": [
+      "B",
+      "D"
+    ],
+    "secondary": {
+      "covered_architecture": [
+        "A",
+        "C"
+      ],
+      "attention_information": [
+        "B",
+        "A"
+      ],
+      "mlp_information": [
+        "D",
+        "C"
+      ],
+      "interaction": [
+        [
+          "B",
+          "D"
+        ],
+        [
+          "A",
+          "C"
+        ]
+      ]
+    },
+    "cells": {
+      "A": "lower_no_attention",
+      "B": "lower_mlp_upper_uncovered_obs",
+      "C": "no_attention",
+      "D": "vanilla_lower_mlp_upper_uncovered_obs"
+    },
+    "capacity_method": "vanilla_lower_mlp_upper_uncovered_capmatched",
+    "capacity_stage": "Only if B-D positive and both two-sided 95% t and crossed bootstrap intervals strictly positive; fixed-sequence alpha=0.05, then B-capmatched on same frozen cohort, no width tuning after outcomes.",
+    "statistical_unit": "Training seed after equal-weight averaging five workload-level count ratios. Episodes/requests are not independent training repeats.",
+    "historical_tolerance": 1e-06,
+    "source_basis": "batch-offload-20260928/source; copy only, never edit archived source",
+    "record_requests": true,
+    "final_checkpoint": "episode_00199",
+    "boundary": {
+      "training_seed_count": 3,
+      "eval_episodes": 2,
+      "classification": "exploratory frozen-policy sensitivity; not independent confirmation",
+      "settings": [
+        {
+          "name": "main"
+        },
+        {
+          "name": "ue60",
+          "ue_count": 60
+        },
+        {
+          "name": "ue140",
+          "ue_count": 140
+        },
+        {
+          "name": "cpu06",
+          "compute_scale": 0.6
+        },
+        {
+          "name": "cpu14",
+          "compute_scale": 1.4
+        },
+        {
+          "name": "uniform",
+          "uniform": true
+        },
+        {
+          "name": "radius100",
+          "demand_radius": 100.0
+        },
+        {
+          "name": "radius230",
+          "demand_radius": 230.0
+        },
+        {
+          "name": "delay1",
+          "delay": 1
+        },
+        {
+          "name": "delay5",
+          "delay": 5
+        },
+        {
+          "name": "drop20",
+          "drop": 0.2
+        },
+        {
+          "name": "drop50",
+          "drop": 0.5
+        }
+      ]
+    },
+    "inference_limits": [
+      "Upper Actor and Critic change together. Lower architecture/training identical, trained separately per cell.",
+      "Common-admission diagnostics are descriptive conditional comparisons, not causal mediation.",
+      "Boundary telemetry has send-time membership, timestamped stale absolute UE position and metadata; current UAV position is allowed. No hidden current-state refill.",
+      "UE slots fixed at 30 and lower request slots fixed at 100. An overflow invalidates that scenario, never silently drops admitted tasks.",
+      "Physical admission stays 100m; neighbor sensing and normalization stay 460m.",
+      "No claim of negligible signaling energy, real deployment, or attention branch-specific causality."
+    ],
+    "technical_revision": "Before any main confirmation evaluation, attempt v1 uniformly stopped to distinguish transmitted telemetry from actual received slot candidates under delay. All four cells restart with unchanged seeds, sample size, hypotheses and thresholds; no v1 scientific results used. Files preserved."
+  },
+  "source_hash": "c27fe7faffd30b2ce1995202557853ce9151d321bbadfa3a319960a6d64cb90a",
+  "protocol_sha256": "51d9c3f2198c3cf56ada82919ec7d10fe0ebadc488110b5f41d8099d00bf5c20"
+}
