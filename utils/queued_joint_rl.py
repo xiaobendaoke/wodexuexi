@@ -798,7 +798,12 @@ def collect_rl_episode(
 
 def _run_top6_mpc(obs, bank, adapter, temporal, proposal_prob, f_seed, act_seed):
     """Evaluate Top-6 candidates selected by `proposal_prob` under identical 3-step rollout rules."""
-    flat_prob = proposal_prob.ravel()
+    p_clip = np.clip(proposal_prob, 1e-12, 1.0)
+    ent = float(-np.sum(p_clip * np.log(p_clip)))
+    power = min(1.0, max(0.25, ent / 1.85))
+    cal_prob = p_clip ** power
+    cal_prob = cal_prob / np.sum(cal_prob)
+    flat_prob = cal_prob.ravel()
     top_k = min(6, flat_prob.size)
     # Deterministic tie-breaking by index before taking top_k
     order = np.lexsort((np.arange(flat_prob.size), flat_prob))
@@ -830,14 +835,14 @@ def _run_top6_mpc(obs, bank, adapter, temporal, proposal_prob, f_seed, act_seed)
         val = (
             suc + (0.0 if congested else 0.25 * r_val)
             - (0.45 if congested else 0.15) * uncompleted
-            + 0.20 * math.log(max(float(proposal_prob[pi, mi]), 1e-12))
+            + 0.65 * math.log(max(float(cal_prob[pi, mi]), 1e-12))
         )
         val = round(val * 100.0) / 100.0
         if val > best_val + 1e-9:
             best_val = val
-            best_pairs = [(int(pi), int(mi), float(proposal_prob[pi, mi]))]
+            best_pairs = [(int(pi), int(mi), float(cal_prob[pi, mi]))]
         elif abs(val - best_val) <= 1e-9:
-            best_pairs.append((int(pi), int(mi), float(proposal_prob[pi, mi])))
+            best_pairs.append((int(pi), int(mi), float(cal_prob[pi, mi])))
     weights = np.array([w for _, _, w in best_pairs], dtype=np.float64)
     weights = weights / weights.sum()
     rng = np.random.default_rng(act_seed)
