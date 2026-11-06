@@ -1,0 +1,58 @@
+train_1 32 / 288
+train_1 64 / 288
+train_1 96 / 288
+train_1 128 / 288
+train_1 160 / 288
+train_1 192 / 288
+train_1 224 / 288
+train_1 256 / 288
+train_1 288 / 288
+train_2 32 / 288
+train_2 64 / 288
+train_2 96 / 288
+train_2 128 / 288
+train_2 160 / 288
+train_2 192 / 288
+train_2 224 / 288
+train_2 256 / 288
+train_2 288 / 288
+evaluation 32 / 288
+evaluation 64 / 288
+evaluation 96 / 288
+evaluation 128 / 288
+evaluation 160 / 288
+evaluation 192 / 288
+evaluation 224 / 288
+evaluation 256 / 288
+evaluation 288 / 288
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/concurrent/futures/process.py", line 264, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_motion_trust_20261102/scripts/analysis/queued_motion_trust_experiment.py", line 94, in collect
+    t=int(e.t);e.add(tape.slot(t));e.admit();obs=e.observe();_,plan,move=m.act(obs,adapter,base.seed(REV,'rank_collect',b,w,t))
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_motion_trust_20261102/environment/queued_service.py", line 144, in add
+    raise ValueError('invalid or duplicate new task')
+ValueError: invalid or duplicate new task
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_motion_trust_20261102/scripts/analysis/queued_motion_trust_experiment.py", line 167, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_motion_trust_20261102/scripts/analysis/queued_motion_trust_experiment.py", line 151, in main
+    base.parallel(task,'rank_collection',collect,[(str(task),b,w) for b in range(3) for w in RANK],cpus)
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_motion_trust_20261102/scripts/analysis/queued_service_motion_ranking.py", line 227, in parallel
+    results.append(future.result())
+                   ^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+ValueError: invalid or duplicate new task

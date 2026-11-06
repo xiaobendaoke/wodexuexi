@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/audit_closed_loop_20261103/scripts/analysis/review_queued_closed_loop.py", line 91, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/audit_closed_loop_20261103/scripts/analysis/review_queued_closed_loop.py", line 89, in main
+    p=argparse.ArgumentParser();p.add_argument('--task-root',type=Path,required=True);p.add_argument('--phase',choices=('pilot','formal'),default='pilot');a=p.parse_args();review(a.task_root,a.phase)
+                                                                                                                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/audit_closed_loop_20261103/scripts/analysis/review_queued_closed_loop.py", line 21, in review
+    assert e.t.sha(root/name)==protocol['source'][name],name
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/audit_closed_loop_20261103/scripts/analysis/queued_joint_mpo_experiment.py", line 43, in sha
+    def sha(path): return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+                                         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/pathlib.py", line 1019, in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/utils/queued_closed_loop.py'

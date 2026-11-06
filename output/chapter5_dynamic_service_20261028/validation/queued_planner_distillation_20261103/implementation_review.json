@@ -1,0 +1,40 @@
+{
+  "status": "IMPLEMENTED_LOCAL_CHECKS_PASS_SERVER_UNVERIFIED",
+  "date": "2026-11-03",
+  "tests": {
+    "command": "python -m unittest tests.test_queued_planner_distillation tests.test_queued_closed_loop tests.test_queued_joint_mpo",
+    "passed": 34,
+    "new_tests": 17,
+    "kind": "Pure numerical and mocked orchestration; no Torch or physical rollout"
+  },
+  "sources": {
+    "utils/queued_planner_distillation.py": "b71c179761edcd6f3949589c97d5933326c6c1603c255ac5e8e39730eb630585",
+    "marl_models/queued_planner_distillation.py": "f34956bbdcf4f2471bd5b23d6a14b276aab2040bcb68e41e4307485416fe1a12",
+    "scripts/analysis/queued_planner_distillation.py": "dcba49d594ffbb72491dfb959670de03b2ea25fba75f8c7ff294f5b60c17a872",
+    "tests/test_queued_planner_distillation.py": "80997e15f80b0b5f1cbf631667e7f4ab56a9292361e1d10dd3c7ec6e3e890c48"
+  },
+  "frozen_no_go_sha256": "62a233d911280ebd84afe32a3cd5b11e712f977b60f3e92dfed77da19fb5c2a5",
+  "frozen_no_go_preserved": true,
+  "old_scientific_sources_match_freeze": [
+    "utils/queued_closed_loop.py",
+    "scripts/analysis/queued_closed_loop_experiment.py",
+    "marl_models/queued_joint_mpo.py"
+  ],
+  "formal_test_access": false,
+  "physical_episodes_run": 0,
+  "server_training_started": false,
+  "layout": {
+    "exit_code": 1,
+    "existing_issues": [
+      "attention mappo项目.md: unexpected root files",
+      "wodexuexi_AI_GUIDE.md: unexpected root files"
+    ],
+    "new_root_entries": 0
+  },
+  "review": "Explicit self-review, not independent agent review",
+  "limitations": [
+    "No server Torch/proposer or physical integration test executed",
+    "No DSR improvement established",
+    "New teacher, representation and aggregation jointly change the method; no isolated causal attribution"
+  ]
+}

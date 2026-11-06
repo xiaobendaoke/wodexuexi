@@ -1,0 +1,960 @@
+{
+  "stage": "pilot",
+  "episodes": 36,
+  "summary": {
+    "old_hard": {
+      "all": {
+        "generated": 63354,
+        "admitted": 30934,
+        "success": 27419,
+        "dsr": 0.43279035262177606,
+        "admission": 0.4882722480032831,
+        "conditional": 0.8863709833839788
+      },
+      "pre": {
+        "generated": 9315,
+        "admitted": 4219,
+        "success": 4170,
+        "dsr": 0.4476650563607085,
+        "admission": 0.4529253891572732,
+        "conditional": 0.9883858734297227
+      },
+      "peak": {
+        "generated": 36420,
+        "admitted": 17681,
+        "success": 14280,
+        "dsr": 0.39209225700164746,
+        "admission": 0.4854750137287205,
+        "conditional": 0.8076466263220407
+      },
+      "post": {
+        "generated": 17619,
+        "admitted": 9034,
+        "success": 8969,
+        "dsr": 0.5090527271695329,
+        "admission": 0.5127419263295306,
+        "conditional": 0.992804959043613
+      },
+      "nonpeak": {
+        "generated": 26934,
+        "admitted": 13253,
+        "success": 13139,
+        "dsr": 0.4878220836117918,
+        "admission": 0.4920546521125715,
+        "conditional": 0.99139817399834
+      },
+      "episodes": 12,
+      "added_decision_fraction": 0.0,
+      "selected_new_fraction": 0.0,
+      "decision_mean": 0.17111533056643388,
+      "decision_p95": 0.49801673134788865,
+      "over_second": 0.0,
+      "flight_m_per_episode": 4282.592121928716,
+      "forecast_calls": 0
+    },
+    "old_plan": {
+      "all": {
+        "generated": 63354,
+        "admitted": 29768,
+        "success": 28521,
+        "dsr": 0.4501846765792215,
+        "admission": 0.46986772737317295,
+        "conditional": 0.95810937919914
+      },
+      "pre": {
+        "generated": 9315,
+        "admitted": 4219,
+        "success": 4179,
+        "dsr": 0.4486312399355878,
+        "admission": 0.4529253891572732,
+        "conditional": 0.9905190803507941
+      },
+      "peak": {
+        "generated": 36420,
+        "admitted": 16499,
+        "success": 15322,
+        "dsr": 0.4207029104887425,
+        "admission": 0.4530203185063152,
+        "conditional": 0.9286623431723134
+      },
+      "post": {
+        "generated": 17619,
+        "admitted": 9050,
+        "success": 9020,
+        "dsr": 0.5119473295873772,
+        "admission": 0.5136500368919916,
+        "conditional": 0.9966850828729282
+      },
+      "nonpeak": {
+        "generated": 26934,
+        "admitted": 13269,
+        "success": 13199,
+        "dsr": 0.4900497512437811,
+        "admission": 0.4926486968144353,
+        "conditional": 0.9947245459341322
+      },
+      "episodes": 12,
+      "added_decision_fraction": 0.0,
+      "selected_new_fraction": 0.0,
+      "decision_mean": 1.3324818385268558,
+      "decision_p95": 5.06000577835366,
+      "over_second": 0.2537128712871287,
+      "flight_m_per_episode": 3805.2410596160134,
+      "forecast_calls": 102669
+    },
+    "guarded_plan": {
+      "all": {
+        "generated": 63354,
+        "admitted": 31539,
+        "success": 29801,
+        "dsr": 0.4703886100325157,
+        "admission": 0.49782176342456674,
+        "conditional": 0.944893623767399
+      },
+      "pre": {
+        "generated": 9315,
+        "admitted": 4677,
+        "success": 4637,
+        "dsr": 0.4977992485238862,
+        "admission": 0.5020933977455717,
+        "conditional": 0.9914475090870216
+      },
+      "peak": {
+        "generated": 36420,
+        "admitted": 16901,
+        "success": 15274,
+        "dsr": 0.4193849533223504,
+        "admission": 0.46405820977484896,
+        "conditional": 0.9037335068930833
+      },
+      "post": {
+        "generated": 17619,
+        "admitted": 9961,
+        "success": 9890,
+        "dsr": 0.561325841421193,
+        "admission": 0.5653555820421137,
+        "conditional": 0.9928722015861862
+      },
+      "nonpeak": {
+        "generated": 26934,
+        "admitted": 14638,
+        "success": 14527,
+        "dsr": 0.5393554614984778,
+        "admission": 0.5434766466176579,
+        "conditional": 0.9924169968574942
+      },
+      "episodes": 12,
+      "added_decision_fraction": 0.7198844884488449,
+      "selected_new_fraction": 0.3849009900990099,
+      "decision_mean": 1.507636734360534,
+      "decision_p95": 5.4814809175208214,
+      "over_second": 0.2590759075907591,
+      "flight_m_per_episode": 4020.5602106136344,
+      "forecast_calls": 123686
+    }
+  },
+  "comparisons": {
+    "guarded_plan--old_plan": {
+      "all": {
+        "dsr": {
+          "mean": 0.020203933453294187,
+          "by_parent": [
+            0.01984089402405531,
+            0.023250307794298708,
+            0.017520598541528543
+          ],
+          "ci95": [
+            0.016868052199130013,
+            0.023643194237456512
+          ],
+          "simultaneous97_5": [
+            0.016111536498213397,
+            0.024452177184237756
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.027954036051393738,
+          "by_parent": [
+            0.02353442560848562,
+            0.03740884553461499,
+            0.022918837011080606
+          ],
+          "ci95": [
+            0.014533786334465818,
+            0.045948123086837434
+          ],
+          "simultaneous97_5": [
+            0.014238090787301,
+            0.04880427137284995
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": -0.013379508190957975,
+          "by_parent": [
+            -0.005071211153282462,
+            -0.026562200216920573,
+            -0.008505113202670889
+          ],
+          "ci95": [
+            -0.05219349210142995,
+            0.012033746194011059
+          ],
+          "simultaneous97_5": [
+            -0.054909802229233286,
+            0.012524124062649872
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "pre": {
+        "dsr": {
+          "mean": 0.04916800858829845,
+          "by_parent": [
+            0.04412238325281803,
+            0.05539452495974234,
+            0.04798711755233498
+          ],
+          "ci95": [
+            0.0364842454394693,
+            0.06480888319453344
+          ],
+          "simultaneous97_5": [
+            0.035153019023986785,
+            0.0683087027914614
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.04916800858829843,
+          "by_parent": [
+            0.04605475040257645,
+            0.05442834138486313,
+            0.047020933977455714
+          ],
+          "ci95": [
+            0.03565505804311773,
+            0.06673072816570576
+          ],
+          "simultaneous97_5": [
+            0.03453267162944582,
+            0.07027914614121512
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.0009097740554783925,
+          "by_parent": [
+            -0.003254269926243447,
+            0.0033598113790103135,
+            0.002623780713668311
+          ],
+          "ci95": [
+            -0.0023596544522887695,
+            0.0032864372512021824
+          ],
+          "simultaneous97_5": [
+            -0.0028945587509286996,
+            0.003383399325957733
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "peak": {
+        "dsr": {
+          "mean": -0.0013179571663920846,
+          "by_parent": [
+            -0.0005766062602965416,
+            -0.003377265238879712,
+            0.0
+          ],
+          "ci95": [
+            -0.019246347663342545,
+            0.008750069225231213
+          ],
+          "simultaneous97_5": [
+            -0.019827753316164043,
+            0.00899014434486417
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.011037891268533773,
+          "by_parent": [
+            0.004118616144975273,
+            0.02051070840197694,
+            0.008484349258649104
+          ],
+          "ci95": [
+            -0.003647449507322135,
+            0.03061799335248716
+          ],
+          "simultaneous97_5": [
+            -0.003958039248249334,
+            0.03405123048129834
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": -0.025294694125200506,
+          "by_parent": [
+            -0.00934183954213963,
+            -0.04988621505748658,
+            -0.0166560277759753
+          ],
+          "ci95": [
+            -0.0956079122108181,
+            0.02294474527695215
+          ],
+          "simultaneous97_5": [
+            -0.10114450013036853,
+            0.02529950087554137
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "post": {
+        "dsr": {
+          "mean": 0.04937851183381581,
+          "by_parent": [
+            0.04920824110335442,
+            0.061297462966116156,
+            0.037629831431976846
+          ],
+          "ci95": [
+            0.03523680036256516,
+            0.06580555070692966
+          ],
+          "simultaneous97_5": [
+            0.03335568219912843,
+            0.06905870852739929
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.051705545150122045,
+          "by_parent": [
+            0.05176230206027588,
+            0.06334071173165334,
+            0.040013621658436915
+          ],
+          "ci95": [
+            0.0385225470201677,
+            0.06580555070692963
+          ],
+          "simultaneous97_5": [
+            0.037546094535702304,
+            0.06951871657754008
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": -0.0037956023554952534,
+          "by_parent": [
+            -0.0043597065711576954,
+            -0.0029903183158608293,
+            -0.004036782179467235
+          ],
+          "ci95": [
+            -0.006637843397891863,
+            -0.0004044671074407979
+          ],
+          "simultaneous97_5": [
+            -0.007191366437691212,
+            0.0005150979448057905
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "nonpeak": {
+        "dsr": {
+          "mean": 0.049305710254696655,
+          "by_parent": [
+            0.047449320561372244,
+            0.05925595901091557,
+            0.04121185119180215
+          ],
+          "ci95": [
+            0.03755868544600938,
+            0.0651159289370671
+          ],
+          "simultaneous97_5": [
+            0.037397102097068556,
+            0.06757110288896363
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.05082794980322266,
+          "by_parent": [
+            0.04978837157496102,
+            0.060258409445310746,
+            0.042437068389396204
+          ],
+          "ci95": [
+            0.03942171547805355,
+            0.0664333032219211
+          ],
+          "simultaneous97_5": [
+            0.03870078593511382,
+            0.06854281122696865
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": -0.002294226651733918,
+          "by_parent": [
+            -0.004012248454044132,
+            -0.0009755654333089003,
+            -0.0018948660678487217
+          ],
+          "ci95": [
+            -0.0037870491313517864,
+            -0.0007878273848126079
+          ],
+          "simultaneous97_5": [
+            -0.004036874983118592,
+            -0.0006404229143272729
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      }
+    },
+    "guarded_plan--old_hard": {
+      "all": {
+        "dsr": {
+          "mean": 0.037598257410739654,
+          "by_parent": [
+            0.03272090160053037,
+            0.046974145278908974,
+            0.03309972535277961
+          ],
+          "ci95": [
+            0.030799848369977255,
+            0.04603233947097859
+          ],
+          "simultaneous97_5": [
+            0.03014201072133922,
+            0.04746973667789842
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.009549515421283553,
+          "by_parent": [
+            0.007434416137891808,
+            0.0159579505635003,
+            0.005256179562458552
+          ],
+          "ci95": [
+            -0.006527089759167511,
+            0.024066924066924067
+          ],
+          "simultaneous97_5": [
+            -0.009755720470006187,
+            0.026067343322055736
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.05853842670555306,
+          "by_parent": [
+            0.052645651997780374,
+            0.06609762432468247,
+            0.056872003794196324
+          ],
+          "ci95": [
+            0.02502401374256883,
+            0.10856635605242733
+          ],
+          "simultaneous97_5": [
+            0.024363646002788657,
+            0.11468417921725209
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "pre": {
+        "dsr": {
+          "mean": 0.050134192163177695,
+          "by_parent": [
+            0.04380032206119161,
+            0.04798711755233498,
+            0.0586151368760065
+          ],
+          "ci95": [
+            0.0444017504536237,
+            0.058253461128860484
+          ],
+          "simultaneous97_5": [
+            0.0437448046550291,
+            0.059332238642583454
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.049168008588298416,
+          "by_parent": [
+            0.04573268921095003,
+            0.04605475040257645,
+            0.05571658615136876
+          ],
+          "ci95": [
+            0.041306436119116254,
+            0.05995740149094782
+          ],
+          "simultaneous97_5": [
+            0.040419783873649195,
+            0.061412151067323506
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.002990356984600299,
+          "by_parent": [
+            -0.0032594943901089746,
+            0.0052523217383398935,
+            0.006978243605569978
+          ],
+          "ci95": [
+            -0.0022698895798229923,
+            0.007447423393293259
+          ],
+          "simultaneous97_5": [
+            -0.0029512879505377843,
+            0.008119427656204364
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "peak": {
+        "dsr": {
+          "mean": 0.027292696320702914,
+          "by_parent": [
+            0.02660626029654034,
+            0.032454695222405294,
+            0.022817133443163107
+          ],
+          "ci95": [
+            0.01689095641579441,
+            0.046161672959006105
+          ],
+          "simultaneous97_5": [
+            0.0167806432122161,
+            0.04651723306820922
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": -0.021416803953871504,
+          "by_parent": [
+            -0.018204283360790774,
+            -0.021169686985172964,
+            -0.02487644151565077
+          ],
+          "ci95": [
+            -0.044126703617425746,
+            -0.0019150613946152814
+          ],
+          "simultaneous97_5": [
+            -0.04824141961534373,
+            -0.0004506788349952209
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.09607761091750884,
+          "by_parent": [
+            0.08922917241469919,
+            0.10691524961559729,
+            0.09208841072223006
+          ],
+          "ci95": [
+            0.03838027268749781,
+            0.17999764986853556
+          ],
+          "simultaneous97_5": [
+            0.035865175606850985,
+            0.1872151258231797
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "post": {
+        "dsr": {
+          "mean": 0.05227311425166017,
+          "by_parent": [
+            0.039502809467052646,
+            0.07645155797718378,
+            0.04086497531074407
+          ],
+          "ci95": [
+            0.045271745375158,
+            0.06066356161232826
+          ],
+          "simultaneous97_5": [
+            0.043999078553328755,
+            0.061894108873974694
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.052613655712583064,
+          "by_parent": [
+            0.04018389238889841,
+            0.07679209943810661,
+            0.04086497531074418
+          ],
+          "ci95": [
+            0.045765027322404395,
+            0.05980104651831405
+          ],
+          "simultaneous97_5": [
+            0.04434462105505643,
+            0.06154993403315549
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.00010557125775993252,
+          "by_parent": [
+            -0.0008152159141058268,
+            0.0006146076792239441,
+            0.0005173220081616803
+          ],
+          "ci95": [
+            -0.0015634970326403226,
+            0.002059580600728639
+          ],
+          "simultaneous97_5": [
+            -0.0018562262762960025,
+            0.002254438741004283
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "nonpeak": {
+        "dsr": {
+          "mean": 0.05153337788668597,
+          "by_parent": [
+            0.04098908442860327,
+            0.06660726219648028,
+            0.047003787034974376
+          ],
+          "ci95": [
+            0.045194003527336865,
+            0.05953582240161456
+          ],
+          "simultaneous97_5": [
+            0.044496227252552145,
+            0.06101324902137906
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.0514219945050865,
+          "by_parent": [
+            0.04210291824459794,
+            0.06616172867008241,
+            0.046001336600579146
+          ],
+          "ci95": [
+            0.044312169312169344,
+            0.059423702208767804
+          ],
+          "simultaneous97_5": [
+            0.043830448291167334,
+            0.06150255947003913
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.0010413265542448258,
+          "by_parent": [
+            -0.0015964369895623554,
+            0.0021454577553613463,
+            0.0025749588969354864
+          ],
+          "ci95": [
+            -0.00036240015719235497,
+            0.0025645300447354837
+          ],
+          "simultaneous97_5": [
+            -0.0006146899013427982,
+            0.002895866940351562
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      }
+    },
+    "old_plan--old_hard": {
+      "all": {
+        "dsr": {
+          "mean": 0.017394323957445463,
+          "by_parent": [
+            0.012880007576475061,
+            0.023723837484610266,
+            0.015579126811251065
+          ],
+          "ci95": [
+            0.007297194844579228,
+            0.027478074326455916
+          ],
+          "simultaneous97_5": [
+            0.00568983353710147,
+            0.0297797329339823
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": -0.018404520630110183,
+          "by_parent": [
+            -0.016100009470593812,
+            -0.021450894971114687,
+            -0.017662657448622054
+          ],
+          "ci95": [
+            -0.028613792668307138,
+            -0.0033092369477911907
+          ],
+          "simultaneous97_5": [
+            -0.028812554598776983,
+            -0.0016712825900104993
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.07191793489651103,
+          "by_parent": [
+            0.057716863151062836,
+            0.09265982454160304,
+            0.06537711699686721
+          ],
+          "ci95": [
+            0.030937531654908458,
+            0.11183005934027372
+          ],
+          "simultaneous97_5": [
+            0.020805466834851294,
+            0.11847098690428555
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "pre": {
+        "dsr": {
+          "mean": 0.0009661835748792461,
+          "by_parent": [
+            -0.00032206119162642155,
+            -0.007407407407407363,
+            0.010628019323671523
+          ],
+          "ci95": [
+            -0.007367072389493912,
+            0.009109204533418052
+          ],
+          "simultaneous97_5": [
+            -0.008976464148877946,
+            0.010235732009925558
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": -1.850371707708594e-17,
+          "by_parent": [
+            -0.00032206119162642155,
+            -0.008373590982286683,
+            0.008695652173913049
+          ],
+          "ci95": [
+            -0.008007687379884682,
+            0.007944073721004141
+          ],
+          "simultaneous97_5": [
+            -0.008866995073891623,
+            0.00837468982630272
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.0020805829291219067,
+          "by_parent": [
+            -5.22446386552744e-06,
+            0.00189251035932958,
+            0.004354462891901667
+          ],
+          "ci95": [
+            -0.0007164841401045378,
+            0.004998293514485405
+          ],
+          "simultaneous97_5": [
+            -0.0007976894086293428,
+            0.005330755205401605
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "peak": {
+        "dsr": {
+          "mean": 0.028610653487095,
+          "by_parent": [
+            0.027182866556836882,
+            0.035831960461285006,
+            0.022817133443163107
+          ],
+          "ci95": [
+            0.008140887190563198,
+            0.048739312748461584
+          ],
+          "simultaneous97_5": [
+            0.008012954742161552,
+            0.049409496264160066
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": -0.03245469522240527,
+          "by_parent": [
+            -0.022322899505766047,
+            -0.041680395387149904,
+            -0.033360790774299875
+          ],
+          "ci95": [
+            -0.04842737222399316,
+            -0.010728163541138721
+          ],
+          "simultaneous97_5": [
+            -0.050453924640475635,
+            -0.008934304938995441
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.12137230504270935,
+          "by_parent": [
+            0.09857101195683882,
+            0.15680146467308387,
+            0.10874443849820536
+          ],
+          "ci95": [
+            0.05185268068911723,
+            0.1825686985494995
+          ],
+          "simultaneous97_5": [
+            0.0343668709254374,
+            0.19141909163425663
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "post": {
+        "dsr": {
+          "mean": 0.0028946024178443572,
+          "by_parent": [
+            -0.009705431636301776,
+            0.015154095011067625,
+            0.0032351438787672215
+          ],
+          "ci95": [
+            -0.007051063345843304,
+            0.015302176555076817
+          ],
+          "simultaneous97_5": [
+            -0.00839514691507102,
+            0.01737624315565987
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.0009081105624610212,
+          "by_parent": [
+            -0.011578409671377465,
+            0.013451387706453266,
+            0.0008513536523072629
+          ],
+          "ci95": [
+            -0.008984419424542237,
+            0.012208595735277864
+          ],
+          "simultaneous97_5": [
+            -0.009717670059226025,
+            0.0148061235892278
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.0039011736132551857,
+          "by_parent": [
+            0.0035444906570518686,
+            0.0036049259950847734,
+            0.004554104187628916
+          ],
+          "ci95": [
+            0.001682297213581263,
+            0.005787871336214352
+          ],
+          "simultaneous97_5": [
+            0.0015444826559228482,
+            0.005961372439774052
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      },
+      "nonpeak": {
+        "dsr": {
+          "mean": 0.00222766763198932,
+          "by_parent": [
+            -0.006460236132768971,
+            0.007351303185564706,
+            0.0057919358431722245
+          ],
+          "ci95": [
+            -0.006020243067313821,
+            0.010358446978165292
+          ],
+          "simultaneous97_5": [
+            -0.008035280487349084,
+            0.012262849901226317
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "admission": {
+          "mean": 0.0005940447018638421,
+          "by_parent": [
+            -0.007685453330363079,
+            0.005903319224771664,
+            0.0035642682111829416
+          ],
+          "ci95": [
+            -0.007547169811320734,
+            0.00879350175124823
+          ],
+          "simultaneous97_5": [
+            -0.009119109018200844,
+            0.010511014201051069
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        },
+        "conditional": {
+          "mean": 0.003335553205978744,
+          "by_parent": [
+            0.0024158114644817763,
+            0.0031210231886702466,
+            0.004469824964784208
+          ],
+          "ci95": [
+            0.0015795636359202299,
+            0.005165910941178317
+          ],
+          "simultaneous97_5": [
+            0.0012611487185227126,
+            0.005311976853792958
+          ],
+          "scope": "Fixed three parents, paired workload blocks and action streams. No new training repeats."
+        }
+      }
+    }
+  },
+  "gate_passed": false
+}

@@ -1,0 +1,40 @@
+extraction 12 / 96
+extraction 24 / 96
+extraction 36 / 96
+extraction 48 / 96
+extraction 60 / 96
+extraction 72 / 96
+extraction 84 / 96
+extraction 96 / 96
+concurrent.futures.process._RemoteTraceback: 
+"""
+Traceback (most recent call last):
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/concurrent/futures/process.py", line 264, in _process_worker
+    r = call_item.fn(*call_item.args, **call_item.kwargs)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_learning_causes_ea8cf58d5cb1/scripts/analysis/queued_learning_causes.py", line 251, in worker
+    result = functions[kind](*args)
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_learning_causes_ea8cf58d5cb1/scripts/analysis/queued_learning_causes.py", line 97, in train_base
+    assert identity_error < 1e-10, 'matched hard-target baseline changed'
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: matched hard-target baseline changed
+"""
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_learning_causes_ea8cf58d5cb1/scripts/analysis/queued_learning_causes.py", line 321, in <module>
+    else:run(args.task_root)
+         ^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_learning_causes_ea8cf58d5cb1/scripts/analysis/queued_learning_causes.py", line 285, in run
+    dispatch(root, feature+'_fits', 'base', [(feature,o,m,r) for o in OBJECTIVES for m in MODES for r in range(6)])
+  File "/home/PengYanghan/Lunwen/chapter5-dynamic-service-20261028/source_learning_causes_ea8cf58d5cb1/scripts/analysis/queued_learning_causes.py", line 262, in dispatch
+    records.append(future.result())
+                   ^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/PengYanghan/miniconda3/envs/drone/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+AssertionError: matched hard-target baseline changed

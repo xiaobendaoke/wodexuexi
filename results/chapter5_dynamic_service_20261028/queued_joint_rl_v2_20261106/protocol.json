@@ -1,0 +1,131 @@
+{
+  "revision": "queued_joint_rl_v2_20261106",
+  "algorithm_classification": "on_policy_clipped_joint_ppo_with_critic_and_gae",
+  "rl_training_arms": [
+    "lower_only_rl",
+    "upper_only_rl",
+    "decomposed_rl",
+    "joint_no_expectation_rl",
+    "joint_rl",
+    "decomposed_rl_finetuned",
+    "joint_no_expectation_rl_finetuned",
+    "joint_rl_finetuned"
+  ],
+  "distilled_baseline_arms": [
+    "decomposed_distilled",
+    "joint_no_expectation_distilled",
+    "joint_distilled"
+  ],
+  "evaluated_arms": [
+    "uncoordinated_init",
+    "lower_only_rl",
+    "upper_only_rl",
+    "decomposed_composed_rl",
+    "decomposed_rl",
+    "joint_no_expectation_rl",
+    "joint_rl",
+    "decomposed_distilled",
+    "joint_no_expectation_distilled",
+    "joint_distilled",
+    "decomposed_rl_finetuned",
+    "joint_no_expectation_rl_finetuned",
+    "joint_rl_finetuned",
+    "quality_amortized",
+    "prior_top6_mpc",
+    "distilled_top6_mpc",
+    "joint_rl_mpc"
+  ],
+  "train_r1_workloads": [
+    940000,
+    940001,
+    940002,
+    940003,
+    940004,
+    940005
+  ],
+  "train_r2_workloads": [
+    940006,
+    940007,
+    940008,
+    940009,
+    940010,
+    940011
+  ],
+  "val_workloads": [
+    941000,
+    941001,
+    941002
+  ],
+  "pilot_workloads": [
+    951000,
+    951001,
+    951002,
+    951003
+  ],
+  "confirmation_workloads": [
+    955000,
+    955001,
+    955002,
+    955003,
+    955004,
+    955005,
+    955006,
+    955007
+  ],
+  "ppo_iterations": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "rollout_replicas_per_workload": 2,
+  "zero_teacher_calls_in_rl": true,
+  "clean_physical_features_no_handcoded_penalty": true,
+  "unconfounded_plan_dependent_masking": true,
+  "true_decomposed_plan_independent_verified": true,
+  "post200_drain_steps_recorded_verified": true,
+  "freeze_manifest_sha256": "d3b26d267e52c9c473ed29c25c286913830e6303c85d11982455c66b1c12e287",
+  "frozen_at_utc": "2026-11-05T11:37:27Z",
+  "tandem_approximation_audit": {
+    "evaluated_pairs": 932,
+    "release_time_edf": {
+      "mae": 0.2757510729613734,
+      "rmse": 0.6443881217885273,
+      "correlation": 0.9995717142528701
+    },
+    "static_single_pass_lindley": {
+      "mae": 0.2703862660944206,
+      "rmse": 0.6180406531345966,
+      "correlation": 0.999629947985655
+    }
+  },
+  "rollout_replay_audit": {
+    "verified": true,
+    "checked_episodes": 1152,
+    "total_transitions": 232704,
+    "total_drain_transitions": 2304,
+    "total_drain_successes": 985,
+    "max_old_logp_abs_diff": 0.0,
+    "conservation_failures": [],
+    "logp_failures": [],
+    "gae_failures": []
+  },
+  "decomposed_independence_audit": {
+    "verified": true,
+    "max_plan_dependence_uncoupled": 0.0,
+    "max_plan_dependence_by_arm": {
+      "lower_only_rl": 0.0,
+      "upper_only_rl": 0.0,
+      "decomposed_composed_rl": 0.0,
+      "decomposed_rl": 0.0,
+      "decomposed_distilled": 0.0,
+      "decomposed_rl_finetuned": 0.0,
+      "joint_no_expectation_rl": 0.5287270084714135,
+      "joint_rl": 0.5295144479039784,
+      "joint_no_expectation_distilled": 0.96328136634793,
+      "joint_distilled": 0.9447170333599172,
+      "joint_no_expectation_rl_finetuned": 0.9494062999425391,
+      "joint_rl_finetuned": 0.9593238256848499
+    }
+  }
+}

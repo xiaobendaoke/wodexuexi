@@ -1,0 +1,187 @@
+{
+  "phase": "pilot",
+  "runs": [
+    {
+      "id": 0,
+      "parent": 0,
+      "repeat": 0,
+      "seed": 202611030100,
+      "training": [
+        [
+          910000,
+          910001,
+          910002,
+          910003,
+          910004,
+          910005
+        ],
+        [
+          910006,
+          910007,
+          910008,
+          910009,
+          910010,
+          910011
+        ]
+      ]
+    },
+    {
+      "id": 1,
+      "parent": 0,
+      "repeat": 1,
+      "seed": 202611030101,
+      "training": [
+        [
+          910012,
+          910013,
+          910014,
+          910015,
+          910016,
+          910017
+        ],
+        [
+          910018,
+          910019,
+          910020,
+          910021,
+          910022,
+          910023
+        ]
+      ]
+    },
+    {
+      "id": 2,
+      "parent": 1,
+      "repeat": 0,
+      "seed": 202611030102,
+      "training": [
+        [
+          910024,
+          910025,
+          910026,
+          910027,
+          910028,
+          910029
+        ],
+        [
+          910030,
+          910031,
+          910032,
+          910033,
+          910034,
+          910035
+        ]
+      ]
+    },
+    {
+      "id": 3,
+      "parent": 1,
+      "repeat": 1,
+      "seed": 202611030103,
+      "training": [
+        [
+          910036,
+          910037,
+          910038,
+          910039,
+          910040,
+          910041
+        ],
+        [
+          910042,
+          910043,
+          910044,
+          910045,
+          910046,
+          910047
+        ]
+      ]
+    },
+    {
+      "id": 4,
+      "parent": 2,
+      "repeat": 0,
+      "seed": 202611030104,
+      "training": [
+        [
+          910048,
+          910049,
+          910050,
+          910051,
+          910052,
+          910053
+        ],
+        [
+          910054,
+          910055,
+          910056,
+          910057,
+          910058,
+          910059
+        ]
+      ]
+    },
+    {
+      "id": 5,
+      "parent": 2,
+      "repeat": 1,
+      "seed": 202611030105,
+      "training": [
+        [
+          910060,
+          910061,
+          910062,
+          910063,
+          910064,
+          910065
+        ],
+        [
+          910066,
+          910067,
+          910068,
+          910069,
+          910070,
+          910071
+        ]
+      ]
+    }
+  ],
+  "rounds": 2,
+  "training_episodes_per_round": 6,
+  "evaluation_workloads": [
+    911000,
+    911001,
+    911002,
+    911003,
+    911004,
+    911005,
+    911006,
+    911007
+  ],
+  "action_replicas": [
+    0,
+    1
+  ],
+  "arms": [
+    "relative_joint",
+    "short_joint",
+    "relative_decomposed",
+    "short_decomposed",
+    "shuffled_joint"
+  ],
+  "baselines": [
+    "initial",
+    "parent",
+    "plan_short",
+    "plan_relative",
+    "plan_old"
+  ],
+  "fit_steps": 12,
+  "estep_kl": 0.1,
+  "cumulative_kl": 0.02,
+  "per_step_kl": 0.002,
+  "minimum_dsr_gain": 0.0025,
+  "maximum_training_episodes": 360,
+  "maximum_evaluation_episodes": 720,
+  "independent_unit": "Fresh residual-policy training repeat conditional on a fixed inherited parent; paired workloads and action replicates are crossed/nested evaluation measurements."
+}
