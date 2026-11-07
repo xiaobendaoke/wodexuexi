@@ -1,0 +1,19 @@
+\begin{table}[!htbp]
+\centering\small
+\bicaption{主要控制方式的平均耗时、尾延迟与前瞻计数}{Decision time, tail latency and lookahead counters}
+\label{tab:ch5-dynamic-cost}
+\begin{tabular}{lrrrrr}
+\toprule
+方法 & 均值/s & p95/s & $>1$s/\% & 确定性步数 & 预测分支数 \\
+\midrule
+初始先验选择器 & 0.463 & 1.275 & 16.6 & 0 & 0 \\
+联合蒸馏 & 0.439 & 1.220 & 15.0 & 0 & 0 \\
+联合微调 & 0.520 & 1.297 & 16.9 & 0 & 0 \\
+先验 Top-6 MPC & 0.692 & 2.166 & 24.3 & 0 & 58147 \\
+蒸馏 Top-6 MPC & 0.711 & 2.196 & 24.4 & 0 & 58161 \\
+微调 Top-6 MPC & 0.722 & 2.203 & 24.5 & 0 & 58173 \\
+在线规划基线 & 1.602 & 5.998 & 29.7 & 1664565 & 0 \\
+\bottomrule
+\end{tabular}
+\par\vspace{0.4em}\begin{minipage}{0.96\textwidth}\footnotesize 计时来自本轮评估记录，不是隔离硬件基准。预测分支使用Engine克隆推进，但记在预测分支计数中，不能把其确定性计数为零理解为没有仿真。物理环境未计入墙钟等待。\end{minipage}
+\end{table}

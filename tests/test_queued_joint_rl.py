@@ -509,8 +509,21 @@ class TestQueuedJointRL(unittest.TestCase):
         self.assertIn(format_rl_selection_table(curves), report_md)
         self.assertIn('[32, 44]', report_md)
         self.assertIn('34', report_md)
+        self.assertIn(r'\Phi_{\text{post}}(s_t^+) - \Phi_{\text{pre}}(s_t)', report_md)
+        self.assertIn('actor_lr=0.0035', report_md)
+        self.assertIn('batch_size=32', report_md)
+        self.assertIn('tost_equivalent_0_50pp = false', report_md)
+        self.assertIn('tost_equivalent_0_75pp = true', report_md)
+        self.assertIn('noninferior_0_50pp_ci95 = true', report_md)
+        self.assertIn('至多 4 个候选联合动作', report_md)
+        self.assertIn('816 个配对评估回合', report_md)
         self.assertNotIn('250,224', report_md)
         self.assertNotIn('old_plan', report_md)
+        self.assertNotIn(r'\gamma\,\Phi(s_{t+1}) - \Phi(s_t)', report_md)
+        self.assertNotIn('actor_lr=8e-4', report_md)
+        self.assertNotIn('batch_size=256', report_md)
+        self.assertNotIn('5 个候选联合动作', report_md)
+        self.assertNotIn('816 个独立回合', report_md)
 
 
 if __name__ == '__main__':
