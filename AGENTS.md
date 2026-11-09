@@ -1,13 +1,18 @@
 # AGENTS.md
 
-This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+This file provides guidance to Codex (Codex.ai/code) and Antigravity when working with code in this repository.
 
-## 分支与最新实验证据（2026-10-04）
+## 分支与最新实验证据（2026-11-09 全文去能耗版定稿口径）
 
-- `双层注意力MAPPO多智能体强化学习` 分支保存论文正文与配图；最新算法、实验脚本、分析结果和验证记录位于 [`codex/sf-hlm-results-20261003`](https://github.com/xiaobendaoke/wodexuexi/tree/codex/sf-hlm-results-20261003)，当前归档提交为 `a8bcf9a8731edd68b7bc483e1c959c576807e0d6`。两分支尚未合并。
-- 最新方法合同见实验分支 `docs/plans/sf_hlm_20261001.md`；实现见 `marl_models/sf_hlm*.py`、`utils/sf_hlm*.py`，运行与分析脚本见 `scripts/analysis/`。
-- 独立确认与稳健性分析见实验分支 `results/sf_hlm_v2_20261001/followup_20261002/`；随机基线补充分析见 `results/sf_hlm_random_baselines_20261004/` 及 `output/sf_hlm_random_baselines_20261004/deliverables/analysis.md`；对应验证记录见各任务 `output/.../validation/`。完整分支链接索引见 [README](README.md#分支与最新实验证据)。
-- 上述路径相对于实验分支，不把本分支缺少文件判为未实现或实验未完成。写作时按实验分支的具体协议和分析引用；现行第五章尚未完整同步最新 SF-HLM 方法与结果。原始回合、模型检查点和大型压缩包并未全部进入 Git，仍保留在本机或服务器。
+- **核心口径声明**：当前论文全文（`latex/main.tex` 及第 1–6 章）已彻底移除能耗（无飞行推进能耗、无计算/通信能耗、无无线携能传输 WPT、无 UE 电池电量与退网机制），全系统聚焦通信、计算与截止期服务指标（DSR = 满足截止时间的服务请求数 $S$ / 全部实际生成的服务请求数 $G$）。
+- **第三、四章（协议 I：单时隙批量结算与缓存耦合协议，`canonical_energy_free_v1`）**：
+  - 统一驱动脚本：`scripts/analysis/run_chapter34_energy_free.py`；正式图源数据与统计 JSON：`docs/figures/data/chapter34_20261004/`。
+  - **第三章（自然覆盖下预接纳需求观测）**：主场景下层无注意力强基线 DSR `0.2507` 优于原完整双注意力 `0.2390`（`-1.16 pp`）；瓶颈诊断显示未覆盖请求占生成请求的 `52.13%`、占失败请求的 `68.55%`；探索阶段 DSR `0.2396 -> 0.2738`（`+3.43 pp`）；10 新训练种子 × 5 新工作负载独立确认（`confirmation_paired_comparison.json`）DSR 从 `0.2450` 提升至 `0.2735`（`+2.85 pp`，配对 $t$ 95% CI `[+1.65, +4.06] pp`，合并计数 `G = 9,805,180` 完全一致）。
+  - **第四章（固定快照二元字典序重评估 MC-ITR）**：严格二元字典序目标 $F(\mathbf{a})=(F_1(\mathbf{a}), F_2(\mathbf{a}))$（超时请求总数 $F_1$ 与平均归一化时延 $F_2$，不含任何能耗项）。410 个评估单元（`chapter4_analysis.json`）主配置每快照平均超时数：Heuristic `2.888`、Greedy `2.227`、Iterative-Base `2.215`、MC-ITR `2.045`（相对 Iterative-Base 差值 `-0.170`，95% CI `[-0.222, -0.122]`）；第三章扩展观测轨迹 400 个桥接快照上超时数由 `9.238` 降至 `6.605`（`-2.633`，95% CI `[-2.925, -2.340]`）。
+- **第五章（协议 II：跨时隙持续 EDF 排队控制协议，`queued_joint_rl_v2_20261106`）**：
+  - 核心实现：`environment/queued_service.py`、`marl_models/queued_joint_rl.py`、`utils/queued_joint_rl.py`、`scripts/analysis/queued_joint_rl_experiment.py`；正式图源数据：`docs/figures/data/queued_joint_rl_20261106/`。
+  - 17 个评估臂在 3 个固定父谱系 × 8 个确认工作负载（`955000–955007`）× 2 个动作流 = 816 个盲测确认回合（每臂 48 回合、池化生成请求 `252,024`）上配对评估：初始先验选择器 `uncoordinated_init` `44.30%`，联合冷启动 `joint_rl` `44.25%`，两轮规划蒸馏 `joint_distilled` `48.04%`（`121,079`），联合反事实微调 `joint_rl_finetuned` `48.74%`（`122,842`，较蒸馏提升 `+0.70 pp`，31 项 Bonferroni CI `[+0.39, +0.98] pp`；纯在策略暖启动 `cf=0` 为 `48.05%`，反事实辅助净贡献 `+0.69 pp`；池化接纳率 `52.58%` 即 `132,524/252,024`，池化条件完成率 `92.69%` 即 `122,842/132,524`，48 回合均值 `92.73%`），在线规划基线 `quality_amortized` `48.56%`（`122,382`，池化接纳 `130,436`，池化条件完成率 `93.83%`），微调 Top-6 MPC `joint_rl_mpc` `49.31%`（`124,280`，较在线规划提升 `+0.75 pp`，31 项 Bonferroni CI `[+0.25, +1.42] pp`，平均耗时从 `1.602 s` 降至 `0.722 s`，降低 `54.9%`）。
+- **严禁事项**：严禁在论文或分析中重新引入旧版能耗公式、旧版三元字典序能耗目标或已废弃的过渡分支缩写（如旧 `SF-HLM`）。
 
 ## 文件位置与生成物规则
 
@@ -66,236 +71,34 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 4. **requesting-code-review** - 在有意义的检查点根据计划审查并修复问题。关键问题阻止依赖它的步骤或最终交付，但不禁止诊断修复和独立工作。
 5. **finishing-a-development-branch** - 仅在用户要求分支集成或清理时使用；普通任务完成后保留工作区并交付结果，不强制提供 Git 操作菜单。
 
-### 使用方法
-
-- 按上面的适用范围选择流程，不因 Skill 名称匹配而扩大任务范围。
-- 当前任务已确认的设计、术语、后端和输出要求持续有效，除非用户改变要求或新信息造成实质冲突。
-- 必需的 Skill 资源缺失时报告具体路径，不声称已经加载；继续不依赖该资源的工作，受影响部分标记未完成，不跳过伦理、证据核验或明确的批准规则。
-
-### 调用方式
-
-优先使用当前平台实际提供的 Skill 加载方式；没有 `Skill` 工具时，读取可用的 `SKILL.md` 并遵循其指令。以下名称用于识别流程，不代表本会话一定提供同名工具或已安装相应 Skill：
-- `/superpowers:brainstorming` - 头脑风暴和设计
-- `/superpowers:writing-plans` - 编写实现计划
-- `/superpowers:test-driven-development` - 测试驱动开发
-- `/superpowers:requesting-code-review` - 请求代码审查
-- `/superpowers:finishing-a-development-branch` - 完成开发分支
-
-没有子代理工具时，普通代码审查可用显式自审替代，并注明不是独立审查。用户明确要求独立审查时不得以自审冒充完成；继续其他已授权工作并报告该审查缺口。不要为适配工具名称擅自安装插件、修改全局配置或创建新的用户任务。
-
-### 完成条件
-
-- 完成表示请求范围内的工作和相应验证已完成，并提供可访问的结果及影响使用的限制；除非用户明确要求的交付物就是计划、大纲、脚本或启动状态，不能把它们当作最终产物。
-- 检查发现的问题先在授权范围内修复。验证无法执行时，报告已完成部分、未验证部分和具体阻塞，不声称全部通过；无关的历史失败单独记录，不擅自扩展修复范围。
-- 长时间实验区分“已启动”“运行中”“已完成且验证”。用户只要求启动时核验进程和日志即可交付启动状态；用户要求实验结果时需等待并核验结果。未来提醒或持续监控仅在用户明确要求时使用平台支持的自动化，并遵循其授权规则；不承诺不存在的后台跟进。
-
 ## 项目概述
 
-中山大学硕士论文项目：基于 Attention-MAPPO 的多无人机 MEC 轨迹与任务卸载协同优化方法。系统由 5 架 UAV、100 个 UE、1 个 MBS 在 700×700m 区域运行。使用 Python 3.9 + PyTorch 2.6 实现。
+中山大学硕士论文项目：面向时限计算服务的无人机集群需求感知轨迹规划、批量字典序任务分配与跨时隙动态排队协同控制。系统由 5 架 UAV、100 个 UE、1 个 MBS 在 700×700m 区域运行，采用无能耗（energy-free）建模口径。
 
 ## 运行环境与工作边界规范（核心原则）
 
 本项目采用**“本机写作与开发 + 远程服务器跑实验”**的双机协同架构，严禁在本机执行重载实验训练：
 
-### 1. 本机环境 (Local Host: macOS Darwin arm64)
-- **核心职责**：代码编写、静态代码审计、Git 版本管理、LaTeX 论文编写与编译排版（`cd latex && make main` 等）、轻量测试与图表查看。
+### 1. 本机环境 (Local Host)
+- **核心职责**：代码编写、静态代码审计、Git 版本管理、LaTeX 论文编写与编译排版（`cd latex && make main` 或 `xelatex`）、轻量测试与图表查看。
 - **限制与约束**：
-  - 本机为 Apple Silicon (Darwin arm64) 架构，仓库内置的 `.venv` 为 Linux x86_64 二进制，**严禁在本机直接尝试运行该 `.venv/bin/python`**；
   - **严禁在本机启动长时间或大规模 MARL 训练实验**；
-  - 本机仅负责无 PyTorch 依赖的轻量静态检查、纯逻辑分析与文档/LaTeX 编译。
+  - 本机仅负责轻量静态检查、纯逻辑分析与文档/LaTeX 编译。
 
 ### 2. 远程实验服务器 (Remote Server: 100.69.44.85)
 - **核心职责**：所有 MARL 模型训练、基线算法比对、消融实验、敏感性分析、以及生成全量实验数据（`results/`）。
-- **连接方式**：`ssh 100.69.44.85`（通过本机 `~/.ssh/config` 配置的免密别名直连，端口 2222，用户 `PengYanghan`）。
+- **连接方式**：`ssh 100.69.44.85`（端口 2222，用户 `PengYanghan`）。
 - **工作目录**：`~/Lunwen/wodexuexi`
-- **运行环境**：服务器端专用 Conda/Python 环境（如 `/home/PengYanghan/miniconda3/envs/drone/bin/python`）。
-- **数据与代码同步流程**：
-  1. 本机完成代码或脚本修改后，通过 `git push` 推送至远程仓库；
-  2. SSH 登录远程服务器拉取最新代码（`git pull`），并在远程后台启动实验（使用 `nohup` 或 shell 脚本）；
-  3. 实验完成后，将远程生成的 `results/` 与图表数据同步回本机（通过 `scp` / `rsync` / git），供本机 LaTeX 编译与论文撰写引用。
 
-## 常用命令
+## 核心架构与章节对应
 
-### Python 实验运行（必须在远程服务器 100.69.44.85 上执行）
-
-```bash
-# 1. 本机通过 SSH 登录远程实验服务器
-ssh 100.69.44.85
-cd ~/Lunwen/wodexuexi
-
-# 2. 激活服务器端运行环境
-source .venv/bin/activate
-# 或使用服务器端 Conda:
-# conda activate drone
-
-# 运行单次分层 MAPPO 训练（默认 attention_mappo 上层 + constrained_attention_offload_mappo 下层）
-python run_hierarchical_mappo_experiment.py --seed 42 --episodes 200
-
-# 运行 joint MAPPO baseline 训练
-python run_joint_end_to_end_mappo_experiment.py --seed 42
-
-# 评估 joint MAPPO baseline
-python evaluate_joint_end_to_end_mappo.py
-
-# 运行完整实验套件（3 training seeds × 10 workload seeds）
-bash run_linear_v2_full.sh
-
-# 运行 DSR-priority 配置实验
-bash run_linear_v2_dsr_strong.sh
-
-# 运行补充实验（vanilla vs attention、attention 可视化、joint MAPPO）
-bash run_remaining_three_experiments.sh
-
-# 统计分析（paired t-test、Wilcoxon、95% CI）
-python analyze_experiment_statistics.py
-
-# 可视化
-python visualize.py --mode snapshot    # 单帧快照 PNG
-python visualize.py --mode animate     # 仿真动画 GIF
-python visualize.py --mode results     # 实验指标柱状图
-```
-
-### LaTeX 论文编译
-
-```bash
-cd latex
-make main      # 编译论文正文 main.pdf
-make pre       # 编译答辩 PPT pre.pdf
-make all       # 编译所有文档
-make clean     # 清理中间文件
-make cleanall  # 清理所有生成文件（含 PDF）
-```
-
-## 核心架构：分层双层 MARL
-
-系统采用上下两层决策结构，而非单一联合动作空间：
-
-### 上层：轨迹控制（attention-MAPPO）
-- 每架 UAV 为一个智能体，输出连续 2D 动作（方向向量）
-- 使用多头交叉注意力（8 heads, hidden_dim=64）建模 UAV-UAV 和 UAV-UE 关系
-- 关键文件：`marl_models/attention_mappo/` (attention_mappo.py, agents.py)
-- 共享注意力模块：`marl_models/attention.py`（CrossAttentionExtractor, AttentionActorBase, AttentionCriticBase）
-
-### 下层：请求级卸载（constrained attention offload MAPPO）
-- 每架 UAV 对至多 30 个请求做离散卸载决策：0=本地, 1=MBS, 2+i=协作 UAV i
-- 质量感知动作 mask 屏蔽不可行动作，Lagrange 约束机制处理 DSR/MBS 负载权衡
-- 关键文件：`marl_models/offload_mappo/offload_mappo.py`, `marl_models/offload_policy.py`
-
-### Baseline 模型
-- `marl_models/vanilla_mappo/` — 无注意力的 MLP 版 MAPPO（消融上层 attention）
-- `marl_models/joint_mappo/` — 端到端联合 MAPPO（单 actor 输出轨迹+卸载动作）
-- `marl_models/uncoordinated_greedy_baseline/` — 非学习贪心+启发式基线
-
-### 共享基础设施
-- `marl_models/buffer_and_helpers.py` — AttentionRolloutBuffer、DiscreteOffloadRolloutBuffer、JointMAPPOBuffer
-- `marl_models/utils.py` — get_model() 工厂函数、save_models()
-- `marl_models/base_model.py` — 模型基类
-
-## 环境仿真
-
-- `environment/env.py` — 主仿真环境类 Env（step/reset/渲染）
-- `environment/uavs.py` — UAV 模型（飞行能耗、计算、通信、WPT、缓存）
-- `environment/user_equipments.py` — UE 模型（电池动态、请求生成）
-- `environment/comm_model.py` — 自由空间路径损耗信道模型
-- `environment/request_types.py` — 服务和内容请求定义
-
-## 配置体系
-
-所有参数集中在 `config.py`，通过 `import config` 在全局共享。实验脚本在运行时可覆盖 config 变量（如 `apply_lower_ablation()` 修改 OFFLOAD_MASK_MODE 等）。路径管理统一通过 `paths.py` 的 `REPO_ROOT` 和 `results_path()`。
-
-## 关键设计约定
-
-- **单位转换**：请求/文件大小以 bytes 记录，无线链路速率以 bit/s，传输时延统一为 `T_tx = 8 * D / R`
-- **观测维度**：上层 `OBS_DIM_SINGLE = SELF_OBS_DIM + MAX_UAV_NEIGHBORS * NEIGHBOR_OBS_DIM + MAX_ASSOCIATED_UES * UE_OBS_DIM`；下层 `OFFLOAD_OBS_DIM_SINGLE = 5 + MAX_OFFLOAD_REQUESTS_PER_UAV * OFFLOAD_REQUEST_FEATURE_DIM`
-- **奖励函数**：线性形式 `reward = W_FAIR*jfi - W_LAT*norm_latency - W_ENERGY*norm_energy - W_OFFLINE*offline_rate + W_DSR*dsr`，其中 latency 和 energy 做了归一化
-- **Lagrange 约束**：下层使用可学习的 lambda_dsr 和 lambda_mbs 拉格朗日乘子，约束 DSR≥target 且 MBS 负载≤ceiling
-- **模型命名**：`get_model()` 工厂函数根据字符串名称（如 "constrained_attention_offload_mappo"）返回对应模型实例
-
-## 实验结论与论文证据边界（截至 2026-09-28）
-
-本节记录已完成实验的**结论及其适用范围**，供后续实验和写作查证；`PASS` 只说明对应任务通过验收，不自动证明论文主张。当前论文主口径是自然覆盖接纳：未进入 UAV 100 m 服务半径的请求不被强制处理，DSR = 满足截止时间的服务请求数 / 全部实际生成的服务请求数。训练种子是独立训练重复；同一检查点的工作负载、评估 episode 和请求不能充作独立训练重复。不同源码摘要、请求接纳规则和评估协议下的绝对指标不得直接拼接。UE 电池低于阈值会把潜在服务请求转为能量请求，故实际生成服务请求数具有轻微策略依赖性；配对外生随机流不等于分母完全相同，以潜在请求为固定分母的稳健性检验已于 09-28 完成，结果见下表；它不改变原预定主指标。
-
-### 结果位置、章节关系与实验走向
-
-- 本项目有主工作区和 `coverage-optimization/wodexuexi` 独立实验工作树；在当前机器运行 `git worktree list` 可定位各自根目录。下表的相对路径必须相对于标明的工作树读取，不能把两个工作树中同名相对路径视为同一文件。旧全量、第四章、下层/奖励 pilot 及瓶颈诊断在主工作区；覆盖观测 pilot、独立确认和 09-28 整套方法对比在 `coverage-optimization/wodexuexi` 工作树。结果尚未合并为单一工作区，不应因为某工作树缺少另一方结果就判为实验未完成。
-- 拟采用的研究章节是：第三章研究上层轨迹控制与覆盖需求观测；第四章研究固定轨迹/历史快照下的任务卸载，已实现的方法为 MC-ITR；第五章研究完整分层策略的端到端表现。第四章 MC-ITR **没有接入**第五章学习式下层，不可把第五章写成“上层 + MC-ITR”的性能验证。当前实现和冻结的第四章协议均未采用拍卖/竞价算法；所收录的拍卖论文只是文献。`latex/main.tex` 已启用独立的第四、五章；现行 LaTeX 仍需随补充实验更新。
-- 研究路线按证据依次变化：旧强制接纳口径不可用于自然覆盖结论 → 修正自然覆盖后发现原完整双注意力不及下层无注意力强基线 → 下层注意力拆分和简单奖励调整未给出稳定改善 → 瓶颈诊断发现未覆盖是主要失败来源 → 扩展上层预动作观测的 pilot 与独立确认显示 100 UE 主场景 DSR 改善 → 09-28 整套方法对比进一步支持其相对现有学习方法的 DSR 优势。每一步的数值、实验单位和不能外推的边界见下表。
-
-| 实验阶段与证据 | 已完成结果 | 结论与边界 |
-|---|---|---|
-| 2026-06 至 07 旧强制接纳基线、消融、DSR 优先与敏感性；`results/baseline_matrix_force_admission_20260626_resume/`、`results/final_force_admission/evaluation_20260630/`、`results/sensitivity_force_admission/`、`docs/reports/defense_experiment_audit_force_admission_full.md` | 旧协议将未覆盖请求强制关联，处理率为 100%；扩展基线中 proposed DSR 约 0.3762、Joint 0.4163、Uniform 0.4529；旧 DSR 优先配置 DSR 0.3524，低于原配置的 0.3762。旧敏感性下 proposed 在多数设置高于 Vanilla，但启发式常有更高 DSR。 | 这些是**历史强制接纳口径**，可说明旧设计的权衡与修复动机，不能支持现行自然覆盖系统的性能、最优性或摘要结论；旧奖励与公平性排名也不能直接移植。 |
-| 2026-09-20 自然覆盖全量首版；`results/canonical_all_20260920/marl/` | 1650 评估任务完成；100 UE 主配置 hierarchical DSR 0.2459、lower_no_attention 0.2548，前者低约 0.89 个百分点；hierarchical 比 vanilla_hierarchical 高约 2.43 个百分点。 | 首版已被 09-23 修正版取代；保留为趋势复核，不作为最新数值引用。 |
-| 2026-09-23 自然覆盖修正版全量；`results/canonical_all_20260923_fixed/marl/{status,analysis}.json` | 5 训练种子 × 10 工作负载，主配置 hierarchical DSR 0.2428；Vanilla 0.2186、IPPO 0.2204、Joint 0.2123、lower_no_attention **0.2609**。hierarchical−Vanilla +2.42 个百分点（配对交叉 bootstrap 95% CI +1.60 至 +3.27）；hierarchical−lower_no_attention **−1.81 个百分点**（−2.40 至 −1.17）。去质量 mask、去惩罚相对完整模型的 DSR 差异区间跨 0。 | 分层框架相对若干基线有收益，但**不能声称双层都加注意力最优，也不能把下层注意力或软约束写成已证实提高 DSR**；后续以 lower_no_attention 为强基线。 |
-| 同一修正版的 UE 数量与算力敏感性；`results/canonical_all_20260923_fixed/marl/analysis.json` | hierarchical 在 60/80/100/120/140 UE 的 DSR 依次约 0.3567/0.2902/0.2428/0.2032/0.1761；60、80 UE 时不高于 Vanilla。算力 0.6→1.4 倍时 DSR 约 0.1963→0.2706，各设置高于 Vanilla。 | 负载增大时服务率下降，注意力上层的优势依场景而变；该网格**各设置重新训练**，不是固定模型跨场景泛化。 |
-| 第四章固定快照优化；主工作区 `results/canonical_all_20260920/chapter4/{status,analysis}.json` | 410 评估单元完成；主设置 MC-ITR 每快照平均 deadline misses 2.055，优于单轮贪心 2.243、迭代基线 2.228、启发式 2.908；平均分配能耗归一化值 2.128，高于迭代基线 1.872；平均搜索耗时约 2.574 s，且不含共享 Greedy 初始化。九个主场景/UE/算力变体的 MC-ITR−Iterative-Base 超时数配对区间均为负。三 UE Exact-Small 的 MC-ITR 三个字典序目标分量均值与穷举精确解相同，但 Greedy、Iterative 也相同，且 85.5% 快照为空。 | 固定几何与请求下的字典序卸载求解器证据，**不是**长时序 MARL 策略的 DSR、主配置全局最优或 1 s 时隙内可实时执行的证明；Exact-Small 仅作实现一致性检查，能耗和完整计算开销必须同时报告。 |
-| 2026-09-24 下层注意力拆分 pilot；`results/lower_attention_pilot_20260924/`、`output/lower_attention_20260924/validation/effect_review.json` | 5×5 配对；完整下层/无注意力/仅 actor 注意力/仅 critic 注意力的 DSR 约 0.2267/0.2439/0.2393/0.2461；各关键配对区间均跨 0。 | 未证明下层注意力有正增益，也未证明其必然无效；不要把单个最高均值当成架构选择的确证。 |
-| 2026-09-24 奖励权重 pilot 与 09-26 固定分母奖励 pilot；`results/reward_priority_pilot_20260924/`、`output/reward_denominator_20260926/validation/completion_review.json` | 5×5 奖励权重试验：基线 DSR 0.2567，DSR 权重 5 为 0.2537，能耗参考值调整为 0.2586；固定分母奖励比基线低 0.26 个百分点，95% CI −2.17 至 +1.55。 | 简单调权和分母替换未给出稳定 DSR 改善；不应以“再调奖励”作为主要创新路线。 |
-| 2026-09-27 瓶颈诊断；`output/bottleneck_diagnostic_20260927/validation/bottleneck_review.json` | 25 个完整评估单元中 DSR 0.2459，未覆盖率 48.14%，未覆盖占全部失败约 63.84%；50 个冻结快照中，双步质量掩码局部搜索使成功数 362→441，即这些快照 +5.13 个百分点，同时分配能耗 +22.86%。 | 未覆盖是描述性主要失败来源；局部搜索显示卸载层仍有空间，但不是可部署学习策略、长时序增益或上界。覆盖与接纳改善后仍须检查被接纳请求的质量。 |
-| 2026-09-27 覆盖观测 G4 探索 pilot；独立 `coverage-optimization/wodexuexi` 工作树下 `results/coverage_observation_g4_20260927/pilot_paired_comparison.json` | 5×5 配对，10 次训练、50 组评估、300 个评估 episode；候选（上层可见感知范围内未覆盖 UE）相对 lower_no_attention：DSR 0.2367→0.2696，+3.30 个百分点，交叉 bootstrap 95% CI +1.29 至 +5.33。 | 探索性发现，不独立支撑论文结论；试验只改上层预动作观测，未改变 100 m 物理接纳半径。 |
-| 2026-09-27 覆盖观测独立确认；同一独立工作树下 `results/coverage_observation_confirmation_20260927/confirmation_paired_comparison.json` | 新的 10 个训练种子 × 5 个新工作负载，20 次训练、100 组评估、600 个 episode；候选与强基线 DSR 0.2444→0.2793，**+3.49 个百分点**；训练种子配对 t 95% CI +2.44 至 +4.54，10/10 种子、49/50 配对单元为正。接纳率 0.4996→0.6189，而已接纳请求的截止期满足率 0.4919→0.4537；UAV 能耗均值约降低 6.37%。 | 这是**100 UE 主场景、相对 lower_no_attention 的独立确认**，尚未覆盖所有基线、负载/算力设置，也未证明实际部署可获取预接纳请求信息。DSR 增益主要来自接纳增加，同时已接纳请求质量下降；pilot 与确认的分解机制不同。只改 `UPPER_UE_OBSERVATION_MODE`，仍须审计 460 m 感知下 UE 位置/请求/电量的可获得性、时序和通信代价。源码有内容摘要，但非正式提交锁定发布版。 |
-| 2026-09-28 整套方法全量对比；独立工作树 `docs/plans/whole_system_comparison_20260928.md`、`results/whole_system_comparison_20260928/whole_system_paired_comparison.json`、`output/whole_system_comparison_20260928/validation/` | 预先固定的 100 UE 主场景，10 个新训练种子 × 5 个新工作负载；60 次学习式训练、325 个评估任务、1950 个评估 episode，`remote_completion.json` 和 `raw_evaluation_audit.json` 均为 PASS。候选 DSR 0.2798；lower_no_attention 0.2459（差 +3.39 个百分点，训练种子配对 t 95% CI +2.13 至 +4.66）、hierarchical 0.2433、vanilla_hierarchical 0.2153、IPPO 0.2162、Joint 0.2074；候选相对五个预先指定学习对手的 DSR 差值均为正且 Holm 校正双侧 p<0.05。最强非学习参照 Uniform DSR 0.2153，其余四种也已评估。相对 lower_no_attention，候选接纳率 0.5269→0.6248，而接纳后按时完成率 0.4703→0.4491（该次指标区间跨 0）。 | 支持**在该 100 UE 仿真设置、现有方法各自原配置下，候选整套方法的 DSR 优于五个指定学习对手**；非学习方法没有训练种子，不能伪装成 10 次独立训练重复。候选独享 460 m 内未接纳 UE 的位置、当前请求特征和电量观测；尚未证明同信息预算下的架构优势、信息的部署可得性、跨负载/算力稳健性或所有指标均优。此轮 `purpose=pilot` 且仅有源码内容摘要，不称正式提交锁定发布版。 |
-| 2026-09-28 第四—五章共享轨迹快照桥接；主工作区 `results/bridge_20260928/full/{protocol,analysis}.json` 及 50 个原始评估单元 | 10 个训练种子 × 5 个工作负载产生 50 个候选轨迹评估任务、400 个冻结快照；状态为 PASS。MC-ITR 相对在线下层每快照超时数 8.235 vs 10.695，配对均值差 −2.460，训练种子 t 95% CI [−2.707,−2.213]，10/10 种子同向；归一化分配能耗 2.519 vs 2.035（约 +23.8%）；MC-ITR 含贪心初值的完整调用路径平均 20.751 s，在线下层调用平均 0.012 s。 | 证明的是候选轨迹**固定快照**上的质量余量与计算代价；反事实分配未回写环境，**不能**写成接入 MC-ITR 后的长期 DSR 或实时可部署收益。 |
-| 2026-09-28 上层观测细化 pilot；独立工作树 `results/chapter5_observation_refinement_20260928/pilot/observation_refinement_paired_comparison.json` | 新的 5×5 探索性配对：服务优先排序相对原候选 DSR +0.18 个百分点，训练种子 t 95% CI [−2.09,+2.45]；仅位置观测相对原候选 −1.24 个百分点，训练种子 t 95% CI [−3.26,+0.78]。 | 两个区间均跨零，不能宣称改法已提高或降低真实主效应；不替换十训练种子的整套方法主结果，若筛选新候选需再用新种子独立确认。 |
-
-| 2026-09-28 固定潜在服务请求分母复核；独立工作树 `scripts/analysis/potential_dsr_robustness.py`、`results/potential_dsr_20260928/potential_dsr_analysis.json`、`output/potential_dsr_20260928/validation/validation.json` | 冻结源码哈希与 325 个原评估单元均验收通过；原 DSR 从计数精确复现。六个学习方法各自 50 单元的共同潜在服务请求数均为 9,526,870；候选实际服务请求 9,525,735、强基线 9,526,728。换成共同固定分母后，候选相对 lower_no_attention 的 DSR 差值 +3.390 个百分点，训练种子配对 95% t CI +2.125 至 +4.655；10/10 种子为正，相对五个预定学习对手的 Holm 校正双侧检验仍均通过。 | 轻微分母内生性未解释原主场景 DSR 增益；这是保留原成功数的替代分母敏感性分析，**不是**让低电量 UE 继续生成服务请求的反事实环境运行，也不改变原预定主指标。 |
-
-其他历史记录：`results/baseline_matrix_force_admission_20260624/` 是后来续跑矩阵的未完成前段，`results/baseline_matrix_force_admission_20260624_smoke/` 和 `results/baseline_matrix_audit_20260624_smoke/` 是流程验收；`results/sensitivity_force_admission/effective_efficiency_convergence/summary.json` 只给旧协议 3 种子终点统计，不能单凭它宣称稳定收敛。`results/experiment_review_20260921/summary.json` 记录正式矩阵中途失败的诊断，后续已用完成版复核；这些记录不另算独立正面证据。先前中断的远程覆盖观测副本未完成，也不计入 G4 pilot 或独立确认。
-
-**当前研究判断**：论文中心应从“上下层注意力组件堆叠”转向“自然覆盖约束下，轨迹策略能否看见尚未接纳的服务需求，以及覆盖扩展与接纳后服务质量如何共同决定端到端 DSR”。上下层分解可保留为系统框架；当前候选是上层 Attention-MAPPO + 无注意力学习式下层，后者也构成强基线。09-28 全量对比已经完成“相对现有完整学习方法是否提高 DSR”的主场景检验；第四—五章共享轨迹快照桥接也已完成，不再列为待做实验。论证必须同时报告 `DSR = 接纳率 × 已接纳请求截止期满足率`（汇总时使用一致的请求计数口径）、UAV 能耗、公平性、MBS 依赖和计算开销。当前只支持**该仿真主场景、方法各自原配置下的端到端 DSR 优势**，不支持“信息预算相同的架构优势”“所有指标全面最优”或现实部署有效性。后续优先做信息可得性与同信息预算对照（请求延迟/缺失、通信时延和能耗），再做 UE/算力变化下的配对复验；任何改变观测物理假设的试验都应单独标为新协议。
-
-**写作同步状态**：主工作区的 `latex/docs/abstract.tex`、`chap01.tex`、`chap03.tex`、`chap04.tex`、`chap05.tex`、`chap06.tex` 与 `latex/main.tex` 已改为截至 09-28 的自然覆盖证据口径；第四、五章已启用，固定潜在请求分母复核与共享快照桥接已写入正文。原第三章系统示意图和把下层误画为 Attention 的旧第五章架构图均不再进入现行正文。该 LaTeX 是可按现有证据审阅的论文草稿，并非已完成全部定稿条件；同信息预算、信息代价和跨场景实验仍未完成，`latex/docs/chap02.tex` 的文献陈述与封面身份字段仍须逐项核验。不得重新引入旧强制接纳口径或把第四章快照结果写成第五章在线增益。
-
-## 第五章下一阶段修正方向（2026-09-29）
-
-本节是后续模型的执行依据；研究假设不等于已证实创新或性能。详见 [近期研究与适配判断](docs/literature/analysis/chapter5_method_research_20260929.md)。
-
-- **2026-09-30 第三阶段贪心对照已完成并复核**：150任务/300回合/30万步，452份原始文件摘要与逐步计数核验通过，无失败或排除。A学习修正/贪心/贪心修正DSR=32.52%/32.10%/33.79%；D=32.66%/32.01%/33.34%。学习修正－贪心修正在A为－1.275个百分点（95% t区间[－2.319,－0.230]），D为－0.682；两组5/5种子均为负。探索性三比较族Holm p约0.055/0.054，小样本精确双侧符号翻转p=0.0625，不称独立确认。A贪心修正相对贪心DSR＋1.692个百分点、UAV总能耗种子平均－15.50%；同贪心修正A－D的DSR区间跨零。理想未计费协调、各初值1.05倍相对能耗限制不变；不能证明共同绝对可行域内的纯初始化效应。分析在coverage工作树 results/deadline_repair_20260929/greedy_analysis/。
-- **2026-09-30 第四阶段逐节点下层筛选已启动**：用户已授权修改实验并运行。复用A/D各5个冻结上层策略；只训练逐节点普通MLP与共享节点打分器，20次下层训练、200回合×1000步，20个单线程CPU进程。原学习＋普通128和贪心＋普通128作为对照；全部训练结束后5进程执行200评估任务/400回合。上层种子620001–620005、新下层660001–660005、训练工作负载860001–860005、评估760001–760005。两新actor节点信息一致、critic沿用原观测；PPO存网络提案及其概率，环境执行修正动作。17项远程测试、4训练短流程、8评估短流程和4历史动作回归通过；上层参数冻结，状态变化仍可改变后续轨迹。初始化绝对能耗域与协调成本的限制保留，原下层不是匹配的新训练信息消融。协议见coverage工作树 docs/plans/node_offload_20260930.md；远程 ~/Lunwen/node-offload-20260930/results/node_offload_20260930/。当前运行中，未获得性能结论，不自动联合重训或独立确认。
-
-### 近期实验内容与结果速查（2026-09-30）
-
-以下结果均位于 coverage-optimization 工作树；不同阶段不能直接拼接绝对值。训练种子为独立单位。
-
-| 实验 | 设计/完成量 | 结果 | 后续约束 |
-|---|---|---|---|
-| 批次感知与顺序卸载pilot | A原候选/B批次感知/C顺序协调/D同信息Vanilla；5训练种子×5工作负载；20训练、100评估、600回合 | DSR A/B/C/D=27.70/26.43/27.35/28.05%；B/C未晋级，D−A区间跨零 | 停止B/C扩训，不主张同信息Attention优势；results/batch_offload_20260928/pilot/ |
-| 有限修正固定快照 | A/D各5×5，50重放任务、400快照；原分配/普通32与128/截止期32与128 | A普通128超时−11.31%，截止期128−11.72%；后者分配能耗−38.80%，6/200快照恶化；截止期−普通−0.045个/快照，95%区间跨零 | 非在线DSR，非UAV总能耗；排序贡献未成立；results/deadline_repair_20260929/review/ |
-| 有限修正在线闭环 | A/D×原分配/普通128/截止期128×5已有训练种子×5新工作负载740001–740005；150任务、300回合、30万步 | A DSR 27.89→32.02/31.96%；D 28.28→31.73/31.75%。A普通增益+4.123个百分点，[+3.566,+4.680]，5/5种子改善；UAV总能耗种子平均−34.10%，接纳后成功率46.30→53.57%，MBS占比4.10→4.80%；公平性区间跨零 | 理想即时无损未计费协调；仍为开发筛选。截止期未超普通，同修正A−D区间跨零。固定潜在分母结论一致；results/deadline_repair_20260929/closed_loop_analysis/ |
-
-完整证据与源码、动作/计数核验、计算开销和小样本限制见该工作树 `docs/reports/deadline_repair_20260929_review.md`。在线软件p95 A普通/截止期约16.63/17.01ms，但不含实际信令；不能把快照路径148ms与新直接适配路径作为同口径加速比。
-
-- **2026-09-30 第二阶段闭环筛选已完成并复核**：150任务/300回合/30万步完整，无失败或排除。A原分配/普通128/截止期128的DSR为27.89%/32.02%/31.96%；普通−原+4.123个百分点，95%训练种子t区间[+3.566,+4.680]，5/5种子改善；截止期−普通−0.055个百分点，区间跨零。同普通修正A−Vanilla+0.283个百分点，区间[−1.724,+2.291]，Attention优势仍未成立。A普通修正的种子平均UAV总能耗变化−34.10%，但协调仍为理想即时无损未计费。原5检查点、新5工作负载，属于开发筛选，不是独立训练确认。候选优先普通128，下一步须补贪心初值＋同修正及协调代价，不自动启动。分析在coverage工作树 `results/deadline_repair_20260929/closed_loop_analysis/`；报告 `docs/reports/deadline_repair_20260929_review.md`。
-- **2026-09-30 第一阶段完整复核已完成**：50任务/400快照，无排除。A 截止期128相对原分配超时减少11.72%、卸载相关分配能耗降低38.80%（不是UAV总能耗）；普通128超时减少11.31%。截止期−普通差为−0.045个/快照，95%训练种子t区间[−0.0910,+0.0010]，四比较Holm p=0.2055；D在128预算下差为0。排序独立优势未成立。时延预测误差集中在协作请求，A截止期128有6/200个快照恶化。结论仅支持考虑小规模闭环筛选，普通128必须保留；复核时尚未启动闭环或新训练。分析和报告在 coverage-optimization 工作树 `results/deadline_repair_20260929/review/` 与 `docs/reports/deadline_repair_20260929_review.md`。
-- **已完成的否定性筛选**：batch_offload pilot 的 A/B/C/D 平均 DSR 为 27.70%/26.43%/27.35%/28.05%。B/C 均未晋级；D−A 区间跨零，同信息 Attention 优势尚未成立。结果在 coverage-optimization 工作树 `results/batch_offload_20260928/pilot/`。停止原定 B/C 扩训，不把节能事后替换为主指标。
-- **优先方向**：按新冻结协议进行逐节点下层的固定上层筛选，保留贪心＋普通128强对照。原学习提案、截止期排序和同信息Attention的DSR优势均不能预设；两种新actor先匹配节点信息与训练条件，再检验结构贡献。自然覆盖、奖励、mask、修正预算与上层参数保持固定，不同时加入教师、交换、奖励调权或联合重训。当前训练已获用户授权；后续阶段不自动启动。
-- **首次执行阶段已获授权**：使用已完成 pilot 的 A 与同信息 Vanilla 最后检查点，固定轨迹快照比较原方案、普通限步搜索、截止期敏感修正。所有预定种子和快照保留，包括空批次。先通过远程测试和 smoke 再启动；训练与环境评估只在远程进行。具体清单见 [修正实验协议](docs/plans/deadline_repair_20260929.md)。用户已要求开始这一阶段，不再为相同范围重复确认。
-- **信息边界**：搜索只能用决策前允许的信息及明确声明的提案汇总；不得将未来状态、实际执行结果或邻居真实缓存用于方案筛选。完整冻结仿真只用于离线事后复核。跨 UAV 当前提案属于新增协调信息，单列协议与上报/下发成本，不能宣称沿用原信息预算。
-- **模型边界**：当前 UAV 按最终任务数平分算力，不是持续排队模型；不直接移植 Lyapunov 队列、可分卸载或设备本地计算。所有已接纳请求必须保留去向，禁止删困难请求、改变 DSR 分母或放宽动作 mask 来制造收益。
-- **证据顺序**：快照有效后进行真实闭环评估，再比较贪心初值＋同修正，随后才考虑逐节点下层重训、自改进/教师辅助训练。后续大规模训练须先冻结新协议，不自动启动旧40次确认。开发数据不能充作独立确认集；相同信息、搜索预算和实际开销必须有匹配对照。
-- **训练契约**：如未来接入修正器，PPO 保存网络原始提案及其概率；修正动作不能冒充原策略采样。辅助模仿单独记录损失、标签来源和教师预算，禁止测试数据回流。
-- **创新边界**：“MAPPO＋搜索”、逐节点打分、有限次数停止本身都不是已证明创新；候选贡献是针对截止期外部影响的低开销修正，须证明同预算质量/速度收益并继续文献核对。不得预先保证最强或宣称全局最优、实时可部署。
-- **验收与留痕**：记录原检查点/源码哈希、扩展模块哈希、配置、预算、失败任务、预测与实际偏差、能耗与完整调用时间。旧冻结源码和历史结果不改写；早期修正阶段沿用 results/deadline_repair_20260929/ 与 output/deadline_repair_20260929/validation/，新逐节点阶段使用 results/node_offload_20260930/ 与 output/node_offload_20260930/validation/。只启动不等于完成，不承诺未设置的后台通知。
-
-## 多模态文件处理
-
-- 仅当任务需要理解图片、音频、视频或 PDF 的内容时触发；提及扩展名、检查路径、重命名或审阅含有示例路径的文本不触发内容分析。
-- 先检查当前平台、模型和工具的实际能力，不沿用其他模型的模态限制。适用且已授权的 `understand_image`、`understand_audio`、`understand_video`、`understand_pdf` 可优先使用，但不假定它们存在。
-- 指定 MCP 不可用时，可使用平台已提供且适用的原生理解能力，或在本地进行文本提取、OCR、转写、渲染与检查；遵循 PDF、文档等相关 Skill 和平台权限。不得将不支持的二进制内容直接传入文本模型，也不得为降级擅自安装工具。
-- 本地处理不等于授权外传。不得把私有论文、敏感数据或审稿材料上传到新的外部服务；外部处理需要明确授权并满足隐私要求。
-- 无可用的授权处理路径时，报告具体限制，继续独立工作，并仅请求受影响部分所需的文本、文件或权限。不凭文件名猜测内容。
-- 如实说明实际使用的分析方式和识别不确定性；只有实际调用并成功得到 MCP 结果时，才可写“已通过 MCP 分析完成”。
-
-## 注意事项
-
-- 无 requirements.txt，依赖安装在 `.venv/` 中手动管理
-- 已有 `tests/` 单元、回归及烟雾验证；按改动运行相关检查。本机只运行无 PyTorch 依赖的轻量验证，训练与完整实验验证在远程服务器执行
-- 实验脚本使用 `nohup` 后台运行，通过 `--max_workers` 控制并行度
-- 环境变量 `OMP_NUM_THREADS=4`, `MKL_NUM_THREADS=4`, `OPENBLAS_NUM_THREADS=4` 用于限制线程数
-
-## SF-HLM 执行授权与实验合同（2026-10-01）
-
-用户已明确要求实施完整 SF-HLM 计划。实现、新协议和验收位于 coverage-optimization 工作树，具体文件为该工作树 `docs/plans/sf_hlm_20261001.md`、`utils/sf_hlm_{matching,search,coordination}.py`、`marl_models/sf_hlm.py`、`scripts/analysis/sf_hlm_experiment.py`、`tests/test_sf_hlm.py`。可用 `git worktree list` 定位；不要把主工作区缺少这些文件当成未实现。原逐节点下层筛选已完成，结果仍在该工作树 `results/node_offload_20260930/`。
-
-匹配、配额 PPO、上层压力反馈、五组整套训练、独立确认与冻结策略稳健性流程已实现，并通过远程 15 项测试及全分支短程验证，包含精确断点恢复。新实验在服务器 `~/Lunwen/sf-hlm-20261001/` 运行，扩展源码冻结在 `extension_release_20261001`；协议和状态位于 coverage 工作树 `results/sf_hlm_20261001/`，验收位于 `output/sf_hlm_20261001/validation/`。后续训练依预定实际快照、闭环、能耗和耗时门槛自动推进，失败保留负面结果并停止；当前授权无需重复审批。不自动执行计划外备选模块或修改论文主结果。启动和短程通过不等于性能确认。
-
-主验收要求相对两个预定强对照 DSR 至少增加 1 个百分点、真实总 UAV 能耗平均增幅不超过 5%、完整软件 p95 小于 1 秒，以及新训练种子的配对区间与 Holm 检验。理想协调与计费、延迟、丢包新协议严格分开。未提交或推送 Git，未设置后台通知。
+1. **第三章（自然覆盖下需求感知轨迹控制）**：
+   - 环境与模型：`environment/env.py`、`marl_models/attention_mappo/`、`marl_models/offload_mappo/`。
+   - 上层观测模式：`UPPER_UE_OBSERVATION_MODE = "associated_plus_uncovered_in_sense"`（保持 30 槽与 $100\,\mathrm{m}$ 物理覆盖半径不变，按距离补入 $460\,\mathrm{m}$ 感知范围内未覆盖 UE）。
+   - 共享奖励：`reward = W_FAIR*jfi - W_LAT*norm_latency + W_DSR*dsr - 0.5*mbs_Load`（无能耗项、无离线率项）。
+2. **第四章（固定快照二元字典序重评估 MC-ITR）**：
+   - 实现：`utils/chapter4_mc_itr.py`、`scripts/analysis/run_chapter34_energy_free.py`。
+   - 严格二元字典序目标：$F(\mathbf{a}) = (F_1(\mathbf{a}), F_2(\mathbf{a}))$，第一层为超时请求数，第二层为平均归一化时延。
+3. **第五章（跨时隙持续排队中的规划知识蒸馏与反事实辅助 PPO）**：
+   - 实现：`environment/queued_service.py`、`marl_models/queued_joint_rl.py`、`utils/queued_joint_rl.py`、`scripts/analysis/queued_joint_rl_experiment.py`。
+   - 核心机制：释放时间工作守恒串联排队近似（Stage 1 通信释放时刻 + Stage 2 节点先占式 EDF 计算）、候选等变双分支联合策略（$\mathbf{C}_{\mathrm{upper}}(s,k)\in\mathbb{R}^4$ 期望运动反馈）、两轮 DAgger 规划蒸馏、共同随机数（CRN）三步反事实辅助 PPO 微调、零在线前瞻与神经引导 Top-6 MPC。

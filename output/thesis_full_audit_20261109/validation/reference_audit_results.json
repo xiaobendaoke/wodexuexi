@@ -1,0 +1,202 @@
+{
+  "audit_date": "2026-11-09",
+  "bib_file": "latex/reference.bib",
+  "commit_head": "f550ba60fba5558dc6d3349b1d9d470d066babc4",
+  "summary": {
+    "total_bib_entries": 53,
+    "actively_cited_entries": 53,
+    "uncited_entries": 0,
+    "verified_clean_entries": 20,
+    "minor_metadata_or_missing_doi_entries": 16,
+    "blocking_hallucinated_garbled_or_mismatched_entries": 17,
+    "verifier_script_flaw": "scripts/literature/verify_thesis_references.py (lines 76-89) checks only SequenceMatcher title similarity > 0.92 and completely ignores author names, publication year, journal/venue, volume, issue, pages, and BibTeX key consistency."
+  },
+  "blocking_entries_requiring_immediate_fix_or_removal": [
+    {
+      "key": "rashid2021updet",
+      "cited_in": ["latex/docs/chap02.tex:L602"],
+      "current_bib": "Rashid, Tabish and Farquhar, Gregory and Peng, Bei and Whiteson, Shimon (2020). Attention-based multi-agent reinforcement learning. ICML, pp. 7958-7968.",
+      "issue_type": "AI_HALLUCINATED_FRANKEN_CITATION",
+      "forensic_detail": "Combines the key of UPDeT (Hu, Siyi et al., ICLR 2021), the authors of JMLR 2020 QMIX (Rashid, Farquhar, Peng, Whiteson), and a nonexistent ICML 2020 paper (ICML 2020 PMLR v119 pp. 7958-7968 is actually Bono et al.).",
+      "recommended_action": "Replace with Iqbal & Sha (ICML 2019, MAAC: Actor-Attention-Critic for Multi-Agent Reinforcement Learning) and/or Hu, Siyi et al. (ICLR 2021, UPDeT: Universal Multi-agent RL via Policy Decoupling with Transformers)."
+    },
+    {
+      "key": "wu2021joint",
+      "cited_in": ["latex/docs/chap01.tex:L73"],
+      "current_bib": "Wu, Qingqing and Zeng, Yong and Zhang, Rui (2021). Joint trajectory and communication design for multi-UAV enabled wireless networks. IEEE TWC, 20(3):1735-1749.",
+      "issue_type": "FABRICATED_YEAR_VOLUME_PAGES_ON_REAL_TITLE",
+      "forensic_detail": "Wu, Zeng, and Zhang's actual paper 'Joint Trajectory and Communication Design for Multi-UAV Enabled Wireless Networks' was published in IEEE Transactions on Wireless Communications, Vol. 17, No. 3, pp. 2109-2121, March 2018 (DOI: 10.1109/TWC.2017.2789293), NOT Vol. 20, No. 3, pp. 1735-1749, 2021.",
+      "recommended_action": "Fix key/year to wu2018joint (2018, Vol. 17, No. 3, pp. 2109-2121, DOI: 10.1109/TWC.2017.2789293)."
+    },
+    {
+      "key": "huang2021uav",
+      "cited_in": ["latex/docs/chap01.tex:L58"],
+      "current_bib": "Huang, Liang and Bi, Suzhi and Zhang, Ying-Jun Angela (2021). DRL based online offloading framework for UAV-MEC systems. IEEE TWC, 20(5):3025-3039.",
+      "issue_type": "FABRICATED_TITLE_VENUE_YEAR_ON_REAL_AUTHORS",
+      "forensic_detail": "Huang, Bi, and Zhang published 'Deep Reinforcement Learning for Online Computation Offloading in Wireless Powered Mobile-Edge Computing Networks' in IEEE Transactions on Mobile Computing, Vol. 19, No. 11, pp. 2581-2593, 2020 (DOI: 10.1109/TMC.2019.2928811), not a UAV-MEC paper in IEEE TWC 2021.",
+      "recommended_action": "Remove from UAV trajectory citation at chap01.tex:L58 or replace with verified UAV-MEC trajectory literature."
+    },
+    {
+      "key": "hu2021uav",
+      "cited_in": ["latex/docs/chap01.tex:L73"],
+      "current_bib": "Hu, Xiao and Yang, Kun and Zheng, Zhaohui (2021). UAV-assisted mobile edge computing: A joint trajectory and resource optimization approach. IEEE TWC, 20(7):4445-4458.",
+      "issue_type": "GARBLED_DUPLICATE_OF_HU2019UAV",
+      "forensic_detail": "Corrupted/hallucinated variant of hu2019uav (Hu, Xiaoyan, Wong, Kai-Kit, Yang, Kun, Zheng, Zhongbin, IEEE TWC 2019, DOI: 10.1109/TWC.2019.2928539) with no DOI.",
+      "recommended_action": "Remove hu2021uav and cite hu2019uav directly."
+    },
+    {
+      "key": "zhou2020latency",
+      "cited_in": ["latex/docs/chap01.tex:L73"],
+      "current_bib": "Zhou, Fan and Wu, Yongpeng and Hu, Rose Qingyang and Qian, Yu (2020). Latency optimization for UAV-assisted mobile edge computing. IEEE TCOM, 68(9):5721-5735.",
+      "issue_type": "GARBLED_AUTHOR_TITLE_VENUE",
+      "forensic_detail": "Fuhui Zhou, Yongpeng Wu, Rose Qingyang Hu, and Yu Qian published 'Computation Rate Maximization in UAV-Enabled Wireless-Powered Mobile-Edge Computing Systems' in IEEE JSAC, Vol. 36, No. 9, pp. 1927-1941, 2018 (DOI: 10.1109/JSAC.2018.2864426), not 'Zhou, Fan' in IEEE TCOM 2020.",
+      "recommended_action": "Replace with Zhou, Fuhui et al. (IEEE JSAC 2018, DOI: 10.1109/JSAC.2018.2864426) or remove."
+    },
+    {
+      "key": "bai2021multi",
+      "cited_in": ["latex/docs/chap01.tex:L73"],
+      "current_bib": "Bai, Teng and Wang, Jianping and Ren, Yong and Hanzo, Lajos (2021). Multi-agent reinforcement learning for UAV-assisted mobile edge computing. IEEE TWC, 20(12):8184-8198.",
+      "issue_type": "GARBLED_TITLE_VENUE_AND_MISPLACED_CLAIM",
+      "forensic_detail": "Teng Bai, Chao Wang, Jianping Wang, Yong Ren, and Lajos Hanzo published 'Energy-Efficient Computation Offloading for Secure UAV-Edge-Computing Systems' in IEEE TVT, Vol. 68, No. 6, pp. 6074-6087, 2019 (DOI: 10.1109/TVT.2019.2912778). Moreover, chap01.tex:L73 cites bai2021multi as an example of 'BCD, SCA, and alternating optimization', contradicting a 'Multi-agent reinforcement learning' title.",
+      "recommended_action": "Replace with verified Bai et al. (IEEE TVT 2019, DOI: 10.1109/TVT.2019.2912778) or remove."
+    },
+    {
+      "key": "zhang2021energy",
+      "cited_in": ["latex/docs/chap01.tex:L73"],
+      "current_bib": "Zhang, Guanglin and Shen, Yanli and Yang, Kun (2021). Energy-efficient UAV-assisted mobile edge computing. IEEE TVT, 70(8):8234-8238.",
+      "issue_type": "UNVERIFIED_NO_DOI_SUSPECTED_FABRICATION",
+      "forensic_detail": "No DOI, not in reference_verification_final.json; reintroduced in commit f550ba6 without verification.",
+      "recommended_action": "Remove or replace with verified UAV-MEC optimization paper (e.g., Zeng, Yong et al. 2019 IEEE TWC)."
+    },
+    {
+      "key": "liu2020energy",
+      "cited_in": ["latex/docs/chap01.tex:L73"],
+      "current_bib": "Liu, Yang and Wang, Kezhi and Pan, Cunhua and Aslam, Nauman (2020). Energy-efficient resource allocation for UAV-assisted mobile edge computing. IEEE TCOM, 68(11):6963-6977.",
+      "issue_type": "UNVERIFIED_NO_DOI_GARBLED_METADATA",
+      "forensic_detail": "No DOI, not in reference_verification_final.json; Liu, Wang, Yang, Pan, Aslam published in IEEE TCOM/JIOT with different title/pages.",
+      "recommended_action": "Remove or verify exact DOI and pages."
+    },
+    {
+      "key": "guo2025mappo",
+      "cited_in": ["latex/docs/chap01.tex:L88"],
+      "current_bib": "Guo, Yanchen et al. (2024). MAPPO-PIS: A multi-agent proximal policy optimization method with prior intent sharing for CAVs' cooperative decision-making. ECCV Workshops, pp. 245-262.",
+      "issue_type": "CLAIM_MISMATCH_AND_KEY_YEAR_MISMATCH",
+      "forensic_detail": "chap01.tex:L88 cites guo2025mappo as a 'UAV-assisted edge computing dynamic offloading and trajectory control' paper, but the BibTeX entry is about Connected Automated Vehicles (CAVs) at road intersections in ECCV 2024 Workshops!",
+      "recommended_action": "Remove from UAV-MEC claim at chap01.tex:L88."
+    },
+    {
+      "key": "de2020sample",
+      "cited_in": ["latex/docs/chap01.tex:L88"],
+      "current_bib": "De, Arindam and Aksaray, Derya (2020). Sample efficient multi-agent reinforcement learning with centralized training. IEEE CDC, pp. 5958-5963.",
+      "issue_type": "CLAIM_MISMATCH_AND_UNVERIFIED_METADATA",
+      "forensic_detail": "chap01.tex:L88 cites de2020sample as a 'UAV-assisted edge computing dynamic offloading and trajectory control' paper, which it is not; also lacks DOI.",
+      "recommended_action": "Remove from chap01.tex:L88."
+    },
+    {
+      "key": "li2024cacom",
+      "cited_in": ["latex/docs/chap01.tex:L112"],
+      "current_bib": "Li, Xinran and Zhang, Jun (2024). Context-aware communication for multi-agent reinforcement learning. AAMAS, pp. 1156-1164.",
+      "issue_type": "UNVERIFIED_METADATA_AND_CLAIM_DRIFT",
+      "forensic_detail": "Originally fabricated as a 'Computer Networks' UAV-MEC paper, then replaced with an AAMAS MARL communication title without DOI verification.",
+      "recommended_action": "Verify AAMAS 2024 proceedings or replace with Iqbal & Sha (2019, ICML, MAAC)."
+    },
+    {
+      "key": "liu2025tmac",
+      "cited_in": ["latex/docs/chap01.tex:L112"],
+      "current_bib": "Li, Xuesi and Xue, Shuai and He, Ziming and Shi, Haobin (2025). TMAC: A Transformer-based partially observable multi-agent communication method. PeerJ Computer Science, 11.",
+      "issue_type": "KEY_AUTHOR_MISMATCH_AND_MISSING_PAGES_DOI",
+      "forensic_detail": "BibTeX key is liu2025tmac ('Liu'), whereas first author is Li, Xuesi; missing article number/pages and DOI.",
+      "recommended_action": "Rename key to li2025tmac and add article number/DOI, or remove."
+    },
+    {
+      "key": "zhang2025as",
+      "cited_in": ["latex/docs/chap01.tex:L112"],
+      "current_bib": "Zhang, Peng and Li, Guohui (2025). A cooperative dynamic target search approach for multi-UAV systems utilizing the MAPPO algorithm. Discover Artificial Intelligence, 5(1):153.",
+      "issue_type": "MISSING_DOI_AND_NOT_MEC",
+      "forensic_detail": "Paper is on multi-UAV target search rather than MEC computation offloading, and lacks DOI (10.1007/s44163-025-00380-x or similar).",
+      "recommended_action": "Add verified DOI and clarify in chap01.tex:L112 that it addresses multi-UAV target search."
+    },
+    {
+      "key": "he2019uav",
+      "cited_in": ["latex/docs/chap01.tex:L75"],
+      "current_bib": "Yuan, Xinwang and Xie, Zhidong and Tan, Xin (2022). Computation offloading in UAV-enabled edge computing: A Stackelberg game approach. Sensors, 22(10):3854.",
+      "issue_type": "LEGACY_KEY_AUTHOR_YEAR_MISMATCH",
+      "forensic_detail": "Metadata and prose attribution ('Yuan, Xie, and Tan') are verified and accurate (DOI: 10.3390/s22103854), but the BibTeX key 'he2019uav' reflects a deleted 2019 paper.",
+      "recommended_action": "Rename BibTeX key from he2019uav to yuan2022computation in reference.bib and chap01.tex:L75."
+    },
+    {
+      "key": "fan2021uav",
+      "cited_in": ["latex/docs/chap01.tex:L107"],
+      "current_bib": "Hady, Mohamad A. et al. (2025). Multi-agent reinforcement learning for resources allocation optimization: A survey. Artificial Intelligence Review, 58(11):354.",
+      "issue_type": "LEGACY_KEY_AUTHOR_YEAR_MISMATCH",
+      "forensic_detail": "Metadata and prose attribution ('Hady et al.') are verified and accurate (DOI: 10.1007/s10462-025-11340-5), and number={11} was added in commit f550ba6, but the BibTeX key 'fan2021uav' reflects a deleted 2021 paper.",
+      "recommended_action": "Rename BibTeX key from fan2021uav to hady2025marl in reference.bib and chap01.tex:L107."
+    },
+    {
+      "key": "zhao2024robust",
+      "cited_in": ["latex/docs/chap01.tex:L90"],
+      "current_bib": "Li, Bin and Yang, Rongrong et al. (2024). Robust computation offloading and trajectory optimization for multi-UAV-assisted MEC: A multi-agent DRL approach. IEEE IoT Journal, 11(3):4775-4786.",
+      "issue_type": "LEGACY_KEY_AUTHOR_MISMATCH",
+      "forensic_detail": "Pages were fixed to 4775--4786 in commit f550ba6 and prose says 'Li et al.', but the BibTeX key 'zhao2024robust' still has 'zhao' instead of 'li'.",
+      "recommended_action": "Rename BibTeX key from zhao2024robust to li2024robust in reference.bib and chap01.tex:L90."
+    },
+    {
+      "key": "khurshid2021uav",
+      "cited_in": ["latex/docs/chap01.tex:L58"],
+      "current_bib": "Khurshid, Tayyaba et al. (2023). A DRL strategy for optimal resource allocation along with 3D trajectory dynamics in UAV-MEC network. IEEE Access, 11:54664-54678.",
+      "issue_type": "KEY_YEAR_MISMATCH_AND_MISSING_DOI",
+      "forensic_detail": "Key says 2021 while publication year is 2023; missing DOI (10.1109/ACCESS.2023.3281674).",
+      "recommended_action": "Rename key to khurshid2023drl and add DOI."
+    }
+  ],
+  "recommended_missing_references_to_add": [
+    {
+      "suggested_key": "ng1999policy",
+      "citation": "Ng, A. Y., Harada, D., & Russell, S. (1999). Policy invariance under reward transformations: Theory and application to reward shaping. Proceedings of the 16th International Conference on Machine Learning (ICML), pp. 278-287.",
+      "target_chapters": ["Chapter 2 (Section 2.4)", "Chapter 5 (Section 5.3.1, Eqs. 5.10-5.11)"],
+      "reason": "Essential theoretical foundation for Potential-Based Reward Shaping (PBRS) and explaining why Chapter 5's undiscounted potential difference Phi_post(s_t^+) - Phi_pre(s_t) is a heuristic dense shaping rather than strict policy-invariant PBRS."
+    },
+    {
+      "suggested_key": "shao2024deepseekmath",
+      "citation": "Shao, Z., Wang, P., Zhu, Q., Xu, R., Song, J., Bi, X., Zhang, H., Zhang, M., Li, Y. K., Wu, Y., & Guo, D. (2024). DeepSeekMath: Pushing the limits of mathematical reasoning in open language models. arXiv preprint arXiv:2402.03300.",
+      "target_chapters": ["Chapter 5 (Section 5.3.2, Eqs. 5.13-5.16)"],
+      "reason": "Direct algorithmic source for Group Relative Policy Optimization (GRPO) / group-normalized counterfactual advantage used in Chapter 5 (explicitly named GRPO-PPO in the codebase)."
+    },
+    {
+      "suggested_key": "kool2019buy",
+      "citation": "Kool, W., van Hoof, H., & Welling, M. (2019). Buy 4 REINFORCE samples, get a baseline for free! ICLR 2019 Workshop on Deep Reinforcement Learning Meets Structured Prediction.",
+      "target_chapters": ["Chapter 5 (Section 5.3.2, Eq. 5.13)"],
+      "reason": "Foundational reference for the Leave-One-Out (LOO) multi-sample baseline estimator Eq. (5.13)."
+    },
+    {
+      "suggested_key": "iqbal2019actor",
+      "citation": "Iqbal, S., & Sha, F. (2019). Actor-attention-critic for multi-agent reinforcement learning. Proceedings of the 36th International Conference on Machine Learning (ICML), PMLR 97, pp. 2961-2970.",
+      "target_chapters": ["Chapter 2 (Section 2.6.2)", "Chapter 3 (Section 3.3)"],
+      "reason": "True foundational paper for multi-agent attention actor-critic (replaces the hallucinated Franken-citation rashid2021updet)."
+    },
+    {
+      "suggested_key": "zaheer2017deep",
+      "citation": "Zaheer, M., Kottur, S., Ravanbakhsh, S., Poczos, B., Salakhutdinov, R. R., & Smola, A. J. (2017). Deep sets. Advances in Neural Information Processing Systems (NeurIPS), Vol. 30.",
+      "target_chapters": ["Chapter 2 (Section 2.6.2, Eq. 2.63)", "Chapter 5 (Section 5.2.2)"],
+      "reason": "Theoretical foundation for permutation invariance and candidate-equivariant set scoring in Chapters 2, 3, and 5."
+    },
+    {
+      "suggested_key": "zeng2019energy",
+      "citation": "Zeng, Y., Xu, J., & Zhang, R. (2019). Energy minimization for wireless communication with rotary-wing UAV. IEEE Transactions on Wireless Communications, 18(4):2329-2345. DOI: 10.1109/TWC.2019.2902559.",
+      "target_chapters": ["Chapter 2 (Section 2.1)", "Chapter 6 (Section 6.2)"],
+      "reason": "Canonical rotary-wing UAV propulsion power model needed to justify the scope boundary of the energy-free protocol (canonical_energy_free_v1) and future energy-constrained extensions."
+    },
+    {
+      "suggested_key": "liu1973scheduling",
+      "citation": "Liu, C. L., & Layland, J. W. (1973). Scheduling algorithms for multiprogramming in a hard-real-time environment. Journal of the ACM, 20(1):46-61. DOI: 10.1145/321738.321743.",
+      "target_chapters": ["Chapter 5 (Section 5.1.2, Eq. 5.3 & Section 5.2.1, Eq. 5.5)"],
+      "reason": "Foundational reference for preemptive Earliest Deadline First (EDF) processor scheduling used throughout Chapter 5."
+    },
+    {
+      "suggested_key": "agarwal2021deep",
+      "citation": "Agarwal, R., Schwarzer, M., Castro, P. S., Courville, A. C., & Bellemare, M. (2021). Deep reinforcement learning at the edge of the statistical precipice. Advances in Neural Information Processing Systems (NeurIPS), Vol. 34, pp. 29304-29320.",
+      "target_chapters": ["Chapter 2 (Section 2.8)", "Chapter 3 (Section 3.5)", "Chapter 5 (Section 5.5)"],
+      "reason": "Essential methodological reference for stratified bootstrap confidence intervals and small-seed statistical evaluation in deep reinforcement learning."
+    }
+  ]
+}

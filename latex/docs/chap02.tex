@@ -238,7 +238,7 @@ $V_t^\pi$ 对策略实际选择的动作取平均，$Q_t^\pi$ 则固定当前动
 对于有界奖励、平稳策略和无限折扣时域，定义策略 Bellman 算子 $\mathcal T^\pi$。任取两个有界函数 $V,W$，由于概率加权不会放大最大绝对差，有
 \begin{align}
     |(\mathcal T^\pi V)(s)-(\mathcal T^\pi W)(s)|
-    &\leq\gamma\sum_a\pi(a\mid s)\sum_{s'}P(s'\mid s,a)|V(s')-W(s')|\\
+    &\leq\gamma\sum_a\pi(a\mid s)\sum_{s'}P(s'\mid s,a)|V(s')-W(s')|\nonumber\\
     &\leq\gamma\|V-W\|_\infty,
     \label{eq:ch2-bellman-contraction}
 \end{align}
@@ -269,7 +269,7 @@ $V_t^\pi$ 对策略实际选择的动作取平均，$Q_t^\pi$ 则固定当前动
 令 $R(\xi)=\sum_t\gamma^t r_t$。使用 $\nabla p_\theta=p_\theta\nabla\log p_\theta$，得到
 \begin{align}
     \nabla_\theta J(\theta)
-    &=\int \nabla_\theta p_\theta(\xi)R(\xi)\,\mathrm d\xi\\
+    &=\int \nabla_\theta p_\theta(\xi)R(\xi)\,\mathrm d\xi\nonumber\\
     &=\mathbb E_{p_\theta}\left[R(\xi)\sum_{t=0}^{T-1}\nabla_\theta\log\pi_\theta(a_t\mid s_t)\right].
     \label{eq:ch2-reinforce-full}
 \end{align}
@@ -290,7 +290,7 @@ $V_t^\pi$ 对策略实际选择的动作取平均，$Q_t^\pi$ 则固定当前动
     \nabla_\theta J(\theta)
     &=\mathbb E_{p_\theta}\left[\sum_{t=0}^{T-1}
        \nabla_\theta\log\pi_\theta(a_t\mid s_t)
-       \sum_{k=t}^{T-1}\gamma^k r_k\right]\\
+       \sum_{k=t}^{T-1}\gamma^k r_k\right]\nonumber\\
     &=\mathbb E_{p_\theta}\left[\sum_{t=0}^{T-1}\gamma^t
        \nabla_\theta\log\pi_\theta(a_t\mid s_t)\mathcal G_t\right].
     \label{eq:ch2-reward-to-go-gradient}
@@ -313,8 +313,8 @@ $V_t^\pi$ 对策略实际选择的动作取平均，$Q_t^\pi$ 则固定当前动
 
 取一个只依赖动作前信息、而不依赖当前采样动作的基线 $b_t(s_t)$。利用式~\eqref{eq:ch2-score-zero}，其对梯度的期望贡献为
 \begin{align}
-    &\mathbb E\left[\nabla_\theta\log\pi_\theta(a_t\mid s_t)b_t(s_t)\mid s_t\right]\\
-    &\quad=b_t(s_t)\sum_a\pi_\theta(a\mid s_t)\nabla_\theta\log\pi_\theta(a\mid s_t)\\
+    &\mathbb E\left[\nabla_\theta\log\pi_\theta(a_t\mid s_t)b_t(s_t)\mid s_t\right]\nonumber\\
+    &\quad=b_t(s_t)\sum_a\pi_\theta(a\mid s_t)\nabla_\theta\log\pi_\theta(a\mid s_t)\nonumber\\
     &\quad=b_t(s_t)\nabla_\theta\sum_a\pi_\theta(a\mid s_t)=0.
     \label{eq:ch2-baseline-unbiased}
 \end{align}
@@ -379,7 +379,7 @@ Actor 与 Critic 的作用不同：前者优化动作概率，后者拟合用于
 \begin{align}
     &\gamma^l\left[(1-\lambda_{\mathrm{GAE}})
        \sum_{n=l+1}^{K-1}\lambda_{\mathrm{GAE}}^{n-1}
-       +\lambda_{\mathrm{GAE}}^{K-1}\right]\\
+       +\lambda_{\mathrm{GAE}}^{K-1}\right]\nonumber\\
     &\qquad=\gamma^l\lambda_{\mathrm{GAE}}^l.
     \label{eq:ch2-gae-coefficient}
 \end{align}
@@ -590,7 +590,7 @@ $M$ 为加性掩码，合法项为零，非法项在数学表达中为负无穷�
 
 多头注意力使用不同投影建立多个表示子空间：
 \begin{align}
-    H_h&=\operatorname{Att}(QW_h^Q,KW_h^K,VW_h^V),\\
+    H_h&=\operatorname{Att}(QW_h^Q,KW_h^K,VW_h^V),\nonumber\\
     \operatorname{MHA}(Q,K,V)&=\operatorname{Concat}(H_1,\ldots,H_H)W^O.
     \label{eq:ch2-multihead}
 \end{align}
@@ -599,7 +599,7 @@ $M$ 为加性掩码，合法项为零，非法项在数学表达中为负无穷�
 \subsection{局部查询、掩码与排列性质}
 \label{sec:ch2-cross-attention}
 
-在 UAV 上层观测中，自身状态经过嵌入后可作为查询，邻居 UAV 和 UE 槽位分别提供键和值\cite{rashid2021updet}。邻居表示包含协作几何关系，UE 表示包含位置与请求等允许信息，两个聚合结果再与自身特征融合。固定槽位中的空元素需要掩码，否则补零槽位也会参与归一化，影响有效元素权重。注意力改变的是聚合方式，并未自动减少原始观测维度，也没有自动增加感知范围。
+在 UAV 上层观测中，自身状态经过嵌入后可作为查询，邻居 UAV 和 UE 槽位分别提供键和值\cite{iqbal2019actor,hu2021updet}。邻居表示包含协作几何关系，UE 表示包含位置与请求等允许信息，两个聚合结果再与自身特征融合。固定槽位中的空元素需要掩码，否则补零槽位也会参与归一化，影响有效元素权重。注意力改变的是聚合方式，并未自动减少原始观测维度，也没有自动增加感知范围。
 
 全空键集合是一个必须处理的边界。若一行所有 logits 都为负无穷，softmax 的归一化不再有有效分母。实现可以为这种情况定义零上下文或专门空状态，并让后续网络识别“没有可见元素”。该约定应与训练和执行一致，避免出现 NaN 后再把结果无条件修成任意数值。实际 UAV 的邻居或 UE 槽位数量变化时，掩码和有效计数同样需要对应，不应把填充容量误认为实际用户数量。
 
@@ -617,25 +617,25 @@ $M$ 为加性掩码，合法项为零，非法项在数学表达中为负无穷�
 \subsection{候选等变编码与分配--运动双分支交互表示}
 \label{sec:ch2-bipartite-graph}
 
-当决策空间由一组离散候选分配方案 $\mathcal{K}(s)=\{1,\ldots,K\}$ 与一组离散候选联合运动方案 $\mathcal{M}(s)=\{1,\ldots,M\}$ 组成时，若把所有候选特征按固定顺序拼接为单一长向量再输入全连接层，网络参数会与候选槽位编号绑定，破坏候选集合的置换等变性。为保持候选顺序无关的结构归纳偏置，可以使用共享权重的逐候选打分网络（Candidate-Equivariant Scoring Network）。设公共排队状态上下文为 $\mathbf{c}(s)$，第 $k$ 个候选分配方案的特征为 $\mathbf{a}_k(s)$，第 $(k,m)$ 对方案组合的运动与交互特征为 $\mathbf{m}_{km}(s)$，定义共享映射 $g_\theta$ 与 $h_\theta$：
+当决策空间由一组离散候选分配方案 $\mathcal{K}(s)=\{1,\ldots,K\}$ 与一组离散候选联合运动方案 $\mathcal{M}(s)=\{1,\ldots,M\}$ 组成时，若把所有候选特征按固定顺序拼接为单一长向量再输入全连接层，网络参数会与候选槽位编号绑定，破坏候选集合的置换等变性\cite{zaheer2017deep}。为保持候选顺序无关的结构归纳偏置，可以使用共享权重的逐候选打分网络（Candidate-Equivariant Scoring Network）。设公共排队状态上下文为 $\mathbf{c}(s)\in\mathbb{R}^{14}$，第 $k$ 个候选分配方案的特征为 $\mathbf{a}_k(s)\in\mathbb{R}^{14}$，第 $(k,m)$ 对方案组合的运动与交互特征为 $\mathbf{m}_{km}(s)\in\mathbb{R}^{16}$，其前四维核心交互特征向量记为 $\boldsymbol{\phi}_{km}(s)\in\mathbb{R}^4$。给定正值候选先验 $p_a^0(k\mid s)$、$p_m^0(m\mid s,k)$ 与共享评分网络 $g_m,g_a$，运动分支条件分布与四维上层运动期望反馈向量 $\mathbf{C}_{\mathrm{upper}}(s,k)\in\mathbb{R}^4$ 定义为：
 \begin{align}
-    z_k^{\mathrm{base}}(s) &= g_\theta\big([\mathbf{c}(s),\,\mathbf{a}_k(s)]\big),\qquad k\in\mathcal{K}(s),\\
-    \mathbf{C}_{\mathrm{upper}}[k,m](s) &= h_\theta\big([\mathbf{c}(s),\,\mathbf{a}_k(s),\,\bar{\mathbf{m}}_k(s),\,\mathbf{m}_{km}(s)]\big),\qquad (k,m)\in\mathcal{K}(s)\times\mathcal{M}(s),
+    p_{\theta_m}(m\mid s,k) &= \operatorname{softmax}_m\Big[\beta_m\log p_m^0(m\mid s,k)+g_m\big([\mathbf{m}_{km}(s),\,\mathbf{a}_k(s),\,\mathbf{c}(s)]\big)\Big],\nonumber\\
+    \mathbf{C}_{\mathrm{upper}}(s,k) &= \sum_{m=1}^{M}p_{\theta_m}(m\mid s,k)\,\boldsymbol{\phi}_{km}(s)\in\mathbb{R}^4,\qquad k\in\mathcal{K}(s),
     \label{eq:ch2-message-passing}
 \end{align}
-其中 $\bar{\mathbf{m}}_k(s)=\frac{1}{M}\sum_{m'=1}^M\mathbf{m}_{km'}(s)$ 为给定分配方案 $k$ 下各候选运动特征的均值上下文。由于 $g_\theta$ 与 $h_\theta$ 对每个候选索引共享参数，若对候选集合 $\mathcal{K}(s)$ 或 $\mathcal{M}(s)$ 施加任意排列，输出打分向量与交互矩阵 $\mathbf{C}_{\mathrm{upper}}\in\mathbb{R}^{K\times M}$ 的对应行列严格按相同排列变换。
+其中 $\beta_m>0$ 为运动先验对数注入权重（主配置取 $\beta_m=1$）。由于 $g_m$ 与 $g_a$ 对每个候选索引共享参数，若对候选集合 $\mathcal{K}(s)$ 或 $\mathcal{M}(s)$ 施加任意排列，输出条件分布与期望反馈向量 $\mathbf{C}_{\mathrm{upper}}(s,k)$ 的对应索引严格按相同排列变换。
 
-在此基础上，联合策略可分解为先选分配候选 $k$、再在所选分配方案条件下选择联合运动 $m$ 的链式双分支结构：
+在此基础上，联合策略可分解为先由分配分支基于运动期望反馈评估候选 $k$、再在所选分配方案条件下选择联合运动 $m$ 的链式双分支结构：
 \begin{equation}
-    \pi_\theta(k,m\mid s)=p_a(k\mid s)\,p_m(m\mid s,k),
+    \pi_\theta(k,m\mid s)=p_{\theta_a}(k\mid s)\,p_{\theta_m}(m\mid s,k),
     \label{eq:ch2-dual-branch-factorization}
 \end{equation}
-其中运动分支分布为 $p_m(m\mid s,k)=\operatorname{softmax}_m(\mathbf{C}_{\mathrm{upper}}[k,m])$，而分配分支的最终 logit 融合了在该分配方案下后续运动分支的期望交互反馈：
+其中分配分支的最终分布融合了上游分配对数先验与在该分配方案下后续运动分支的四维期望交互反馈向量：
 \begin{equation}
-    z_k(s)=z_k^{\mathrm{base}}(s)+\eta_{\mathrm{fb}}\sum_{m=1}^{M}p_m(m\mid s,k)\,\mathbf{C}_{\mathrm{upper}}[k,m](s).
+    p_{\theta_a}(k\mid s)=\operatorname{softmax}_k\Big[\beta_a\log p_a^0(k\mid s)+g_a\big([\mathbf{a}_k(s),\,\eta_{\mathrm{fb}}\mathbf{C}_{\mathrm{upper}}(s,k),\,\mathbf{c}(s)]\big)\Big],
     \label{eq:ch2-expectation-feedback}
 \end{equation}
-当 $\eta_{\mathrm{fb}}=1$ 且保留 $\mathbf{a}_k(s)$ 条件输入时，分配分支在评价方案 $k$ 时能够感知该分配在后续可用运动下的期望服务表现（完整联合策略）；若令 $\eta_{\mathrm{fb}}=0$，则退化为无运动期望反馈的单向条件化策略；若进一步消去运动分支中的 $\mathbf{a}_k(s)$ 条件输入，则退化为完全解耦的独立双分支策略 $p_a(k\mid s)p_m(m\mid s)$。第五章在此统一表示框架下严格对比完整联合、去期望反馈与完全解耦三类结构。
+其中 $\beta_a>0$ 为分配先验对数注入权重（主配置取 $\beta_a=1$），$g_a$ 的输入维度为 $14+4+14=32$，$g_m$ 的输入维度为 $16+14+14=44$。当 $\eta_{\mathrm{fb}}=1$ 且保留 $\mathbf{a}_k(s)$ 条件输入时，分配分支在评价方案 $k$ 时能够感知该分配在后续可用运动下的期望服务表现，且分配损失可经 $\mathbf{C}_{\mathrm{upper}}(s,k)$ 回传至运动分支（完整联合策略）；若令 $\eta_{\mathrm{fb}}=0$，则退化为无运动期望反馈的单向条件化策略；若进一步将运动分支中的方案耦合通道与 $\mathbf{a}_k(s)$ 条件输入按下层先验边缘化，则退化为完全解耦的独立双分支策略 $p_{\theta_a}(k\mid s)p_{\theta_m}(m\mid s)$。第五章在此统一表示框架下严格对比完整联合、去期望反馈与完全解耦三类结构。
 
 \section{批量字典序重评估与跨时隙串联排队建模基础}
 \label{sec:ch2-matching}
@@ -676,7 +676,7 @@ $M$ 为加性掩码，合法项为零，非法项在数学表达中为负无穷�
 \subsection{跨时隙持续队列、释放时间串联近似与两套互补实验协议}
 \label{sec:ch2-quota-search}
 
-当未完成任务的传输与计算工作量跨时隙持续保留时，系统从单时隙批量结算扩展为多时隙排队网络。每个被自然接纳的任务 $j$ 依次经历“无线接入上传 $\to$（跨机转发）$\to$ 目标节点最早截止期优先（EDF）计算”两个串联阶段。精确模拟未来多步轨迹下的微观时隙交错排队开销较高，因此在构建候选卸载方案与短期前瞻评价时，可采用\textbf{释放时间工作守恒串联排队近似（Release-Time Work-Conserving Tandem-Queue Approximation）}：第一阶段按冻结链路速率与先到先服务（FCFS）共享带宽计算每个任务的通信完成时刻（即计算阶段释放时刻 $\tilde{r}_j^{\mathrm{cpu}}$）；第二阶段在各执行节点上，将已有计算积压与在窗口内释放的新任务按截止期 $d_j$ 升序（EDF）排列，递推估计各任务的近似完成时刻 $\tilde{t}_j^{\mathrm{done}}$ 与截止期松弛度。第五章将该解析近似用于构造多策略候选分配池与规划教师前瞻，并在真实环境中通过精确微步离散事件排队完成闭环验证。
+当未完成任务的传输与计算工作量跨时隙持续保留时，系统从单时隙批量结算扩展为多时隙排队网络。每个被自然接纳的任务 $j$ 依次经历“无线接入上传 $\to$（跨机转发）$\to$ 目标节点最早截止期优先（EDF）计算\cite{liu1973scheduling}”两个串联阶段。精确模拟未来多步轨迹下的微观时隙交错排队开销较高，因此在构建候选卸载方案与短期前瞻评价时，可采用\textbf{释放时间工作守恒串联排队近似（Release-Time Work-Conserving Tandem-Queue Approximation）}：第一阶段按冻结链路速率与先到先服务（FCFS）共享带宽计算每个任务的通信完成时刻（即计算阶段释放时刻 $\tilde{r}_j^{\mathrm{cpu}}$）；第二阶段在各执行节点上，将已有计算积压与在窗口内释放的新任务按截止期 $d_j$ 升序（EDF）排列，递推估计各任务的近似完成时刻 $\tilde{t}_j^{\mathrm{done}}$ 与截止期松弛度。第五章将该解析近似用于构造多策略候选分配池与规划教师前瞻，并在真实环境中通过精确微步离散事件排队完成闭环验证。
 
 \begin{table}[!htbp]
     \centering
@@ -691,7 +691,7 @@ $M$ 为加性掩码，合法项为零，非法项在数学表达中为负无穷�
         核心科学问题 & 剥离跨时隙队列积压干扰，诊断\textbf{未覆盖需求可见性}对空间接纳的净效应（第三章），以及\textbf{单步批量算力竞争}下的跨机重分配质量余量（第四章）。 & 在传输与计算进度跨时隙保留的持续排队条件下，检验\textbf{规划知识蒸馏、反事实辅助微调与神经引导 MPC} 的闭环协同控制收益。 \\
         任务生命周期与队列保留 & 单时隙内完成完整路径时延结算与截止期判定；未完成工作量不跨时隙累积为持久队列。 & 接入上传、跨机转发与计算剩余工作量均跨时隙持久保留，直至任务完成或超过绝对截止期 $d_j$ 后作为过期任务清除。 \\
         计算资源竞争机制 & 最终批量等份共享：$f_{m,j}=F_j/N_j(\mathbf{b})$，体现同批次任务数外部性。 & 持续工作守恒最早截止期优先（EDF）排队调度，体现跨时隙积压与释放时间耦合。 \\
-        业务类型与缓存动态 & 25类服务与50类内容混合（Zipf $\beta=0.8$），含二值缓存命中、回源下载与 GDSF 周期更新。 & 纯计算服务请求流（时变热点驱动到达，180宏步、每宏步5个微时隙），聚焦通信--计算串联排队耦合。 \\
+        业务类型与缓存动态 & 25类服务与50类内容混合（Zipf $\beta=0.8$），含二值缓存命中、回源下载与 GDSF 周期更新。 & 纯计算服务请求流（时变热点驱动到达，200个到达宏步外加至多4个排空步、每宏步20个 $0.05\,\mathrm{s}$ 微子步），聚焦通信--计算串联排队耦合。 \\
         地面用户与空间运动 & 100个移动 UE（随机航点模型），5架 UAV 离散位置经40轮交替几何消解与悬停回退。 & 100个固定位置 UE（含时变热点到达率），5架 UAV 沿宏步线性插值全路径检查边界与 $200\,\mathrm{m}$ 机间距。 \\
         跨章桥接与证据边界 & 第四章第~\ref{sec:ch4-shared-trajectories} 节在第三章冻结策略的真实轨迹快照上评估 MC-ITR；两章绝对 DSR 不与第五章直接拼接。 & 独立设立17组对照方案与816个盲测确认回合；绝对 DSR（约 $44\%\sim 49\%$）仅在协议 II 内部配对比较。 \\
         \bottomrule
@@ -703,7 +703,7 @@ $M$ 为加性掩码，合法项为零，非法项在数学表达中为负无穷�
 \section{随机实验与证据解释基础}
 \label{sec:ch2-statistical-evidence}
 
-强化学习实验的随机性来自模型初始化、策略采样和外生需求。独立训练块是不同训练过程产生的模型重复；同一模型上的多个工作负载、回合、时隙和请求则属于嵌套评价。增加这些评价可以更准确地估计该模型的行为，但不能把它们都视为独立训练样本。非学习方法没有训练模型，其随机流重复也需要按实际含义命名。本文以这种区分组织后续图表中的 $n$。
+强化学习实验的随机性来自模型初始化、策略采样和外生需求\cite{agarwal2021deep}。独立训练块是不同训练过程产生的模型重复；同一模型上的多个工作负载、回合、时隙和请求则属于嵌套评价。增加这些评价可以更准确地估计该模型的行为，但不能把它们都视为独立训练样本。非学习方法没有训练模型，其随机流重复也需要按实际含义命名。本文以这种区分组织后续图表中的 $n$。
 
 在预定配对设计中，先在训练块内聚合各方法对应的工作负载与回合，得到块级指标 $Y_{b,1}$ 和 $Y_{b,0}$，再计算差值 $d_b=Y_{b,1}-Y_{b,0}$。均值差与样本标准差为
 \begin{equation}
