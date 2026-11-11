@@ -1,0 +1,1348 @@
+% !TeX root = ./main.tex
+% 项目排版覆盖：严格对齐《中山大学航空航天学院学位论文撰写模板（2025年12月更新）.doc》。
+% 不改动 sysuthesis.cls；本文件由 main.tex 在 sysusetup.tex 之后载入，用于覆盖文档类默认值。
+\makeatletter
+
+% =====================================================================
+% 一、字体配置（Windows 标准字体：宋体、黑体、楷体、华文中宋、Times New Roman）
+%   注意：sysuthesis.cls 以 fontset=none 载入 ctexbook，导致 \songti/\heiti/\kaishu/\fangsong
+%   被定义为 \relax，随后 sysuthesis.cls 中的 \providecommand 均被静默忽略。
+%   此处必须使用 \DeclareRobustCommand 强制绑定各中文字体族，并将伪粗体描边系数设为 2.86
+%   （精确对齐 WPS 导出 PDF 的 2 Tr 描边宽度 w = 0.0286 * font_size）。
+% =====================================================================
+\setmainfont{Times New Roman}
+\let\sysu@tnr@entoc\rmfamily
+\setsansfont{Arial}
+\setmonofont{Courier New}[Scale = MatchLowercase]
+
+\setCJKmainfont{SimSun}[
+  AutoFakeBold = 2.86,
+  ItalicFont   = KaiTi,
+]
+\setCJKsansfont{SimHei}[AutoFakeBold = 2.86]
+\setCJKmonofont{FangSong}[AutoFakeBold = 2.86]
+\setCJKfamilyfont{zhhei}{SimHei}[AutoFakeBold = 2.86]
+\setCJKfamilyfont{zhheinobold}{SimHei}[BoldFont = SimHei]
+\setCJKfamilyfont{zhkai}{KaiTi}[AutoFakeBold = 2.86]
+\setCJKfamilyfont{zhfs}{FangSong}[AutoFakeBold = 2.86]
+
+\IfFontExistsTF{STZhongsong}{%
+  \setCJKfamilyfont{zhzhongsong}{STZhongsong}[AutoFakeBold = 2.86]%
+}{%
+  \IfFontExistsTF{STZHONGS.TTF}{%
+    \setCJKfamilyfont{zhzhongsong}{STZHONGS.TTF}[AutoFakeBold = 2.86]%
+  }{%
+    \setCJKfamilyfont{zhzhongsong}{SimSun}[AutoFakeBold = 2.86]%
+  }%
+}
+
+% 兼容：部分 xeCJK 版本不再提供 \CJKrmfamily，回退到当前 CJK 主字族
+\providecommand{\CJKrmfamily}{\CJKfamily{\CJKrmdefault}}
+\DeclareRobustCommand{\songti}{\rmfamily\CJKrmfamily}
+\DeclareRobustCommand{\heiti}{\rmfamily\CJKfamily{zhhei}}
+\DeclareRobustCommand{\heitinobold}{\rmfamily\CJKfamily{zhheinobold}}
+\DeclareRobustCommand{\fangsong}{\rmfamily\CJKfamily{zhfs}}
+\DeclareRobustCommand{\kaishu}{\rmfamily\CJKfamily{zhkai}}
+\DeclareRobustCommand{\zhongsong}{\rmfamily\CJKfamily{zhzhongsong}}
+
+% =====================================================================
+% 二、页面边距、文档字符网格与版心设置（对齐 Word 模板 XML 与原生 PDF 精确矢量坐标）
+%   纸张：11906 × 16838 twips (595.30bp × 841.90bp)
+%   上边距：2155 twips = 107.75bp；下/左/右边距：1701 twips = 85.05bp
+%   左右边界：x0 = 85.05bp，x1 = 510.25bp，版心宽 textwidth = 425.20bp (8504 twips)
+%   普通正文首行基线：y_base = 123.77bp（top = 107.75bp，topskip = 16.02bp）
+%   页眉文字基线：y_base = 94.13bp；上粗线 y = 97.70..99.86bp (h=2.16bp)，下细线 y = 100.58..101.30bp (h=0.72bp)
+%   页脚页码基线：y_base = 774.65bp（841.90 - 85.05 + 17.80 = 774.65bp）
+% =====================================================================
+\geometry{
+  paperwidth    = 595.30bp,
+  paperheight   = 841.90bp,
+  top           = 107.75bp,
+  bottom        = 85.05bp,
+  left          = 85.05bp,
+  right         = 85.05bp,
+  bindingoffset = 0bp,
+  headheight    = 15bp,
+  headsep       = 10.11bp,
+  footskip      = 17.80bp,
+}
+\setlength{\topskip}{16.02bp}
+\setlength{\headwidth}{\textwidth}
+\setlength{\emergencystretch}{4.2em}
+
+\xeCJKsetup{
+  PunctStyle = plain,
+  CJKglue    = {\hspace{0.45bp plus 0.72bp minus 0.08bp}},
+  CJKecglue  = {\hspace{3.0bp plus 1.6bp minus 0.4bp}},
+}
+
+% =====================================================================
+% 三、页眉与页脚（上粗 2.16bp/1.44bp、间距 0.72bp、下细 0.72bp 双横线页眉，宋体/TNR 小五号 9bp 居中）
+%   前置部分（摘要、Abstract、目录、Contents、图目录、表目录、主要符号对照表）：
+%     奇偶页页眉均为当前部分标题；中英文摘要页上粗线为 1.44bp，其余为 2.16bp。
+%   正文及后置部分（第1章–第6章、参考文献、附录、致谢）：
+%     偶数页页眉随学位动态显示“中山大学工学博士/硕士学位论文”，奇数页页眉为章标题；
+%     最后一章“总结与展望”复刻 Word 第 17 节（header17.xml）上粗线 1.44bp、下细线 0.72bp。
+% =====================================================================
+\renewcommand\sysu@thesis@name{%
+  \ifsysu@degree@type@academic
+    \ifsysu@degree@doctor 中山大学工学博士学位论文\else 中山大学工学硕士学位论文\fi
+  \else
+    \ifsysu@degree@doctor 中山大学工程博士学位论文\else 中山大学专业硕士学位论文\fi
+  \fi
+}
+
+\newif\ifsysu@infrontmatter
+\sysu@infrontmatterfalse
+\newif\ifsysu@inabstract
+\sysu@inabstractfalse
+\newif\ifsysu@inenabstract
+\sysu@inenabstractfalse
+\newif\ifsysu@inentochead
+\sysu@inentocheadfalse
+\newif\ifsysu@inconclusions
+\sysu@inconclusionsfalse
+
+\renewcommand\frontmatter{%
+  \cleardoublepage
+  \@mainmatterfalse
+  \sysu@infrontmattertrue
+  \global\sysu@inconclusionsfalse
+  \pagenumbering{Roman}%
+  \pagestyle{plain}%
+}
+
+\renewcommand\mainmatter{%
+  \cleardoublepage
+  \sysu@infrontmatterfalse
+  \sysu@inabstractfalse
+  \sysu@inenabstractfalse
+  \sysu@inentocheadfalse
+  \global\sysu@inconclusionsfalse
+  \pagenumbering{arabic}%
+  \pagestyle{plain}%
+  \@mainmattertrue
+}
+
+\renewcommand\headrulewidth{2.16bp}
+\renewcommand\headrule{%
+  \if@fancyplain\let\headrulewidth\plainheadrulewidth\fi
+  \ifdim\headrulewidth=0pt\relax\else
+    \ifsysu@inabstract
+      \ifsysu@inenabstract
+        \vskip -1.29bp
+        \hrule\@height 1.44bp \@width\headwidth
+        \vskip 0.72bp
+        \hrule\@height 0.72bp \@width\headwidth
+        \vskip -1.59bp
+      \else
+        \vskip 3.06bp
+        \hrule\@height 1.44bp \@width\headwidth
+        \vskip 0.72bp
+        \hrule\@height 0.72bp \@width\headwidth
+        \vskip -5.94bp
+      \fi
+    \else
+      \ifsysu@inentochead
+        \vskip -1.29bp
+        \hrule\@height 2.16bp \@width\headwidth
+        \vskip 0.72bp
+        \hrule\@height 0.72bp \@width\headwidth
+        \vskip -2.31bp
+      \else
+        \ifsysu@inconclusions
+          \vskip 0.06bp
+          \hrule\@height 1.44bp \@width\headwidth
+          \vskip 0.72bp
+          \hrule\@height 0.72bp \@width\headwidth
+          \vskip -2.94bp
+        \else
+          \vskip 0.06bp
+          \hrule\@height 2.16bp \@width\headwidth
+          \vskip 0.72bp
+          \hrule\@height 0.72bp \@width\headwidth
+          \vskip -3.66bp
+        \fi
+      \fi
+    \fi
+  \fi
+}
+
+\newcommand\sysu@raise@enhead[1]{%
+  \ifsysu@inenabstract
+    \raisebox{0.72bp}{#1}%
+  \else
+    \ifsysu@inentochead
+      \raisebox{0.72bp}{#1}%
+    \else
+      #1%
+    \fi
+  \fi
+}
+
+\edef\sysu@conclusions@detok{\detokenize{结论}}
+
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \setlength{\headwidth}{\textwidth}%
+  \def\sysu@hf@font{\xeCJKsetup{CJKglue={\hspace{0bp}},CJKecglue={\hspace{0bp}}}\songti\mdseries\fontsize{9bp}{11.7bp}\selectfont}%
+  \fancyhead[EC]{\sysu@hf@font\ifsysu@infrontmatter\sysu@raise@enhead{\leftmark}\else\sysu@thesis@name\fi}%
+  \fancyhead[OC]{\sysu@hf@font\sysu@raise@enhead{\leftmark}}%
+  \fancyfoot[C]{\sysu@hf@font\thepage}%
+  \def\chaptermark##1{%
+    \edef\sysu@curr@chdetok{\detokenize{##1}}%
+    \ifx\sysu@curr@chdetok\sysu@conclusions@detok
+      \global\sysu@inconclusionstrue
+    \else
+      \global\sysu@inconclusionsfalse
+    \fi
+    \markboth{\CTEXifname{第\hspace{2.16bp}\thechapter\hspace{2.34bp}章\hspace{4.44bp}}{}##1}{\sysu@thesis@name}%
+  }%
+  \let\sectionmark\@gobble
+}
+\pagestyle{plain}
+
+% 无编号章（摘要、目录、符号表等）直接写入页眉与 PDF 书签
+\RenewDocumentCommand\sysu@chapter{o m}{%
+  \if@openright\cleardoublepage\else\clearpage\fi
+  \global\sysu@inconclusionsfalse
+  \IfValueTF{#1}{%
+    \sysu@pdfbookmark{#1}%
+    \markboth{#1}{#1}%
+  }{%
+    \sysu@pdfbookmark{#2}%
+    \markboth{#2}{#2}%
+  }%
+  \chapter*{#2}%
+}
+
+% =====================================================================
+% 四、章节标题与正文行距、列表样式（精确对齐 WPS 模板 PDF 基线间距 dy）
+%   一级标题（第 1 章）：黑体 + TNR 小二(18bp)加粗居中，y_base = 145.37bp；
+%     chapter -> section 基线间距 dy = 44.52bp (y_base = 189.89bp)；
+%     chapter* -> 正文基线间距 dy = 41.52bp (附录/致谢) 或 45.48bp (摘要/Abstract)。
+%   二级标题（1.1）  ：黑体 + TNR 小三(15bp)加粗左对齐，
+%     正文 -> section 基线间距 dy = 28.80bp，section -> 正文基线间距 dy = 30.12bp。
+%   三级标题（1.1.1）：黑体 + TNR 四号(14bp)加粗左对齐，
+%     正文 -> subsection 基线间距 dy = 27.84bp，subsection -> 正文基线间距 dy = 29.88bp。
+%   四级标题（1.1.1.1）：宋体 + TNR 小四(12bp)加粗左对齐，固定值20磅，dy = 20.00bp。
+% =====================================================================
+\newif\ifsysu@intoc
+\sysu@intocfalse
+\DeclareRobustCommand\sysu@chapnum@sep{%
+  \ifsysu@intoc\hspace{3.42bp}\else\hspace{4.50bp}\fi
+}
+
+\ctexset{
+  chapter = {
+    name        = {第\sysu@chapnum@sep,\sysu@chapnum@sep 章},
+    number      = \thechapter,
+    format      = \centering\xeCJKsetup{CJKglue={\hspace{0.06bp}}}\heiti\bfseries\fontsize{18bp}{28bp}\selectfont,
+    nameformat  = {},
+    titleformat = {},
+    aftername   = \hspace{8.92bp},
+    beforeskip  = 22.72bp,
+    afterskip   = 29.8bp,
+    fixskip     = true,
+  },
+  section = {
+    format     = \heiti\bfseries\fontsize{15bp}{21bp}\selectfont,
+    aftername  = \hspace{8.41bp},
+    beforeskip = 7.80bp,
+    afterskip  = 10.12bp,
+    fixskip    = false,
+  },
+  subsection = {
+    format     = \heiti\bfseries\fontsize{14bp}{19bp}\selectfont,
+    aftername  = \hspace{8.40bp},
+    beforeskip = 8.96bp,
+    afterskip  = 9.88bp,
+    fixskip    = false,
+  },
+  subsubsection = {
+    format     = \songti\bfseries\fontsize{12bp}{20bp}\selectfont,
+    number     = \thesubsection.\arabic{subsubsection},
+    aftername  = \hspace{6.84bp},
+    indent     = 0em,
+    beforeskip = 7.58bp,
+    afterskip  = 8.98bp,
+    fixskip    = true,
+    runin      = false,
+  },
+}
+
+% 控制连续标题（如 第 1 章 -> 1.1、1.2 -> 1.2.1）与非连续标题的段前距：
+% 当子标题紧跟父标题（\if@nobreak 为真）时，第 1 章 -> 1.1 补 0.46bp 使 dy=44.52bp，
+% 1.2 -> 1.2.1 补 0.88bp 使 dy=30.00bp。
+\def\sysu@nobreak@sec@Name{section}
+\def\sysu@nobreak@subsec@Name{subsection}
+\def\@startsection#1#2#3#4#5#6{%
+  \if@noskipsec \leavevmode \fi
+  \par
+  \CTEX@update@sectionformat@n{#1}%
+  \ifodd \CTEX@afterindent
+    \@afterindenttrue
+  \else
+    \@afterindentfalse
+  \fi
+  \if@nobreak
+    \everypar{}%
+    \edef\sysu@curr@sec@name{#1}%
+    \ifx\sysu@curr@sec@name\sysu@nobreak@sec@Name
+      \nobreak\vskip 0.46bp\relax
+    \else
+      \ifx\sysu@curr@sec@name\sysu@nobreak@subsec@Name
+        \nobreak\vskip 0.88bp\relax
+      \fi
+    \fi
+  \else
+    \csname CTEX@#1@break\endcsname
+    \CTEX@setheadingskip{#4}%
+    \ifodd \CTEX@fixskip \CTEX@fixheadingskip \fi
+    \addvspace \CTEX@headingskip
+  \fi
+  \@ifstar
+    {\CTEX@makeanchor@ssect{#1*}\@ssect{#3}{#4}{#5}{#6}}%
+    {\@dblarg{\@sect{#1}{#2}{#3}{#4}{#5}{#6}}}}
+
+% 正文行距：宋体 / Times New Roman 小四(12bp)，固定值 20 磅，段前段后 0 磅，首行缩进 2 字符(24.96bp)
+\renewcommand\normalsize{%
+  \@setfontsize\normalsize{12bp}{20bp}%
+  \lineskiplimit -5bp\relax
+  \lineskip 1bp\relax
+  \abovedisplayskip 3bp \@plus1bp \@minus1bp%
+  \abovedisplayshortskip 3bp \@plus1bp \@minus1bp%
+  \belowdisplayshortskip \abovedisplayshortskip
+  \belowdisplayskip \abovedisplayskip
+  \let\@listi\@listI}%
+\normalsize
+\ifx\MakeRobust\@undefined \else \MakeRobust\normalsize \fi
+\ctexset{autoindent=24.96bp}
+\everydisplay\expandafter{\the\everydisplay\lineskiplimit=0pt\lineskip=1pt}
+\AtBeginDocument{%
+  \setlength{\headwidth}{\textwidth}%
+  \setlength{\parindent}{24.96bp}%
+  \lineskiplimit -5bp\relax
+  \lineskip 1bp\relax
+}
+
+% 编号列表：全角括号（1）（2），首行缩进 2 字符(24.96bp)，续行回到左边界，无额外段间空隙
+\setlist[enumerate,1]{
+  label         = （\arabic*）,
+  labelsep      = 0em,
+  leftmargin    = 0pt,
+  labelindent   = 24.96bp,
+  itemindent    = *,
+  listparindent = 24.96bp,
+  topsep        = 0bp,
+  partopsep     = 0bp,
+  itemsep       = 0bp,
+  parsep        = 0bp,
+  align         = left,
+}
+
+% 定理、引理、定义、假设与证明环境（宋体正体 12bp、固定值 20bp 行距、首行缩进 2 字符 24.96bp，严禁正文中手写 \noindent）
+\@ifpackageloaded{amsthm}{}{\RequirePackage{amsthm}}
+\let\theorem\@undefined \let\endtheorem\@undefined \let\c@theorem\@undefined \let\thetheorem\@undefined
+\let\lemma\@undefined \let\endlemma\@undefined \let\c@lemma\@undefined \let\thelemma\@undefined
+\let\definition\@undefined \let\enddefinition\@undefined \let\c@definition\@undefined \let\thedefinition\@undefined
+\let\assumption\@undefined \let\endassumption\@undefined \let\c@assumption\@undefined \let\theassumption\@undefined
+\newtheoremstyle{sysuthm}%
+  {0bp}{0bp}%
+  {\songti\mdseries\fontsize{12bp}{20bp}\selectfont}{24.96bp}%
+  {\songti\mdseries}{：}%
+  {0bp}{\thmname{#1}\thmnumber{\hspace{0.25em}#2}\thmnote{（#3）}}
+\theoremstyle{sysuthm}
+\newtheorem{theorem}{定理}[section]
+\newtheorem{lemma}{引理}[section]
+\newtheorem{definition}{定义}[section]
+\newtheorem{assumption}{假设}[section]
+\renewenvironment{proof}[1][证明]{%
+  \par
+  \songti\mdseries\fontsize{12bp}{20bp}\selectfont
+  \topsep 0bp \partopsep 0bp \itemsep 0bp \parsep 0bp
+  \trivlist
+  \item\relax\hskip 24.96bp\relax #1：\ignorespaces
+}{%
+  \endtrivlist\@endpefalse
+}
+
+% =====================================================================
+% 五、中英文摘要（摘  要 / Abstract）
+%   1. 中文标题 y_base = 145.37bp，英文标题 Abstract y_base = 155.30bp，首段基线 y_base = 190.85bp；
+%   2. 正文小四号（12bp），固定行距 20 磅，每满行 34 字符（dx = 12.45bp，首行缩进 24.96bp）；
+%   3. 关键词与摘要正文之间空一行（dy = 40.0bp），首行缩进 2 字符（不悬挂缩进），
+%      词间以分号分隔（中文全角分号“；”，英文半角分号加空格“; ”）。
+% =====================================================================
+\ExplSyntaxOn
+\renewcommand\sysu@keywords@text{\clist_use:Nn \sysu@keywords {；\allowbreak}}
+\renewcommand\sysu@keywords@en@text{\clist_use:Nn \sysu@keywords@en {\textnormal{;\space}}}
+\RenewDocumentCommand\keywords{s m}{%
+  \IfBooleanTF{#1}{%
+    \clist_set:Nn \sysu@keywords@en {#2}%
+  }{%
+    \clist_set:Nn \sysu@keywords {#2}%
+  }%
+}
+\renewcommand\enkeywords[1]{\clist_set:Nn \sysu@keywords@en {#1}}
+\ExplSyntaxOff
+
+\renewenvironment{abstract}{%
+  \sysusetup{language=chinese}%
+  \sysu@inabstracttrue
+  \sysu@inenabstractfalse
+  \sysu@inentocheadfalse
+  \let\clearpage\relax
+  \ctexset{
+    chapter/format     = \centering\heitinobold\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 22.93bp,
+    chapter/afterskip  = 29.8bp,
+  }%
+  \sysu@chapter[摘要]{摘\hspace{2em}要}%
+  \addcontentsline{toc}{chapter}{摘\hspace{1.07em}要}%
+  \vspace{3.91bp}%
+  \songti\mdseries\fontsize{12bp}{20bp}\selectfont
+  \setlength{\rightskip}{2.16bp}%
+  \parindent=24.96bp\relax
+}{%
+  \par\vspace{20bp}%
+  {\xeCJKsetup{CJKglue={\hspace{0bp}}}\indent{\heiti\bfseries 关键词：}{\songti\mdseries\sysu@keywords@text}\par}%
+  \sysu@reset@main@language
+  \newpage
+}
+
+\renewenvironment{abstract*}{%
+  \sysusetup{language=english}%
+  \sysu@inabstracttrue
+  \sysu@inenabstracttrue
+  \sysu@inentocheadfalse
+  \let\clearpage\relax
+  \ctexset{
+    chapter/format     = \centering\rmfamily\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 27.86bp,
+    chapter/afterskip  = 19.87bp,
+  }%
+  \sysu@chapter[Abstract]{\strut Abstract}%
+  \addcontentsline{toc}{chapter}{Abstract}%
+  \vspace{8.88bp}%
+  \rmfamily\mdseries\fontsize{12bp}{20bp}\selectfont
+  \hyphenpenalty=150\exhyphenpenalty=150\relax
+  \spaceskip=3.0bp plus 2.6bp minus 0.9bp\relax
+  \parindent=24.96bp\relax
+}{%
+  \par\vspace{20bp}%
+  \indent\textbf{Keywords:} {\rmfamily\mdseries\sysu@keywords@en@text}\par
+  \newpage
+  \sysu@inabstractfalse
+  \sysu@inenabstractfalse
+  \sysu@reset@main@language
+  \ctexset{
+    chapter/format     = \centering\xeCJKsetup{CJKglue={\hspace{0.06bp}}}\heiti\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 22.72bp,
+    chapter/afterskip  = 29.8bp,
+  }%
+}
+
+% 中英文摘要工作点列表与首句加粗语义宏（对齐 Word 模板 WP09/WP10 示例：编号不加粗，首句总括性话加粗）
+\newif\ifsysu@inenabstractpoints
+\sysu@inenabstractpointsfalse
+\newlist{abstractpoints}{enumerate}{1}
+\setlist[abstractpoints,1]{
+  label         = {\mdseries（\arabic*）},
+  labelsep      = 0pt,
+  leftmargin    = 0pt,
+  rightmargin   = 2.16bp,
+  labelindent   = 24.96bp,
+  itemindent    = *,
+  listparindent = 24.96bp,
+  topsep        = 0bp,
+  partopsep     = 0bp,
+  itemsep       = 0bp,
+  parsep        = 0bp,
+  align         = left,
+  before        = \sysu@inenabstractpointsfalse,
+}
+\newlist{enabstractpoints}{enumerate}{1}
+\setlist[enabstractpoints,1]{
+  label         = {\rmfamily\mdseries(\arabic*)},
+  labelsep      = 1.40bp,
+  leftmargin    = 0pt,
+  labelindent   = 21.04bp,
+  itemindent    = *,
+  listparindent = 24.96bp,
+  topsep        = 0bp,
+  partopsep     = 0bp,
+  itemsep       = 0bp,
+  parsep        = 0bp,
+  align         = left,
+  before        = \sysu@inenabstractpointstrue,
+}
+\newcommand\workpoint[2]{%
+  \ifsysu@inenabstractpoints
+    \item {\bfseries #1}\space #2%
+  \else
+    \item {\bfseries #1}#2%
+  \fi
+}
+
+% =====================================================================
+% 六、中英文目录（目录 / Contents）、图目录、表目录与符号说明
+%   1. 中文目录：标题 y_base = 145.37bp，首行 y_base = 183.05bp (dy = 37.68bp)；
+%      章条目黑体 + TNR 加粗 12bp，一级节条目宋体 + TNR 12bp (dy = 19.56bp，缩进 12bp)，
+%      二级节条目宋体 + TNR 12bp (dy = 18.72bp，缩进 24bp)。
+%   2. 英文目录：标题 Contents y_base = 128.45bp，首行 y_base = 163.25bp (dy = 34.80bp)；
+%      全部条目行距 dy = 16.56bp，长标题自然折行（续行回到当前层级左边界，无词距拉裂）。
+%   3. 图目录与表目录：标题 y_base = 133.73bp，行距 dy = 19.56bp。
+% =====================================================================
+\newif\ifsysu@entoc
+\sysu@entocfalse
+\def\sysu@last@toclevel{0}
+\newcount\sysu@cntoc@chapcount
+
+\newcommand\sysu@cntoc@trans[1]{%
+  \ifsysu@entoc\else
+    \ifnum#1=1\relax
+      \global\advance\sysu@cntoc@chapcount\@ne
+    \fi
+    \ifnum\sysu@last@toclevel=1\relax
+      \ifnum#1=1\relax
+        \ifnum\sysu@cntoc@chapcount=2\relax
+          \vspace{0.12bp}%
+        \else
+          \ifnum\sysu@cntoc@chapcount=3\relax
+            \vspace{-0.36bp}%
+          \else
+            \vspace{0.96bp}%
+          \fi
+        \fi
+      \fi
+      \ifnum#1=2\relax\vspace{1.80bp}\fi
+    \fi
+    \ifnum\sysu@last@toclevel=2\relax
+      \ifnum#1=1\relax\vspace{-0.90bp}\fi
+      \ifnum#1=3\relax\vspace{-1.20bp}\fi
+    \fi
+    \ifnum\sysu@last@toclevel=3\relax
+      \ifnum#1=2\relax\vspace{1.08bp}\fi
+      \ifnum#1=1\relax\vspace{0.18bp}\fi
+    \fi
+    \gdef\sysu@last@toclevel{#1}%
+  \fi
+}
+
+\renewcommand\sysu@leaders{%
+  \nobreak\hspace{1.2bp}%
+  \leaders\hbox to 3.04bp{\hss.\hss}\hskip 1.2em plus 1fill\relax
+  \nobreak\hspace{1.2bp}%
+}
+
+% 在导言区一次性注册 titlecontents，通过 \ifsysu@entoc 切换中英文目录样式，避免向 .toc 写入 \ttl@change
+\titlecontents{chapter}
+  [0bp]
+  {\sysu@cntoc@trans{1}%
+   \ifsysu@entoc
+     \rightskip 14bp plus 1fil\relax
+     \parfillskip -14bp\relax
+     \sysu@tnr@entoc\bfseries\fontsize{12bp}{16.56bp}\selectfont
+   \else
+     \heitinobold\bfseries\fontsize{12bp}{18.48bp}\selectfont
+   \fi}
+  {\ifsysu@entoc{\thecontentslabel\hspace{3.50bp}}\else\contentspush{\thecontentslabel\hspace{6.60bp}}\fi}{}
+  {\ifsysu@entoc
+     \rmfamily\mdseries\fontsize{12bp}{16.56bp}\selectfont\sysu@leaders\mbox{\thecontentspage}\hspace*{0.68bp}%
+   \else
+     \rmfamily\mdseries\fontsize{12bp}{18.48bp}\selectfont\sysu@leaders\mbox{\thecontentspage}\hspace*{0.68bp}%
+   \fi}
+
+\titlecontents{section}
+  [0bp]
+  {\sysu@cntoc@trans{2}%
+   \ifsysu@entoc
+     \setlength{\leftskip}{12.24bp}%
+     \rightskip 22bp plus 1fil\relax
+     \parfillskip -22bp\relax
+     \sysu@tnr@entoc\mdseries\fontsize{12bp}{16.56bp}\selectfont
+   \else
+     \setlength{\leftskip}{12bp}%
+     \songti\mdseries\fontsize{12bp}{19.56bp}\selectfont
+   \fi}
+  {\ifsysu@entoc{\thecontentslabel\hspace{3.60bp}}\else\contentspush{\thecontentslabel\hspace{5.40bp}}\fi}{}
+  {\ifsysu@entoc
+     \rmfamily\mdseries\fontsize{12bp}{16.56bp}\selectfont\sysu@leaders\mbox{\thecontentspage}\hspace*{0.68bp}%
+   \else
+     \rmfamily\mdseries\fontsize{12bp}{19.56bp}\selectfont\sysu@leaders\mbox{\thecontentspage}\hspace*{0.68bp}%
+   \fi}
+
+\titlecontents{subsection}
+  [0bp]
+  {\sysu@cntoc@trans{3}%
+   \ifsysu@entoc
+     \setlength{\leftskip}{24.16bp}%
+     \rightskip 22bp plus 1fil\relax
+     \parfillskip -22bp\relax
+     \sysu@tnr@entoc\mdseries\fontsize{12bp}{16.56bp}\selectfont
+   \else
+     \setlength{\leftskip}{24bp}%
+     \songti\mdseries\fontsize{12bp}{18.72bp}\selectfont
+   \fi}
+  {\ifsysu@entoc{\thecontentslabel\hspace{3.70bp}}\else\contentspush{\thecontentslabel\hspace{6.60bp}}\fi}{}
+  {\ifsysu@entoc
+     \rmfamily\mdseries\fontsize{12bp}{16.56bp}\selectfont\sysu@leaders\mbox{\thecontentspage}\hspace*{0.68bp}%
+   \else
+     \rmfamily\mdseries\fontsize{12bp}{18.72bp}\selectfont\sysu@leaders\mbox{\thecontentspage}\hspace*{0.68bp}%
+   \fi}
+
+% 英文目录标题映射表（以 hyperref 锚点或章节名为键，直接复用 .toc 的实时页码与超链接）
+\newcommand\sysu@def@entoc[2]{\@namedef{sysu@entoc@id@#1}{#2}}
+\newcommand\sysu@def@entoc@title[2]{\@namedef{sysu@entoc@title@\detokenize{#1}}{#2}}
+
+% 前置与后置无编号章映射
+\sysu@def@entoc@title{摘\hspace {1.07em}要}{Abstract (In Chinese)}
+\sysu@def@entoc@title{摘\hspace{1.07em}要}{Abstract (In Chinese)}
+\sysu@def@entoc@title{摘\hspace {1em}要}{Abstract (In Chinese)}
+\sysu@def@entoc@title{摘\hspace{1em}要}{Abstract (In Chinese)}
+\sysu@def@entoc@title{摘  要}{Abstract (In Chinese)}
+\sysu@def@entoc@title{摘 要}{Abstract (In Chinese)}
+\sysu@def@entoc@title{摘要}{Abstract (In Chinese)}
+\sysu@def@entoc@title{Abstract}{Abstract (In English)}
+\sysu@def@entoc@title{结\hspace {1.07em}论}{Conclusions}
+\sysu@def@entoc@title{结\hspace{1.07em}论}{Conclusions}
+\sysu@def@entoc@title{结\hspace {1em}论}{Conclusions}
+\sysu@def@entoc@title{结\hspace{1em}论}{Conclusions}
+\sysu@def@entoc@title{结  论}{Conclusions}
+\sysu@def@entoc@title{结 论}{Conclusions}
+\sysu@def@entoc@title{结论}{Conclusions}
+\sysu@def@entoc@title{参考文献}{References}
+\sysu@def@entoc@title{附录}{\ifsysu@degree@doctor Papers published in the period of Ph.D. education\else Papers published in the period of Master education\fi}
+\sysu@def@entoc@title{在读期间取得的科研成果}{\ifsysu@degree@doctor Papers published in the period of Ph.D. education\else Papers published in the period of Master education\fi}
+\sysu@def@entoc@title{致谢}{Acknowledgements}
+
+% 第 1 章
+\sysu@def@entoc{chapter.1}{\numberline{Chapter 1}Introduction}
+\sysu@def@entoc{section.1.1}{\numberline{1.1}Background, objective and significance of the subject}
+\sysu@def@entoc{section.1.2}{\numberline{1.2}Review of domestic and foreign research status}
+\sysu@def@entoc{subsection.1.2.1}{\numberline{1.2.1}Research status of cooperative swarm coverage and demand-driven spatial planning}
+\sysu@def@entoc{subsection.1.2.2}{\numberline{1.2.2}Research status of cooperative computation task allocation and model-driven resource optimization}
+\sysu@def@entoc{subsection.1.2.3}{\numberline{1.2.3}Research status of deep reinforcement learning and multi-agent cooperative decision-making}
+\sysu@def@entoc{section.1.3}{\numberline{1.3}Main research contents of this thesis}
+
+% 第 2 章
+\sysu@def@entoc{chapter.2}{\numberline{Chapter 2}System Modeling and Analysis of UAV Swarm Air-Ground Cooperative Computing}
+\sysu@def@entoc{section.2.1}{\numberline{2.1}Introduction}
+\sysu@def@entoc{section.2.2}{\numberline{2.2}Geometric and wireless communication modeling of air-ground cooperative computing}
+\sysu@def@entoc{subsection.2.2.1}{\numberline{2.2.1}Spatial region and natural-coverage association model}
+\sysu@def@entoc{subsection.2.2.2}{\numberline{2.2.2}UAV discrete kinematics and safety-spacing repair model}
+\sysu@def@entoc{subsection.2.2.3}{\numberline{2.2.3}Air-to-ground and inter-UAV wireless communication channel models}
+\sysu@def@entoc{section.2.3}{\numberline{2.3}Deadline-constrained service execution and dual-protocol workload coupling modeling}
+\sysu@def@entoc{subsection.2.3.1}{\numberline{2.3.1}Task attributes, service caching and three-tier execution path model}
+\sysu@def@entoc{subsection.2.3.2}{\numberline{2.3.2}Single-slot batch equal-share and cross-slot tandem queue models}
+\sysu@def@entoc{subsection.2.3.3}{\numberline{2.3.3}End-to-end DSR decomposition, paired evaluation and sequential decision modeling}
+\sysu@def@entoc{section.2.4}{\numberline{2.4}Brief summary}
+
+% 第 3 章
+\sysu@def@entoc{chapter.3}{\numberline{Chapter 3}Demand-Aware Cooperative Trajectory Planning for UAV Swarms}
+\sysu@def@entoc{section.3.1}{\numberline{3.1}Introduction}
+\sysu@def@entoc{section.3.2}{\numberline{3.2}System model and pre-admission observation bottleneck analysis}
+\sysu@def@entoc{subsection.3.2.1}{\numberline{3.2.1}Natural-coverage admission and sensing geometry}
+\sysu@def@entoc{subsection.3.2.2}{\numberline{3.2.2}UAV mobility and wireless communication model}
+\sysu@def@entoc{subsection.3.2.3}{\numberline{3.2.3}Task execution and service caching model}
+\sysu@def@entoc{subsection.3.2.4}{\numberline{3.2.4}Evaluation metrics and pre-admission observation bottleneck formulation}
+\sysu@def@entoc{section.3.3}{\numberline{3.3}Demand-aware cooperative trajectory planning method}
+\sysu@def@entoc{subsection.3.3.1}{\numberline{3.3.1}Dec-POMDP cooperative decision modeling}
+\sysu@def@entoc{subsection.3.3.2}{\numberline{3.3.2}Pre-admission demand observation extension mechanism}
+\sysu@def@entoc{subsection.3.3.3}{\numberline{3.3.3}Multi-head attention network and cooperative decision architecture}
+\sysu@def@entoc{subsection.3.3.4}{\numberline{3.3.4}Attention-MAPPO training and lower-layer offloading network configuration}
+\sysu@def@entoc{section.3.4}{\numberline{3.4}Simulation studies and result analysis}
+\sysu@def@entoc{subsection.3.4.1}{\numberline{3.4.1}Hierarchical architecture benchmark comparison and bottleneck diagnosis under associated-only observation}
+\sysu@def@entoc{subsection.3.4.2}{\numberline{3.4.2}Exploratory comparison and independent confirmation of uncovered-demand observation extension}
+\sysu@def@entoc{subsection.3.4.3}{\numberline{3.4.3}Paired decoupling of admission expansion and post-admission quality and information boundary analysis}
+\sysu@def@entoc{section.3.5}{\numberline{3.5}Brief summary}
+
+% 第 4 章
+\sysu@def@entoc{chapter.4}{\numberline{Chapter 4}Computation Task Allocation for UAV Swarms under Cross-UAV Resource Contention}
+\sysu@def@entoc{section.4.1}{\numberline{4.1}Introduction}
+\sysu@def@entoc{section.4.2}{\numberline{4.2}Problem description and cross-UAV migration externality analysis}
+\sysu@def@entoc{subsection.4.2.1}{\numberline{4.2.1}Fixed snapshots and task allocation variables}
+\sysu@def@entoc{subsection.4.2.2}{\numberline{4.2.2}Service path and final batch load-sharing model}
+\sysu@def@entoc{subsection.4.2.3}{\numberline{4.2.3}Impact of single-request migration on deadlines of other requests}
+\sysu@def@entoc{subsection.4.2.4}{\numberline{4.2.4}Constructive analysis of self-improvement versus system-wide improvement}
+\sysu@def@entoc{section.4.3}{\numberline{4.3}Full-batch re-evaluation based MC-ITR task allocation algorithm}
+\sysu@def@entoc{subsection.4.3.1}{\numberline{4.3.1}System-wide objective versus individual evaluation}
+\sysu@def@entoc{subsection.4.3.2}{\numberline{4.3.2}Single-request migration neighborhood and search procedure}
+\sysu@def@entoc{subsection.4.3.3}{\numberline{4.3.3}Strict improvement, finite termination and neighborhood optimality}
+\sysu@def@entoc{subsection.4.3.4}{\numberline{4.3.4}Number of function evaluations and computational cost}
+\sysu@def@entoc{section.4.4}{\numberline{4.4}Simulation studies and result analysis}
+\sysu@def@entoc{subsection.4.4.1}{\numberline{4.4.1}Service quality and computational cost comparison across allocation algorithms on standard snapshots}
+\sysu@def@entoc{subsection.4.4.2}{\numberline{4.4.2}Sensitivity to user scale and computing capacity multiplier and Exact-Small verification}
+\sysu@def@entoc{subsection.4.4.3}{\numberline{4.4.3}Bridged snapshot re-evaluation on demand-aware trajectory candidates}
+\sysu@def@entoc{section.4.5}{\numberline{4.5}Brief summary}
+
+% 第 5 章
+\sysu@def@entoc{chapter.5}{\numberline{Chapter 5}Planning Distillation and Counterfactual-Assisted Cooperative Control in Dynamic Queuing Services}
+\sysu@def@entoc{section.5.1}{\numberline{5.1}Introduction}
+\sysu@def@entoc{section.5.2}{\numberline{5.2}Dynamic service system and candidate action modeling}
+\sysu@def@entoc{subsection.5.2.1}{\numberline{5.2.1}Bursty arrivals, task attributes and full-drain settlement}
+\sysu@def@entoc{subsection.5.2.2}{\numberline{5.2.2}Immutable association and transmission-computation tandem queues}
+\sysu@def@entoc{subsection.5.2.3}{\numberline{5.2.3}Available information, candidate library and state features}
+\sysu@def@entoc{section.5.3}{\numberline{5.3}Planning knowledge distillation and candidate-level joint policy}
+\sysu@def@entoc{subsection.5.3.1}{\numberline{5.3.1}Release-time aware tandem-queue approximation}
+\sysu@def@entoc{subsection.5.3.2}{\numberline{5.3.2}Dual-branch joint distribution and expected motion feedback}
+\sysu@def@entoc{subsection.5.3.3}{\numberline{5.3.3}Planning teacher targets and two-round data aggregation}
+\sysu@def@entoc{section.5.4}{\numberline{5.4}Counterfactual-assisted PPO fine-tuning and neural-guided online control}
+\sysu@def@entoc{subsection.5.4.1}{\numberline{5.4.1}Full-trajectory rewards and centralized state value}
+\sysu@def@entoc{subsection.5.4.2}{\numberline{5.4.2}Common random number baseline and short-horizon counterfactual scoring}
+\sysu@def@entoc{subsection.5.4.3}{\numberline{5.4.3}Joint clipped objective and training combinations}
+\sysu@def@entoc{subsection.5.4.4}{\numberline{5.4.4}Zero online lookahead policy and neural-guided Top-6 MPC}
+\sysu@def@entoc{section.5.5}{\numberline{5.5}Simulation studies and result analysis}
+\sysu@def@entoc{subsection.5.5.1}{\numberline{5.5.1}Comprehensive performance comparison across control strategies under cross-slot dynamic queuing}
+\sysu@def@entoc{subsection.5.5.2}{\numberline{5.5.2}Progressive ablation of planning distillation, counterfactual fine-tuning and neural-guided MPC}
+\sysu@def@entoc{subsection.5.5.3}{\numberline{5.5.3}Trade-off analysis between online decision inference latency and service quality}
+\sysu@def@entoc{section.5.6}{\numberline{5.6}Brief summary}
+
+\newcommand\sysu@entoc@contentsline[4]{%
+  \ifcsname sysu@entoc@id@#4\endcsname
+    \sysu@orig@contentsline{#1}{\@nameuse{sysu@entoc@id@#4}}{#3}{#4}%
+  \else
+    \ifcsname sysu@entoc@title@\detokenize{#2}\endcsname
+      \sysu@orig@contentsline{#1}{\@nameuse{sysu@entoc@title@\detokenize{#2}}}{#3}{#4}%
+    \else
+      \sysu@orig@contentsline{#1}{#2}{#3}{#4}%
+    \fi
+  \fi
+}
+
+\renewcommand\tableofcontents{%
+  \clearpage
+  \sysu@inentocheadfalse
+  \pagestyle{plain}%
+  \ctexset{
+    chapter/format     = \centering\heitinobold\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 23.84bp,
+    chapter/afterskip  = 29.8bp,
+  }%
+  \sysu@chapter[目录]{目\hspace{9.60bp}录}%
+  \vspace{-6.95bp}%
+  \setcounter{tocdepth}{2}%
+  \begingroup
+    \makeatletter
+    \sysu@entocfalse
+    \sysu@intoctrue
+    \gdef\sysu@last@toclevel{0}%
+    \global\sysu@cntoc@chapcount\z@
+    \@input{\jobname.toc}%
+  \endgroup
+  \sysu@intocfalse
+  \clearpage
+  \sysu@inentocheadtrue
+  \pagestyle{plain}%
+  \ctexset{
+    chapter/format     = \centering\rmfamily\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 1.10bp,
+    chapter/afterskip  = 26.5bp,
+  }%
+  \sysu@chapter[Contents]{\strut Contents}%
+  \vspace{-11.69bp}%
+  \setcounter{tocdepth}{2}%
+  \begingroup
+    \makeatletter
+    \sysu@entoctrue
+    \let\sysu@orig@contentsline\contentsline
+    \let\contentsline\sysu@entoc@contentsline
+    \@input{\jobname.toc}%
+  \endgroup
+  \clearpage
+  \sysu@entocfalse
+  \sysu@inentocheadfalse
+  \ctexset{
+    chapter/format     = \centering\xeCJKsetup{CJKglue={\hspace{0.06bp}}}\heiti\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 22.72bp,
+    chapter/afterskip  = 29.8bp,
+  }%
+  \begingroup
+    \makeatletter
+    \if@filesw
+      \expandafter\newwrite\csname tf@toc\endcsname
+      \immediate\openout\csname tf@toc\endcsname\jobname.toc\relax
+    \fi
+    \@nobreakfalse
+  \endgroup
+}
+
+% 图目录与表目录：消除跨章 10pt 空隙，统一为“图1-1 标题”与“表1-1 标题”（宋体小四，行距 19.56bp）
+\def\listfigurename{图目录}
+\def\listtablename{表目录}
+\renewcommand\sysu@notation@name{主要符号对照表}
+
+\renewcommand\sysu@set@lof@format{%
+  \titlecontents{figure}%
+    [0bp]{\xeCJKsetup{CJKecglue={\hspace{2.40bp}}}\rightskip 22bp plus 1fil\relax\parfillskip -22bp\relax\songti\mdseries\fontsize{12bp}{19.56bp}\selectfont}%
+    {\contentspush{\figurename\thecontentslabel\hspace{6.72bp}}}{}%
+    {\rmfamily\mdseries\fontsize{12bp}{19.56bp}\selectfont\sysu@leaders\mbox{\thecontentspage}\hspace*{0.68bp}}%
+  \titlecontents{table}%
+    [0bp]{\xeCJKsetup{CJKecglue={\hspace{3.48bp}}}\rightskip 22bp plus 1fil\relax\parfillskip -22bp\relax\songti\mdseries\fontsize{12bp}{19.56bp}\selectfont}%
+    {\contentspush{\tablename\thecontentslabel\hspace{3.60bp}}}{}%
+    {\rmfamily\mdseries\fontsize{12bp}{19.56bp}\selectfont\sysu@leaders\mbox{\thecontentspage}\hspace*{0.68bp}}%
+}
+\sysu@set@lof@format
+
+\renewcommand\listoffigures{%
+  \clearpage
+  \sysu@inentocheadfalse
+  \begingroup
+    \ctexset{
+      chapter/format     = \centering\heitinobold\bfseries\fontsize{18bp}{28bp}\selectfont,
+      chapter/beforeskip = 11.99bp,
+      chapter/afterskip  = 29.8bp,
+    }%
+    \sysu@chapter[图目录]{\listfigurename}%
+    \vspace{1.41bp}%
+    \let\addvspace\@gobble
+    \@starttoc{lof}%
+  \endgroup
+}
+
+\renewcommand\listoftables{%
+  \clearpage
+  \sysu@inentocheadfalse
+  \begingroup
+    \ctexset{
+      chapter/format     = \centering\heitinobold\bfseries\fontsize{18bp}{28bp}\selectfont,
+      chapter/beforeskip = 11.36bp,
+      chapter/afterskip  = 29.8bp,
+    }%
+    \sysu@chapter[表目录]{\listtablename}%
+    \vspace{-4.47bp}%
+    \let\addvspace\@gobble
+    \@starttoc{lot}%
+  \endgroup
+}
+
+\renewenvironment{notation}{%
+  \clearpage
+  \sysu@inentocheadfalse
+  \ctexset{
+    chapter/format     = \centering\heitinobold\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 22.72bp,
+    chapter/afterskip  = 29.8bp,
+  }%
+  \sysu@chapter[主要符号对照表]{\sysu@notation@name}%
+  \songti\mdseries\fontsize{12bp}{20bp}\selectfont
+  \lineskiplimit -5bp\relax
+  \lineskip 1bp\relax
+  \raggedright
+}{%
+  \clearpage
+  \ctexset{
+    chapter/format     = \centering\xeCJKsetup{CJKglue={\hspace{0.06bp}}}\heiti\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 22.72bp,
+    chapter/afterskip  = 29.8bp,
+  }%
+  \pagestyle{plain}%
+}
+
+\renewenvironment{notationlist}[1]{%
+  \list{}{%
+    \topsep 0bp%
+    \partopsep 0bp%
+    \itemsep 0bp%
+    \parsep 0bp%
+    \lineskiplimit -5bp\relax
+    \lineskip 1bp\relax
+    \labelwidth #1\relax%
+    \labelsep 1em%
+    \leftmargin\labelwidth
+    \advance\leftmargin\labelsep
+    \advance\leftmargin 3em%
+    \rightmargin 3em%
+    \let\makelabel\notationlabel
+  }%
+}{%
+  \endlist
+}
+
+% =====================================================================
+% 七、图表题注与表格正文字号
+%   1. 图表题注：五号（10.5bp）宋体 + Times New Roman，不加粗，居中，行距 16.32bp；
+%      标签格式：“图1-1 标题” / “Fig.1-1 Title” / “表1-1 标题” / “Table1-1 Title”，
+%      中英文双题注之间无额外空行。
+%   2. 表格内容：五号（10.5bp）宋体 + Times New Roman，行距 19.1bp；
+%      三线表顶底粗线 1.44bp (1.5pt)、栏目细线 0.96bp (1.0pt)。
+% =====================================================================
+\renewcommand\sysu@set@names{%
+  \ifsysu@language@chinese
+    \def\figurename{图}%
+    \def\tablename{表}%
+  \else
+    \def\figurename{Fig.}%
+    \def\tablename{Table}%
+  \fi
+}
+\sysu@set@names
+
+\def\captionmainlanguage{chinese}
+
+\renewcommand\sysu@caption@font{%
+  \songti\mdseries\fontsize{10.5bp}{16.32bp}\selectfont
+  \lineskiplimit -5bp\relax
+  \lineskip 1bp\relax
+}
+\DeclareCaptionFont{sysu}{\sysu@caption@font}
+\DeclareCaptionLabelFormat{sysunospace}{#1#2}
+\DeclareCaptionBox{topparbox}{\parbox[t]{#1}{#2}}
+
+\captionsetup{
+  font            = sysu,
+  labelformat     = sysunospace,
+  labelsep        = space,
+  skip            = 3.8bp,
+  figureposition  = bottom,
+  tableposition   = top,
+  justification   = centering,
+  singlelinecheck = false,
+}
+\captionsetup[bi-first]{
+  lang            = chinese,
+  font            = sysu,
+  labelformat     = sysunospace,
+  labelsep        = space,
+  justification   = centering,
+  singlelinecheck = false,
+  parbox          = parbox,
+}
+\captionsetup[bi-second]{
+  lang            = english,
+  list            = off,
+  font            = sysu,
+  labelformat     = sysunospace,
+  labelsep        = space,
+  justification   = centering,
+  singlelinecheck = false,
+  parbox          = topparbox,
+}
+\DeclareBiCaptionSeparator{figtight}{\vspace{-6.08bp}}
+\DeclareBiCaptionSeparator{tabtight}{\vspace{-3.68bp}}
+\captionsetup[figure]{bi-separator=figtight}
+\captionsetup[table]{bi-separator=tabtight}
+
+\setlength\heavyrulewidth{1.44bp}
+\setlength\lightrulewidth{0.96bp}
+
+\renewcommand\sysu@table@font{%
+  \songti\mdseries\fontsize{10.5bp}{16.32bp}\selectfont
+  \renewcommand\arraystretch{1.18}%
+}
+
+\newcommand\sysucompacttable{%
+  \songti\mdseries\fontsize{10.5bp}{13.5bp}\selectfont
+  \renewcommand{\arraystretch}{1.05}%
+  \setlength{\tabcolsep}{3pt}%
+}
+
+\newenvironment{sysufulltabular}[2][0pt]{%
+  \setlength{\tabcolsep}{#1}%
+  \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}#2@{}}%
+}{%
+  \end{tabular*}%
+}
+
+\newenvironment{sysutabular}[2][4pt]{%
+  \setlength{\tabcolsep}{#1}%
+  \begin{tabular}{#2}%
+}{%
+  \end{tabular}%
+}
+
+\newenvironment{sysutabularx}[2][4pt]{%
+  \setlength{\tabcolsep}{#1}%
+  \tabularx{\textwidth}{#2}%
+}{%
+  \endtabularx
+}
+
+\newcommand\sysufignote[1]{%
+  \par\smallskip
+  {\songti\mdseries\footnotesize 注：#1\par}%
+}
+
+\newcommand\sysutabnote[1]{%
+  \par\smallskip
+  \begin{minipage}{0.96\textwidth}%
+    \songti\mdseries\footnotesize #1%
+  \end{minipage}%
+}
+
+\SetArgSty{textnormal}
+
+% =====================================================================
+% 八、封面、扉页与原创性/使用授权声明页（精确对齐 WPS 模板 PDF 坐标）
+% =====================================================================
+\newcommand\sysu@secret@level@zh{%
+  \ifdefined\sysu@secret@level
+    \ifx\sysu@secret@level\@empty 公开\else\sysu@secret@level\fi
+  \else
+    公开%
+  \fi
+}
+
+\newcommand\sysu@cover@degree@name{%
+  \ifsysu@degree@doctor\smash{博士学位论文}\vphantom{硕士学位论文}\else 硕士学位论文\fi
+}
+
+% 封面日期：阿拉伯数字“2026 年 11 月 9 日”（楷体 + Times New Roman 四号）
+\newcommand\sysu@date@format@zh@cover[3]{\number#1\hspace{0.25em}年\hspace{0.25em}\number#2\hspace{0.25em}月\hspace{0.25em}\number#3\hspace{0.25em}日}
+\newcommand\sysu@date@zh@cover{\sysu@format@date{\sysu@date@format@zh@cover}{\sysu@date}}
+
+% 扉页日期：中文数字“二〇二六年十一月”（宋体四号）
+\newcommand\sysu@date@format@zh@cn[3]{\zhdigits{#1}年\zhnumber{#2}月}
+\newcommand\sysu@date@zh@cn{\sysu@format@date{\sysu@date@format@zh@cn}{\sysu@date}}
+
+% 定长下划线辅助宏：#1=下划线宽度，#2=下划线距基线深度，#3=线粗，#4=内容
+\newcommand\sysu@fixed@uline[4]{%
+  \leavevmode
+  \hbox to #1{%
+    \rlap{\rule[#2]{#1}{#3}}%
+    \hss
+    \begingroup
+      \sbox\@tempboxa{#4}%
+      \ifdim\wd\@tempboxa>#1\relax
+        \resizebox{#1}{\height}{\unhbox\@tempboxa}%
+      \else
+        \unhbox\@tempboxa
+      \fi
+    \endgroup
+    \hss
+  }%
+}
+
+% 1. 研究生中文封面（Word 第 1 节：Page 1；上区弹性标题盒 + 下区刚性坐标锁定盒，杜绝 1–4 行题目漂移或溢页）
+\newsavebox\sysu@title@trialbox
+\renewcommand\sysu@title@page@graduate@zh{%
+  \sysusetup{language=chinese}%
+  \begin{titlepage}%
+    \sysu@pdfbookmark{封面}%
+    \noindent\vbox to \textheight{%
+      \vbox to 432.25bp{%
+        \vspace*{2.36bp}%
+        {\kaishu\mdseries\fontsize{12bp}{15.6bp}\selectfont
+          \setlength{\parindent}{0pt}%
+          \noindent\hspace*{348.87bp}\rlap{密级：\sysu@secret@level@zh}\par
+          \noindent\hspace*{348.75bp}\rlap{编号：\smash{\sysu@student@id}}\par}%
+        \vspace{10.91bp}%
+        \noindent\hspace*{65.43bp}\includegraphics[width=292.56bp,height=89.40bp]{image/template/sysu-word-title.png}\par
+        {\centering
+          \let\newline\\%
+          \vspace{1.97bp}%
+          {\zhongsong\bfseries\fontsize{36bp}{46.8bp}\selectfont \sysu@cover@degree@name\par}%
+        }%
+        \sbox\sysu@title@trialbox{%
+          \parbox{\textwidth}{\centering\let\newline\\%
+            {\songti\mdseries\fontsize{22bp}{33bp}\selectfont \sysu@title\par}%
+            \vspace{11.0bp}%
+            {\rmfamily\mdseries\fontsize{22bp}{28bp}\selectfont \sysu@title@en\par}%
+          }%
+        }%
+        \ifdim\dimexpr\ht\sysu@title@trialbox+\dp\sysu@title@trialbox\relax>176bp\relax
+          {\centering\let\newline\\%
+            \vspace{20bp \@minus 18bp}%
+            {\songti\mdseries\fontsize{22bp}{27bp}\selectfont \sysu@title\par}%
+            \vspace{6bp \@minus 4bp}%
+            {\rmfamily\mdseries\fontsize{20bp}{23bp}\selectfont \sysu@title@en\par}%
+          }%
+        \else
+          {\centering\let\newline\\%
+            \vspace{73.20bp \@minus 58bp}%
+            {\songti\mdseries\fontsize{22bp}{33bp}\selectfont \sysu@title\par}%
+            \vspace{11.0bp \@minus 9bp}%
+            {\rmfamily\mdseries\fontsize{22bp}{28bp}\selectfont \sysu@title@en\par}%
+          }%
+        \fi
+        \vspace{0bp \@plus 1fill}%
+      }%
+      \nointerlineskip
+      \vbox to \dimexpr\textheight-432.25bp\relax{%
+        \vspace*{0bp \@plus 1fill}%
+        {\kaishu\mdseries\fontsize{14bp}{27.24bp}\selectfont
+          \setlength{\parindent}{0pt}%
+          \noindent\hspace*{106.59bp}\makebox[86.76bp][l]{学位申请人：}\sysu@fixed@uline{130.05bp}{-1.89bp}{0.60bp}{\sysu@author}\par
+          \noindent\hspace*{106.59bp}\makebox[115.56bp][l]{导师姓名及职称：}\sysu@fixed@uline{101.25bp}{-1.80bp}{0.60bp}{\sysu@supervisor@names}\par
+          \noindent\hspace*{106.59bp}\makebox[72.21bp][l]{专业名称：}\sysu@fixed@uline{144.60bp}{-1.81bp}{0.60bp}{\sysu@speciality}\par}%
+        \vspace{96.48bp}%
+        {\centering\kaishu\mdseries\fontsize{14bp}{21bp}\selectfont \sysu@date@zh@cover\par}%
+        \vspace*{16.49bp}%
+      }%
+    }%
+  \end{titlepage}%
+  \sysu@reset@main@language
+}
+
+% 2. 研究生中文扉页（Word 第 2 节：Page 3；上区定高 188.55bp 弹性标题盒 + 下区刚性坐标锁定盒，杜绝偏移与溢页）
+\newcommand\sysu@title@page@graduate@zh@inner{%
+  \sysusetup{language=chinese}%
+  \begin{titlepage}%
+    \sysu@pdfbookmark{扉页}%
+    \noindent\vbox to \textheight{%
+      \vbox to 188.55bp{%
+        \sbox\sysu@title@trialbox{%
+          \parbox{\textwidth}{\centering\let\newline\\%
+            {\songti\mdseries\fontsize{22bp}{33bp}\selectfont \sysu@title\par}%
+            \vspace{11.12bp}%
+            {\rmfamily\mdseries\fontsize{22bp}{28bp}\selectfont \sysu@title@en\par}%
+          }%
+        }%
+        \ifdim\dimexpr\ht\sysu@title@trialbox+\dp\sysu@title@trialbox\relax>176bp\relax
+          \vspace*{10bp \@minus 10bp}%
+          {\centering\let\newline\\%
+            {\songti\mdseries\fontsize{21bp}{24.5bp}\selectfont \sysu@title\par}%
+            \vspace{5bp \@minus 3bp}%
+            {\rmfamily\mdseries\fontsize{19.5bp}{21.5bp}\selectfont \sysu@title@en\par}%
+          }%
+        \else
+          \ifdim\dimexpr\ht\sysu@title@trialbox+\dp\sysu@title@trialbox\relax>150.5bp\relax
+            \vspace*{37.85bp}%
+            {\centering\let\newline\\%
+              {\songti\mdseries\fontsize{22bp}{33bp}\selectfont \sysu@title\par}%
+              \vspace{8.5bp \@minus 6bp}%
+              {\rmfamily\mdseries\fontsize{22bp}{26.8bp}\selectfont \sysu@title@en\par}%
+            }%
+          \else
+            \vspace*{37.85bp}%
+            {\centering\let\newline\\%
+              {\songti\mdseries\fontsize{22bp}{33bp}\selectfont \sysu@title\par}%
+              \vspace{11.12bp}%
+              {\rmfamily\mdseries\fontsize{22bp}{28bp}\selectfont \sysu@title@en\par}%
+            }%
+          \fi
+        \fi
+        \vspace{0bp \@plus 1fill}%
+      }%
+      \nointerlineskip
+      \vbox to \dimexpr\textheight-188.55bp\relax{%
+        \vspace*{0bp \@plus 1fill}%
+        {\raggedright\songti\mdseries\fontsize{15bp}{28.80bp}\selectfont
+          \setlength{\parindent}{0pt}%
+          \noindent\hspace*{50.08bp}\makebox[140.96bp][r]{专业:}\hspace{6.11bp}\sysu@fixed@uline{140.0bp}{-4.84bp}{0.48bp}{\sysu@speciality}\par
+          \noindent\hspace*{50.08bp}\makebox[140.96bp][r]{学位申请人:}\hspace{6.11bp}\sysu@fixed@uline{140.0bp}{-4.89bp}{0.48bp}{\sysu@author}\par
+          \noindent\hspace*{50.08bp}\makebox[140.96bp][r]{指导教师:}\hspace{6.11bp}\sysu@fixed@uline{140.0bp}{-4.94bp}{0.48bp}{\sysu@supervisor@names}\par}%
+        \vspace{34.51bp}%
+        {\raggedright\songti\mdseries\fontsize{15bp}{28.85bp}\selectfont
+          \setlength{\parindent}{0pt}%
+          \noindent\hspace*{46.36bp}\makebox[144.68bp][r]{论文答辩委员会主席:}\hspace{6.11bp}\sysu@fixed@uline{140.0bp}{-4.93bp}{0.48bp}{}\par
+          \noindent\hspace*{46.36bp}\makebox[144.68bp][r]{成员:}\hspace{6.11bp}\sysu@fixed@uline{140.0bp}{-4.93bp}{0.48bp}{}\par
+          \noindent\hspace*{46.36bp}\makebox[144.68bp][r]{}\hspace{6.11bp}\sysu@fixed@uline{140.0bp}{-4.93bp}{0.48bp}{}\par
+          \noindent\hspace*{46.36bp}\makebox[144.68bp][r]{}\hspace{6.11bp}\sysu@fixed@uline{140.0bp}{-4.93bp}{0.48bp}{}\par
+          \noindent\hspace*{46.36bp}\makebox[144.68bp][r]{}\hspace{6.11bp}\sysu@fixed@uline{140.0bp}{-4.93bp}{0.48bp}{}\par}%
+        \vspace{86.80bp}%
+        {\centering\songti\mdseries\fontsize{14bp}{21bp}\selectfont \sysu@date@zh@cn\par}%
+        \vspace*{94.77bp}%
+      }%
+    }%
+  \end{titlepage}%
+  \sysu@reset@main@language
+}
+
+% 封面与扉页沿用全文统一页边距
+\renewcommand\maketitle{%
+  \pagenumbering{Alph}%
+  \pagestyle{empty}%
+  \sysu@title@pagetrue
+  \ifsysu@degree@graduate
+    \sysu@title@page@graduate@zh
+    \sysu@title@page@graduate@zh@inner
+  \else
+    \sysu@cover
+    \sysu@title@page@bachelor
+  \fi
+  \cleardoublepage
+  \pagestyle{plain}%
+  \sysu@title@pagefalse
+}
+
+% 3. 原创性声明与使用授权声明分两页独立排版（Word 第 4 节与第 6 节：Page 5 & Page 7）
+%    标题 16bp 黑体居中 y_base = 133.13bp，首行 y_base = 207.65bp (dy = 74.52bp)，
+%    正文 14bp 宋体，行距 dy = 33.24bp，签名距末行 dy = 66.48bp，日期距签名 dy = 47.28bp。
+\renewcommand\sysu@copyrightpage@graduate{%
+  \begin{titlepage}%
+    \sysu@pdfbookmark{论文原创性声明}%
+    \vspace*{-14.64bp}%
+    {\centering\addtolength{\rightskip}{2.24bp}\heitinobold\mdseries\fontsize{16bp}{24bp}\selectfont 论文原创性声明\par}%
+    \vspace{41.30bp}%
+    {\xeCJKsetup{CJKglue={\hspace{0.48bp plus 0.25bp minus 0.10bp}}}%
+     \songti\mdseries\fontsize{14bp}{33.21bp}\selectfont
+      {\setlength{\parindent}{31.96bp}\setlength{\rightskip}{2.08bp}\sysu@originality\par}%
+      \vspace{33.28bp}%
+      \noindent\hspace*{210.28bp}学位论文作者签名：\par
+      \vspace{14.07bp}%
+      \noindent\hspace*{256.36bp}日期：\hspace{15.11bp}年\hspace{22.00bp}月\hspace{22.24bp}日\par}%
+  \end{titlepage}%
+  \sysu@title@pagetrue
+  \cleardoublepage
+  \begin{titlepage}%
+    \sysu@pdfbookmark{学位论文使用授权声明}%
+    \vspace*{-14.64bp}%
+    {\centering\addtolength{\rightskip}{2.24bp}\heitinobold\mdseries\fontsize{16bp}{24bp}\selectfont 学位论文使用授权声明\par}%
+    \vspace{41.29bp}%
+    {\xeCJKsetup{CJKglue={\hspace{0.48bp plus 0.25bp minus 0.10bp}}}%
+     \songti\mdseries\fontsize{14bp}{33.22bp}\selectfont
+      {\setlength{\parindent}{31.96bp}\setlength{\rightskip}{2.08bp}\sysu@authorization\par}%
+      \vspace{33.29bp}%
+      \noindent\rlap{学位论文作者签名：}\hspace*{251.08bp}导师签名：\par
+      \vspace{14.06bp}%
+      \noindent\rlap{日期：\hspace{36.27bp}年\hspace{21.88bp}月\hspace{21.88bp}日}\hspace*{258.40bp}日期：\hspace{36.35bp}年\hspace{21.88bp}月\hspace{21.88bp}日\par}%
+  \end{titlepage}%
+  \cleardoublepage
+  \sysu@title@pagefalse
+}
+
+% =====================================================================
+% 九、后置部分：结论、参考文献（Page 22）、附录（Page 23）、致谢（Page 25）
+%   0. 结论：无章编号平级章标题（结  论 / Conclusions），居中 18bp 黑体，奇数页页眉“结  论”。
+%   1. 参考文献：标题 y_base = 145.37bp，首条 [1] y_base = 184.97bp (dy = 39.60bp)，
+%      字号 10bp (五号偏小 9.95bp)，行距 dy = 15.80bp，悬挂缩进 22.96bp (x0 = 108.00bp)。
+%   2. 附录：标题 y_base = 145.37bp，首行 y_base = 186.89bp (dy = 41.52bp)，
+%      小节标题 12bp 宋体加粗左对齐，列表项行距 dy = 19.44bp，悬挂缩进 27.24bp (x0 = 112.28bp)。
+%   3. 致谢：标题 y_base = 145.37bp，首行 y_base = 186.89bp (dy = 41.52bp)，
+%      正文 12bp 宋体，行距 dy = 19.48bp，每满行 34 字 (dx = 12.45bp，首行缩进 24.96bp)。
+% =====================================================================
+\newcommand\conclusionchapter{%
+  \clearpage
+  \@mainmatterfalse
+  \sysu@infrontmatterfalse
+  \sysu@inentocheadfalse
+  \global\sysu@inconclusionstrue
+  \ctexset{
+    chapter/format     = \centering\heitinobold\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 22.85bp,
+    chapter/afterskip  = 30.16bp,
+  }%
+  \chapter[\texorpdfstring{结\hspace{1.07em}论}{结论}]{结\hspace{1em}论}%
+  \global\sysu@inconclusionstrue
+  \markboth{结\hspace{1em}论}{\sysu@thesis@name}%
+}
+
+\newcommand\sysu@apply@natbib@overrides{%
+  \renewcommand\sysu@bib@chapter{%
+    \clearpage
+    \global\sysu@inconclusionsfalse
+    \@mainmatterfalse
+    \sysu@infrontmatterfalse
+    \sysu@inentocheadfalse
+    \ctexset{
+      chapter/format     = \centering\heitinobold\bfseries\fontsize{18bp}{28bp}\selectfont,
+      chapter/beforeskip = 22.86bp,
+      chapter/afterskip  = 29.8bp,
+    }%
+    \chapter{\bibname}%
+    \vspace{0.95bp}%
+  }%
+  \let\bibsection\sysu@bib@chapter
+  \renewcommand\bibfont{\songti\mdseries\fontsize{10bp}{15.80bp}\selectfont}%
+  \setlength{\bibsep}{0bp}%
+  \setlength{\bibhang}{22.96bp}%
+  \renewcommand\NAT@bibsetnum[1]{%
+    \settowidth\labelwidth{\@biblabel{##1}}%
+    \setlength{\leftmargin}{22.96bp}%
+    \setlength{\labelsep}{\dimexpr 22.96bp - \labelwidth\relax}%
+    \setlength{\itemsep}{\bibsep}%
+    \setlength{\parsep}{\z@}%
+  }%
+  \def\@inlinecite##1{\begingroup\let\@cite\NAT@citenum\citep{##1}\endgroup\kern\z@\ifsysu@language@chinese\ignorespaces\fi}%
+  \renewcommand\NAT@citesuper[3]{%
+    \ifNAT@swa
+      \if*##2*\else##2\NAT@spacechar\fi%
+      \unskip\nobreak\kern\z@%
+      \textsuperscript{%
+        \NAT@@open##1\NAT@@close%
+        \if*##3*\else##3\fi%
+      }%
+      \kern\z@%
+    \else
+      \unskip\nobreak\kern\z@##1\kern\z@%
+    \fi
+    \endgroup
+    \kern\z@\ifsysu@language@chinese\ignorespaces\fi%
+  }%
+  \renewcommand\NAT@citenum[3]{%
+    \ifNAT@swa
+      \unskip\nobreak\kern\z@%
+      \NAT@@open%
+      \if*##2*\else##2\NAT@spacechar\fi%
+      ##1\NAT@@close%
+      \if*##3*\else\textsuperscript{##3}\fi%
+      \kern\z@%
+    \else
+      \unskip\nobreak\kern\z@##1\kern\z@%
+    \fi
+    \endgroup
+    \kern\z@\ifsysu@language@chinese\ignorespaces\fi%
+  }%
+}
+\AtEndOfPackageFile*{natbib}{\sysu@apply@natbib@overrides}
+\ifdefined\bibfont
+  \sysu@apply@natbib@overrides
+\fi
+\AtBeginDocument{\let\parencite\inlinecite}
+
+\renewcommand\sysu@achievements@name{附录}
+\renewcommand\sysu@acknowledgements@name{致谢}
+
+\renewenvironment{achievements}{%
+  \clearpage
+  \global\sysu@inconclusionsfalse
+  \@mainmatterfalse
+  \sysu@infrontmatterfalse
+  \sysu@inentocheadfalse
+  \ctexset{
+    chapter/format     = \centering\heitinobold\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 23.14bp,
+    chapter/afterskip  = 29.78bp,
+  }%
+  \chapter{\sysu@achievements@name}%
+  \songti\mdseries\fontsize{12bp}{19.44bp}\selectfont
+  \setlength{\parindent}{24.96bp}%
+}{}
+
+\newcommand\achievementheading[1][（一）发表的学术论文]{%
+  \par
+  \noindent{\xeCJKsetup{CJKglue={\hspace{0.50bp}}}\songti\bfseries\fontsize{12bp}{19.44bp}\selectfont #1}\par
+  \vspace{5.04bp}%
+}
+
+\renewenvironment{theachievements}[1][（一）发表的学术论文]{%
+  \achievementheading[#1]%
+  \begin{achievementlist}%
+}{%
+  \end{achievementlist}%
+}
+
+\setlist[achievementlist]{
+  topsep        = 0bp,
+  partopsep     = 0bp,
+  itemsep       = 0bp,
+  parsep        = 0bp,
+  leftmargin    = 27.24bp,
+  itemindent    = 0em,
+  labelsep      = 5.24bp,
+  labelwidth    = 22.0bp,
+  align         = left,
+  label         = [\arabic*],
+  font          = \songti\mdseries\fontsize{12bp}{19.44bp}\selectfont,
+}
+
+\renewenvironment{acknowledgements}{%
+  \clearpage
+  \global\sysu@inconclusionsfalse
+  \@mainmatterfalse
+  \sysu@infrontmatterfalse
+  \sysu@inentocheadfalse
+  \ctexset{
+    chapter/format     = \centering\heitinobold\bfseries\fontsize{18bp}{28bp}\selectfont,
+    chapter/beforeskip = 22.93bp,
+    chapter/afterskip  = 29.70bp,
+  }%
+  \chapter{\sysu@acknowledgements@name}%
+  \songti\mdseries\fontsize{12bp}{19.48bp}\selectfont
+  \setlength{\rightskip}{2.16bp}%
+  \setlength{\parindent}{24.96bp}%
+}{}
+
+\makeatother

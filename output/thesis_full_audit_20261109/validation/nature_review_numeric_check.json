@@ -1,0 +1,1057 @@
+{
+  "scope": "Static recomputation, not independent simulation replication",
+  "checks": {
+    "packet_integrity": {
+      "packet_mismatch": [],
+      "workspace_changed_since_snapshot": [
+        "latex/docs/abstract.tex",
+        "latex/docs/chap01.tex",
+        "latex/docs/chap02.tex",
+        "latex/docs/chap03.tex",
+        "latex/docs/chap04.tex",
+        "latex/docs/chap05.tex",
+        "latex/docs/chap06.tex",
+        "latex/thesis-layout.tex"
+      ]
+    },
+    "frozen_reports": {
+      "1": {
+        "sha256": "cd0825b61456f3d86fe282b68e6c7ff70dec342810471e26b9bf0af2ca33f53d",
+        "matches_frozen": true
+      },
+      "2": {
+        "sha256": "485326e2359e45dbe2d41ab4d62f8b2baa35f3445fc5cf0c56893c866fc02e28",
+        "matches_frozen": true
+      },
+      "3": {
+        "sha256": "026c2190510cce18bd6f571e81ebae4e05f5965d06f9898b039fd258a7e01dc2",
+        "matches_frozen": true
+      }
+    },
+    "chapter3": {
+      "rows": 100,
+      "pairs": 50,
+      "metrics": {
+        "DSR": {
+          "baseline_mean": 0.24500006856190068,
+          "candidate_mean": 0.27350884124820174,
+          "difference": 0.028508772686301042,
+          "seed_t_ci95": [
+            0.016451849553863772,
+            0.04056569581873831
+          ],
+          "tolerance": 1e-09,
+          "matches_json": true
+        },
+        "Admission fraction": {
+          "baseline_mean": 0.4768826666448986,
+          "candidate_mean": 0.5750713487216588,
+          "difference": 0.09818868207676008,
+          "seed_t_ci95": [
+            0.05379778543544353,
+            0.14257957871807664
+          ],
+          "tolerance": 1e-09,
+          "matches_json": true
+        },
+        "Deadline satisfaction among admitted": {
+          "baseline_mean": 0.5170242674991314,
+          "candidate_mean": 0.4785500449800535,
+          "difference": -0.03847422251907808,
+          "seed_t_ci95": [
+            -0.08042523538415902,
+            0.0034767903460028657
+          ],
+          "tolerance": 1e-09,
+          "matches_json": true
+        },
+        "Penalized system latency per generated service request": {
+          "baseline_mean": 33.73389321735956,
+          "candidate_mean": 28.154637472487565,
+          "difference": -5.579255744871988,
+          "seed_t_ci95": [
+            -8.034465109031578,
+            -3.1240463807123984
+          ],
+          "tolerance": 1e-09,
+          "matches_json": true
+        },
+        "Latency per admitted service request": {
+          "baseline_mean": 1.576455397391873,
+          "candidate_mean": 1.6553067157997525,
+          "difference": 0.07885131840787953,
+          "seed_t_ci95": [
+            -0.02538366374030583,
+            0.1830863005560649
+          ],
+          "tolerance": 1e-09,
+          "matches_json": true
+        },
+        "Fairness": {
+          "baseline_mean": 0.8665241018281195,
+          "candidate_mean": 0.9209673815253718,
+          "difference": 0.054443279697252434,
+          "seed_t_ci95": [
+            0.03610891709825724,
+            0.07277764229624763
+          ],
+          "tolerance": 1e-09,
+          "matches_json": true
+        },
+        "MBS offload fraction": {
+          "baseline_mean": 0.053253850138014806,
+          "candidate_mean": 0.047335290814111176,
+          "difference": -0.005918559323903621,
+          "seed_t_ci95": [
+            -0.02261484818920026,
+            0.010777729541393019
+          ],
+          "tolerance": 1e-09,
+          "matches_json": true
+        }
+      },
+      "pooled_count_identities": {
+        "lower_no_attention": true,
+        "lower_mlp_upper_uncovered_obs": true
+      }
+    },
+    "chapter4": {
+      "rows": 410,
+      "unique_snapshot_count": 6000,
+      "main_means": {
+        "greedy_single_pass": {
+          "deadline_misses": 2.2266666666666666,
+          "mean_normalized_latency": 0.676976311692149,
+          "solver_wall_seconds": 1.0826663040121398,
+          "local_optimality_verified_fraction": 0.0,
+          "admitted_service_requests": 5.806666666666667,
+          "empty_snapshot_fraction": 0.10666666666666666
+        },
+        "heuristic_control": {
+          "deadline_misses": 2.888333333333333,
+          "mean_normalized_latency": 0.8857834528207877,
+          "solver_wall_seconds": 0.12132469080698986,
+          "local_optimality_verified_fraction": 0.0,
+          "admitted_service_requests": 5.806666666666667,
+          "empty_snapshot_fraction": 0.10666666666666666
+        },
+        "iterative_base": {
+          "deadline_misses": 2.215,
+          "mean_normalized_latency": 0.6735680252764441,
+          "solver_wall_seconds": 2.346987462885057,
+          "local_optimality_verified_fraction": 0.0,
+          "admitted_service_requests": 5.806666666666667,
+          "empty_snapshot_fraction": 0.10666666666666666
+        },
+        "mc_itr": {
+          "deadline_misses": 2.045,
+          "mean_normalized_latency": 0.6733676927539338,
+          "solver_wall_seconds": 2.880099266025548,
+          "local_optimality_verified_fraction": 1.0,
+          "admitted_service_requests": 5.806666666666667,
+          "empty_snapshot_fraction": 0.10666666666666666
+        }
+      },
+      "comparison_point_estimates_match_json": true,
+      "all_mcitr_units_local_optimality_verified": true
+    },
+    "bridge": {
+      "snapshots": 400,
+      "training_seeds": [
+        7013,
+        7283,
+        7541,
+        7823,
+        8089,
+        8353,
+        8627,
+        8887,
+        9151,
+        9419
+      ],
+      "workload_seeds": [
+        3001,
+        3037,
+        3061,
+        3097,
+        3121
+      ],
+      "online_misses": 9.2375,
+      "mcitr_misses": 6.605,
+      "paired_difference": -2.6325,
+      "seed_t_ci95": [
+        -2.924792581083125,
+        -2.340207418916875
+      ]
+    },
+    "chapter5": {
+      "rows": 816,
+      "unique_keys": 816,
+      "all_counts_bounded": true,
+      "same_generated_per_paired_episode": true,
+      "all_17_summary_rows_match": true,
+      "summaries": {
+        "decomposed_composed_rl": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 130608,
+          "success": 112040,
+          "dsr": 0.4445608354759864,
+          "admission": 0.5182363584420532,
+          "conditional": 0.8578341296092123,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 43334,
+              "success": 37310
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 42568,
+              "success": 37309
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 44706,
+              "success": 37421
+            }
+          }
+        },
+        "decomposed_distilled": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 133171,
+          "success": 120865,
+          "dsr": 0.47957734184045964,
+          "admission": 0.5284060248230327,
+          "conditional": 0.907592493861276,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 44729,
+              "success": 40192
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 44400,
+              "success": 40487
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 44042,
+              "success": 40186
+            }
+          }
+        },
+        "decomposed_rl": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 131091,
+          "success": 111328,
+          "dsr": 0.4417357077103768,
+          "admission": 0.5201528425864204,
+          "conditional": 0.8492421295130863,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 43333,
+              "success": 37156
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 44018,
+              "success": 37293
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 43740,
+              "success": 36879
+            }
+          }
+        },
+        "decomposed_rl_finetuned": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 132908,
+          "success": 122002,
+          "dsr": 0.4840888169380694,
+          "admission": 0.5273624734152303,
+          "conditional": 0.9179432389321937,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 44996,
+              "success": 40638
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 43872,
+              "success": 41009
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 44040,
+              "success": 40355
+            }
+          }
+        },
+        "distilled_top6_mpc": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 130040,
+          "success": 123753,
+          "dsr": 0.49103656794590994,
+          "admission": 0.5159826048312859,
+          "conditional": 0.9516533374346355,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 43832,
+              "success": 41579
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 43062,
+              "success": 41086
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 43146,
+              "success": 41088
+            }
+          }
+        },
+        "joint_distilled": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 132117,
+          "success": 121079,
+          "dsr": 0.48042646732057265,
+          "admission": 0.5242238834396724,
+          "conditional": 0.9164528410424094,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 44500,
+              "success": 40463
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 43788,
+              "success": 40252
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 43829,
+              "success": 40364
+            }
+          }
+        },
+        "joint_no_expectation_distilled": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 132411,
+          "success": 120473,
+          "dsr": 0.47802193441894425,
+          "admission": 0.525390439005809,
+          "conditional": 0.9098413273821662,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 44097,
+              "success": 40435
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 44360,
+              "success": 40032
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 43954,
+              "success": 40006
+            }
+          }
+        },
+        "joint_no_expectation_rl": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 132876,
+          "success": 111916,
+          "dsr": 0.4440688188426499,
+          "admission": 0.5272355013808209,
+          "conditional": 0.8422589481922996,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 43402,
+              "success": 36910
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 45046,
+              "success": 37758
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 44428,
+              "success": 37248
+            }
+          }
+        },
+        "joint_no_expectation_rl_finetuned": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 133082,
+          "success": 122571,
+          "dsr": 0.48634653842491193,
+          "admission": 0.5280528838523315,
+          "conditional": 0.9210186200988864,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 45407,
+              "success": 41311
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 44336,
+              "success": 40538
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 43339,
+              "success": 40722
+            }
+          }
+        },
+        "joint_rl": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 131395,
+          "success": 111514,
+          "dsr": 0.44247373266038154,
+          "admission": 0.5213590769133098,
+          "conditional": 0.8486928726359451,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 43202,
+              "success": 36854
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 43680,
+              "success": 37576
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 44513,
+              "success": 37084
+            }
+          }
+        },
+        "joint_rl_finetuned": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 132524,
+          "success": 122842,
+          "dsr": 0.4874218328413167,
+          "admission": 0.5258388090023173,
+          "conditional": 0.9269415351181672,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 44534,
+              "success": 41050
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 44078,
+              "success": 40892
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 43912,
+              "success": 40900
+            }
+          }
+        },
+        "joint_rl_mpc": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 129491,
+          "success": 124280,
+          "dsr": 0.49312763863759007,
+          "admission": 0.5138042408659492,
+          "conditional": 0.9597578210068654,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 43580,
+              "success": 41583
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 43009,
+              "success": 41476
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 42902,
+              "success": 41221
+            }
+          }
+        },
+        "lower_only_rl": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 128049,
+          "success": 110397,
+          "dsr": 0.4380416150842777,
+          "admission": 0.5080825635653747,
+          "conditional": 0.8621465220345337,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 42174,
+              "success": 36772
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 42838,
+              "success": 37038
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 43037,
+              "success": 36587
+            }
+          }
+        },
+        "prior_top6_mpc": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 123242,
+          "success": 114573,
+          "dsr": 0.45461146557470716,
+          "admission": 0.4890089832714345,
+          "conditional": 0.9296587202414761,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 40739,
+              "success": 38165
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 41930,
+              "success": 38653
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 40573,
+              "success": 37755
+            }
+          }
+        },
+        "quality_amortized": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 130436,
+          "success": 122382,
+          "dsr": 0.4855966098466813,
+          "admission": 0.5175538837571025,
+          "conditional": 0.9382532429697323,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 43640,
+              "success": 40860
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 43378,
+              "success": 40755
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 43418,
+              "success": 40767
+            }
+          }
+        },
+        "uncoordinated_init": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 129096,
+          "success": 111646,
+          "dsr": 0.44299749230232044,
+          "admission": 0.5122369298162079,
+          "conditional": 0.8648292743384768,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 42901,
+              "success": 37304
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 42800,
+              "success": 37379
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 43395,
+              "success": 36963
+            }
+          }
+        },
+        "upper_only_rl": {
+          "episodes": 48,
+          "generated": 252024,
+          "admitted": 131496,
+          "success": 111825,
+          "dsr": 0.44370774211979813,
+          "admission": 0.5217598323969146,
+          "conditional": 0.8504060960029203,
+          "by_parent": {
+            "0": {
+              "generated": 84008,
+              "admitted": 43345,
+              "success": 37370
+            },
+            "1": {
+              "generated": 84008,
+              "admitted": 43182,
+              "success": 37124
+            },
+            "2": {
+              "generated": 84008,
+              "admitted": 44969,
+              "success": 37331
+            }
+          }
+        }
+      },
+      "all_31_effects_and_intervals_match": true,
+      "effects": [
+        {
+          "pair": "joint_rl--uncoordinated_init",
+          "calculated_pp": [
+            -0.05237596419388665,
+            -0.49067980848411547,
+            0.3406359962704811,
+            -0.7296100787517276,
+            0.5171654509071146
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl--decomposed_rl",
+          "calculated_pp": [
+            0.07380249500047639,
+            -0.26898537506416315,
+            0.40750024538697666,
+            -0.44634044054792915,
+            0.5873553419665425
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl--joint_distilled",
+          "calculated_pp": [
+            -3.795273466019109,
+            -4.240771557020644,
+            -3.2146829810579125,
+            -4.390708865385727,
+            -2.8608817145652865
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_distilled--decomposed_distilled",
+          "calculated_pp": [
+            0.0849125480113011,
+            -0.1662583527734477,
+            0.3707724144707407,
+            -0.2794893435595079,
+            0.5527330633000762
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_finetuned--joint_distilled",
+          "calculated_pp": [
+            0.6995365520744052,
+            0.5142107990691718,
+            0.8778891437258768,
+            0.3904835693330101,
+            0.9834615621133573
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_finetuned--decomposed_rl_finetuned",
+          "calculated_pp": [
+            0.3333015903247305,
+            -0.078954836178034,
+            0.838186479256031,
+            -0.2936763965579399,
+            1.1984805747577152
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_finetuned--joint_no_expectation_rl_finetuned",
+          "calculated_pp": [
+            0.1075294416404804,
+            -0.15440694324177356,
+            0.414881988265015,
+            -0.28042746752585496,
+            0.6601782128523771
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_mpc--quality_amortized",
+          "calculated_pp": [
+            0.7531028790908796,
+            0.4066255063491166,
+            1.155613185937625,
+            0.25249546562533004,
+            1.4206965589938518
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl--lower_only_rl",
+          "calculated_pp": [
+            0.4432117576103863,
+            -0.116188556031709,
+            0.9863665511245636,
+            -0.49856530890111317,
+            1.3123100349825676
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl--upper_only_rl",
+          "calculated_pp": [
+            -0.12340094594165592,
+            -0.6249504236718343,
+            0.4125519529355637,
+            -0.8568620849727744,
+            0.7411961630601352
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl--decomposed_composed_rl",
+          "calculated_pp": [
+            -0.20871028156048502,
+            -0.7171688404120088,
+            0.2783409380915969,
+            -0.9702688329857361,
+            0.5509491879066615
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl--joint_no_expectation_rl",
+          "calculated_pp": [
+            -0.15950861822683532,
+            -0.5438219982127029,
+            0.23741255378165863,
+            -0.8006300806088743,
+            0.46261136365489053
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_no_expectation_rl--decomposed_rl",
+          "calculated_pp": [
+            0.2333111132273117,
+            -0.23990743856114333,
+            0.6561000771655843,
+            -0.5335663441078266,
+            0.8441930031388465
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "decomposed_rl--decomposed_composed_rl",
+          "calculated_pp": [
+            -0.2825127765609614,
+            -0.7857359113985083,
+            0.24687761044190965,
+            -1.0378530640772183,
+            0.5372506018730913
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "decomposed_composed_rl--lower_only_rl",
+          "calculated_pp": [
+            0.6519220391708713,
+            0.33171082263093843,
+            0.9953554282005839,
+            0.14604111076458576,
+            1.2048928983553682
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "decomposed_composed_rl--upper_only_rl",
+          "calculated_pp": [
+            0.08530933561882911,
+            -0.27649060885049037,
+            0.44162055362058483,
+            -0.4812485796050506,
+            0.6525924064600622
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "upper_only_rl--uncoordinated_init",
+          "calculated_pp": [
+            0.07102498174776928,
+            -0.4181492879620329,
+            0.49238337665219684,
+            -0.7596583965505305,
+            0.6479848359114201
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "lower_only_rl--uncoordinated_init",
+          "calculated_pp": [
+            -0.49558772180427296,
+            -0.989980771155592,
+            -0.07011952303654903,
+            -1.29336183685528,
+            0.12158012985198083
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_distilled--joint_no_expectation_distilled",
+          "calculated_pp": [
+            0.24045329016284164,
+            -0.011488753545167664,
+            0.5254416330926047,
+            -0.14884909992496773,
+            0.7159973102890324
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_no_expectation_distilled--decomposed_distilled",
+          "calculated_pp": [
+            -0.1555407421515405,
+            -0.3942477290203156,
+            0.11724793482127921,
+            -0.5089595997031664,
+            0.32952238868339623
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_finetuned--decomposed_distilled",
+          "calculated_pp": [
+            0.7844491000857065,
+            0.43257703113162804,
+            1.1367378827076209,
+            0.22975033122174543,
+            1.3560735534457664
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_finetuned--joint_rl",
+          "calculated_pp": [
+            4.494810018093514,
+            3.9453886338207496,
+            4.934025063403079,
+            3.6043695104874742,
+            5.091705438277121
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_finetuned--uncoordinated_init",
+          "calculated_pp": [
+            4.442434053899627,
+            3.9781796703060555,
+            4.922437127604474,
+            3.7431567844317932,
+            5.206729187909468
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_finetuned--quality_amortized",
+          "calculated_pp": [
+            0.18252229946354265,
+            -0.1683441443459805,
+            0.6053755525836619,
+            -0.3134065151116491,
+            0.9093009974393211
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_no_expectation_rl_finetuned--joint_distilled",
+          "calculated_pp": [
+            0.5920071104339248,
+            0.35233492037106545,
+            0.7951054487877748,
+            0.20068530018630013,
+            0.8947844033847334
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "decomposed_rl_finetuned--decomposed_distilled",
+          "calculated_pp": [
+            0.4511475097609759,
+            -0.023413516613428276,
+            0.9341118997037857,
+            -0.2932627112129437,
+            1.3166789349363164
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_mpc--joint_rl_finetuned",
+          "calculated_pp": [
+            0.5705805796273371,
+            0.17000465917979526,
+            0.9805374043766968,
+            -0.05707119914571087,
+            1.22187374868808
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_mpc--distilled_top6_mpc",
+          "calculated_pp": [
+            0.2091070691680149,
+            -0.05583521388013267,
+            0.4750174451796813,
+            -0.22539662021254067,
+            0.6040426364625668
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "joint_rl_mpc--prior_top6_mpc",
+          "calculated_pp": [
+            3.8516173062882886,
+            3.2232888026115036,
+            4.417006867947359,
+            2.835723290882498,
+            4.68300118364385
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "distilled_top6_mpc--prior_top6_mpc",
+          "calculated_pp": [
+            3.642510237120274,
+            3.0132138131229413,
+            4.218652063950343,
+            2.659008235780346,
+            4.546027848349084
+          ],
+          "matches_csv": true
+        },
+        {
+          "pair": "distilled_top6_mpc--quality_amortized",
+          "calculated_pp": [
+            0.5439958099228648,
+            0.16877747481369793,
+            1.0045493448342868,
+            -0.02422972469562204,
+            1.3474432452193155
+          ],
+          "matches_csv": true
+        }
+      ],
+      "wall_time_reduction_percent": 54.94525820599182
+    },
+    "chapter5_frozen_source_hashes": {
+      "environment/queued_service.py": {
+        "frozen_sha256": "2ecb8b37105c7bb53a2afe0e44e74e2ca4f71e375547b28d1422996f9c3504cb",
+        "snapshot_sha256": "2ecb8b37105c7bb53a2afe0e44e74e2ca4f71e375547b28d1422996f9c3504cb"
+      },
+      "utils/queued_closed_loop.py": {
+        "frozen_sha256": "40856690df789dcae126becbd1ea57e6db43e65128ffd5c699de3ed5fd436c79",
+        "snapshot_sha256": "9fe7dc6b6945dfdd5133dd14e97b0f27b60bc5ae948a749db3d708a2615d5d50"
+      },
+      "utils/queued_taskset_closed_loop.py": {
+        "frozen_sha256": "4a9732cb8791f9cc9642965cc69c5fb06309bb2b234699d90e7f2e2d9d75c3ad",
+        "snapshot_sha256": "4a9732cb8791f9cc9642965cc69c5fb06309bb2b234699d90e7f2e2d9d75c3ad"
+      },
+      "utils/queued_service_controllers.py": {
+        "frozen_sha256": "e3f05d6f2509a37ee32a60d3c25ab4b25894e6fa623f10f73afbf2b3849e6676",
+        "snapshot_sha256": "e3f05d6f2509a37ee32a60d3c25ab4b25894e6fa623f10f73afbf2b3849e6676"
+      },
+      "utils/queued_service_learning.py": {
+        "frozen_sha256": "b645151f409ade1a5b5eda0c14225aefe8b9e81edbe1cc5af66e1adce528d4cd",
+        "snapshot_sha256": "b645151f409ade1a5b5eda0c14225aefe8b9e81edbe1cc5af66e1adce528d4cd"
+      },
+      "utils/queued_arrival_adaptation.py": {
+        "frozen_sha256": "bebe5d3e41f36601a8e53965a1c6a4e937305335c2e63b520ae93102c8517ffc",
+        "snapshot_sha256": "bebe5d3e41f36601a8e53965a1c6a4e937305335c2e63b520ae93102c8517ffc"
+      },
+      "utils/queued_waiting_rescue.py": {
+        "frozen_sha256": "a2aafb5b72e3e1e9291c49e5c67cb4c29f44bff6bf68a38d71249c63ec75b1f2",
+        "snapshot_sha256": "a2aafb5b72e3e1e9291c49e5c67cb4c29f44bff6bf68a38d71249c63ec75b1f2"
+      },
+      "utils/queued_planner_distillation.py": {
+        "frozen_sha256": "b71c179761edcd6f3949589c97d5933326c6c1603c255ac5e8e39730eb630585",
+        "snapshot_sha256": "b71c179761edcd6f3949589c97d5933326c6c1603c255ac5e8e39730eb630585"
+      },
+      "utils/queued_quality_amortization.py": {
+        "frozen_sha256": "b62093b47074d1867e35f52e648a77b0dda0bd5e0c55dc53ed64e9d232a130dc",
+        "snapshot_sha256": "b62093b47074d1867e35f52e648a77b0dda0bd5e0c55dc53ed64e9d232a130dc"
+      },
+      "utils/queued_joint_training.py": {
+        "frozen_sha256": "dbd85c8c4aca8830c89c77d394582f833d05070f044cf0b1546017b600035f13",
+        "snapshot_sha256": "dbd85c8c4aca8830c89c77d394582f833d05070f044cf0b1546017b600035f13"
+      },
+      "marl_models/queued_joint_training.py": {
+        "frozen_sha256": "59c0fe1ca5e5670e16f02f9d319f0d54b11b48554212e6115852cdb5b4a5d41b",
+        "snapshot_sha256": "59c0fe1ca5e5670e16f02f9d319f0d54b11b48554212e6115852cdb5b4a5d41b"
+      },
+      "marl_models/queued_joint_rl.py": {
+        "frozen_sha256": "c00f048960a528c4519bc410d91b17c8dcf2fd13e58a329f91b55e4b90bf2053",
+        "snapshot_sha256": "c00f048960a528c4519bc410d91b17c8dcf2fd13e58a329f91b55e4b90bf2053"
+      },
+      "utils/queued_joint_rl.py": {
+        "frozen_sha256": "f9f6438ae01964b73e37a798b5073b1fb9a86bae8f6cfd808262880af16671fc",
+        "snapshot_sha256": "f9f6438ae01964b73e37a798b5073b1fb9a86bae8f6cfd808262880af16671fc"
+      },
+      "scripts/analysis/queued_joint_rl_experiment.py": {
+        "frozen_sha256": "898588eb57ffd00660cde72cb04b20c352e18e20bf381853ee50e8018cf7d452",
+        "snapshot_sha256": "898588eb57ffd00660cde72cb04b20c352e18e20bf381853ee50e8018cf7d452"
+      },
+      "scripts/analysis/review_queued_joint_rl.py": {
+        "frozen_sha256": "b13032d74c65a36dd4a7b3048ecfa7bcff325eca69487314a24edd8f620f61e5",
+        "snapshot_sha256": "b13032d74c65a36dd4a7b3048ecfa7bcff325eca69487314a24edd8f620f61e5"
+      }
+    },
+    "chapter5_data_source_hashes": {
+      "checked": 823,
+      "mismatches": []
+    },
+    "local_reference_resolution": {
+      "unresolved_labels": [],
+      "duplicate_labels": [],
+      "missing_citation_keys": [],
+      "distinct_cited_keys": 57,
+      "boundary": "Local key resolution only. External bibliography facts not verified."
+    }
+  }
+}

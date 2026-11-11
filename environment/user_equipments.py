@@ -85,8 +85,6 @@ class UE:
         if self.is_hotspot_user:
             self.pos[:2] = self._get_position_in_hotspot()
 
-        self.battery_level: float = self.mobility_rng.uniform(0.6, 1.0) * config.UE_BATTERY_CAPACITY  # Start at capacity between 60% to 100%
-
         self.current_request: Request = Request.service(0, 0, config.TIME_SLOT_DURATION, config.SERVICE_PRIORITY_MIN)
         self.latency_current_request: float = 0.0  # Latency for the current request
         self.assigned: bool = False
@@ -134,17 +132,12 @@ class UE:
     # 函数 generate_request：用户设备产生的任务请求。
     def generate_request(self) -> None:
         """Generates a new explicit request object for the current time slot."""
-
-        # Consume the same latent workload draws even when policy-dependent
-        # battery state selects an energy request. Mobility has its own stream.
         req_id = int(self.rng.choice(self.all_ids, p=self.global_probs))
         req_size = int(self.rng.randint(config.MIN_INPUT_SIZE, config.MAX_INPUT_SIZE))
         deadline = float(self.rng.uniform(config.SERVICE_DEADLINE_MIN, config.SERVICE_DEADLINE_MAX))
         priority = int(self.rng.randint(config.SERVICE_PRIORITY_MIN, config.SERVICE_PRIORITY_MAX + 1))
         self.latent_request = (req_id, req_size, deadline, priority)
-        if self.battery_level < config.UE_CRITICAL_THRESHOLD:
-            self.current_request = Request.energy()
-        elif req_id < config.NUM_SERVICES:
+        if req_id < config.NUM_SERVICES:
             self.current_request = Request.service(req_size=req_size, req_id=req_id, deadline=deadline, priority=priority)
         else:
             self.current_request = Request.content(req_id=req_id)
@@ -183,12 +176,3 @@ class UE:
             self._waypoint = np.array([self.mobility_rng.uniform(0, config.AREA_WIDTH), self.mobility_rng.uniform(0, config.AREA_HEIGHT)], dtype=np.float32)
 
         self._wait_time = self.mobility_rng.randint(0, config.UE_MAX_WAIT_TIME + 1)
-
-    # 函数 update_battery：更新模型、环境或统计量的状态，主要参数：harv_energy, ue_transmit_time。
-    def update_battery(self, harv_energy: float, ue_transmit_time: float, ue_receive_time: float = 0.0) -> None:
-        """Updates battery level based on consumption and harvesting."""
-        consumed_energy: float = config.UE_STATIC_POWER * config.TIME_SLOT_DURATION
-        consumed_energy += config.TRANSMIT_POWER * ue_transmit_time
-        consumed_energy += config.UE_RECEIVE_POWER * ue_receive_time
-        self.battery_level = min(config.UE_BATTERY_CAPACITY, self.battery_level - consumed_energy + harv_energy)
-        self.battery_level = max(0.0, self.battery_level)

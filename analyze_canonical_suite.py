@@ -18,18 +18,13 @@ def read_unit(directory, episodes, source_hash):
     rows = [r['metrics'] for episode in raw for r in episode['steps']]
     generated = sum(r['generated_service_count'] for r in rows)
     success = sum(r['deadline_satisfied_count'] for r in rows)
-    energy = sum(r['uav_fleet_total_energy'] for r in rows)
     admitted = sum(r['admitted_service_count'] for r in rows)
     return {'DSR': success / generated if generated else 0.,
             'Admission fraction': admitted / generated if generated else 0.,
             'Deadline satisfaction among admitted': success / admitted if admitted else 0.,
-            'UAV Fleet Total Energy': energy / episodes,
-            'Non-flight assignment energy': sum(r['lower_assignment_energy'] for r in rows) / episodes,
-            'Critical-UE Ratio': float(np.mean([r['offline_rate'] for r in rows])),
             'Penalized system latency per generated service request': sum(r['latency'] for r in rows) / generated if generated else 0.,
             'Latency per admitted service request': sum(r['lower_service_latency'] for r in rows) / admitted if admitted else 0.,
             'Fairness': float(np.mean([r['fairness'] for r in rows])),
-            'Effective tasks per MJ': success * 1e6 / energy if energy else 0.,
             'MBS offload fraction': sum(r['service_offloads_mbs'] for r in rows) / admitted if admitted else 0.}, [r['exogenous_trace_hash'] for r in raw]
 
 

@@ -76,69 +76,6 @@ class TestMetricSemantics(unittest.TestCase):
             f"System DSR ({dsr}) did not include unadmitted requests in the denominator"
         )
 
-    def test_critical_ue_ratio_definition(self):
-        """Critical-UE Ratio must equal the proportion of UEs with battery < UE_CRITICAL_THRESHOLD."""
-        # Set 15 UEs below threshold
-        crit_thresh = config.UE_CRITICAL_THRESHOLD
-        for i in range(15):
-            self.env.ues[i].battery_level = crit_thresh - 1.0
-        for i in range(15, config.NUM_UES):
-            self.env.ues[i].battery_level = crit_thresh + 10.0
-
-        _, _, metrics = self.env.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32))
-
-        # Check offline_rate field equals 15/100 = 0.15
-        expected_ratio = 15.0 / float(config.NUM_UES)
-        self.assertAlmostEqual(
-            metrics["offline_rate"], expected_ratio, places=4,
-            msg=f"Critical-UE Ratio was {metrics['offline_rate']}, expected {expected_ratio}"
-        )
-
-    def test_uav_fleet_total_energy_excludes_mbs_energy(self):
-        """UAV Fleet Total Energy excludes MBS compute energy (grid powered)."""
-        uav0 = self.env.uavs[0]
-        ue0 = self.env.ues[0]
-        ue0.pos[:2] = uav0.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
-        ue0.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue0.current_request.req_id = 0
-        ue0.current_request.req_size = 50000
-
-        uav0._current_covered_ues = [ue0]
-        for u in self.env.uavs[1:]:
-            u._current_covered_ues = []
-
-        offload_actions = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
-        offload_actions[0, 0] = 1  # MBS
-
-        _, _, metrics = self.env.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32), offloading_actions=offload_actions)
-
-        # Test Local vs MBS: Local adds UAV computation energy, while MBS only incurs
-        # backhaul TX energy. MBS computation is powered by the grid and excluded from fleet energy.
-        env_local = Env()
-        env_local.reset()
-        uav0_l = env_local.uavs[0]
-        ue0_l = env_local.ues[0]
-        ue0_l.pos[:2] = uav0_l.pos[:2] + np.array([10.0, 0.0], dtype=np.float32)
-        ue0_l.current_request.req_type = REQUEST_TYPE_SERVICE
-        ue0_l.current_request.req_id = 0
-        ue0_l.current_request.req_size = 50000
-
-        uav0_l._current_covered_ues = [ue0_l]
-        for u in env_local.uavs[1:]:
-            u._current_covered_ues = []
-
-        offload_actions_local = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
-        offload_actions_local[0, 0] = 0  # Local
-
-        _, _, metrics_local = env_local.step(np.zeros((config.NUM_UAVS, 2), dtype=np.float32), offloading_actions=offload_actions_local)
-
-        # UAV computation energy should be present in metrics_local
-        # While metrics for MBS should not charge UAV for MBS computing
-        self.assertLess(
-            metrics["energy"], metrics_local["energy"] + 1.0,
-            "MBS compute energy was improperly added to UAV Fleet Total Energy"
-        )
-
 
 if __name__ == "__main__":
     unittest.main()

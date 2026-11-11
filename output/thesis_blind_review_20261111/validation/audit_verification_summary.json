@@ -1,0 +1,204 @@
+{
+  "audit_id": "thesis_blind_review_20261111_forensic_reconciliation",
+  "generated_at_utc": "2026-11-11T04:29:17.034333+00:00",
+  "protocol": {
+    "skill": "nature-reviewer",
+    "blind_reviewers_frozen_before_audit": true,
+    "frozen_reviewer_files": [
+      "output/thesis_blind_review_20261111/deliverables/reviewer_1_report.md",
+      "output/thesis_blind_review_20261111/deliverables/reviewer_2_report.md",
+      "output/thesis_blind_review_20261111/deliverables/reviewer_3_report.md"
+    ],
+    "recent_archive_untouched": true,
+    "repository_source_files_modified": false
+  },
+  "overall_summary": {
+    "total_audit_items": 11,
+    "confirmed_internal_error_count": 7,
+    "aggregation_ambiguity_count": 2,
+    "provenance_gap_count": 1,
+    "passed_domain_bundle_count": 1,
+    "bibliography_entries_total": 57,
+    "bibliography_entries_cited_in_text": 57,
+    "bibliography_recent_5yr_2022_2026_count": 18,
+    "bibliography_recent_5yr_ratio": 0.3158
+  },
+  "audit_findings": [
+    {
+      "id": "AUD-01",
+      "status": "confirmed_internal_error",
+      "severity": "Major",
+      "title": "Protocol II simulation micro-step (dt) mismatch between Table 5-4 and Engine implementation",
+      "manuscript_location": "latex/docs/chap05.tex:L404 (Table 5-4 tab:ch5-sim-params)",
+      "manuscript_claim": "宏决策步长 / 微步长 = 1.0 / 0.05 s",
+      "repo_source_location": "environment/queued_service.py:L28; scripts/analysis/queued_joint_rl_experiment.py:L129",
+      "repo_value": "Protocol.dt = 0.1 s (10 micro-steps per 1.0 s macro-slot, not 20)"
+    },
+    {
+      "id": "AUD-02",
+      "status": "confirmed_internal_error",
+      "severity": "Major",
+      "title": "Tandem queue approximation audit RMSE transcription error for legacy static single-pass Lindley operator",
+      "manuscript_location": "latex/docs/chap05.tex:L144",
+      "manuscript_claim": "旧单次 Lindley 近似对应相关系数 0.99963、MAE 0.2704、RMSE 0.6382",
+      "repo_source_location": "results/chapter5_dynamic_service_20261028/queued_joint_rl_v2_20261106/tandem_approximation_audit.json; protocol.json",
+      "repo_value": {
+        "evaluated_pairs": 932,
+        "release_time_edf": {
+          "correlation": 0.999572,
+          "mae": 0.275751,
+          "rmse": 0.644388
+        },
+        "static_single_pass_lindley": {
+          "correlation": 0.99963,
+          "mae": 0.270386,
+          "rmse": 0.618041
+        }
+      }
+    },
+    {
+      "id": "AUD-03",
+      "status": "confirmed_internal_error",
+      "severity": "Major",
+      "title": "Chapter 1 'millisecond-to-subsecond' online decision time claim contradicted by Chapter 5 recorded timing",
+      "manuscript_location": "latex/docs/chap01.tex:L111 vs latex/docs/tables/ch5_dynamic_cost.tex:L9-L16 & latex/docs/chap05.tex:L503-L515",
+      "manuscript_claim": "能在毫秒至亚秒级时间内完成在线协同决策",
+      "repo_source_location": "results/chapter5_dynamic_service_20261028/queued_joint_rl_v2_20261106/confirmation_analysis.json",
+      "repo_value": {
+        "mean_decision_seconds_range": [
+          0.439,
+          1.602
+        ],
+        "p95_decision_seconds_range": [
+          1.22,
+          5.998
+        ],
+        "share_over_1s_macro_slot_range_pct": [
+          15.0,
+          29.7
+        ],
+        "joint_rl_finetuned": {
+          "mean_s": 0.52,
+          "p95_s": 1.297,
+          "over_1s_pct": 16.9
+        },
+        "joint_rl_mpc": {
+          "mean_s": 0.722,
+          "p95_s": 2.203,
+          "over_1s_pct": 24.5
+        }
+      }
+    },
+    {
+      "id": "AUD-04",
+      "status": "confirmed_internal_error",
+      "severity": "Minor",
+      "title": "Cross-chapter and figure-to-text rounding discrepancies (Ch3 Jain fairness delta, Ch4 bridge deadline-miss delta & online normalized latency)",
+      "manuscript_location": "latex/docs/chap06.tex:L32 vs latex/docs/chap03.tex:L649,L724; docs/figures/图4-8_候选轨迹快照桥接对比.png(c) vs latex/docs/chap04.tex:L488 & chap06.tex:L21; latex/docs/chap04.tex:L488",
+      "manuscript_claim": {
+        "ch6_jain_delta": "+0.0545 (vs +0.0544 in Table 3-5 and chap03.tex:L724)",
+        "fig4_8c_bridge_delta": "-2.632 (vs -2.633 in chap04.tex:L488, abstract.tex:L14,L26, chap06.tex:L21)",
+        "ch4_bridge_online_norm_latency": "1.259 -> 0.980 (delta -0.278)"
+      },
+      "repo_source_location": "docs/figures/data/chapter34_20261004/confirmation_paired_comparison.json; bridge_analysis.json",
+      "repo_value": {
+        "exact_jain_baseline": 0.8665241018,
+        "exact_jain_candidate": 0.9209673815,
+        "exact_jain_mean_difference": 0.0544432797,
+        "exact_bridge_online_deadline_misses": 9.2375,
+        "exact_bridge_mc_itr_deadline_misses": 6.605,
+        "exact_bridge_deadline_miss_difference": -2.6325,
+        "exact_bridge_online_norm_latency": 1.2584713938,
+        "exact_bridge_mc_itr_norm_latency": 0.9801501626,
+        "exact_bridge_norm_latency_difference": -0.2783212312
+      }
+    },
+    {
+      "id": "AUD-05",
+      "status": "confirmed_internal_error",
+      "severity": "Major",
+      "title": "Jain fairness formula in Ch2/Ch3/notation vs implementation in user_equipments.py",
+      "manuscript_location": "latex/docs/chap02.tex:L213-L218; latex/docs/chap03.tex:L256-L263; latex/docs/notation.tex:L13",
+      "manuscript_claim": "Ch2 & notation define per-UE timely service satisfaction rate relative to request deadline D_m; Ch3 Eq. (3-21) writes accepted requests with latency <= tau (1.0 s) without clarifying content requests",
+      "repo_source_location": "environment/user_equipments.py:L158-L162; environment/env.py:L552-L558",
+      "repo_value": "UE.is_successful_for_fairness() counts ALL requests (both service AND content requests, ~2/3 content) with total_latency <= config.TIME_SLOT_DURATION (1.0 s) rather than service-only requests with latency <= D_m (0.65-2.10 s)"
+    },
+    {
+      "id": "AUD-06",
+      "status": "confirmed_internal_error",
+      "severity": "Major",
+      "title": "Ch2 dual-branch equations & Ch3 centralized critic equations diverge from Ch5 equations and active model code",
+      "manuscript_location": "latex/docs/chap02.tex:L321, L325-L332 vs latex/docs/chap05.tex:L150-L168",
+      "manuscript_claim": "Ch2 Eqs. introduce undefined scaling parameters beta_m, beta_a, eta_fb; Ch2 states MAPPO uses centralized joint-state critic V_phi(O_t)",
+      "repo_source_location": "marl_models/queued_joint_rl.py:L216-L245; marl_models/offload_mappo/offload_mappo.py:L173-L187",
+      "repo_value": "queued_joint_rl.py hardcodes log_prior + score (beta_m = beta_a = 1) and boolean use_expectation_feedback in {0, 1}; Ch3 lower-layer OffloadMLPCritic takes local per-agent obs_dim ([B, N, 1405]) rather than centralized joint observation O_t"
+    },
+    {
+      "id": "AUD-07",
+      "status": "confirmed_internal_error",
+      "severity": "Major",
+      "title": "Ch5 Definition 5.3.1 Stage-1 non-work-conserving overwrite, unreachable 0.85/0.15 scoring branch, and duplicate context feature channel",
+      "manuscript_location": "latex/docs/chap05.tex:L103 (Table 5-2), L116-L143 (Definition 5.3.1)",
+      "manuscript_claim": "Two-stage release-time work-conserving approximation eliminating unready tasks blocking ready tasks; 0.85/0.15 split when min(3.0, s_n) < tau_done <= s_n; 14-D public context vector",
+      "repo_source_location": "utils/queued_joint_rl.py:L139-L145, L224-L240, L380-L390; utils/queued_service_business.py:L16; environment/queued_service.py:L223-L227",
+      "repo_value": "Stage 1 iterates in static (deadline, uid) order and overwrites t_bh_free/t_inter_free = t_tr_done (non-work-conserving when earlier-deadline task has longer uplink than ready task, and single-channel vs Engine._rates equal bandwidth sharing across active directed links); relative deadlines D_n in [2.0, 3.0] s imply s_n <= 3.0 s for all existing tasks so min(3.0, s_n) == s_n and the 0.85/0.15 branch is unreachable; context[3] and context[9] are identical (win3 / 60.0)"
+    },
+    {
+      "id": "AUD-08",
+      "status": "aggregation_ambiguity",
+      "severity": "Major",
+      "title": "Ch3 symmetric DSR decomposition unit-level vs macro-mean aggregation & undocumented 100-UE penalized system latency denominator",
+      "manuscript_location": "latex/docs/chap03.tex:L648 (Table 3-5), L724; latex/docs/chap06.tex:L19",
+      "manuscript_claim": "Symmetric decomposition gives +4.87 pp admission and -2.02 pp post-admission quality (+2.85 pp net); penalized system latency per generated service request drops from 33.73 s to 28.15 s",
+      "repo_source_location": "docs/figures/data/chapter34_20261004/confirmation_units.csv; environment/env.py:L656-L658, L706; config.py (NON_SERVED_LATENCY_PENALTY = 20.0)",
+      "repo_value": "Averaging symmetric decomposition across the 50 units yields +4.8664 pp and -2.0155 pp (sum +2.8509 pp, matching prose +4.87 / -2.02 / +2.85 pp), whereas plugging Table 3-5 macro means into Eq. (2-16) gives +4.8877 pp and -2.0237 pp (sum +2.8641 pp != +2.8509 pp due to multi-episode covariance inside each unit). Penalized latency sums 20.0 s penalty across ALL 100 UEs without a timely completion (including idle UEs and content-request UEs) and divides that 100-UE sum by ~33.8 generated service requests, producing values > 20.0 s (33.73 s and 28.15 s)"
+    },
+    {
+      "id": "AUD-09",
+      "status": "aggregation_ambiguity",
+      "severity": "Major",
+      "title": "Ch4 400-snapshot bridge omits intermediate baselines in prose and removes the online 3% MBS quota penalty",
+      "manuscript_location": "latex/docs/chap04.tex:L478-L488; latex/docs/abstract.tex:L14,L26; latex/docs/chap06.tex:L21",
+      "manuscript_claim": "MC-ITR reduces mean deadline misses per snapshot from online lower layer's 9.238 to 6.605 (-2.633, -28.50%)",
+      "repo_source_location": "docs/figures/data/chapter34_20261004/bridge_analysis.json; utils/chapter4.py:L21; config.py (MBS_MAX_LOAD_SHARE = 0.03)",
+      "repo_value": {
+        "mbs_constraint_asymmetry": "Online lower layer trained with MBS_MAX_LOAD_SHARE = 0.03 penalty; offline bridge sets mbs_penalty = 0.0 on uncontended 200 GHz MBS",
+        "bridge_50_job_means": {
+          "online_lower": 9.2375,
+          "heuristic_control": 11.9825,
+          "greedy_single_pass": 7.6575,
+          "iterative_base": 7.4775,
+          "mc_itr": 6.605
+        },
+        "greedy_share_of_total_reduction_pct": 60.02,
+        "iterative_base_share_of_total_reduction_pct": 66.86,
+        "mc_itr_minus_iterative_base_on_bridge": -0.8725
+      }
+    },
+    {
+      "id": "AUD-10",
+      "status": "provenance_gap",
+      "severity": "Major",
+      "title": "Missing raw CSV/JSON for Table 5-7 (w_cf = 0 ablation) and missing upstream proposer .pt checkpoints & raw rl_rollouts in active workspace",
+      "manuscript_location": "latex/docs/chap05.tex:L449-L469 (Table 5-7 tab:ch5-cf-ablation); L90 (three fixed parent lineages)",
+      "manuscript_claim": "w_cf = 0 confirmation counts 120,759 (47.92%), 120,701 (47.89%), 121,100 (48.05%); end-to-end evaluation over 3 fixed parent lineages",
+      "repo_source_location": "docs/figures/data/queued_joint_rl_20261106/source_manifest.json:L8-L11; results/chapter5_dynamic_service_20261028/queued_joint_rl_v2_20261106/",
+      "repo_value": "Active results/ and docs/figures/data/ contain zero raw JSON/CSV artifacts for the w_cf = 0 confirmation run (only referenced second-hand in output/thesis_full_audit_20261109/validation/data_table_crosscheck.json as overwritten commit 97b34d7). Furthermore, source_manifest.json explicitly notes '3 scorer files locally available; 3 proposer .pt files absent' and 'original rl_rollouts absent locally'."
+    },
+    {
+      "id": "AUD-11",
+      "status": "passed",
+      "severity": "Info",
+      "title": "Primary experimental tables, paired CIs, replay/independence audits, and citation coverage pass exact reconciliation",
+      "manuscript_location": "Tables 3-5, 3-6, 4-5, 4-6, 5-5, 5-6, 5-8; chap03-chap05 main statistics; reference.bib",
+      "manuscript_claim": "All headline DSRs, counts, paired CIs, sensitivity rows, replay conservation audits, and 57 BibTeX citations",
+      "repo_source_location": "docs/figures/data/chapter34_20261004/*; docs/figures/data/queued_joint_rl_20261106/*; results/chapter5_dynamic_service_20261028/queued_joint_rl_v2_20261106/*",
+      "repo_value": {
+        "ch3_verified": "Baseline 0.2507 vs 0.2390 (-1.16 pp), uncovered 52.13% / 68.55%, pilot 0.2396 -> 0.2738 (+3.43 pp), confirmation 0.2450 -> 0.2735 (+2.85 pp, CI [+1.65, +4.06] pp, G=9,805,180), Table 3-5 & Table 3-6 (seed 7541, workload 2203: 46.71->60.28%, 54.86->47.95%, 25.62->28.90%) exact match",
+        "ch4_verified": "410 units (2.888, 2.227, 2.215, 2.045; -0.170 CI [-0.222, -0.122]), all 9 sensitivity rows in Table 4-6, Exact-Small 600 snapshots (511 empty, 82 single, 7 multi-request; 0.025 misses) exact match",
+        "ch5_verified": "816 confirmation episodes (G=252,024 per arm), all 17 arms in Table 5-5, all 10 paired comparisons & Bonferroni CIs in Table 5-6, per-lineage counts (41,050/40,892/40,900 vs 40,468/40,250/40,361), Table 5-8 timing & lookahead counts, decomposed_independence_audit (0.0), rollout_replay_audit (1,152 episodes, 0 failures) exact match",
+        "bib_verified": "All 57/57 entries in latex/reference.bib are cited in text via \\cite or \\inlinecite; zero undefined citations or labels in main.log"
+      }
+    }
+  ]
+}

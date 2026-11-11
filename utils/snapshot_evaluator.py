@@ -61,15 +61,6 @@ def evaluate(snapshot, assignment):
         if isinstance(action, (bool, np.bool_)) or not isinstance(action, (int, np.integer)) or action not in candidates:
             raise ValueError('Assignment contains a non-hard-feasible action')
     env = pickle.loads(snapshot.payload)
-    request_energy = {}
-    # Instrument production calls on this private copy; do not replace physics.
-    for uav in env.uavs:
-        original = uav._process_service_request
-        def measured(ue, rate, target, neighbor, original=original):
-            before = [u.assignment_causal_energy for u in env.uavs]
-            original(ue, rate, target, neighbor)
-            request_energy[ue.id] = math.fsum(u.assignment_causal_energy - b for u, b in zip(env.uavs, before))
-        uav._process_service_request = measured
     actions = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=np.int64)
     for request, action in zip(snapshot.requests, assignment):
         actions[request[0], request[1]] = action
@@ -85,8 +76,7 @@ def evaluate(snapshot, assignment):
         latency = float(ues[ue_id].latency_current_request)
         records.append({'ue_id': ue_id, 'source': source, 'action': int(action),
                         'target': 'mbs' if action == 1 else int(source if action == 0 else action - 2),
-                        'latency': latency, 'deadline': deadline, 'success': latency <= deadline,
-                        'assignment_energy': request_energy[ue_id]})
+                        'latency': latency, 'deadline': deadline, 'success': latency <= deadline})
     return {'requests': records, 'metrics': metrics,
             'cache_after': [u.cache.tolist() for u in env.uavs],
             'snapshot_hash': snapshot.snapshot_hash}

@@ -20,11 +20,8 @@ class TestCanonicalAnalysisMetrics(unittest.TestCase):
                 "generated_service_count": 4,
                 "deadline_satisfied_count": 1,
                 "admitted_service_count": 2,
-                "uav_fleet_total_energy": 10,
-                "lower_assignment_energy": 6,
                 "lower_service_latency": 3,
                 "latency": 43,
-                "offline_rate": 0,
                 "fairness": 1,
                 "service_offloads_mbs": 1,
             }}], "exogenous_trace_hash": "trace"}))
@@ -36,7 +33,6 @@ class TestCanonicalAnalysisMetrics(unittest.TestCase):
             self.assertEqual(metrics["Admission fraction"], 0.5)
             self.assertEqual(metrics["Latency per admitted service request"], 1.5)
             self.assertEqual(metrics["Penalized system latency per generated service request"], 10.75)
-            self.assertEqual(metrics["Non-flight assignment energy"], 6)
             self.assertEqual(traces, ["trace"])
 
 

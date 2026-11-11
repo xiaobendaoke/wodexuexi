@@ -85,11 +85,9 @@ def lower_rewards_from_metrics(
     if count == 0:
         return [0.0] * len(system_rewards), {"dsr_violation": 0.0, "mbs_load_violation": 0.0, "constraint_penalty": 0.0}
     latency_term = float(metrics["lower_service_latency"]) / (count * config.NON_SERVED_LATENCY_PENALTY)
-    energy_term = float(metrics["lower_assignment_energy"]) / (config.NUM_UAVS * config.OFFLOAD_ENERGY_NORM_REF)
     lower_reward = (
         config.OFFLOAD_REWARD_DSR_WEIGHT * float(metrics["lower_deadline_satisfaction_rate"])
         - config.OFFLOAD_REWARD_LATENCY_WEIGHT * latency_term
-        - config.OFFLOAD_REWARD_ENERGY_WEIGHT * energy_term
         - config.OFFLOAD_REWARD_MBS_WEIGHT * float(metrics["lower_mbs_load_ratio"])
     )
     diagnostics = compute_constraint_diagnostics(metrics, lambda_dsr, lambda_mbs)
@@ -274,9 +272,9 @@ def train_hierarchical_mappo(
 
             episode_totals["reward"] += float(np.sum(system_rewards))
             episode_totals["latency"] += float(metrics["latency"])
-            episode_totals["energy"] += float(metrics["energy"])
+            episode_totals["energy"] += float(metrics.get("energy", 0.0))
             episode_totals["fairness"] = float(metrics["fairness"])
-            episode_totals["offline_rate"] = float(metrics["offline_rate"])
+            episode_totals["offline_rate"] = float(metrics.get("offline_rate", 0.0))
             episode_totals["deadline"] += float(metrics["deadline_satisfaction_rate"])
             episode_totals["local"] += float(metrics["offloading_ratio_local"])
             episode_totals["coop"] += float(metrics["offloading_ratio_cooperative"])

@@ -48,11 +48,6 @@ def _tx_latency_bytes(size_bytes: float, rate_bps: float) -> float:
     return float(size_bytes) * float(config.BITS_PER_BYTE) / max(float(rate_bps), float(config.EPSILON))
 
 
-def _comm_energy(power_watts: float, duration_seconds: float) -> float:
-    """Return communication energy in Joules for a link active during duration_seconds."""
-    return float(power_watts) * max(float(duration_seconds), 0.0)
-
-
 # 函数 _get_belief_probability：关键函数，承载本模块的一段可复用实验逻辑，主要参数：file_id, neighbor_id。
 def _get_belief_probability(file_id: int, neighbor_id: int, rank_map=None) -> float:
     """Returns the estimated probability P_{v,i} that a neighbor has file_i."""
@@ -64,15 +59,13 @@ def _get_belief_probability(file_id: int, neighbor_id: int, rank_map=None) -> fl
     return probability
 
 
-# 函数 _get_computing_latency_and_energy：执行、移动或通信过程产生的能耗，主要参数：uav, cpu_cycles。
-def _get_computing_latency_and_energy(uav: "UAV", cpu_cycles: float) -> tuple[float, float]:
-    """Calculate computing latency and energy for a UAV processing request."""
+# 函数 _get_computing_latency：计算无人机处理任务的执行时延，主要参数：uav, cpu_cycles。
+def _get_computing_latency(uav: "UAV", cpu_cycles: float) -> float:
+    """Calculate computing latency for a UAV processing request."""
     assert uav._current_service_request_count > 0
     computing_capacity_per_request: float = config.UAV_COMPUTING_CAPACITY[uav.id] / uav._current_service_request_count
     latency: float = cpu_cycles / computing_capacity_per_request
-    energy: float = config.K_CPU * cpu_cycles * (computing_capacity_per_request**2)
-    # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-    return latency, energy
+    return latency
 
 
 # 函数 _try_add_file_to_cache：关键函数，承载本模块的一段可复用实验逻辑，主要参数：uav, file_id。
@@ -109,18 +102,8 @@ class UAV:
         self._current_covered_ues: list[UE] = []
         self._neighbors: list[UAV] = []
         self._current_service_request_count: int = 0
-        self._energy_current_slot: float = 0.0
         self.collision_violation: bool = False
         self.boundary_violation: bool = False
-
-        # Energy component instrumentation (ENV-R9)
-        self.flight_energy: float = 0.0
-        self.hover_energy: float = 0.0
-        self.wpt_energy: float = 0.0
-        self.service_compute_energy: float = 0.0
-        self.service_comm_energy: float = 0.0
-        self.service_fetch_or_backhaul_energy: float = 0.0
-        self.content_related_energy: float = 0.0
 
         # Cache lifecycle (ENV-R5)
         self.cache: np.ndarray = np.zeros(config.NUM_FILES, dtype=bool)
@@ -141,7 +124,6 @@ class UAV:
         self._service_predict_exception_fallback_count: int = 0
 
         self._uav_mbs_rate: float = 0.0
-        self.assignment_causal_energy: float = 0.0
         policy_entry = self._get_service_offload_policy()
         self._service_offload_policy = policy_entry["policy"]
         self._service_offload_policy_requested: str = str(policy_entry["requested_policy"])
@@ -220,12 +202,6 @@ class UAV:
                 )
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return cls._policy_cache[cache_key]
-
-    # 函数 energy：执行、移动或通信过程产生的能耗。
-    @property
-    def energy(self) -> float:
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return self._energy_current_slot
 
     # 函数 current_covered_ues：关键函数，承载本模块的一段可复用实验逻辑。
     @property
@@ -499,9 +475,6 @@ class UAV:
 
         for ue in other_ues:
             current_req = ue.current_request
-            if current_req.is_energy:
-                self._process_energy_request(ue)
-                continue
             ue_uav_rate = comms.calculate_ue_uav_rate(
                 comms.calculate_channel_gain(ue.pos, self.pos),
                 max(len(self._current_covered_ues), 1),
@@ -842,65 +815,35 @@ class UAV:
         file_size: int = int(config.FILE_SIZES[req_id])
 
         ue_uav_upload_latency: float = _tx_latency_bytes(req_size, ue_uav_rate)
-        ue.update_battery(0.0, ue_uav_upload_latency)
-        rx_energy: float = _comm_energy(config.UAV_COMM_RX_POWER, ue_uav_upload_latency)
-        self._energy_current_slot += rx_energy
-        self.service_comm_energy += rx_energy
 
         read_cache = getattr(self, "cache_snapshot", self.cache)
         if target_idx == OFFLOAD_TARGET_LOCAL:
             fetch_latency: float = 0.0
             if not read_cache[req_id]:
                 fetch_latency = _tx_latency_bytes(file_size, self._uav_mbs_rate)
-                f_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
-                self._energy_current_slot += f_energy
-                self.service_fetch_or_backhaul_energy += f_energy
-                self.assignment_causal_energy += f_energy
                 _try_add_file_to_cache(self, req_id)
 
-            comp_latency, comp_energy = _get_computing_latency_and_energy(self, cpu_cycles)
+            comp_latency = _get_computing_latency(self, cpu_cycles)
             ue.latency_current_request = ue_uav_upload_latency + fetch_latency + comp_latency
-            self._energy_current_slot += comp_energy
-            self.service_compute_energy += comp_energy
-            self.assignment_causal_energy += comp_energy
 
         elif target_idx == OFFLOAD_TARGET_COOPERATIVE:
             assert target_uav is not None
             uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, target_uav.pos))
             uav_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(target_uav.pos, config.MBS_POS))
             uav_uav_upload_latency: float = _tx_latency_bytes(req_size, uav_uav_rate)
-            tx_energy: float = _comm_energy(config.UAV_COMM_TX_POWER, uav_uav_upload_latency)
-            target_rx_energy: float = _comm_energy(config.UAV_COMM_RX_POWER, uav_uav_upload_latency)
-            self._energy_current_slot += tx_energy
-            self.service_comm_energy += tx_energy
-            self.assignment_causal_energy += tx_energy
-            target_uav._energy_current_slot += target_rx_energy
-            target_uav.service_comm_energy += target_rx_energy
-            target_uav.assignment_causal_energy += target_rx_energy
 
             fetch_latency = 0.0
             target_read_cache = getattr(target_uav, "cache_snapshot", target_uav.cache)
             if not target_read_cache[req_id]:
                 fetch_latency = _tx_latency_bytes(file_size, uav_mbs_rate)
-                t_f_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
-                target_uav._energy_current_slot += t_f_energy
-                target_uav.service_fetch_or_backhaul_energy += t_f_energy
-                target_uav.assignment_causal_energy += t_f_energy
                 _try_add_file_to_cache(target_uav, req_id)
 
-            comp_latency, comp_energy = _get_computing_latency_and_energy(target_uav, cpu_cycles)
+            comp_latency = _get_computing_latency(target_uav, cpu_cycles)
             ue.latency_current_request = ue_uav_upload_latency + uav_uav_upload_latency + fetch_latency + comp_latency
-            target_uav._energy_current_slot += comp_energy
-            target_uav.service_compute_energy += comp_energy
-            target_uav.assignment_causal_energy += comp_energy
 
         else:
             uav_mbs_upload_latency: float = _tx_latency_bytes(req_size, self._uav_mbs_rate)
             mbs_compute_latency: float = cpu_cycles / float(config.MBS_COMPUTING_CAPACITY)
-            mbs_tx_energy: float = _comm_energy(config.UAV_BACKHAUL_TX_POWER, uav_mbs_upload_latency)
-            self._energy_current_slot += mbs_tx_energy
-            self.service_fetch_or_backhaul_energy += mbs_tx_energy
-            self.assignment_causal_energy += mbs_tx_energy
             ue.latency_current_request = ue_uav_upload_latency + uav_mbs_upload_latency + mbs_compute_latency
 
     # 函数 _process_content_request：用户设备产生的任务请求，主要参数：ue, ue_uav_rate, target_idx, target_uav。
@@ -911,19 +854,12 @@ class UAV:
         file_size: int = int(config.FILE_SIZES[req_id])
 
         ue_uav_download_latency: float = _tx_latency_bytes(file_size, ue_uav_rate)
-        ue.update_battery(0.0, 0.0, ue_receive_time=ue_uav_download_latency)
-        downlink_energy: float = _comm_energy(config.UAV_COMM_TX_POWER, ue_uav_download_latency)
-        self._energy_current_slot += downlink_energy
-        self.content_related_energy += downlink_energy
 
         read_cache = getattr(self, "cache_snapshot", self.cache)
         if target_idx == OFFLOAD_TARGET_LOCAL:
             fetch_latency: float = 0.0
             if not read_cache[req_id]:
                 fetch_latency = _tx_latency_bytes(file_size, self._uav_mbs_rate)
-                f_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
-                self._energy_current_slot += f_energy
-                self.content_related_energy += f_energy
                 _try_add_file_to_cache(self, req_id)
 
             ue.latency_current_request = fetch_latency + ue_uav_download_latency
@@ -933,20 +869,11 @@ class UAV:
             uav_uav_rate: float = comms.calculate_uav_uav_rate(comms.calculate_channel_gain(self.pos, target_uav.pos))
             uav_mbs_rate: float = comms.calculate_uav_mbs_rate(comms.calculate_channel_gain(target_uav.pos, config.MBS_POS))
             uav_uav_download_latency: float = _tx_latency_bytes(file_size, uav_uav_rate)
-            t_tx_energy: float = _comm_energy(config.UAV_COMM_TX_POWER, uav_uav_download_latency)
-            rx_energy: float = _comm_energy(config.UAV_COMM_RX_POWER, uav_uav_download_latency)
-            target_uav._energy_current_slot += t_tx_energy
-            target_uav.content_related_energy += t_tx_energy
-            self._energy_current_slot += rx_energy
-            self.content_related_energy += rx_energy
 
             fetch_latency = 0.0
             target_read_cache = getattr(target_uav, "cache_snapshot", target_uav.cache)
             if not target_read_cache[req_id]:
                 fetch_latency = _tx_latency_bytes(file_size, uav_mbs_rate)
-                t_f_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, fetch_latency)
-                target_uav._energy_current_slot += t_f_energy
-                target_uav.content_related_energy += t_f_energy
                 _try_add_file_to_cache(target_uav, req_id)
 
             ue.latency_current_request = fetch_latency + uav_uav_download_latency + ue_uav_download_latency
@@ -954,25 +881,8 @@ class UAV:
 
         else:
             uav_mbs_download_latency: float = _tx_latency_bytes(file_size, self._uav_mbs_rate)
-            mbs_energy: float = _comm_energy(config.UAV_BACKHAUL_RX_POWER, uav_mbs_download_latency)
-            self._energy_current_slot += mbs_energy
-            self.content_related_energy += mbs_energy
             ue.latency_current_request = uav_mbs_download_latency + ue_uav_download_latency
             _try_add_file_to_cache(self, req_id)
-
-    # 函数 _process_energy_request：用户设备产生的任务请求，主要参数：ue。
-    def _process_energy_request(self, ue: UE) -> None:
-        """Process an emergency energy request from a UE."""
-        channel_gain: float = comms.calculate_channel_gain(self.pos, ue.pos)
-        harv_energy: float = (
-            config.WPT_EFFICIENCY
-            * config.WPT_TRANSMIT_POWER
-            * config.WPT_HARVEST_GAIN
-            * channel_gain
-            * config.TIME_SLOT_DURATION
-        )
-        ue.update_battery(harv_energy, 0.0)
-        ue.latency_current_request = 0.0
 
     # 函数 update_ema_and_cache：更新模型、环境或统计量的状态。
     def update_ema_and_cache(self) -> None:
@@ -997,24 +907,3 @@ class UAV:
             else:
                 break
         self._working_cache = self.cache.copy()
-
-    # 函数 update_energy_consumption：执行、移动或通信过程产生的能耗。
-    def update_energy_consumption(self, dist_moved: float | None = None) -> None:
-        """Update UAV energy consumption for the current time slot.
-        Calculates flight and hover energy from actual displacement (ENV-R6).
-        """
-        if dist_moved is not None:
-            self._dist_moved = float(dist_moved)
-        max_dist: float = config.UAV_SPEED * config.TIME_SLOT_DURATION
-        effective_dist: float = float(np.clip(self._dist_moved, 0.0, max_dist))
-        time_moving: float = effective_dist / config.UAV_SPEED
-        time_hovering: float = max(0.0, config.TIME_SLOT_DURATION - time_moving)
-        self.flight_energy = float(config.POWER_MOVE * time_moving)
-        self.hover_energy = float(config.POWER_HOVER * time_hovering)
-        self._energy_current_slot += (self.flight_energy + self.hover_energy)
-        has_energy_request: bool = any(ue.current_request.is_energy for ue in self._current_covered_ues)
-        # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
-        if has_energy_request:
-            wpt_e: float = float(config.WPT_TRANSMIT_POWER * config.TIME_SLOT_DURATION)
-            self.wpt_energy += wpt_e
-            self._energy_current_slot += wpt_e

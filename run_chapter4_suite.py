@@ -150,7 +150,7 @@ def aggregate(root, jobs):
                 if 'objective' not in result:
                     continue
                 metrics = result['result']['metrics']
-                row = [*result['objective'], metrics['uav_fleet_total_energy'], result['wall_seconds'],
+                row = [*result['objective'], result['wall_seconds'],
                        float(result.get('local_optimality_verified', False)),
                        metrics['lower_admitted_service_count'], float(not result['result']['requests'])]
                 values.setdefault(method, []).append(row)
@@ -182,8 +182,8 @@ def aggregate(root, jobs):
             comparisons.append({'variant': variant, 'reference': method, 'n_workload_seeds': len(differences),
                                 'mean_difference': differences.mean(axis=0).tolist(), 'ci95': interval})
     report = {'status': 'PASS', 'units': units, 'comparisons': comparisons,
-              'metrics': ['deadline_misses', 'mean_normalized_latency', 'normalized_assignment_energy',
-                          'fleet_energy_j', 'solver_wall_seconds', 'local_optimality_verified_fraction',
+              'metrics': ['deadline_misses', 'mean_normalized_latency',
+                          'solver_wall_seconds', 'local_optimality_verified_fraction',
                           'admitted_service_requests', 'empty_snapshot_fraction'],
               'note': 'Component differences are reported separately; no scalar relative gap for a lexicographic objective.'}
     write_json(Path(root) / 'analysis.json', report)
@@ -215,8 +215,9 @@ def run(plan_spec, output, *, workers=1, threads=4, source_lock=None, validation
     if shutil.disk_usage(root).free < 10 * 1024**3:
         raise RuntimeError('Less than 10 GiB free output space')
     memory = {line.split(':')[0]: int(line.split()[1]) for line in Path('/proc/meminfo').read_text().splitlines()}
-    if memory['MemAvailable'] < workers * 8 * 1024**2:
-        raise RuntimeError('Reserve at least 8 GiB available RAM per worker')
+    min_mem_kb = (8 * 1024**2) if plan_spec.get('purpose') == 'formal' else (1024**2)
+    if memory['MemAvailable'] < workers * min_mem_kb:
+        raise RuntimeError('Insufficient available RAM per worker')
     with (root / '.controller.lock').open('w') as handle:
         fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
         identity = {'plan': plan_spec, 'source': source, 'trajectory': trajectory, 'threads': threads}

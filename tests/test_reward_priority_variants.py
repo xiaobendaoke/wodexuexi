@@ -23,7 +23,7 @@ class TestRewardPriorityVariants(unittest.TestCase):
         baseline, upper, actor, critic = self.snapshot("lower_no_attention")
         cases = {
             "lower_mlp_upper_dsr_w5": ("REWARD_W_DSR", 5.0),
-            "lower_mlp_upper_energy_ref25k": ("REWARD_NORM_ENERGY_REF", 25000.0),
+            "lower_mlp_upper_uncovered_obs": ("UPPER_UE_OBSERVATION_MODE", "covered_plus_sensed_uncovered"),
         }
         for method, (changed, value) in cases.items():
             with self.subTest(method=method):
@@ -36,8 +36,7 @@ class TestRewardPriorityVariants(unittest.TestCase):
                 self.assertIs(candidate_critic, critic)
 
     def test_first_rollout_changes_only_the_expected_upper_reward_term(self):
-        methods = ("lower_no_attention", "lower_mlp_upper_dsr_w5",
-                   "lower_mlp_upper_energy_ref25k")
+        methods = ("lower_no_attention", "lower_mlp_upper_dsr_w5")
         with tempfile.TemporaryDirectory() as temporary:
             episodes = {}
             for method in methods:
@@ -54,12 +53,7 @@ class TestRewardPriorityVariants(unittest.TestCase):
                 for original, changed in zip(baseline, candidate):
                     self.assertEqual(original["metrics"], changed["metrics"])
                     metrics = original["metrics"]
-                    if method == "lower_mlp_upper_dsr_w5":
-                        expected = 4.0 * metrics["deadline_satisfaction_rate"]
-                    else:
-                        energy = metrics["energy"]
-                        expected = 0.5 * energy * (1.0 / (5 * 5000 + config.EPSILON)
-                                                   - 1.0 / (5 * 25000 + config.EPSILON))
+                    expected = 4.0 * metrics["deadline_satisfaction_rate"]
                     self.assertAlmostEqual(changed["team_reward"] - original["team_reward"],
                                            expected * config.REWARD_SCALING_FACTOR, places=8)
 

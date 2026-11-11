@@ -31,8 +31,6 @@ from dataclasses import dataclass
 REQUEST_TYPE_SERVICE: int = 0
 # 关键变量 REQUEST_TYPE_CONTENT：用户设备产生的任务请求。
 REQUEST_TYPE_CONTENT: int = 1
-# 关键变量 REQUEST_TYPE_ENERGY：用户设备产生的任务请求。
-REQUEST_TYPE_ENERGY: int = 2
 
 
 # 类 Request：用户设备产生的任务请求。
@@ -41,7 +39,7 @@ class Request:
     """Explicit request structure used across the environment.
 
     Deadline and priority are meaningful for service requests only.
-    Content and emergency energy requests keep default placeholder values.
+    Content requests keep default placeholder values.
     """
 
     req_type: int
@@ -62,12 +60,6 @@ class Request:
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return self.req_type == REQUEST_TYPE_CONTENT
 
-    # 函数 is_energy：执行、移动或通信过程产生的能耗。
-    @property
-    def is_energy(self) -> bool:
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return self.req_type == REQUEST_TYPE_ENERGY
-
     # 函数 service：关键函数，承载本模块的一段可复用实验逻辑，主要参数：cls, req_size, req_id, deadline, priority。
     @classmethod
     def service(cls, req_size: int, req_id: int, deadline: float, priority: int) -> "Request":
@@ -85,9 +77,3 @@ class Request:
     def content(cls, req_id: int) -> "Request":
         # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
         return cls(req_type=REQUEST_TYPE_CONTENT, req_size=0, req_id=req_id)
-
-    # 函数 energy：执行、移动或通信过程产生的能耗，主要参数：cls。
-    @classmethod
-    def energy(cls) -> "Request":
-        # 返回结果：把本阶段计算出的指标、状态或对象交给上层流程继续使用。
-        return cls(req_type=REQUEST_TYPE_ENERGY, req_size=0, req_id=0)

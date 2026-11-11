@@ -236,15 +236,6 @@ class Env:
             uav.cache_snapshot = uav.cache.copy()
             uav.pending_cache.clear()
             uav._dist_moved = 0.0
-            uav._energy_current_slot = 0.0
-            uav.flight_energy = 0.0
-            uav.hover_energy = 0.0
-            uav.wpt_energy = 0.0
-            uav.service_compute_energy = 0.0
-            uav.assignment_causal_energy = 0.0
-            uav.service_comm_energy = 0.0
-            uav.service_fetch_or_backhaul_energy = 0.0
-            uav.content_related_energy = 0.0
             uav._current_service_request_count = 0
             uav.calculate_initial_load()
 
@@ -262,18 +253,12 @@ class Env:
         UAV.execute_request_batch(plans)
 
         for ue in self._ues:
-            if not ue.assigned:
-                ue.update_battery(0.0, 0.0)
             ue.update_service_coverage(self._time_step)
 
         # S4: Apply upper actions a_t, resolve collisions and boundary constraints (ENV-R8)
         self._apply_actions_to_env(actions)
 
-        # S5: Compute flight and hover energy from current action a_t's actual displacement (ENV-R6)
-        for uav in self._uavs:
-            uav.update_energy_consumption()
-
-        # S6: Rewards and Metrics for current transition t
+        # S5: Rewards and Metrics for current transition t
         rewards, metrics = self._get_rewards_and_metrics()
         self._last_step_stats = metrics.copy()
         self._last_runtime_audit = self._collect_runtime_audit()
@@ -463,19 +448,34 @@ class Env:
                 neighbor_states[i, :] = relative_pos
 
             ue_states: np.ndarray = np.zeros((config.MAX_ASSOCIATED_UES, config.UE_OBS_DIM), dtype=np.float32)
-            ues: list[UE] = sorted(uav.current_covered_ues, key=lambda u: float(np.linalg.norm(uav.pos[:2] - u.pos[:2])))[: config.MAX_ASSOCIATED_UES]
+            covered_ues: list[UE] = sorted(
+                uav.current_covered_ues,
+                key=lambda u: (float(np.linalg.norm(uav.pos[:2] - u.pos[:2])), int(u.id)),
+            )
+            if getattr(config, "UPPER_UE_OBSERVATION_MODE", "covered_only") == "covered_plus_sensed_uncovered":
+                sensed_uncovered_ues: list[UE] = sorted(
+                    (
+                        u
+                        for u in self._ues
+                        if (not u.assigned)
+                        and float(np.linalg.norm(uav.pos[:2] - u.pos[:2])) <= float(config.UAV_SENSING_RANGE)
+                    ),
+                    key=lambda u: (float(np.linalg.norm(uav.pos[:2] - u.pos[:2])), int(u.id)),
+                )
+                ues: list[UE] = (covered_ues + sensed_uncovered_ues)[: config.MAX_ASSOCIATED_UES]
+            else:
+                ues = covered_ues[: config.MAX_ASSOCIATED_UES]
             # 循环处理：遍历 (i, ue) 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
             for i, ue in enumerate(ues):
                 delta_pos: np.ndarray = (ue.pos[:2] - uav.pos[:2]) / np.array([config.AREA_WIDTH, config.AREA_HEIGHT], dtype=np.float32)
                 request = ue.current_request
-                norm_type: float = float(request.req_type) / 2.0
+                norm_type: float = float(request.req_type)
                 norm_id: float = float(request.req_id) / float(config.NUM_FILES)
                 norm_size: float = float(request.req_size) / float(config.MAX_INPUT_SIZE)
                 norm_deadline: float = float(request.deadline) / float(config.SERVICE_DEADLINE_MAX) if request.is_service else 0.0
                 norm_priority: float = float(request.priority) / float(config.SERVICE_PRIORITY_MAX) if request.is_service else 0.0
-                norm_battery: float = ue.battery_level / config.UE_BATTERY_CAPACITY
                 request_info: np.ndarray = np.array(
-                    [norm_type, norm_size, norm_id, norm_deadline, norm_priority, norm_battery],
+                    [norm_type, norm_size, norm_id, norm_deadline, norm_priority],
                     dtype=np.float32,
                 )
                 ue_states[i, :] = np.concatenate([delta_pos, request_info])
@@ -656,14 +656,11 @@ class Env:
         total_latency: float = sum(
             ue.latency_current_request if ue.assigned else config.NON_SERVED_LATENCY_PENALTY for ue in self._ues
         )
-        total_energy: float = sum(uav.energy for uav in self._uavs)
         sc_metrics: np.ndarray = np.array([ue.service_coverage for ue in self._ues], dtype=np.float32)
         jfi: float = 0.0
         # 条件分支：根据当前配置、状态或评估结果选择不同处理路径。
         if sc_metrics.size > 0 and np.sum(sc_metrics**2) > 0:
             jfi = (np.sum(sc_metrics) ** 2) / (sc_metrics.size * np.sum(sc_metrics**2))
-        offline_count: int = sum(1 for ue in self._ues if ue.battery_level < config.UE_CRITICAL_THRESHOLD)
-        offline_rate: float = offline_count / config.NUM_UES
 
         total_service_requests_generated: int = sum(1 for ue in self._ues if ue.current_request.is_service)
         total_service_requests_processed: int = sum(uav.service_request_count for uav in self._uavs)
@@ -704,17 +701,14 @@ class Env:
             offloading_ratio_mbs = total_mbs_offloads / total_service_requests_processed
             assert np.isclose(offloading_ratio_local + offloading_ratio_cooperative + offloading_ratio_mbs, 1.0)
 
-        # Linear normalized reward (replaces legacy log-form):
-        #   reward = W_FAIR*jfi - W_LAT*norm_lat - W_ENERGY*norm_energy - W_OFFLINE*offline_rate + W_DSR*dsr - W_MBS*mbs_load
+        # Linear normalized reward (energy-free):
+        #   reward = W_FAIR*jfi - W_LAT*norm_lat + W_DSR*dsr - W_MBS*mbs_load
         norm_latency: float = total_latency / (config.NUM_UES * config.NON_SERVED_LATENCY_PENALTY + config.EPSILON)
-        norm_energy: float = total_energy / (config.NUM_UAVS * config.REWARD_NORM_ENERGY_REF + config.EPSILON)
         r_fairness: float = config.REWARD_W_FAIR * jfi
         r_latency: float = config.REWARD_W_LAT * norm_latency
-        r_energy: float = config.REWARD_W_ENERGY * norm_energy
-        r_offline: float = config.REWARD_W_OFFLINE * offline_rate
         r_dsr: float = config.REWARD_W_DSR * deadline_satisfaction_rate
         r_mbs: float = 0.5 * mbs_load_ratio  # lightweight MBS load penalty for upper layer
-        reward: float = r_fairness - r_latency - r_energy - r_offline + r_dsr - r_mbs
+        reward: float = r_fairness - r_latency + r_dsr - r_mbs
         rewards: list[float] = [reward] * config.NUM_UAVS
         # 循环处理：遍历 uav 对应的数据集合，逐项执行环境交互、训练更新或结果统计。
         for uav in self._uavs:
@@ -726,54 +720,27 @@ class Env:
                 rewards[uav.id] -= config.BOUNDARY_PENALTY
         rewards = [r * config.REWARD_SCALING_FACTOR for r in rewards]
 
-        # 有效能效 = 满足截止时间的请求数 / UAV总能耗
-        effective_energy_efficiency: float = 0.0
-        if total_energy > config.EPSILON:
-            effective_energy_efficiency = float(deadline_satisfied_count) / total_energy
-
-        # Energy breakdown instrumentation (ENV-R9)
-        flight_energy: float = float(sum(uav.flight_energy for uav in self._uavs))
-        hover_energy: float = float(sum(uav.hover_energy for uav in self._uavs))
-        wpt_energy: float = float(sum(uav.wpt_energy for uav in self._uavs))
-        service_compute_energy: float = float(sum(uav.service_compute_energy for uav in self._uavs))
-        service_comm_energy: float = float(sum(uav.service_comm_energy for uav in self._uavs))
-        service_fetch_or_backhaul_energy: float = float(sum(uav.service_fetch_or_backhaul_energy for uav in self._uavs))
         lower_requests = [ue for uav in self._uavs for ue in uav.current_covered_ues if ue.current_request.is_service]
         lower_count = len(lower_requests)
         lower_successes = sum(ue.latency_current_request <= ue.current_request.deadline for ue in lower_requests)
         lower_latency = sum(ue.latency_current_request for ue in lower_requests)
-        lower_energy = sum(uav.assignment_causal_energy for uav in self._uavs)
-        content_related_energy: float = float(sum(uav.content_related_energy for uav in self._uavs))
-        uav_fleet_total_energy: float = float(sum(uav.energy for uav in self._uavs))
 
         metrics: dict[str, float] = {
             "lower_admitted_service_count": float(lower_count),
             "lower_deadline_satisfaction_rate": float(lower_successes / lower_count) if lower_count else 0.0,
             "lower_service_latency": float(lower_latency),
-            "lower_assignment_energy": float(lower_energy),
             "lower_mbs_load_ratio": float(total_mbs_offloads / lower_count) if lower_count else 0.0,
             "lower_visible_count": float(lower_count),
             "capacity_fallback_count": 0.0,  # capacity violations raise before execution
             "invalid_action_fallback_count": float(total_fallbacks - total_predict_exception_fallbacks),
             "deadline_satisfied_count": float(deadline_satisfied_count),
             "latency": total_latency,
-            "energy": total_energy,
-            "flight_energy": flight_energy,
-            "hover_energy": hover_energy,
-            "wpt_energy": wpt_energy,
-            "service_compute_energy": service_compute_energy,
-            "service_comm_energy": service_comm_energy,
-            "service_fetch_or_backhaul_energy": service_fetch_or_backhaul_energy,
-            "content_related_energy": content_related_energy,
-            "uav_fleet_total_energy": uav_fleet_total_energy,
             "fairness": jfi,
-            "offline_rate": offline_rate,
             "deadline_satisfaction_rate": deadline_satisfaction_rate,
             "offloading_ratio_local": offloading_ratio_local,
             "offloading_ratio_cooperative": offloading_ratio_cooperative,
             "offloading_ratio_mbs": offloading_ratio_mbs,
             "mbs_load_ratio": mbs_load_ratio,
-            "effective_energy_efficiency": effective_energy_efficiency,
             "service_requests_generated": float(total_service_requests_generated),
             "service_requests_processed": float(total_service_requests_processed),
             "service_requests_uncovered": float(uncovered_service_requests),

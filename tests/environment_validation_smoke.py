@@ -29,9 +29,6 @@ def check_transition(env, obs, rewards, metrics, before):
     assert np.all(np.linalg.norm(positions - before, axis=1) <= config.UAV_SPEED * config.TIME_SLOT_DURATION + 1e-3)
     assert metrics["generated_service_count"] == metrics["admitted_service_count"] + metrics["unadmitted_service_count"]
     assert metrics["processed_service_count"] == metrics["admitted_service_count"]
-    components = ("flight_energy", "hover_energy", "wpt_energy", "service_compute_energy",
-                  "service_comm_energy", "service_fetch_or_backhaul_energy", "content_related_energy")
-    np.testing.assert_allclose(sum(metrics[k] for k in components), metrics["energy"], rtol=1e-10, atol=1e-7)
     for uav in env.uavs:
         assert np.sum(uav.cache * config.FILE_SIZES) <= config.UAV_STORAGE_CAPACITY[uav.id]
 

@@ -56,14 +56,6 @@ def run_simulation(seed: int, num_episodes: int = 2, steps_per_episode: int = 5)
                 "ue_positions": np.array([ue.pos.copy() for ue in env.ues]),
                 "cache": np.array([u.cache.copy() for u in env.uavs]),
                 "metrics": dict(metrics),
-                "flight_energy": [float(u.flight_energy) for u in env.uavs],
-                "hover_energy": [float(u.hover_energy) for u in env.uavs],
-                "service_compute_energy": [float(u.service_compute_energy) for u in env.uavs],
-                "service_comm_energy": [float(u.service_comm_energy) for u in env.uavs],
-                "service_fetch_energy": [float(u.service_fetch_or_backhaul_energy) for u in env.uavs],
-                "content_energy": [float(u.content_related_energy) for u in env.uavs],
-                "wpt_energy": [float(u.wpt_energy) for u in env.uavs],
-                "total_slot_energy": [float(u.energy) for u in env.uavs],
                 "rewards": list(rewards),
                 "admitted_service_count": int(metrics["admitted_service_count"]),
                 "unadmitted_service_count": int(metrics["unadmitted_service_count"]),
@@ -103,22 +95,12 @@ def compare_runs(hist1, hist2):
                 v2 = st2["metrics"][k]
                 if isinstance(v1, (int, float)):
                     assert v1 == v2, f"Metric {k} mismatch at ep {ep_idx} step {st_idx}: {v1} != {v2}"
-            # 5. Component energies
-            for comp in [
-                "flight_energy", "hover_energy", "service_compute_energy",
-                "service_comm_energy", "service_fetch_energy", "content_energy",
-                "wpt_energy", "total_slot_energy"
-            ]:
-                np.testing.assert_array_equal(
-                    st1[comp], st2[comp],
-                    err_msg=f"Energy component {comp} mismatch at ep {ep_idx} step {st_idx}"
-                )
-            # 6. Rewards
+            # 5. Rewards
             np.testing.assert_array_equal(
                 st1["rewards"], st2["rewards"],
                 err_msg=f"Reward mismatch at ep {ep_idx} step {st_idx}"
             )
-            # 7. Admissions
+            # 6. Admissions
             assert st1["admitted_service_count"] == st2["admitted_service_count"]
             assert st1["unadmitted_service_count"] == st2["unadmitted_service_count"]
 

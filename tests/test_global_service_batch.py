@@ -44,18 +44,22 @@ class TestGlobalServiceBatch(unittest.TestCase):
         return env, target, metrics
 
     def test_local_and_two_incoming_tasks_share_global_final_load(self):
-        _, target, _ = self.run_batch()
+        from environment import comm_model as comms
+        env, target, _ = self.run_batch()
         cycles = float(config.CPU_CYCLES_PER_BYTE[0]) * 50000
-        expected = 3 * config.K_CPU * cycles * (float(config.UAV_COMPUTING_CAPACITY[1]) / 3) ** 2
-        self.assertAlmostEqual(target.service_compute_energy, expected, places=7)
+        rate = comms.calculate_ue_uav_rate(comms.calculate_channel_gain(env.ues[1].pos, target.pos), 1)
+        upload = 50000.0 * config.BITS_PER_BYTE / rate
+        expected_latency = upload + cycles / (float(config.UAV_COMPUTING_CAPACITY[1]) / 3.0)
+        self.assertAlmostEqual(env.ues[1].latency_current_request, expected_latency, places=7)
 
     def test_target_mbs_task_excluded_but_incoming_tasks_retained(self):
-        _, target, _ = self.run_batch(target_local=False)
+        env_local, _, _ = self.run_batch(target_local=True)
+        env_mbs, _, _ = self.run_batch(target_local=False)
         cycles = float(config.CPU_CYCLES_PER_BYTE[0]) * 50000
-        expected = 2 * config.K_CPU * cycles * (float(config.UAV_COMPUTING_CAPACITY[1]) / 2) ** 2
-        self.assertAlmostEqual(target.service_compute_energy, expected, places=7)
+        expected_diff = cycles / (float(config.UAV_COMPUTING_CAPACITY[1]) / 3.0) - cycles / (float(config.UAV_COMPUTING_CAPACITY[1]) / 2.0)
+        self.assertAlmostEqual(env_local.ues[0].latency_current_request - env_mbs.ues[0].latency_current_request, expected_diff, places=7)
 
-    def test_global_uav_order_preserves_latency_and_energy(self):
+    def test_global_uav_order_preserves_latency(self):
         forward, _, first = self.run_batch()
         reverse, _, second = self.run_batch(reverse=True)
         np.testing.assert_allclose(
@@ -63,8 +67,7 @@ class TestGlobalServiceBatch(unittest.TestCase):
             [ue.latency_current_request for ue in reverse.ues[:3]],
             rtol=0, atol=1e-10,
         )
-        for name in ("service_compute_energy", "service_comm_energy", "energy"):
-            self.assertAlmostEqual(first[name], second[name], places=7)
+        self.assertAlmostEqual(first["lower_service_latency"], second["lower_service_latency"], places=7)
 
 
 if __name__ == "__main__":

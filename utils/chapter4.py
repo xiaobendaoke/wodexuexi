@@ -11,11 +11,10 @@ from utils.assignment_search import best_improvement, exact_small
 from utils.snapshot_evaluator import evaluate
 
 PROTOCOL = {
-    'version': 'chapter4_lexicographic_v1',
-    'ordering': ['deadline_miss_count', 'mean_latency_over_deadline', 'assignment_energy_over_reference'],
+    'version': 'chapter4_lexicographic_energy_free_v1',
+    'ordering': ['deadline_miss_count', 'mean_latency_over_deadline'],
     'comparison': 'strict lexicographic; no scalarization, rounding or tolerance',
     'deadline_epsilon_s': 1e-9,
-    'energy_reference_j': 25000.,
     'physics': 'BATCH_FINAL_LOAD_EQUAL_SHARING',
     'candidate_set': 'all admitted requests; local, MBS, specific hard-feasible neighbors',
     'request_order': 'ascending UE id; production batch scheduler unchanged',
@@ -28,20 +27,14 @@ PROTOCOL = {
 
 def request_objective(record):
     latency, deadline = float(record['latency']), float(record['deadline'])
-    energy = float(record.get('assignment_energy', 0.))
-    if not all(math.isfinite(v) for v in (latency, deadline, energy)) or latency < 0 or deadline <= 0 or energy < 0:
+    if not all(math.isfinite(v) for v in (latency, deadline)) or latency < 0 or deadline <= 0:
         raise ValueError('Invalid request cost inputs')
-    return (int(latency > deadline), latency / max(deadline, PROTOCOL['deadline_epsilon_s']),
-            energy / PROTOCOL['energy_reference_j'])
+    return (int(latency > deadline), latency / max(deadline, PROTOCOL['deadline_epsilon_s']))
 
 
 def objective(result):
     costs = [request_objective(r) for r in result['requests']]
-    energy = float(result['metrics']['lower_assignment_energy'])
-    if not math.isfinite(energy) or energy < 0:
-        raise ValueError('Invalid assignment energy')
-    return (sum(c[0] for c in costs), math.fsum(c[1] for c in costs) / max(len(costs), 1),
-            energy / PROTOCOL['energy_reference_j'])
+    return (sum(c[0] for c in costs), math.fsum(c[1] for c in costs) / max(len(costs), 1))
 
 
 def heuristic_control(snapshot):

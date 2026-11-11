@@ -14,6 +14,34 @@ This file provides guidance to Codex (Codex.ai/code) and Antigravity when workin
   - 17 个评估臂在 3 个固定父谱系 × 8 个确认工作负载（`955000–955007`）× 2 个动作流 = 816 个盲测确认回合（每臂 48 回合、池化生成请求 `252,024`）上配对评估：初始先验选择器 `uncoordinated_init` `44.30%`，联合冷启动 `joint_rl` `44.25%`，两轮规划蒸馏 `joint_distilled` `48.04%`（`121,079`），联合反事实微调 `joint_rl_finetuned` `48.74%`（`122,842`，较蒸馏提升 `+0.70 pp`，31 项 Bonferroni CI `[+0.39, +0.98] pp`；纯在策略暖启动 `cf=0` 为 `48.05%`，反事实辅助净贡献 `+0.69 pp`；池化接纳率 `52.58%` 即 `132,524/252,024`，池化条件完成率 `92.69%` 即 `122,842/132,524`，48 回合均值 `92.73%`），在线规划基线 `quality_amortized` `48.56%`（`122,382`，池化接纳 `130,436`，池化条件完成率 `93.83%`），微调 Top-6 MPC `joint_rl_mpc` `49.31%`（`124,280`，较在线规划提升 `+0.75 pp`，31 项 Bonferroni CI `[+0.25, +1.42] pp`，平均耗时从 `1.602 s` 降至 `0.722 s`，降低 `54.9%`）。
 - **严禁事项**：严禁在论文或分析中重新引入旧版能耗公式、旧版三元字典序能耗目标或已废弃的过渡分支缩写（如旧 `SF-HLM`）。
 
+## 当前活跃文件架构与 `recent/` 历史归档索引（防混淆红线）
+
+为彻底杜绝历史迭代产物对当前去能耗版论文造成上下文污染，本仓库已于 2026-11-09 执行严格瘦身：
+- **主工作区仅保留当前去能耗版论文（第 1–6 章）正在使用的源码、数据、图表与测试**；
+- **所有历史迭代文件均按原相对目录结构归档至 `recent/` 目录下**（完整迁移清单见 `docs/provenance/RECENT_ARCHIVE_MANIFEST_20261109.json` 与 `recent/README.md`）。
+
+### 1. 主工作区活跃文件对照表（当前论文唯一权威来源）
+
+| 模块 / 章节 | 活跃代码与脚本 | 正式数据源与检查点 | 论文源码与图表 |
+|---|---|---|---|
+| **全仓基础配置** | `config.py`、`paths.py`、`scripts/maintenance/check_layout.py`、`scripts/maintenance/root_allowlist.py` | — | `latex/main.tex`、`latex/sysusetup.tex`、`latex/reference.bib`、`latex/docs/{abstract,chap01,chap02,chap06,notation}.tex` |
+| **第 2 章（基础示意）** | `docs/figures/scripts/generate_foundation_figures.py`、`docs/figures/scripts/thesis_figure_style.py` | — | `docs/figures/图2-1_MEC三层架构示意图.*`、`图2-2_UAV辅助通信应用场景.*`、`图2-3_强化学习智能体环境交互框架.*` |
+| **第 3 章（协议 I：扩展需求观测）** | `environment/{env,uavs,user_equipments,comm_model,request_types}.py`、`marl_models/{attention_mappo,offload_mappo,vanilla_mappo,joint_mappo,ippo_baseline,uncoordinated_greedy_baseline,random_baseline,uniform_baseline}/`、`run_canonical_experiment.py`、`run_hierarchical_mappo_experiment.py`、`analyze_canonical_suite.py`、`scripts/analysis/run_chapter34_energy_free.py`、`docs/figures/scripts/generate_chapter34_figures_20261002.py` | `docs/figures/data/chapter34_20261004/{canonical_baseline_analysis.json,bottleneck_review.json,pilot_analysis.json,confirmation_paired_comparison.json,confirmation_training.csv,confirmation_units.csv}` | `latex/docs/chap03.tex`、`docs/figures/图3-1_系统与自然覆盖示意图.*` 至 `图3-9_接纳率与接纳后质量配对比较.*` |
+| **第 4 章（协议 I：MC-ITR 二元字典序分配）** | `utils/{chapter4,assignment_search,snapshot_evaluator,canonical_experiment,formal_protocol}.py`、`run_chapter4_suite.py`、`scripts/analysis/run_chapter34_energy_free.py`、`docs/figures/scripts/generate_chapter34_figures_20261002.py` | `docs/figures/data/chapter34_20261004/{chapter4_analysis.json,chapter4_units.csv,bridge_analysis.json}` | `latex/docs/chap04.tex`、`docs/figures/图4-1_批量算力共享与迁移外部影响示意.*`、`图4-2_MC-ITR算法流程图.*`、`图4-3_主配置质量时延耗时对比.*`、`图4-4_相对Iterative-Base配对差值.*` 至 `图4-8_候选轨迹快照桥接对比.*` |
+| **第 5 章（协议 II：跨时隙持续 EDF 排队控制）** | `environment/queued_service.py`、`marl_models/{queued_joint_rl,queued_joint_training,queued_planner_distillation}.py`、`utils/{queued_joint_rl,queued_joint_training,queued_planner_distillation,queued_quality_amortization,queued_waiting_rescue,queued_arrival_adaptation}.py`（及上游特征依赖模块）、`scripts/analysis/{queued_joint_rl_experiment,review_queued_joint_rl}.py`、`docs/figures/scripts/generate_queued_joint_thesis_figures.py` | `docs/figures/data/queued_joint_rl_20261106/`、`results/chapter5_dynamic_service_20261028/{queued_joint_rl_v2_20261106,queued_long_value_20261102,queued_score_control_20261104}/` | `latex/docs/chap05.tex`、`latex/docs/tables/ch5_dynamic_{main,effects,cost}.tex`、`docs/figures/ch5_dynamic_01_protocol.*` 至 `ch5_dynamic_06_decision_cost.*` |
+| **文献与全面审计** | `scripts/literature/verify_thesis_references.py` | `docs/literature/`、`output/thesis_full_audit_20261109/`、`output/thesis_writing_20261004/` | — |
+
+### 2. `recent/` 历史归档目录使用规范（AI 严禁主动读取）
+
+- **归档范围**：`recent/` 内按原相对路径存放了 405 项历史迭代资产，包括：
+  1. 早期含能耗/强制接纳/三元字典序说明文档（`recent/CLAUDE.md`、`recent/wodexuexi_AI_GUIDE.md`、`recent/CANONICAL_SEMANTICS_SPEC.md`、`recent/CHAPTER4_PROTOCOL.md`、`recent/attention mappo项目.md`）；
+  2. 已废弃的 `SF-HLM` / `dynamic_service` 过渡版环境、模型、脚本与测试（`recent/environment/dynamic_service*.py`、`recent/marl_models/dynamic_service*.py`、`recent/scripts/analysis/dynamic_service*.py` 等）；
+  3. 第 5 章早期的中间探索实验目录（`recent/results/chapter5_dynamic_service_20261028/` 下的 38 个早期实验子目录）及 2026 年 6–9 月旧版含能耗实验结果（`recent/results/baseline_matrix_*`、`recent/results/final_force_admission` 等）；
+  4. 旧版未使用的图件与绘图脚本（`recent/docs/figures/图5-*`、`recent/docs/figures/图4-3_主配置质量能耗耗时对比.*`、`recent/latex/docs/figures/`、中大模板 VOC2007 示例图 `recent/latex/image/{appendix1,chap03,chap04}` 等）。
+- **强制红线**：
+  - **在常规论文修改、审稿、画图、测试或代码维护任务中，严禁读取、搜索或引用 `recent/` 目录下的任何文件**，以免把旧版能耗公式、强制接纳或 `SF-HLM` 口径重新混入当前工作区；
+  - **仅当用户明确要求找回某个旧版文件、对比历史版本或查阅早期实验记录时**，才按原相对路径到 `recent/<原相对路径>` 中查找或恢复。
+
 ## 文件位置与生成物规则
 
 创建或修改文件前必须遵循本节；用户明确指定位置时遵从用户，不为常规归类重复询问。
@@ -48,7 +76,7 @@ This file provides guidance to Codex (Codex.ai/code) and Antigravity when workin
 | `output/<主题>_YYYYMMDD/assets/` | 仅供本任务使用的素材 |
 | `.tmp/<主题>/` | 可重新生成的预览、临时提取、一次性探针 |
 | `results/`、`saved_models/`、`train_logs/` | 实验结果、模型检查点、训练日志；沿用实验约定的子目录 |
-| `recent/`、`logs/`、`tasks/` | 历史兼容目录，停止作为新文件的默认去处 |
+| `recent/`、`logs/`、`tasks/` | 历史归档与兼容目录（`recent/` 存放已归档的旧版文件，常规工作严禁混用） |
 
 ## Superpowers 工作流程
 
@@ -97,7 +125,7 @@ This file provides guidance to Codex (Codex.ai/code) and Antigravity when workin
    - 上层观测模式：`UPPER_UE_OBSERVATION_MODE = "associated_plus_uncovered_in_sense"`（保持 30 槽与 $100\,\mathrm{m}$ 物理覆盖半径不变，按距离补入 $460\,\mathrm{m}$ 感知范围内未覆盖 UE）。
    - 共享奖励：`reward = W_FAIR*jfi - W_LAT*norm_latency + W_DSR*dsr - 0.5*mbs_Load`（无能耗项、无离线率项）。
 2. **第四章（固定快照二元字典序重评估 MC-ITR）**：
-   - 实现：`utils/chapter4_mc_itr.py`、`scripts/analysis/run_chapter34_energy_free.py`。
+   - 实现：`utils/chapter4.py`、`utils/assignment_search.py`、`scripts/analysis/run_chapter34_energy_free.py`。
    - 严格二元字典序目标：$F(\mathbf{a}) = (F_1(\mathbf{a}), F_2(\mathbf{a}))$，第一层为超时请求数，第二层为平均归一化时延。
 3. **第五章（跨时隙持续排队中的规划知识蒸馏与反事实辅助 PPO）**：
    - 实现：`environment/queued_service.py`、`marl_models/queued_joint_rl.py`、`utils/queued_joint_rl.py`、`scripts/analysis/queued_joint_rl_experiment.py`。

@@ -46,7 +46,7 @@ MODEL: str = "attention_mappo"  # options: "attention_mappo", "vanilla_mappo", "
 # 关键变量 SEED：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 SEED: int = 42  # random seed for reproducibility
 _static_rng = np.random.RandomState(SEED)  # hardware draws never reset the policy/workload RNG
-ENV_SEMANTICS_VERSION: str = "canonical_v3_global_batch_joint_sum"
+ENV_SEMANTICS_VERSION: str = "canonical_energy_free_v1"
 # 关键变量 STEPS_PER_EPISODE：训练或测试的回合编号。
 STEPS_PER_EPISODE: int = 1000  # total T
 # 关键变量 LOG_FREQ：全局常量或配置项，会影响环境规模、训练过程或实验输出。
@@ -126,11 +126,6 @@ MAX_ASSOCIATED_UES: int = min(30, NUM_UES // NUM_UAVS + 10)
 assert MAX_UAV_NEIGHBORS >= 0 and MAX_UAV_NEIGHBORS <= NUM_UAVS - 1
 assert MAX_ASSOCIATED_UES >= 1 and MAX_ASSOCIATED_UES <= NUM_UES
 
-# 关键变量 POWER_MOVE：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-POWER_MOVE: float = 300.0  # P_move in Watts
-# 关键变量 POWER_HOVER：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-POWER_HOVER: float = 150.0  # P_hover in Watts
-
 # Request Parameters
 NUM_SERVICES: int = 25  # S
 # 关键变量 NUM_CONTENTS：全局常量或配置项，会影响环境规模、训练过程或实验输出。
@@ -147,15 +142,8 @@ MIN_INPUT_SIZE: int = 1 * 10**6  # in bytes
 MAX_INPUT_SIZE: int = 5 * 10**6  # in bytes
 # 关键变量 ZIPF_BETA：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 ZIPF_BETA: float = 0.8  # beta^Zipf
-# 关键变量 K_CPU：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-K_CPU: float = 1e-27  # CPU capacitance coefficient
 BITS_PER_BYTE: float = 8.0  # conversion factor for byte-sized workloads over bit/s wireless rates
 MBS_COMPUTING_CAPACITY: float = 200 * 10**9  # F_mbs in cycles/sec
-UE_RECEIVE_POWER: float = 0.10  # UE receive power in Watts for downlink content delivery
-UAV_COMM_TX_POWER: float = 0.5  # UAV access/inter-UAV transmit power in Watts
-UAV_COMM_RX_POWER: float = 0.10  # UAV access/inter-UAV receive power in Watts
-UAV_BACKHAUL_TX_POWER: float = 0.5  # UAV-MBS backhaul transmit power in Watts
-UAV_BACKHAUL_RX_POWER: float = 0.10  # UAV-MBS backhaul receive power in Watts
 # 关键变量 SERVICE_DEADLINE_MIN：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 SERVICE_DEADLINE_MIN: float = 0.65 * TIME_SLOT_DURATION  # moderate deadline pressure for richer local/cooperative/MBS trade-offs
 # 关键变量 SERVICE_DEADLINE_MAX：全局常量或配置项，会影响环境规模、训练过程或实验输出。
@@ -194,7 +182,6 @@ OFFLOAD_REQUEST_FEATURE_DIM: int = 14
 OFFLOAD_OBS_DIM_SINGLE: int = 5 + (MAX_OFFLOAD_REQUESTS_PER_UAV * OFFLOAD_REQUEST_FEATURE_DIM)
 OFFLOAD_REWARD_DEADLINE_WEIGHT: float = 3.0
 OFFLOAD_REWARD_LATENCY_WEIGHT: float = 4.0
-OFFLOAD_REWARD_ENERGY_WEIGHT: float = 1.2
 OFFLOAD_REWARD_MBS_WEIGHT: float = 0.35
 OFFLOAD_REWARD_COOP_BONUS: float = 0.08
 OFFLOAD_REWARD_SUCCESS_BONUS: float = 0.40
@@ -236,45 +223,19 @@ BANDWIDTH_EDGE: int = 40 * 10**6  # B^edge in Hz
 # 关键变量 BANDWIDTH_BACKHAUL：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 BANDWIDTH_BACKHAUL: int = 750_000  # B^backhaul in Hz; constrained backhaul reduces the all-to-MBS collapse
 
-# WPT Parameters
-UE_BATTERY_CAPACITY: float = 500.0  # B_max in Joules
-# 关键变量 UE_CRITICAL_THRESHOLD：用户设备对象，产生任务请求并等待服务。
-UE_CRITICAL_THRESHOLD: float = 0.1 * UE_BATTERY_CAPACITY  # B_low in Joules
-# 关键变量 WPT_TRANSMIT_POWER：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-WPT_TRANSMIT_POWER: float = 50.0  # P^WPT in Watts (actual UAV WPT power cost)
-# 关键变量 WPT_HARVEST_GAIN：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-WPT_HARVEST_GAIN: float = 5e5  # equivalent WPT harvest gain for the simplified channel model
-# 关键变量 WPT_EFFICIENCY：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-WPT_EFFICIENCY: float = 0.8  # eta (energy harvesting efficiency, 80%)
-# 关键变量 UE_STATIC_POWER：用户设备对象，产生任务请求并等待服务。
-UE_STATIC_POWER: float = 0.01  # Idle power consumption in Watts
+# Upper-layer UE observation slot filling mode:
+# - "covered_only": only currently associated UEs enter the 30 UE observation slots
+# - "covered_plus_sensed_uncovered": associated UEs first, then uncovered UEs within UAV_SENSING_RANGE
+UPPER_UE_OBSERVATION_MODE: str = "covered_only"
 
 # Model Parameters
-# Linear reward weights (new normalized form):
-#   reward = W_FAIR*jfi - W_LAT*norm_latency - W_ENERGY*norm_energy - W_OFFLINE*offline_rate + W_DSR*dsr
+# Linear reward weights (energy-free normalized form):
+#   reward = W_FAIR*jfi - W_LAT*norm_latency + W_DSR*dsr - 0.5*mbs_load_ratio
 # Where:
 #   norm_latency = total_latency / (NUM_UES * NON_SERVED_LATENCY_PENALTY)
-#   norm_energy = total_energy / (NUM_UAVS * REWARD_NORM_ENERGY_REF)
 REWARD_W_FAIR: float = 1.0    # fairness bonus weight
 REWARD_W_LAT: float = 1.0     # latency penalty weight
-REWARD_W_ENERGY: float = 0.5  # energy penalty weight
-REWARD_W_OFFLINE: float = 5.0 # offline UE penalty weight
 REWARD_W_DSR: float = 1.0     # DSR bonus weight
-# Normalization reference values for linear reward
-REWARD_NORM_ENERGY_REF: float = 5000.0  # per-UAV per-step max energy reference (Joules)
-
-# Lower-level offload linear reward normalization reference (per-UAV per-step, Joules)
-# Baseline max ~22940 J/UAV/step; 25000 gives norm_energy <= 1.0
-OFFLOAD_ENERGY_NORM_REF: float = 25000.0
-
-# Legacy log-form weights (kept for backward compatibility)
-ALPHA_1 = 1.0  # weightage for latency (legacy log-form)
-# 关键变量 ALPHA_2：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-ALPHA_2 = 0.4  # weightage for energy (legacy log-form)
-# 关键变量 ALPHA_3：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-ALPHA_3 = 2.0  # weightage for fairness (legacy log-form)
-# 关键变量 ALPHA_4：全局常量或配置项，会影响环境规模、训练过程或实验输出。
-ALPHA_4 = 50.0  # weightage for offline rate (legacy log-form)
 # 关键变量 REWARD_SCALING_FACTOR：当前时间步或当前回合的奖励值。
 REWARD_SCALING_FACTOR: float = 0.1  # scaling factor for rewards (prevents exploding values)
 
@@ -283,7 +244,7 @@ SELF_OBS_DIM: int = 2 + NUM_FILES  # pos (2) + cache (NUM_FILES)
 # 关键变量 REQUEST_OBS_DIM：用户设备产生的任务请求。
 REQUEST_OBS_DIM: int = 5  # type, size, id, deadline, priority
 # 关键变量 UE_OBS_DIM：用户设备对象，产生任务请求并等待服务。
-UE_OBS_DIM: int = 2 + REQUEST_OBS_DIM + 1  # pos (2) + request signature (5) + battery level (1)
+UE_OBS_DIM: int = 2 + REQUEST_OBS_DIM  # pos (2) + request signature (5)
 # 关键变量 NEIGHBOR_OBS_DIM：全局常量或配置项，会影响环境规模、训练过程或实验输出。
 NEIGHBOR_OBS_DIM: int = 2  # pos (2)
 # 关键变量 OBS_DIM_SINGLE：全局常量或配置项，会影响环境规模、训练过程或实验输出。

@@ -33,18 +33,17 @@ class TestScenarioReproducibility(unittest.TestCase):
             np.testing.assert_array_equal(ra, rb)
             self.assertEqual(ma, mb)
 
-    def test_battery_changes_do_not_shift_latent_requests_or_mobility(self):
+    def test_trajectory_differences_do_not_shift_latent_requests_or_mobility(self):
         first = Env(scenario_seed=27)
         second = Env(scenario_seed=27)
         first.reset()
         second.reset()
-        for ue in first.ues:
-            ue.battery_level = 0
         for _ in range(8):
             first.step(np.zeros((config.NUM_UAVS, 2)))
-            second.step(np.zeros((config.NUM_UAVS, 2)))
+            second.step(np.ones((config.NUM_UAVS, 2)))
             np.testing.assert_array_equal([u.pos for u in first.ues], [u.pos for u in second.ues])
             self.assertEqual([u.latent_request for u in first.ues], [u.latent_request for u in second.ues])
+            self.assertEqual([u.current_request.is_service for u in first.ues], [u.current_request.is_service for u in second.ues])
 
     def test_hotspot_layouts_respect_configured_separation(self):
         for seed in range(20):

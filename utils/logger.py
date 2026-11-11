@@ -44,7 +44,7 @@ def refresh_derived_config_fields() -> None:
     default_config.MAX_ASSOCIATED_UES = min(30, default_config.NUM_UES // default_config.NUM_UAVS + 10)
     default_config.SELF_OBS_DIM = 2 + default_config.NUM_FILES
     default_config.REQUEST_OBS_DIM = 5
-    default_config.UE_OBS_DIM = 2 + default_config.REQUEST_OBS_DIM + 1
+    default_config.UE_OBS_DIM = 2 + default_config.REQUEST_OBS_DIM
     default_config.OBS_DIM_SINGLE = (
         default_config.SELF_OBS_DIM
         + (default_config.MAX_UAV_NEIGHBORS * default_config.NEIGHBOR_OBS_DIM)

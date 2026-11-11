@@ -1,0 +1,272 @@
+{
+  "timing": "Post-review audit after all three independent reports were frozen",
+  "records": [
+    {
+      "audit_id": "AUD-01",
+      "status": "passed",
+      "location": "Chapter 3 confirmation",
+      "claim_pointer": "Mean DSR and seed-paired t intervals",
+      "evidence_pointer": "confirmation_units.csv and confirmation_paired_comparison.json",
+      "check": "Recompute all seven metric means and seed-level t intervals",
+      "result": "All match within absolute tolerance 1e-9",
+      "impact": "No headline arithmetic contradiction",
+      "resolution_test": "None",
+      "reviewer_overlap": [
+        "R1/R2/R3 acknowledge core evidence"
+      ]
+    },
+    {
+      "audit_id": "AUD-02",
+      "status": "passed",
+      "location": "Chapter 4 standard evaluation",
+      "claim_pointer": "410 units and main means",
+      "evidence_pointer": "chapter4_units.csv and chapter4_analysis.json",
+      "check": "Recompute comparison points and unique snapshot count",
+      "result": "410 rows, 6000 unique snapshots, all comparison point estimates match",
+      "impact": "Preserves reported primary empirical result",
+      "resolution_test": "None",
+      "reviewer_overlap": []
+    },
+    {
+      "audit_id": "AUD-03",
+      "status": "passed",
+      "location": "Chapter 4 bridge",
+      "claim_pointer": "400 snapshots, -2.6325 paired deadline misses",
+      "evidence_pointer": "bridge_analysis.json",
+      "check": "Recompute seed t interval",
+      "result": "CI approximately [-2.924793,-2.340207]",
+      "impact": "Preserves bridge mean and interval",
+      "resolution_test": "None",
+      "reviewer_overlap": []
+    },
+    {
+      "audit_id": "AUD-04",
+      "status": "passed",
+      "location": "Chapter 5 confirmation",
+      "claim_pointer": "17 arms, 816 episodes, all 31 DSR comparison intervals",
+      "evidence_pointer": "confirmation_units.csv, confirmation_summary.csv, paired_dsr_effects.csv",
+      "check": "Recompute summaries and frozen paired bootstrap",
+      "result": "All 17 summaries and all 31 point estimates/95%/Bonferroni intervals match",
+      "impact": "No arithmetic basis to discard main results",
+      "resolution_test": "None",
+      "reviewer_overlap": []
+    },
+    {
+      "audit_id": "AUD-05",
+      "status": "confirmed_internal_error",
+      "location": "latex/docs/chap04.tex:458",
+      "claim_pointer": "Bridge seeds 7101-7110",
+      "evidence_pointer": "bridge_analysis.json:6; confirmation_paired_comparison.json:4",
+      "check": "Compare exact seed identifiers",
+      "result": "Actual seeds 7013,7283,7541,7823,8089,8353,8627,8887,9151,9419",
+      "impact": "Local provenance identifier error, not proof of wrong results",
+      "resolution_test": "Correct seed list",
+      "reviewer_overlap": [
+        "R1-m8",
+        "R2-m3",
+        "R3-m1"
+      ]
+    },
+    {
+      "audit_id": "AUD-06",
+      "status": "confirmed_internal_error",
+      "location": "latex/docs/chap05.tex:424",
+      "claim_pointer": "Parent generated counts 84092,83932,84000",
+      "evidence_pointer": "confirmation_units.csv",
+      "check": "Sum generated counts by parent",
+      "result": "Each parent has 84008; pooled 252024 remains correct",
+      "impact": "Local denominator error; parent rates agree with corrected denominator",
+      "resolution_test": "Derive prose denominators from raw count sums",
+      "reviewer_overlap": [
+        "R3-m2"
+      ]
+    },
+    {
+      "audit_id": "AUD-07",
+      "status": "confirmed_internal_error",
+      "location": "latex/docs/chap05.tex:92",
+      "claim_pointer": "Feature tensor table is the actual model input",
+      "evidence_pointer": "utils/queued_joint_rl.py:380,490,527; utils/queued_arrival_adaptation.py:50",
+      "check": "Compare exact indexed input fields",
+      "result": "Context, assignment and motion fields differ materially; dimensions largely match",
+      "impact": "Important method reproducibility defect",
+      "resolution_test": "Rewrite indexed feature specification against frozen matching source",
+      "reviewer_overlap": [
+        "R2-M2"
+      ]
+    },
+    {
+      "audit_id": "AUD-08",
+      "status": "confirmed_internal_error",
+      "location": "latex/docs/chap05.tex:118,133",
+      "claim_pointer": "Defined release-time approximation is implemented scorer",
+      "evidence_pointer": "utils/queued_joint_rl.py:137,181,205,225",
+      "check": "Compare tail sharing, cutoff conditions and scores; evaluate isolated pure helper on a hand state",
+      "result": "Ready task with CPU duration .2 and deadline 2 scores 1 in code vs .985 in prose",
+      "impact": "Important method definition defect",
+      "resolution_test": "Describe actual frozen operator and link validation to same function",
+      "reviewer_overlap": [
+        "R2-M3"
+      ]
+    },
+    {
+      "audit_id": "AUD-09",
+      "status": "confirmed_internal_error",
+      "location": "latex/docs/abstract.tex:10,22; chap02.tex:337",
+      "claim_pointer": "Three-factor DSR decomposition",
+      "evidence_pointer": "chap02.tex:206-225",
+      "check": "Count multiplicative factors",
+      "result": "DSR=(A/G)*(S/A) has two factors and three counts",
+      "impact": "Local naming inconsistency",
+      "resolution_test": "Use two-factor or three-count terminology",
+      "reviewer_overlap": [
+        "R1-m1",
+        "R2-m2"
+      ]
+    },
+    {
+      "audit_id": "AUD-10",
+      "status": "confirmed_internal_error",
+      "location": "latex/docs/abstract.tex:10",
+      "claim_pointer": "Probabilistic LoS model",
+      "evidence_pointer": "chap03.tex:105-131",
+      "check": "Compare abstract with explicit channel assumptions",
+      "result": "Body explicitly omits random LoS",
+      "impact": "Abstract misstates model",
+      "resolution_test": "Use LoS-dominant deterministic path-loss description",
+      "reviewer_overlap": [
+        "R1-m2",
+        "R3-m5"
+      ]
+    },
+    {
+      "audit_id": "AUD-11",
+      "status": "confirmed_internal_error",
+      "location": "latex/docs/chap02.tex:47,158",
+      "claim_pointer": "Unified uncovered failure lifecycle and FCFS transmission",
+      "evidence_pointer": "chap05.tex:74,82; environment/queued_service.py:207",
+      "check": "Compare protocol-specific lifecycle and ordering",
+      "result": "Protocol II allows waiting; actual channel task order is deadline/uid",
+      "impact": "Local unified-model inconsistencies",
+      "resolution_test": "Separate protocol lifecycles and correct wireless ordering",
+      "reviewer_overlap": [
+        "R1-m3",
+        "R2-m4"
+      ]
+    },
+    {
+      "audit_id": "AUD-12",
+      "status": "provenance_gap",
+      "location": "Chapter 5 execution source",
+      "claim_pointer": "Current checkout exactly reproduces frozen executable source",
+      "evidence_pointer": "freeze_manifest.json source_sha256",
+      "check": "Hash 15 frozen source files against snapshot",
+      "result": "14 match, utils/queued_closed_loop.py differs; core engine/feature/scoring/driver match",
+      "impact": "Exact full executable provenance not established; does not negate matching core function comparison",
+      "resolution_test": "Preserve frozen source and explain migration/modifications",
+      "reviewer_overlap": []
+    },
+    {
+      "audit_id": "AUD-13",
+      "status": "passed",
+      "location": "Chapter 5 source data manifest",
+      "claim_pointer": "Listed source data are unchanged",
+      "evidence_pointer": "docs/figures/data/queued_joint_rl_20261106/source_manifest.json",
+      "check": "Verify all 823 listed file hashes",
+      "result": "All match",
+      "impact": "Confirms listed-file integrity only",
+      "resolution_test": "None",
+      "reviewer_overlap": []
+    },
+    {
+      "audit_id": "AUD-14",
+      "status": "unresolved_input_needed",
+      "location": "Chapter 5 cf=0 ablation",
+      "claim_pointer": "Strict one-factor net gain and direct uncertainty",
+      "evidence_pointer": "chap05.tex:428-450; available 17-arm source data",
+      "check": "Locate direct paired supplementary records within allowed active sources",
+      "result": "Complete cf=0 per-episode source/version comparison not located; direct net-gain CI not displayed",
+      "impact": "Cannot independently establish strict comparison or its significance from this packet",
+      "resolution_test": "Supply/link existing paired records and version/config correspondence; compute direct CI",
+      "reviewer_overlap": [
+        "R3-M1"
+      ]
+    },
+    {
+      "audit_id": "AUD-15",
+      "status": "passed",
+      "location": "Local LaTeX references",
+      "claim_pointer": "All calls resolve",
+      "evidence_pointer": "main.tex, docs/**/*.tex, reference.bib",
+      "check": "Resolve labels and citation keys",
+      "result": "57 cited keys present; no duplicate labels or missing labels",
+      "impact": "Local reference resolution only; external facts unverified",
+      "resolution_test": "None",
+      "reviewer_overlap": []
+    },
+    {
+      "audit_id": "AUD-16",
+      "status": "not_assessable",
+      "location": "External references and independent replication",
+      "claim_pointer": "External truth, priority and deployment validity",
+      "evidence_pointer": "Local-only review scope",
+      "check": "No external lookup, training or complete simulation",
+      "result": "Not independently verified",
+      "impact": "Cannot certify global novelty, literature truth or replication",
+      "resolution_test": "Only claim bounded local review",
+      "reviewer_overlap": []
+    },
+    {
+      "audit_id": "AUD-17",
+      "status": "confirmed_internal_error",
+      "location": "Existing PDF page 62; latex/docs/chap03.tex:533-569",
+      "claim_pointer": "Parameters fit thesis text block",
+      "evidence_pointer": "Rendered page and main.log",
+      "check": "Visual sample and log corroboration",
+      "result": "Tables 3-2 and 3-3 extend beyond text width; log reports 51.50pt and 21.78pt",
+      "impact": "Submission layout requires revision",
+      "resolution_test": "Reflow tables then render/inspect",
+      "reviewer_overlap": []
+    },
+    {
+      "audit_id": "AUD-18",
+      "status": "confirmed_internal_error",
+      "location": "latex/sysusetup.tex:6-19; achievements.tex:5",
+      "claim_pointer": "Submission front/back matter complete",
+      "evidence_pointer": "Existing PDF pages 1,3,117",
+      "check": "Inspect source and rendered pages",
+      "result": "Generic name/speciality/supervisor/student-ID placeholders; empty achievements heading",
+      "impact": "Final submission incomplete, unless appropriately replaced by anonymous-review convention",
+      "resolution_test": "Fill real fields or apply school anonymous rules; handle empty heading truthfully",
+      "reviewer_overlap": []
+    },
+    {
+      "audit_id": "AUD-19",
+      "status": "provenance_gap",
+      "location": "latex/docs/chap04.tex:310",
+      "claim_pointer": "Unimplemented incremental evaluator runs below 1 ms",
+      "evidence_pointer": "Current full-step evaluator and prose",
+      "check": "Search for specified timing source in provided packet",
+      "result": "No implementation/hardware benchmark supports absolute timing claim",
+      "impact": "Unsupported local speed assertion",
+      "resolution_test": "Remove absolute timing or provide measured/explicit estimated conditions",
+      "reviewer_overlap": [
+        "R1-m6",
+        "R2-m6",
+        "R3-m4"
+      ]
+    },
+    {
+      "audit_id": "AUD-20",
+      "status": "passed",
+      "location": "Review isolation and snapshot integrity",
+      "claim_pointer": "Reports frozen before synthesis",
+      "evidence_pointer": "Reviewer freeze hashes; REVIEW_PACKET.json",
+      "check": "Verify hashes and source snapshot unchanged",
+      "result": "All report hashes match; packet files intact; no source changed since snapshot",
+      "impact": "Supports independent-report process integrity",
+      "resolution_test": "None",
+      "reviewer_overlap": []
+    }
+  ]
+}

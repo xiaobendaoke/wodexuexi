@@ -1358,8 +1358,7 @@ FUNCTION {format.editdate}
 }
 
 FUNCTION {format.urldate}
-{ show.urldate show.url and entry.url empty$ not and
-  is.pure.electronic or
+{ show.urldate show.url entry.is.electronic or and entry.url empty$ not and
   urldate empty$ not and
     { "\allowbreak[" urldate * "]" * }
     { "" }
@@ -1495,7 +1494,7 @@ FUNCTION {check.url}
 }
 
 FUNCTION {output.url}
-{ show.url is.pure.electronic or
+{ show.url entry.is.electronic or
   entry.url empty$ not and
     { new.block
       entry.url #1 #5 substring$ "\url{" =
@@ -1592,11 +1591,19 @@ FUNCTION {check.electronic}
   if$
   medium empty$ not
     { medium "MT" = medium "DK" = or medium "CD" = or medium "OL" = or
-        { #1 'entry.is.electronic := }
+        { #1 'entry.is.electronic :=
+          check.url
+        }
         'skip$
       if$
     }
-    'skip$
+    { urldate empty$ not url empty$ not and
+        { #1 'entry.is.electronic :=
+          check.url
+        }
+        'skip$
+      if$
+    }
   if$
 }
 
@@ -1625,6 +1632,7 @@ FUNCTION {format.eprint}
 
 FUNCTION {output.eprint}
 { show.preprint eprint empty$ not and
+  entry.is.electronic eprint is.in.url and not and
     { new.block
       format.eprint output
     }
@@ -1936,7 +1944,7 @@ FUNCTION {preprint}
   new.block
   title.in.journal
     { format.series.vol.num.title "title" output.check
-      "A" set.entry.mark
+      "EB" set.entry.mark
       format.mark "" output.after
       new.block
     }

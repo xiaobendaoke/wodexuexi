@@ -22,8 +22,7 @@ class TestSnapshotEvaluator(unittest.TestCase):
         actions = np.zeros((config.NUM_UAVS, config.MAX_OFFLOAD_REQUESTS_PER_UAV), dtype=int)
         with patch.object(env, '_get_obs', return_value=[]):
             _, _, metrics = env.step(np.zeros((config.NUM_UAVS, 2)), offloading_actions=actions)
-        for name in ('lower_assignment_energy', 'lower_service_latency', 'service_compute_energy',
-                     'service_comm_energy', 'service_requests_processed', 'deadline_satisfied_count'):
+        for name in ('lower_service_latency', 'service_requests_processed', 'deadline_satisfied_count'):
             self.assertAlmostEqual(first['metrics'][name], metrics[name], places=9)
         self.assertEqual(first['cache_after'], [u.cache.tolist() for u in env.uavs])
 

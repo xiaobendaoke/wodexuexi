@@ -27,8 +27,7 @@ FONT_CANDIDATES = [
     "Source Han Serif SC",
     "WenQuanYi Micro Hei",
     "WenQuanYi Zen Hei",
-    "DejaVu Serif",
-    "DejaVu Sans",
+    "Times New Roman",
     "serif",
 ]
 
@@ -48,6 +47,22 @@ PALETTE = {
     "purple": "#7C70B2",
     "blue_light": "#9EC4DF",
     "green_light": "#8FCB98",
+}
+
+# 全书统一状态与机制图语义色板（遵循四条绘图红线）：
+# 绿色=已覆盖/按时完成；橙色=已接纳超时；红色=未覆盖/超期淘汰；
+# 实线=前向推理与真实执行；虚线=训练监督、蒸馏目标与梯度回传。
+SEMANTIC_PALETTE = {
+    "covered_ok": "#3A8D5A",
+    "admitted_miss": "#D8A448",
+    "uncovered_expired": "#C75E5A",
+    "module_blue": "#3D6FB6",
+    "module_teal": "#53A6A6",
+    "module_purple": "#7C70B2",
+    "neutral_slate": "#5A6673",
+    "panel_bg": "#F7F9FC",
+    "border_light": "#CBD2DC",
+    "text_dark": "#22252A",
 }
 
 BASELINE_COLORS = {
@@ -79,6 +94,19 @@ def selected_chinese_font() -> str:
     return "DejaVu Sans"
 
 
+def resolve_qa_scripts_dir(repo_root: Path) -> Path:
+    """Locate bundled or installed nature-figure QA scripts without hardcoded machine paths."""
+    candidates = [
+        repo_root / "tools" / "figure_qa",
+        Path.home() / ".gemini" / "config" / "skills" / "nature-figure" / "scripts",
+        Path.home() / ".codex" / "skills" / "nature-figure" / "scripts",
+    ]
+    for path in candidates:
+        if path.is_dir():
+            return path
+    raise FileNotFoundError("Unable to locate nature-figure QA scripts directory.")
+
+
 def setup_thesis_style(font_size: float = 8.0, legend_frameon: bool = False) -> str:
     """Apply the shared compact thesis style and return the selected font."""
 
@@ -105,7 +133,11 @@ def setup_thesis_style(font_size: float = 8.0, legend_frameon: bool = False) -> 
             "legend.frameon": legend_frameon,
             "figure.dpi": 140,
             "savefig.dpi": 600,
-            "mathtext.fontset": "dejavuserif",
+            "mathtext.fontset": "custom",
+            "mathtext.rm": "Times New Roman",
+            "mathtext.it": "Times New Roman:italic",
+            "mathtext.bf": "Times New Roman:bold",
+            "mathtext.cal": "Times New Roman:italic",
         }
     )
     return family
@@ -210,12 +242,27 @@ def save_pub(
 ) -> dict[str, object]:
     """Save publication outputs and optionally append a text-space QA result."""
 
+    import io
+
     qa = qa_text_space(fig, name)
     for out_dir in output_dirs:
         out_dir.mkdir(parents=True, exist_ok=True)
         for ext in formats:
             dpi = tiff_dpi if ext == "tiff" else png_dpi if ext == "png" else None
-            fig.savefig(out_dir / f"{name}.{ext}", bbox_inches="tight", pad_inches=pad_inches, dpi=dpi)
+            buf = io.BytesIO()
+            fig.savefig(buf, format=ext, bbox_inches="tight", pad_inches=pad_inches, dpi=dpi)
+            payload = buf.getvalue()
+            target = out_dir / f"{name}.{ext}"
+            for attempt in range(4):
+                try:
+                    target.write_bytes(payload)
+                    break
+                except OSError:
+                    if attempt == 3:
+                        raise
+                    import time
+
+                    time.sleep(0.2 * (attempt + 1))
     if qa_report is not None:
         write_qa_report(qa_report, qa)
     plt.close(fig)

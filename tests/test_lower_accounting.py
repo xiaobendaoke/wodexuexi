@@ -16,17 +16,17 @@ class TestLowerAccounting(unittest.TestCase):
 
     def test_external_metrics_cannot_change_lower_reward_or_penalties(self):
         metrics = {"lower_admitted_service_count": 2., "lower_deadline_satisfaction_rate": .5,
-                   "lower_service_latency": 3., "lower_assignment_energy": 10., "lower_mbs_load_ratio": .5,
-                   "energy": 100., "latency": 100., "deadline_satisfaction_rate": .1,
+                   "lower_service_latency": 3., "lower_mbs_load_ratio": .5,
+                   "latency": 100., "deadline_satisfaction_rate": .1,
                    "mbs_load_ratio": .1, "offloading_ratio_cooperative": 0.}
         first = lower_rewards_from_metrics(metrics, [0.] * config.NUM_UAVS, 2., 3.)
-        metrics.update(energy=1e9, latency=1e9, deadline_satisfaction_rate=0., mbs_load_ratio=0., offloading_ratio_cooperative=1.)
+        metrics.update(latency=1e9, deadline_satisfaction_rate=0., mbs_load_ratio=0., offloading_ratio_cooperative=1.)
         second = lower_rewards_from_metrics(metrics, [999.] * config.NUM_UAVS, 2., 3.)
         self.assertEqual(first, second)
 
     def test_empty_lower_domain_has_no_reward_or_constraint_violation(self):
         metrics = {"lower_admitted_service_count": 0., "lower_deadline_satisfaction_rate": 0.,
-                   "lower_service_latency": 0., "lower_assignment_energy": 0., "lower_mbs_load_ratio": 0.}
+                   "lower_service_latency": 0., "lower_mbs_load_ratio": 0.}
         rewards, diag = lower_rewards_from_metrics(metrics, [0.] * config.NUM_UAVS, 3., 3.)
         self.assertEqual(rewards, [0.] * config.NUM_UAVS)
         self.assertTrue(all(value == 0 for value in diag.values()))
@@ -40,7 +40,7 @@ class TestLowerAccounting(unittest.TestCase):
                 for uav in env.uavs:
                     uav._current_covered_ues = []
                 for i, ue in enumerate(env.ues):
-                    ue.current_request = Request.service(1000, 0, 1., 1) if i < count else Request.energy()
+                    ue.current_request = Request.service(1000, 0, 1., 1) if i < count else Request.content(config.NUM_SERVICES)
                     ue.assigned = i < count
                     if i < count:
                         ue.pos[:2] = env.uavs[0].pos[:2] + [i / 10 + 1, 0]

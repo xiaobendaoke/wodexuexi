@@ -2,7 +2,7 @@
 % !TeX spellcheck = en_US
 
 \documentclass[
-    fontset=fandol,
+    fontset=windows,
     degree=master,
     degree-type=professional
 ]{sysuthesis}
@@ -14,6 +14,9 @@
 % 加载宏包、全部的配置
 \input{sysusetup.tex}
 
+% 项目排版覆盖：对齐航空航天学院 Word 学位论文模板
+\input{thesis-layout.tex}
+
 
 \begin{document}
 
@@ -23,18 +26,15 @@
 \frontmatter
 \input{docs/abstract.tex}
 \tableofcontents
-\listoffigures
-\listoftables
-% \listoffiguresandtables
 \input{docs/notation.tex}
 
 \mainmatter
 \input{docs/chap01.tex}  % 绪论
-\input{docs/chap02.tex}  % 相关技术简介
-\input{docs/chap03.tex}  % 无人机集群需求感知协同轨迹决策
-\input{docs/chap04.tex}  % 跨机资源竞争与截止期优先计算任务分配
+\input{docs/chap02.tex}  % 无人机集群空地协同计算系统建模与分析
+\input{docs/chap03.tex}  % 无人机集群需求感知协同轨迹规划
+\input{docs/chap04.tex}  % 跨机资源竞争下的无人机集群计算任务分配
 \input{docs/chap05.tex}  % 动态排队服务中的规划蒸馏与反事实辅助协同控制
-\input{docs/chap06.tex}  % 总结与展望
+\input{docs/chap06.tex}  % 结论
 
 \bibliography{reference}  % 参考文献使用 BibTeX 编译
 % \printbibliography       % 参考文献使用 BibLaTeX 编译
@@ -43,7 +43,7 @@
 % \input{docs/complementary.tex}  % 模板示例附录，与本研究无关；有正式补充材料后再启用
 
 \backmatter
-\input{docs/acknowledgements.tex}
 \input{docs/achievements.tex}
+\input{docs/acknowledgements.tex}
 
 \end{document}

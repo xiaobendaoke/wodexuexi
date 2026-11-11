@@ -45,13 +45,6 @@ class TestLowerRewardCausality(unittest.TestCase):
         _, system_rewards_fly, metrics_fly = env_fly.step(max_actions, offloading_actions=offload_actions)
         lower_rewards_fly, _ = lower_rewards_from_metrics(metrics_fly, system_rewards_fly)
 
-        self.assertNotEqual(metrics_hover["flight_energy"], metrics_fly["flight_energy"])
-
-        # In canonical semantics:
-        # Lower rewards evaluate strictly causal non-flight energy.
-        # Flight motion from max_actions must NOT change lower_rewards.
-        # Under legacy code, metrics_fly['energy'] is different due to flight/hover energy,
-        # so lower_rewards_hover != lower_rewards_fly (EXPECTED_RED).
         self.assertAlmostEqual(
             lower_rewards_hover[0], lower_rewards_fly[0], places=3,
             msg=f"Lower reward polluted by flight motion! Hover reward: {lower_rewards_hover[0]}, Fly reward: {lower_rewards_fly[0]}"

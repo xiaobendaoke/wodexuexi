@@ -17,7 +17,7 @@ def small_snapshot():
     env = Env(scenario_seed=19)
     env.reset(initial_positions=[[100, 100], [310, 100], [520, 100], [100, 500], [520, 500]])
     for ue in env.ues:
-        ue.current_request = Request.energy()
+        ue.current_request = Request.content(config.NUM_SERVICES)
         ue.assigned = False
     for uav in env.uavs:
         uav._current_covered_ues = []
@@ -39,15 +39,15 @@ class TestChapter4(unittest.TestCase):
         importlib.reload(config)
 
     def test_objective_priority_and_normalization(self):
-        def result(latency, energy):
+        def result(latency):
             return {'requests': [{'latency': latency, 'deadline': 1., 'success': latency <= 1.}],
-                    'metrics': {'lower_assignment_energy': energy}}
-        self.assertLess(objective(result(.99, 1e12)), objective(result(1.01, 0)))
-        self.assertLess(objective(result(.2, 1e12)), objective(result(.3, 0)))
-        self.assertEqual(objective(result(.2, 25000)), (0, .2, 1.))
-        self.assertEqual(PROTOCOL['energy_reference_j'], 25000.)
+                    'metrics': {}}
+        self.assertLess(objective(result(.99)), objective(result(1.01)))
+        self.assertLess(objective(result(.2)), objective(result(.3)))
+        self.assertEqual(objective(result(.2)), (0, .2))
+        self.assertEqual(PROTOCOL['ordering'], ['deadline_miss_count', 'mean_latency_over_deadline'])
         with self.assertRaises(ValueError):
-            objective(result(float('nan'), 0))
+            objective(result(float('nan')))
 
     def test_all_methods_share_snapshot_and_exact_reference(self):
         snapshot = small_snapshot()
@@ -68,8 +68,8 @@ class TestChapter4(unittest.TestCase):
                 neighbor = final[:i] + (target,) + final[i+1:]
                 self.assertGreaterEqual(objective(evaluate(snapshot, neighbor)), results['mc_itr']['objective'])
         per_request = evaluate(snapshot, final)
-        self.assertAlmostEqual(sum(r['assignment_energy'] for r in per_request['requests']),
-                               per_request['metrics']['lower_assignment_energy'], places=8)
+        self.assertAlmostEqual(sum(r['latency'] for r in per_request['requests']),
+                               per_request['metrics']['lower_service_latency'], places=8)
 
     def test_exact_does_not_claim_completion_when_budget_is_insufficient(self):
         results = solve_snapshot(small_snapshot(), max_rounds=0, exact_budget=1)

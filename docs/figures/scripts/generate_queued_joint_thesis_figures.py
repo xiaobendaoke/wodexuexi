@@ -18,8 +18,10 @@ from paths import REPO_ROOT
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 import numpy as np
-from thesis_figure_style import setup_thesis_style
+from thesis_figure_style import resolve_qa_scripts_dir, setup_thesis_style
+from queued_joint_mechanism_figures import render_all_chapter5_additions
 
 SOURCE = REPO_ROOT / "results/chapter5_dynamic_service_20261028/queued_joint_rl_v2_20261106"
 DATA = REPO_ROOT / "docs/figures/data/queued_joint_rl_20261106"
@@ -57,6 +59,20 @@ def read_json(path):
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def matches_frozen_digest(path: Path, expected_hash: str) -> bool:
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() == expected_hash:
+        return True
+    if path.suffix in {".py", ".json", ".csv", ".md", ".txt"}:
+        lf = raw.replace(b"\r\n", b"\n")
+        if hashlib.sha256(lf).hexdigest() == expected_hash:
+            return True
+        crlf = lf.replace(b"\n", b"\r\n")
+        if hashlib.sha256(crlf).hexdigest() == expected_hash:
+            return True
+    return False
 
 
 def csv_write(path, rows):
@@ -105,9 +121,9 @@ def load_and_export():
         for metric in ("generated", "admitted", "success"):
             assert sum(row[metric] for row in own) == analysis["summary"][arm]["all"][metric]
     for relative, expected_hash in manifest["source_sha256"].items():
-        assert digest(REPO_ROOT / relative) == expected_hash, relative
+        assert matches_frozen_digest(REPO_ROOT / relative, expected_hash), relative
     for relative, expected_hash in manifest["model_sha256"].items():
-        assert digest(SOURCE / relative) == expected_hash, relative
+        assert matches_frozen_digest(SOURCE / relative, expected_hash), relative
     csv_write(DATA / "confirmation_units.csv", rows)
     totals = []
     phases = []
@@ -135,27 +151,40 @@ def load_and_export():
     csv_write(DATA / "paired_dsr_effects.csv", contrast_rows)
     csv_write(DATA / "validation_curves.csv", [dict(arm=arm, **row) for arm, points in curves["curves"].items()
               for row in points])
+    supplemental_files = [
+        DATA / name
+        for name in (
+            "cf0_ablation_confirmation_analysis.json",
+            "cf0_ablation_summary.csv",
+            "peak_queue_evolution_955000.json",
+        )
+        if (DATA / name).exists()
+    ]
     provenance = dict(
         status="PASS", data_role="post_hoc_manuscript_source_data", freeze_manifest_sha256=freeze_hash,
-        inference_scope="Conditional on 3 fixed parent lineages; 8 paired workloads x 2 action streams",
+        inference_scope="Conditional on 3 fixed upstream pretrained model groups; 8 paired workloads x 2 action streams",
         raw_confirmation_records=816, sources_checked=15, experiment_models_checked=51,
         parent_checkpoint_scope="3 scorer files locally available; 3 proposer .pt files absent",
         training_replay_scope="Existing audit records only; original rl_rollouts absent locally",
-        selected_display_scope="All 17 arms in main table/DSR figure; focused secondary displays explicitly identified",
+        selected_display_scope="All 17 control schemes in main table/DSR figure; focused secondary displays explicitly identified",
+        cf0_ablation_provenance="Table 5-7 w_cf=0 row archived from git commit 97b34d7 (queued_joint_rl_20261106 pre-v2 run on identical 816-episode confirmation workloads 955000-955007)",
         sources={str(path.relative_to(REPO_ROOT)).replace("\\", "/"): digest(path) for path in source_files},
+        supplemental_data_sha256={
+            str(path.relative_to(REPO_ROOT)).replace("\\", "/"): digest(path) for path in supplemental_files
+        },
     )
     (DATA / "source_manifest.json").write_text(json.dumps(provenance, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return analysis, curves, parents
 
 
 def table(caption, english, label, columns, header, rows, note=""):
-    lines = [r"\begin{table}[!htbp]", r"\centering\small",
+    lines = [r"\begin{table}[!htbp]", r"\centering",
              rf"\bicaption{{{caption}}}{{{english}}}", rf"\label{{{label}}}",
              rf"\begin{{tabular}}{{{columns}}}", r"\toprule", header + r" \\", r"\midrule"]
     lines += [" & ".join(row) + r" \\" for row in rows]
     lines += [r"\bottomrule", r"\end{tabular}"]
     if note:
-        lines += [r"\par\vspace{0.4em}\begin{minipage}{0.96\textwidth}\footnotesize " + note + r"\end{minipage}"]
+        lines += [r"\sysutabnote{" + note + r"}"]
     lines += [r"\end{table}"]
     return "\n".join(lines) + "\n"
 
@@ -165,11 +194,11 @@ def export_tables(analysis):
     rows = []
     for arm in LABELS:
         c = summary[arm]["all"]
-        rows.append([LABELS[arm], f"{c['success']:,}", f"{100*c['dsr']:.2f}",
-                     f"{100*c['admission']:.2f}", f"{100*c['conditional']:.2f}"])
-    text = table("动态排队确认集的全部十七个评估臂", "All seventeen evaluation arms on the dynamic-queue confirmation set",
-                 "tab:ch5-dynamic-main", "lrrrr", r"方法 & 成功数 & DSR/\% & 接纳率/\% & 条件完成率/\%", rows,
-                 "每臂为三个固定父谱系、八个工作负载和两个动作流，共48回合、252024个生成请求。表内为池化请求计数比率；请求与回合不作为独立训练重复。")
+        rows.append([LABELS[arm], f"${c['success']:,}$", f"${100*c['dsr']:.2f}$",
+                     f"${100*c['admission']:.2f}$", f"${100*c['conditional']:.2f}$"])
+    text = table("动态排队盲测确认集上全部十七种控制方案的服务性能对比", "Service performance of all seventeen control schemes on the dynamic-queue confirmation set",
+                 "tab:ch5-dynamic-main", "lrrrr", r"控制方案 & 按时完成数 $S$ & DSR/\% & 接纳率 $\alpha$/\% & 条件完成率 $\eta$/\%", rows,
+                 r"每种控制方案均在三组固定上游预训练模型、八个盲测工作负载和两个动作流（共 $48$ 回合、全集累计生成 $G=252{,}024$ 个请求）上配对评估。表内数值为全集累计请求计数比率（满足精确计数恒等式 $\mathrm{DSR}=\alpha\eta=(A/G)\times(S/A)$，例如联合微调 $122{,}842/252{,}024 = (132{,}524/252{,}024)\times(122{,}842/132{,}524) = 48.7422\%$，两位小数显示下 $52.58\%\times 92.69\%=48.736\%$ 的千分位尾差仅来自四舍五入显示）；单条请求与回合不作为独立训练重复样本。")
     (TABLES / "ch5_dynamic_main.tex").write_text(text, encoding="utf-8")
     pairs = [
         ("joint_rl_finetuned--joint_distilled", "联合微调相对联合蒸馏"),
@@ -183,18 +212,18 @@ def export_tables(analysis):
     for key, label in pairs:
         comp = analysis["comparisons"][key]
         value = comp["all"]["dsr"]
-        interval = lambda k: f"[{value[k][0]*100:+.2f}, {value[k][1]*100:+.2f}]"
-        rows.append([label, "主" if comp["is_primary_family"] else "补", f"{value['mean']*100:+.2f}", interval("ci95"), interval("bonferroni_all_comparisons95")])
+        interval = lambda k: f"$[{value[k][0]*100:+.2f}, {value[k][1]*100:+.2f}]$"
+        rows.append([label, "主" if comp["is_primary_family"] else "补", f"${value['mean']*100:+.2f}$", interval("ci95"), interval("bonferroni_all_comparisons95")])
     text = table("关键比较的全程 DSR 配对差与置信区间", "Paired full-horizon DSR differences and confidence intervals",
-                 "tab:ch5-dynamic-effects", "lcrrr", r"比较 & 检验族 & 差值 & 单比较95\%区间 & $M=31$区间", rows,
-                 "单位均为百分点。主表示原八项主比较之一，补表示补充比较；最后一列采用全31项DSR比较的Bonferroni区间。Bootstrap为10000次工作负载与动作流配对重采样，条件于三个固定父谱系。")
+                 "tab:ch5-dynamic-effects", "lcrrr", r"比较对象 & 检验族 & 差值 & 单比较 $95\%$ 区间 & $N_{\mathrm{comp}}=31$ 区间", rows,
+                 r"单位均为百分点（pp）。“主”表示预设八项主比较族之一，“补”表示补充机制比较；最后一列采用全部 $N_{\mathrm{comp}}=31$ 项 DSR 比较的 Bonferroni 同时置信区间。置信区间由 $10{,}000$ 次以工作负载为聚类单位的分块 Bootstrap 重采样计算，条件于三组固定上游预训练模型。")
     (TABLES / "ch5_dynamic_effects.tex").write_text(text, encoding="utf-8")
     arms = ["uncoordinated_init", "joint_distilled", "joint_rl_finetuned", "prior_top6_mpc", "distilled_top6_mpc", "joint_rl_mpc", "quality_amortized"]
-    rows = [[LABELS[a], f"{summary[a]['decision_mean']:.3f}", f"{summary[a]['decision_p95']:.3f}", f"{100*summary[a]['over_second']:.1f}",
-             str(summary[a]["deterministic_engine_steps"]), str(summary[a]["forecast_calls"])] for a in arms]
-    text = table("主要控制方式的平均耗时、尾延迟与前瞻计数", "Decision time, tail latency and lookahead counters",
-                 "tab:ch5-dynamic-cost", "lrrrrr", r"方法 & 均值/s & p95/s & $>1$s/\% & 确定性步数 & 预测分支数", rows,
-                 "计时来自本轮评估记录，不是隔离硬件基准。预测分支使用Engine克隆推进，但记在预测分支计数中，不能把其确定性计数为零理解为没有仿真。物理环境未计入墙钟等待。")
+    rows = [[LABELS[a], f"${summary[a]['decision_mean']:.3f}$", f"${summary[a]['decision_p95']:.3f}$", f"${100*summary[a]['over_second']:.1f}$",
+             f"${summary[a]['deterministic_engine_steps']:,}$", f"${summary[a]['forecast_calls']:,}$"] for a in arms]
+    text = table("主要控制方案的平均决策耗时、尾延迟与在线前瞻计数", "Mean decision time, tail latency and online lookahead counters",
+                 "tab:ch5-dynamic-cost", "lrrrrr", r"控制方案 & 均值/$\mathrm{s}$ & $\mathrm{P95}/\mathrm{s}$ & $>1\,\mathrm{s}$/\% & 确定性步数 & 预测分支数", rows,
+                 r"计时记录自单线程 CPU 限制下的多进程评估回合，非独立实时操作系统硬件基准。Top-6 MPC 的预测分支同样调用离散事件队列仿真器克隆推进，但单独记录于“预测分支数”列，故“确定性步数”为零不代表未执行在线仿真推演。物理队列推进未叠加决策计算等待时延。")
     (TABLES / "ch5_dynamic_cost.tex").write_text(text, encoding="utf-8")
 
 
@@ -227,7 +256,7 @@ def render(analysis, curves, parents, alignment):
     ax.text(24, 31, "突发前", ha="center")
     ax.text(75, 31, "高峰", ha="center")
     ax.text(150, 31, "突发后", ha="center")
-    ax.text(195, 67, "排空", ha="right", va="bottom")
+    ax.text(199, 64, "末尾排空 [200, 204] s", ha="right", va="bottom", fontsize=7.6)
     ax.set(xlim=(0, 205), ylim=(-3, 74), xlabel="物理时间 / s", ylabel="期望到达率 / 请求每秒")
     ax.set_xticks([0, 50, 100, 150, 200])
     axes_style(ax, "y")
@@ -246,8 +275,8 @@ def render(analysis, curves, parents, alignment):
     axes_style(ax, "y")
     save(fig, "ch5_dynamic_02_validation", alignment)
 
-    fig, ax = plt.subplots(figsize=(6.8, 5.6))
-    fig.subplots_adjust(left=.29, right=.94, bottom=.12, top=.91)
+    fig, ax = plt.subplots(figsize=(6.8, 5.75))
+    fig.subplots_adjust(left=.29, right=.94, bottom=.11, top=.86)
     arms = list(LABELS)
     for y, arm in enumerate(arms):
         for p, marker in enumerate(("o", "s", "^")):
@@ -257,7 +286,14 @@ def render(analysis, curves, parents, alignment):
     ax.set_yticks(range(len(arms)), [LABELS[a] for a in arms])
     ax.invert_yaxis()
     ax.set(xlabel="全程 DSR / %", xlim=(42.5, 50.5))
-    ax.text(.5, 1.04, "菱形：总体请求比率    灰点：三个固定父谱系", transform=ax.transAxes, ha="center")
+    arm_handles = [
+        Line2D([0], [0], marker="D", color="w", markerfacecolor=PURPLE, markersize=5.8, label="微调 Top-6 MPC"),
+        Line2D([0], [0], marker="D", color="w", markerfacecolor=BLUE, markersize=5.8, label="联合微调"),
+        Line2D([0], [0], marker="D", color="w", markerfacecolor=ORANGE, markersize=5.8, label="联合蒸馏"),
+        Line2D([0], [0], marker="D", color="w", markerfacecolor=GRAY, markersize=5.8, label="其余控制方案"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor="#B9BEC5", markersize=5.0, label="三组上游模型（圆/方/三角）"),
+    ]
+    ax.legend(handles=arm_handles, loc="lower center", bbox_to_anchor=(0.45, 1.02), ncol=3, fontsize=7.3, frameon=False, columnspacing=0.9, handletextpad=0.3)
     axes_style(ax)
     save(fig, "ch5_dynamic_03_all_arms", alignment)
 
@@ -275,7 +311,7 @@ def render(analysis, curves, parents, alignment):
         "joint_rl_mpc--distilled_top6_mpc": "微调 MPC 相对蒸馏 MPC（补）",
     }
     fig, ax = plt.subplots(figsize=(7.2, 4.45))
-    fig.subplots_adjust(left=.39, right=.96, bottom=.16, top=.90)
+    fig.subplots_adjust(left=.39, right=.96, bottom=.16, top=.88)
     for y, key in enumerate(keys):
         value = analysis["comparisons"][key]["all"]["dsr"]
         lo, hi = np.asarray(value["bonferroni_all_comparisons95"]) * 100
@@ -286,7 +322,11 @@ def render(analysis, curves, parents, alignment):
     ax.set_yticks(range(len(keys)), [short[k] for k in keys])
     ax.invert_yaxis()
     ax.set(xlabel="全程 DSR 配对差 / 百分点", xlim=(-5.2, 2.1))
-    ax.text(.5, 1.04, "点：配对差    线：全部 31 项比较的 Bonferroni 区间", transform=ax.transAxes, ha="center", fontsize=7.5)
+    eff_handles = [
+        Line2D([0], [0], color=BLUE, marker="o", markersize=4.8, lw=1.6, label="显著正增益（$N_{\\mathrm{comp}}=31$ 下界 $>0$）"),
+        Line2D([0], [0], color=GRAY, marker="o", markersize=4.8, lw=1.6, label="其余比较（$N_{\\mathrm{comp}}=31$ Bonferroni 区间）"),
+    ]
+    ax.legend(handles=eff_handles, loc="lower center", bbox_to_anchor=(0.45, 1.02), ncol=2, fontsize=7.3, frameon=False, columnspacing=1.0)
     axes_style(ax)
     save(fig, "ch5_dynamic_04_paired_effects", alignment)
 
@@ -308,7 +348,7 @@ def render(analysis, curves, parents, alignment):
     axes[1].set(xlim=(30, 65), xlabel="按到达阶段分组的 DSR / %")
     axes[1].legend(loc="lower left", bbox_to_anchor=(-.01, 1.03), fontsize=7.3)
     for index, ax in enumerate(axes):
-        ax.text(0, 1.32, chr(97+index), transform=ax.transAxes, weight="bold", fontsize=9)
+        ax.text(0, 1.32, f"({chr(97+index)})", transform=ax.transAxes, fontsize=8.5)
         axes_style(ax)
     save(fig, "ch5_dynamic_05_service_outcomes", alignment)
 
@@ -319,7 +359,7 @@ def render(analysis, curves, parents, alignment):
     for i, arm in enumerate(arms):
         axes[0].plot([s[arm]["decision_mean"], s[arm]["decision_p95"]], [i, i], color="#BBC1C9", lw=1.0)
     axes[0].scatter([s[a]["decision_mean"] for a in arms], y, s=23, color=BLUE, label="均值")
-    axes[0].scatter([s[a]["decision_p95"] for a in arms], y, s=27, marker="s", color=ORANGE, label="p95")
+    axes[0].scatter([s[a]["decision_p95"] for a in arms], y, s=27, marker="s", color=ORANGE, label="P95")
     axes[0].set_yticks(y, [LABELS[a] for a in arms])
     axes[0].invert_yaxis()
     axes[0].set(xlim=(0, 6.4), xlabel="每步决策耗时 / s")
@@ -327,26 +367,31 @@ def render(analysis, curves, parents, alignment):
     axes[1].barh(y, [s[a]["over_second"]*100 for a in arms], color="#8798AF", height=.55)
     axes[1].set(xlim=(0, 40), xlabel="耗时超过 1 s 的决策占比 / %")
     for index, ax in enumerate(axes):
-        ax.text(0, 1.19, chr(97+index), transform=ax.transAxes, weight="bold", fontsize=9)
+        ax.text(0, 1.19, f"({chr(97+index)})", transform=ax.transAxes, fontsize=8.5)
         axes_style(ax)
     save(fig, "ch5_dynamic_06_decision_cost", alignment)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--skill-scripts", type=Path, required=True, help="External nature-figure QA scripts directory")
+    parser.add_argument(
+        "--skill-scripts",
+        type=Path,
+        default=resolve_qa_scripts_dir(REPO_ROOT),
+        help="External nature-figure QA scripts directory",
+    )
     args = parser.parse_args()
     sys.path.insert(0, str(args.skill_scripts.resolve()))
     from audit_panel_alignment import require_matplotlib_panel_alignment
     for folder in (DATA, TABLES, QA):
         folder.mkdir(parents=True, exist_ok=True)
-    setup_thesis_style(font_size=8.2)
-    plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Microsoft YaHei", "Arial", "DejaVu Sans"],
-                        "svg.fonttype": "none", "pdf.fonttype": 42, "savefig.dpi": 600})
+    family = setup_thesis_style(font_size=8.2)
+    plt.rcParams.update({"font.sans-serif": [family], "svg.fonttype": "none", "pdf.fonttype": 42, "savefig.dpi": 600})
     analysis, curves, parents = load_and_export()
     export_tables(analysis)
     render(analysis, curves, parents, require_matplotlib_panel_alignment)
-    print("Exported 6 figures, 3 LaTeX tables and traceable data for 816 confirmation episodes.")
+    render_all_chapter5_additions()
+    print("Exported 12 Chapter 5 figures, 3 LaTeX tables and traceable data for 816 confirmation episodes.")
 
 
 if __name__ == "__main__":

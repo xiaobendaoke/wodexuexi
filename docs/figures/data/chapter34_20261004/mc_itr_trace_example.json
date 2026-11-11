@@ -1,0 +1,487 @@
+{
+  "protocol": {
+    "version": "chapter4_lexicographic_energy_free_v1",
+    "ordering": [
+      "deadline_miss_count",
+      "mean_latency_over_deadline"
+    ],
+    "comparison": "strict lexicographic; no scalarization, rounding or tolerance",
+    "deadline_epsilon_s": 1e-09,
+    "physics": "BATCH_FINAL_LOAD_EQUAL_SHARING",
+    "candidate_set": "all admitted requests; local, MBS, specific hard-feasible neighbors",
+    "request_order": "ascending UE id; production batch scheduler unchanged",
+    "mbs_penalty": 0.0,
+    "initialization": "heuristic-control then one own-cost greedy pass; shared by MC-ITR and Iterative-Base",
+    "iterative_base": "best own-request improvement, ignoring effects on other requests; cycle/budget guarded",
+    "snapshot_distribution": "independent counterfactual evaluations along a shared heuristic-control reference history"
+  },
+  "trajectory": "fixed open-loop phase-shifted circular actions; amplitude 0.4, period 1000 slots",
+  "description": "Two deterministic frozen snapshots from the Chapter 4 formal main setting (100 UEs, scale 1.0, WORKLOAD_SEEDS) illustrating MC-ITR strict lexicographic descent vs Iterative-Base self-interested externalities.",
+  "snapshots": {
+    "lexicographic_tradeoff_s126_t200": {
+      "workload_seed": 126,
+      "episode": 0,
+      "step": 200,
+      "snapshot_hash": "f7a9549ddc05640f88ae5a57b60a5da0f745300df5d92fc8a5350d65695cd93e",
+      "num_requests": 9,
+      "requests": [
+        [
+          0,
+          6
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          0,
+          4
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          7
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "reference_assignment": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "methods": {
+        "heuristic_control": {
+          "objective": [
+            6.0,
+            0.9472764190682543
+          ],
+          "assignment": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "rounds": 0,
+          "termination": "single_eval",
+          "local_optimality_verified": false,
+          "trace": [
+            [
+              6.0,
+              0.9472764190682543
+            ]
+          ]
+        },
+        "greedy_single_pass": {
+          "objective": [
+            6.0,
+            0.9472764190682543
+          ],
+          "assignment": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "rounds": 0,
+          "termination": "single_eval",
+          "local_optimality_verified": false,
+          "trace": [
+            [
+              6.0,
+              0.9472764190682543
+            ]
+          ]
+        },
+        "iterative_base": {
+          "objective": [
+            6.0,
+            0.9472764190682543
+          ],
+          "assignment": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "rounds": 0,
+          "termination": "no_own_cost_improvement",
+          "local_optimality_verified": false,
+          "trace": [
+            [
+              6.0,
+              0.9472764190682543
+            ]
+          ]
+        },
+        "mc_itr": {
+          "objective": [
+            3.0,
+            1.0844237728517632
+          ],
+          "assignment": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            0
+          ],
+          "rounds": 0,
+          "termination": "no_improving_move",
+          "local_optimality_verified": true,
+          "trace": [
+            [
+              6.0,
+              0.9472764190682543
+            ],
+            [
+              5.0,
+              0.9518657799191862
+            ],
+            [
+              3.0,
+              1.0844237728517632
+            ]
+          ]
+        }
+      }
+    },
+    "self_interested_worsening_s168_t100": {
+      "workload_seed": 168,
+      "episode": 0,
+      "step": 100,
+      "snapshot_hash": "aec3ff774c829c3f39bf7a963dd26a9182cb20ad1c9b1ad38a481ba4e379c1db",
+      "num_requests": 21,
+      "requests": [
+        [
+          0,
+          4
+        ],
+        [
+          0,
+          5
+        ],
+        [
+          3,
+          4
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          8
+        ],
+        [
+          0,
+          7
+        ],
+        [
+          3,
+          5
+        ],
+        [
+          0,
+          3
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          0,
+          10
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          3,
+          6
+        ],
+        [
+          3,
+          3
+        ],
+        [
+          0,
+          6
+        ],
+        [
+          0,
+          9
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          3,
+          2
+        ],
+        [
+          3,
+          7
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ]
+      ],
+      "reference_assignment": [
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        0,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        6,
+        0,
+        0
+      ],
+      "methods": {
+        "heuristic_control": {
+          "objective": [
+            17.0,
+            2.499669866506955
+          ],
+          "assignment": [
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            0,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            6,
+            0,
+            0
+          ],
+          "rounds": 0,
+          "termination": "single_eval",
+          "local_optimality_verified": false,
+          "trace": [
+            [
+              17.0,
+              2.499669866506955
+            ]
+          ]
+        },
+        "greedy_single_pass": {
+          "objective": [
+            10.0,
+            1.1343102408075028
+          ],
+          "assignment": [
+            0,
+            0,
+            4,
+            0,
+            0,
+            3,
+            0,
+            0,
+            0,
+            3,
+            3,
+            0,
+            4,
+            0,
+            0,
+            6,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "rounds": 0,
+          "termination": "single_eval",
+          "local_optimality_verified": false,
+          "trace": [
+            [
+              10.0,
+              1.1343102408075028
+            ]
+          ]
+        },
+        "iterative_base": {
+          "objective": [
+            11.0,
+            1.1020762189535354
+          ],
+          "assignment": [
+            0,
+            6,
+            4,
+            0,
+            0,
+            3,
+            0,
+            0,
+            0,
+            3,
+            6,
+            0,
+            4,
+            0,
+            0,
+            6,
+            0,
+            4,
+            0,
+            0,
+            0
+          ],
+          "rounds": 0,
+          "termination": "no_own_cost_improvement",
+          "local_optimality_verified": false,
+          "trace": [
+            [
+              10.0,
+              1.1343102408075028
+            ],
+            [
+              10.0,
+              1.1107867054322913
+            ],
+            [
+              11.0,
+              1.104574098095548
+            ],
+            [
+              11.0,
+              1.1020762189535354
+            ]
+          ]
+        },
+        "mc_itr": {
+          "objective": [
+            9.0,
+            1.106425970740101
+          ],
+          "assignment": [
+            0,
+            6,
+            4,
+            0,
+            0,
+            3,
+            0,
+            0,
+            0,
+            0,
+            3,
+            4,
+            4,
+            0,
+            0,
+            6,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "rounds": 0,
+          "termination": "no_improving_move",
+          "local_optimality_verified": true,
+          "trace": [
+            [
+              10.0,
+              1.1343102408075028
+            ],
+            [
+              9.0,
+              1.1312911729922734
+            ],
+            [
+              9.0,
+              1.107767637617062
+            ],
+            [
+              9.0,
+              1.106425970740101
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "payload_digest": "ab8127e1bd7133f02a61382b7e4b5436323afccb5e968388591d46507221de74"
+}

@@ -1,0 +1,71 @@
+[
+  {
+    "audit_id": "AUD-01",
+    "status": "passed",
+    "claim_pointer": "Ch5 confirmation main results and intervals",
+    "evidence_pointer": "confirmation/*.json; confirmation_analysis.json",
+    "check": "Reaggregate all 816 records and rerun the original paired_bootstrap on all 31 full DSR comparisons",
+    "result": "Count and interval maximum error 0",
+    "impact": "Original reported arithmetic is reproduced",
+    "resolution_test": "None",
+    "reviewer_overlap": [
+      "R3 result verification"
+    ]
+  },
+  {
+    "audit_id": "AUD-02",
+    "status": "aggregation_ambiguity",
+    "claim_pointer": "Ch4 line484 repeats a mean difference in a seven-snapshot discussion",
+    "evidence_pointer": "Ch4 line475; remote exact_small raw snapshots",
+    "check": "Group by all, nonempty and multiple-request snapshots",
+    "result": {
+      "all600": 3.330855072948456e-05,
+      "nonempty89": 0.00022455202738978354,
+      "multiple7": 0.0028550186339558192
+    },
+    "impact": "A whole-cohort mean is being read as a subset mean",
+    "resolution_test": "Specify the denominator or report the conditional mean",
+    "reviewer_overlap": [
+      "R2-m2",
+      "R3-m4"
+    ]
+  },
+  {
+    "audit_id": "AUD-03",
+    "status": "provenance_gap",
+    "claim_pointer": "Ch5 partial frozen dependencies",
+    "evidence_pointer": "freeze_manifest.json; prepare_slot_base and distribution hard_joint call chain",
+    "check": "Read the actual loader and remote model paths",
+    "result": "Original six parents found and matched; three additional pool_hard_joint files exist but are not in original parent list",
+    "impact": "Local missing parents are resolved; completeness of the historical freeze remains limited",
+    "resolution_test": "Link actual dependency identities to verifiable historical evidence; distinguish present-day supplemental registration",
+    "reviewer_overlap": [
+      "R2-M1",
+      "R3-M1"
+    ]
+  },
+  {
+    "audit_id": "AUD-04",
+    "status": "passed",
+    "claim_pointer": "Current manuscript can compile and matches existing PDF",
+    "evidence_pointer": ".tmp/thesis_full_review/build/main.log and main.pdf; latex/main.pdf",
+    "check": "Independent temporary XeLaTeX build and text comparison for every page",
+    "result": "123 pages in both; no differing page text; no unresolved explicit references",
+    "impact": "Preliminary PDF/source discrepancy was excluded",
+    "resolution_test": "None",
+    "reviewer_overlap": []
+  },
+  {
+    "audit_id": "AUD-05",
+    "status": "passed",
+    "claim_pointer": "The 31-comparison MPC interval is positive",
+    "evidence_pointer": "numerical_audit.json; original percentile bootstrap; cluster ratio linearization sensitivity",
+    "check": "Reproduce the original intervals and compare workload-cluster t sensitivity, same pooled-ratio estimand",
+    "result": "Original interval reproduced; alternative 31 interval crosses zero; alternative prespecified 8 interval stays positive",
+    "impact": "Original arithmetic reproduced; confirmed method sensitivity. The audit does not establish which alternative has superior finite-sample coverage.",
+    "resolution_test": "Disclose small-sample method and quantile stability sensitivity; anchor primary inference to the prespecified comparison family",
+    "reviewer_overlap": [
+      "R3-M2"
+    ]
+  }
+]
