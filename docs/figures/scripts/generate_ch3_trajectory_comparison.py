@@ -11,7 +11,11 @@ import hashlib
 import json
 from pathlib import Path
 import platform
+import subprocess
 import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
+from paths import REPO_ROOT
 
 
 def main() -> None:
@@ -19,6 +23,12 @@ def main() -> None:
     p.add_argument("--data", type=Path, required=True)
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--qa-tools", type=Path, required=True)
+    p.add_argument(
+        "--validation-dir",
+        type=Path,
+        default=REPO_ROOT / "output" / "thesis_figure_upgrade_20261111" / "validation",
+        help="Directory for QA JSON/SVG and auxiliary CSV exports",
+    )
     p.add_argument(
         "--preview",
         action="store_true",
@@ -51,8 +61,9 @@ def main() -> None:
         raise ValueError("Source supplement checksum/verification failed")
     data = np.load(source_path)
     args.output.mkdir(parents=True, exist_ok=True)
+    args.validation_dir.mkdir(parents=True, exist_ok=True)
 
-    chosen_font = setup_thesis_style(font_size=9.0)
+    chosen_font = setup_thesis_style(font_size=8.8)
     plt.rcParams.update(
         {
             "font.family": "serif",
@@ -63,8 +74,13 @@ def main() -> None:
             "ps.fonttype": 42,
             "axes.spines.top": True,
             "axes.spines.right": True,
-            "axes.linewidth": 0.6,
-            "font.size": 9.0,
+            "axes.linewidth": 0.95,
+            "xtick.direction": "in",
+            "ytick.direction": "in",
+            "legend.frameon": True,
+            "legend.fancybox": False,
+            "legend.edgecolor": "#4A525D",
+            "font.size": 8.8,
         }
     )
 
@@ -83,12 +99,12 @@ def main() -> None:
     )
     assert int(hist.sum()) == 100000
 
-    fig, axes = plt.subplots(2, 2, figsize=(6.6, 6.25), dpi=600)
+    fig, axes = plt.subplots(2, 2, figsize=(6.6, 6.65), dpi=600)
     box_w = 165.6 / 475.2
-    box_h = 165.6 / 450.0
+    box_h = 165.6 / 478.8
     left_xs = (0.085, 0.575)
-    top_y = 1.0 - (23.4 + 165.6) / 450.0
-    bot_y = 1.0 - (230.4 + 165.6) / 450.0
+    top_y = 1.0 - (22.0 + 165.6) / 478.8
+    bot_y = 1.0 - (248.0 + 165.6) / 478.8
 
     for j, lx in enumerate(left_xs):
         axes[0, j].set_position([lx, top_y, box_w, box_h])
@@ -112,8 +128,19 @@ def main() -> None:
             xlabel="水平位置 $x$ / m" if show_xlabel else "",
             ylabel="水平位置 $y$ / m",
         )
-        ax.set_title(title, fontsize=9, loc="left", pad=6)
-        ax.tick_params(labelsize=9, length=2.5, pad=3)
+        ax.set_title(title, fontsize=8.8, loc="left", pad=6)
+        ax.tick_params(
+            axis="both",
+            direction="in",
+            labelsize=8.6,
+            length=3.0,
+            width=0.8,
+            top=True,
+            bottom=True,
+            left=True,
+            right=True,
+            pad=3.5,
+        )
         ax.grid(False)
 
     for ax, method, title in zip(top_axes, methods, top_titles):
@@ -207,40 +234,64 @@ def main() -> None:
         handles=top_handles,
         ncol=7,
         loc="center",
-        bbox_to_anchor=(0.504, 0.535),
-        fontsize=9,
-        frameon=False,
-        columnspacing=1.25,
-        handlelength=1.3,
-        handletextpad=0.45,
+        bbox_to_anchor=(0.504, 0.547),
+        fontsize=8.4,
+        frameon=True,
+        fancybox=False,
+        edgecolor="#4A525D",
+        columnspacing=0.95,
+        handlelength=1.2,
+        handletextpad=0.38,
     )
     fig.legend(
         handles=bot_handles,
         ncol=4,
         loc="center",
-        bbox_to_anchor=(0.504, 0.042),
-        fontsize=9,
-        frameon=False,
-        columnspacing=1.5,
-        handlelength=1.5,
-        handletextpad=0.5,
+        bbox_to_anchor=(0.504, 0.036),
+        fontsize=8.4,
+        frameon=True,
+        fancybox=False,
+        edgecolor="#4A525D",
+        columnspacing=1.25,
+        handlelength=1.35,
+        handletextpad=0.45,
     )
 
     fig.canvas.draw()
+    stem = "图3-10_固定配对回合轨迹与覆盖对比"
     require_matplotlib_panel_alignment(
         fig,
-        json_out=args.output / "ch3_trajectory.alignment.json",
-        overlay_svg=args.output / "ch3_trajectory.alignment.svg",
+        json_out=args.validation_dir / f"{stem}.alignment.json",
+        overlay_svg=args.validation_dir / f"{stem}.alignment.svg",
         strict=True,
     )
-    for stem in ("ch3_trajectory_comparison", "图3-10_固定配对回合轨迹与覆盖对比"):
-        fig.savefig(args.output / f"{stem}.pdf", facecolor="white")
-        fig.savefig(args.output / f"{stem}.svg", facecolor="white")
-        fig.savefig(args.output / f"{stem}.png", dpi=600, facecolor="white")
-        fig.savefig(args.output / f"{stem}.tiff", dpi=600, facecolor="white")
+    pdf_path = args.output / f"{stem}.pdf"
+    fig.savefig(pdf_path, facecolor="white")
+    fig.savefig(args.output / f"{stem}.svg", facecolor="white")
+    fig.savefig(args.output / f"{stem}.png", dpi=600, facecolor="white")
     plt.close(fig)
 
-    with (args.output / "episode_metrics.csv").open("w", newline="", encoding="utf-8") as f:
+    res_txt = subprocess.run(
+        [sys.executable, str(args.qa_tools / "audit_pdf_text.py"), str(pdf_path), "--min-pt", "5", "--json"],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    (args.validation_dir / f"{stem}.pdf_text.json").write_text(res_txt.stdout, encoding="utf-8")
+    subprocess.run(
+        [
+            sys.executable,
+            str(args.qa_tools / "audit_figure_collisions.py"),
+            str(pdf_path),
+            "--json-out",
+            str(args.validation_dir / f"{stem}.collision.json"),
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+
+    with (args.validation_dir / "episode_metrics.csv").open("w", newline="", encoding="utf-8") as f:
         fields = [
             "method",
             "mean_uav_path_m",
@@ -263,14 +314,14 @@ def main() -> None:
                     for key in fields
                 }
             )
-    with (args.output / "trajectory_positions.csv").open("w", newline="", encoding="utf-8") as f:
+    with (args.validation_dir / "trajectory_positions.csv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(("method", "state_index", "uav_id", "x_m", "y_m"))
         for method in methods:
             for t, frame in enumerate(data[method + "_uav_positions"]):
                 for u, xy in enumerate(frame):
                     writer.writerow((method, t, u + 1, *xy))
-    with (args.output / "snapshot_requests.csv").open("w", newline="", encoding="utf-8") as f:
+    with (args.validation_dir / "snapshot_requests.csv").open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(("method", "slot", "ue_id", "x_m", "y_m", "is_service", "admitted"))
         for method in methods:
@@ -285,7 +336,7 @@ def main() -> None:
                         int(data[method + "_admitted"][slot, u]),
                     )
                 )
-    np.savetxt(args.output / "shared_ue_density.csv", hist.T, delimiter=",", fmt="%d")
+    np.savetxt(args.validation_dir / "shared_ue_density.csv", hist.T, delimiter=",", fmt="%d")
     metadata = dict(
         kind="paired spatial case",
         independent_pairs=1,
@@ -296,11 +347,11 @@ def main() -> None:
         layout="Top: complete trajectories only. Bottom: slot-500 physical coverage and actual requests, no trajectories.",
         density="Removed redundant UE density layer for clarity; complete UE positions remain in the unchanged NPZ source.",
         claim="Describe deployment differences; do not infer population flight-distance reduction from this case",
-        fonts={"text": chosen_font, "math": "Times New Roman", "size_pt": 9},
+        fonts={"text": chosen_font, "math": "Times New Roman", "size_pt": 8.8},
         source_data_sha256=summary["source_data_sha256"],
         plotting_script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
     )
-    (args.output / "figure_metadata.json").write_text(
+    (args.validation_dir / "figure_metadata.json").write_text(
         json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
     )
     print(json.dumps(summary["methods"], ensure_ascii=False, indent=2))

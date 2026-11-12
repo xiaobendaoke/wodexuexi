@@ -105,9 +105,8 @@ def save(fig: plt.Figure, name: str, *, multi_panel: bool = False) -> None:
     for item in fig.findobj(match=Text):
         if item.get_fontsize() < 8:
             item.set_fontsize(8)
-    for ax in fig.axes:
-        ax.grid(False)
     ALIGN_DIR.mkdir(parents=True, exist_ok=True)
+    UPGRADE_QA_DIR.mkdir(parents=True, exist_ok=True)
     alignment = require_matplotlib_panel_alignment(
         fig,
         json_out=ALIGN_DIR / f"{name}.alignment.json",
@@ -125,28 +124,26 @@ def save(fig: plt.Figure, name: str, *, multi_panel: bool = False) -> None:
                     str(OUTPUT_DIRS[0] / f"{name}.pdf"),
                     "--json-out", str(ALIGN_DIR / f"{name}.collision.json")],
                    check=True, capture_output=True, text=True)
-    if name in ("图3-4_Attention-MAPPO网络与训练结构", "ch4_mc_itr_iteration_trace"):
-        UPGRADE_QA_DIR.mkdir(parents=True, exist_ok=True)
-        (UPGRADE_QA_DIR / f"{name}.alignment.json").write_text(
-            (ALIGN_DIR / f"{name}.alignment.json").read_text(encoding="utf-8"), encoding="utf-8"
-        )
-        (UPGRADE_QA_DIR / f"{name}.collision.json").write_text(
-            (ALIGN_DIR / f"{name}.collision.json").read_text(encoding="utf-8"), encoding="utf-8"
-        )
-        res_txt = subprocess.run(
-            [
-                sys.executable,
-                str(SKILL_SCRIPTS / "audit_pdf_text.py"),
-                str(OUTPUT_DIRS[0] / f"{name}.pdf"),
-                "--min-pt",
-                "5",
-                "--json",
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        (UPGRADE_QA_DIR / f"{name}.pdf_text.json").write_text(res_txt.stdout, encoding="utf-8")
+    res_txt = subprocess.run(
+        [
+            sys.executable,
+            str(SKILL_SCRIPTS / "audit_pdf_text.py"),
+            str(OUTPUT_DIRS[0] / f"{name}.pdf"),
+            "--min-pt",
+            "5",
+            "--json",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    (UPGRADE_QA_DIR / f"{name}.alignment.json").write_text(
+        (ALIGN_DIR / f"{name}.alignment.json").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    (UPGRADE_QA_DIR / f"{name}.collision.json").write_text(
+        (ALIGN_DIR / f"{name}.collision.json").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    (UPGRADE_QA_DIR / f"{name}.pdf_text.json").write_text(res_txt.stdout, encoding="utf-8")
     print(f"saved {name}")
 
 
@@ -154,33 +151,109 @@ def save(fig: plt.Figure, name: str, *, multi_panel: bool = False) -> None:
 
 
 def fig_system_overview() -> None:
-    """Natural coverage admission; illustrative positions, not recorded data."""
-    fig, ax = plt.subplots(figsize=(5.8,5.6))
-    rng = np.random.default_rng(11)
-    hotspots = [np.array([210.,500.]),np.array([520.,180.])]
-    uavs = [np.array(p) for p in [(200,480),(500,200),(400,600),(150,170),(580,420)]]
-    assert min(np.linalg.norm(a-b) for i,a in enumerate(uavs) for b in uavs[i+1:]) >= 200
+    """Merged 2-panel schematic: (a) 5-UAV natural coverage & dual hotspots; (b) Rc=100m vs Rs=460m zones."""
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+
+    fig, axes = plt.subplots(1, 2, figsize=(8.4, 4.55))
+    fig.subplots_adjust(left=0.08, right=0.98, bottom=0.13, top=0.745, wspace=0.18)
+
+    # Panel (a): Full 700x700 system with 5 UAVs, MBS, 2 hotspots, covered vs uncovered UEs
+    ax0 = axes[0]
+    rng0 = np.random.default_rng(11)
+    hotspots = [np.array([210.0, 500.0]), np.array([520.0, 180.0])]
+    uavs = [np.array(p, dtype=float) for p in [(200, 480), (500, 200), (400, 600), (150, 170), (580, 420)]]
+    assert min(np.linalg.norm(a - b) for i, a in enumerate(uavs) for b in uavs[i + 1:]) >= 200.0
     for h in hotspots:
-        ax.add_patch(Circle(h,100,facecolor=PALETTE["orange"],alpha=.10,edgecolor="none"))
+        ax0.add_patch(Circle(h, 100.0, facecolor=PALETTE["orange"], alpha=0.11, edgecolor="none"))
     for u in uavs:
-        ax.add_patch(Circle(u,100,facecolor=PALETTE["full"],alpha=.13,edgecolor=PALETTE["full"],lw=.8))
-        ax.plot(*u,marker="^",color=PALETTE["red"],markersize=10,zorder=5)
-    clipped_circle(ax,uavs[0],460,bounds=(0,700,0,700),color=PALETTE["full"],ls="--",lw=1)
-    def cloud(center,r,n):
-        ang=rng.uniform(0,2*np.pi,n);rad=r*np.sqrt(rng.uniform(0,1,n))
-        return center+np.column_stack((rad*np.cos(ang),rad*np.sin(ang)))
-    pts=np.vstack([cloud(hotspots[0],95,24),cloud(hotspots[1],95,22),cloud(np.array([350.,350.]),320,8)])
-    pts=pts[(pts[:,0]>0)&(pts[:,0]<700)&(pts[:,1]>0)&(pts[:,1]<700)]
-    covered=np.array([any(np.linalg.norm(p-u)<=100 for u in uavs) for p in pts])
-    ax.scatter(*pts[covered].T,s=14,color=PALETTE["green"],zorder=4,label="已覆盖 UE：接纳")
-    ax.scatter(*pts[~covered].T,s=16,color=PALETTE["red"],marker="x",zorder=4,label="未覆盖 UE：不接纳")
-    ax.plot(350,350,marker="*",color=PALETTE["purple"],markersize=15,zorder=5,label="MBS")
-    ax.plot([],[],marker="^",color=PALETTE["red"],ls="",label="UAV")
-    ax.set(xlim=(0,700),ylim=(0,700),xlabel="$x$ / m",ylabel="$y$ / m")
-    ax.set_aspect("equal")
-    ax.legend(loc="upper center",bbox_to_anchor=(.5,-.12),ncol=2,fontsize=8,frameon=False)
-    fig.subplots_adjust(bottom=.18)
-    save(fig,"图3-1_系统与自然覆盖示意图")
+        ax0.add_patch(Circle(u, 100.0, facecolor=PALETTE["full"], alpha=0.14, edgecolor=PALETTE["full"], lw=0.85))
+        ax0.plot(*u, marker="^", color=PALETTE["red"], markersize=8.5, zorder=5)
+    clipped_circle(ax0, uavs[0], 460.0, bounds=(0, 700, 0, 700), color=PALETTE["full"], ls="--", lw=1.0)
+
+    def cloud(center: np.ndarray, r: float, n: int) -> np.ndarray:
+        ang = rng0.uniform(0, 2 * np.pi, n)
+        rad = r * np.sqrt(rng0.uniform(0, 1, n))
+        return center + np.column_stack((rad * np.cos(ang), rad * np.sin(ang)))
+
+    pts = np.vstack([cloud(hotspots[0], 95.0, 24), cloud(hotspots[1], 95.0, 22), cloud(np.array([350.0, 350.0]), 320.0, 8)])
+    pts = pts[(pts[:, 0] > 0) & (pts[:, 0] < 700) & (pts[:, 1] > 0) & (pts[:, 1] < 700)]
+    covered = np.array([any(np.linalg.norm(p - u) <= 100.0 for u in uavs) for p in pts])
+    ax0.scatter(*pts[covered].T, s=15, color=PALETTE["green"], zorder=4)
+    ax0.scatter(*pts[~covered].T, s=18, color=PALETTE["red"], marker="x", linewidths=1.15, zorder=4)
+    ax0.plot(350, 350, marker="*", color=PALETTE["purple"], markersize=13, zorder=5)
+    ax0.set(xlim=(0, 700), ylim=(0, 700), xlabel="$x$ / m", ylabel="$y$ / m")
+    ax0.set_xticks([0, 200, 400, 600])
+    ax0.set_yticks([0, 200, 400, 600])
+    ax0.set_aspect("equal")
+    ax0.set_title("(a) 双热点集群部署与自然覆盖接纳", fontsize=8.5, pad=6)
+    soften_axes(ax0, axis="none")
+
+    # Panel (b): Single-UAV Rc=100m vs Rs=460m nested geometry & 3 UE visibility zones
+    ax1 = axes[1]
+    uav_pos = np.array([350.0, 435.0])
+    rng1 = np.random.default_rng(7)
+    clipped_circle(ax1, uav_pos, 460.0, bounds=(0, 700, 0, 700), color=PALETTE["full"], ls="--", lw=1.15)
+    ax1.add_patch(Circle(uav_pos, 100.0, fill=True, facecolor=PALETTE["full"], alpha=0.20,
+                         edgecolor=PALETTE["full"], linewidth=1.15))
+
+    def sample_separated(r_min: float, r_max: float, n: int, min_sep: float) -> np.ndarray:
+        accepted: list[np.ndarray] = []
+        while len(accepted) < n:
+            ang = float(rng1.uniform(0, 2 * np.pi))
+            rad = float(np.sqrt(rng1.uniform(r_min**2, r_max**2)))
+            cand = uav_pos + np.array([rad * np.cos(ang), rad * np.sin(ang)])
+            if not (28.0 <= cand[0] <= 672.0 and 28.0 <= cand[1] <= 672.0):
+                continue
+            if np.linalg.norm(cand - uav_pos) < 22.0:
+                continue
+            if all(np.linalg.norm(cand - q) >= min_sep for q in accepted):
+                accepted.append(cand)
+        return np.asarray(accepted)
+
+    cov_pts = sample_separated(24.0, 86.0, 7, 26.0)
+    sense_pts = sample_separated(135.0, 425.0, 9, 65.0)
+    outside_pts = np.array(
+        [[42.0, 42.0], [90.0, 30.0], [30.0, 80.0], [610.0, 30.0], [658.0, 48.0]],
+        dtype=float,
+    )
+    assert np.all(np.linalg.norm(outside_pts - uav_pos, axis=1) >= 475.0)
+
+    ax1.scatter(cov_pts[:, 0], cov_pts[:, 1], s=20, zorder=3, marker="o", color=PALETTE["green"])
+    ax1.scatter(sense_pts[:, 0], sense_pts[:, 1], s=22, zorder=3, marker="s", color=PALETTE["orange"])
+    ax1.scatter(outside_pts[:, 0], outside_pts[:, 1], s=26, zorder=4, marker="x", linewidths=1.25, color="#4E5965")
+    ax1.plot(*uav_pos, marker="^", color=PALETTE["red"], markersize=10, zorder=5)
+    ax1.set(xlim=(0, 700), ylim=(0, 700), xlabel="$x$ / m")
+    ax1.set_xticks([0, 200, 400, 600])
+    ax1.set_yticks([0, 200, 400, 600])
+    ax1.set_aspect("equal")
+    ax1.set_title("(b) 单机覆盖圈 $R_c$ 与感知圈 $R_s$ 分区", fontsize=8.5, pad=6)
+    soften_axes(ax1, axis="none")
+
+    legend_handles = [
+        Line2D([0], [0], marker="^", color="w", markerfacecolor=PALETTE["red"], markersize=7.5, label="UAV"),
+        Line2D([0], [0], marker="*", color="w", markerfacecolor=PALETTE["purple"], markersize=9.5, label="地面 MBS"),
+        Patch(facecolor=PALETTE["orange"], alpha=0.18, edgecolor="none", label="高密度业务热点"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=PALETTE["green"], markersize=6.0, label="已覆盖 UE（接纳）"),
+        Line2D([0], [0], marker="s", color="w", markerfacecolor=PALETTE["orange"], markersize=6.0, label="感知内未覆盖 UE"),
+        Line2D([0], [0], marker="x", color=PALETTE["red"], ls="", markersize=6.5, markeredgewidth=1.2, label="未覆盖拒收 UE"),
+        Line2D([0], [0], marker="x", color="#4E5965", ls="", markersize=6.5, markeredgewidth=1.2, label="感知范围外 UE"),
+        Patch(facecolor=PALETTE["full"], alpha=0.22, edgecolor=PALETTE["full"], lw=0.9, label="覆盖半径 $R_c=100\\,\\mathrm{m}$"),
+        Line2D([0], [0], color=PALETTE["full"], ls="--", lw=1.1, label="感知半径 $R_s=460\\,\\mathrm{m}$"),
+    ]
+    fig.legend(
+        handles=legend_handles,
+        loc="upper center",
+        bbox_to_anchor=(0.53, 0.995),
+        ncol=3,
+        fontsize=8.0,
+        frameon=True,
+        fancybox=False,
+        edgecolor="#4A525D",
+        columnspacing=1.0,
+        handletextpad=0.35,
+    )
+    save(fig, "图3-1_系统与自然覆盖示意图", multi_panel=True)
 
 
 def fig_coverage_geometry() -> None:
@@ -224,8 +297,9 @@ def fig_coverage_geometry() -> None:
     ax.set_aspect("equal")
     ax.set_xlabel("$x$ / m")
     ax.set_ylabel("$y$ / m")
-    ax.legend(loc="upper center", bbox_to_anchor=(.5, -.13), ncol=2, fontsize=8, frameon=False)
-    fig.subplots_adjust(bottom=.20)
+    soften_axes(ax, axis="none")
+    ax.legend(loc="upper center", bbox_to_anchor=(.5, -.14), ncol=2, fontsize=8, frameon=True, fancybox=False, edgecolor="#4A525D")
+    fig.subplots_adjust(bottom=.21)
     save(fig, "图3-2_覆盖与感知几何示意图")
 
 def fig_slot_timeline() -> None:
@@ -236,22 +310,22 @@ def fig_slot_timeline() -> None:
     w,h=.26,.34
     for i,((title,body),(x,y)) in enumerate(zip(entries,positions)):
         color=PALETTE["full"] if i in (1,3) else PALETTE["lower"]
-        ax.add_patch(FancyBboxPatch((x,y),w,h,boxstyle="round,pad=.007",facecolor=color,alpha=.12,edgecolor=color,transform=ax.transAxes))
+        ax.add_patch(Rectangle((x-.007,y-.007),w+.014,h+.014,facecolor=color+"18",edgecolor=color,lw=1.0,transform=ax.transAxes))
         ax.text(x+w/2,y+h*.78,title,ha="center",va="center",fontsize=8,transform=ax.transAxes,fontweight="bold")
         ax.text(x+w/2,y+h*.35,body,ha="center",va="center",fontsize=8,transform=ax.transAxes)
         if i:
             px,py=positions[i-1]
             if py==y:
-                start=(px+w+.005,py+h/2) if x>px else (px-.005,py+h/2)
-                end=(x-.005,y+h/2) if x>px else (x+w+.005,y+h/2)
-            else:start=(px+w/2,py-.015);end=(x+w/2,y+h+.015)
-            ax.add_patch(FancyArrowPatch(start,end,arrowstyle="-|>",mutation_scale=9,transform=ax.transAxes))
+                start=(px+w+.012,py+h/2) if x>px else (px-.012,py+h/2)
+                end=(x-.012,y+h/2) if x>px else (x+w+.012,y+h/2)
+            else:start=(px+w/2,py-.018);end=(x+w/2,y+h+.018)
+            ax.add_patch(FancyArrowPatch(start,end,arrowstyle="-|>",mutation_scale=9.5,lw=1.05,color="#2B3A4A",transform=ax.transAxes))
     save(fig,"图3-3_单时隙决策时序图")
 
 def fig_network_structure() -> None:
     """3.3.3 节（编译图 3-5）：上层 295 维 Attention-MAPPO 与下层 1405 维受约束卸载的协同闭环结构图。"""
     fig, ax = plt.subplots(figsize=(10.6, 6.5))
-    fig.subplots_adjust(left=0.012, right=0.988, bottom=0.08, top=0.95)
+    fig.subplots_adjust(left=0.012, right=0.988, bottom=0.09, top=0.95)
     ax.set_xlim(0.0, 1.0)
     ax.set_ylim(0.0, 1.0)
     ax.axis("off")
@@ -265,13 +339,13 @@ def fig_network_structure() -> None:
     gray = SEMANTIC_PALETTE["neutral_slate"]
     dark = SEMANTIC_PALETTE["text_dark"]
 
-    def box(x, y, w, h, text, color, fs=8.8, lw=0.95, ls_line=1.50):
+    def box(x, y, w, h, text, color, fs=8.8, lw=1.0, ls_line=1.50):
+        pad = 0.005
         ax.add_patch(
-            FancyBboxPatch(
-                (x, y),
-                w,
-                h,
-                boxstyle="round,pad=0.007",
+            Rectangle(
+                (x - pad, y - pad),
+                w + 2 * pad,
+                h + 2 * pad,
                 facecolor=color + "16",
                 edgecolor=color,
                 lw=lw,
@@ -298,8 +372,8 @@ def fig_network_structure() -> None:
     # ---- Outer group containers ----
     # 1. Upper-layer trajectory module
     ax.add_patch(
-        FancyBboxPatch(
-            (0.022, 0.53), 0.753, 0.43, boxstyle="round,pad=0.008", facecolor="#F8FAFD", edgecolor=blue, lw=1.0
+        Rectangle(
+            (0.016, 0.524), 0.765, 0.442, facecolor="#F8FAFD", edgecolor=blue, lw=1.05, ls="--"
         )
     )
     ax.text(
@@ -310,8 +384,8 @@ def fig_network_structure() -> None:
 
     # 2. Lower-layer constrained offloading module
     ax.add_patch(
-        FancyBboxPatch(
-            (0.022, 0.06), 0.753, 0.43, boxstyle="round,pad=0.008", facecolor="#F7FBFA", edgecolor=teal, lw=1.0
+        Rectangle(
+            (0.016, 0.054), 0.765, 0.442, facecolor="#F7FBFA", edgecolor=teal, lw=1.05, ls="--"
         )
     )
     ax.text(
@@ -322,8 +396,8 @@ def fig_network_structure() -> None:
 
     # 3. Right-hand Protocol I physical environment closed loop
     ax.add_patch(
-        FancyBboxPatch(
-            (0.798, 0.06), 0.192, 0.90, boxstyle="round,pad=0.008", facecolor="#F8FBF8", edgecolor=green, lw=1.0
+        Rectangle(
+            (0.793, 0.054), 0.201, 0.912, facecolor="#F8FBF8", edgecolor=green, lw=1.05, ls="--"
         )
     )
     ax.text(
@@ -411,17 +485,19 @@ def fig_network_structure() -> None:
     ax.legend(
         handles=legend_handles,
         loc="lower center",
-        bbox_to_anchor=(0.50, -0.015),
+        bbox_to_anchor=(0.50, -0.025),
         ncol=2,
         fontsize=8.8,
-        frameon=False,
+        frameon=True,
+        fancybox=False,
+        edgecolor="#4A525D",
     )
 
     save(fig, "图3-4_Attention-MAPPO网络与训练结构")
 
 def fig_observation_compare() -> None:
     """图3-5: original vs extended UE observation slot filling (schematic)."""
-    fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.2))
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 3.35))
     titles = ["(a) 原观测：仅已覆盖 UE", "(b) 扩展观测：补入未覆盖 UE"]
     rng = np.random.default_rng(17)
     n_cov, n_unc = 6, 8
@@ -456,7 +532,8 @@ def fig_observation_compare() -> None:
         ax.set_aspect("equal")
         ax.set_xticks([])
         ax.set_yticks([])
-        ax.set_title(titles[k], fontsize=8.4)
+        soften_axes(ax, axis="none")
+        ax.set_title(titles[k], fontsize=8.4, pad=6)
         n_slots = 30
         filled = n_cov if k == 0 else n_cov + n_unc
         for i in range(n_slots):
@@ -465,11 +542,11 @@ def fig_observation_compare() -> None:
                 PALETTE["red"] if (k == 1 and i < filled) else "#E4E6EB")
             ax.add_patch(Rectangle((x, -545), 940 / n_slots - 3, 52,
                                    facecolor=color, edgecolor="white", lw=0.3))
-        ax.text(0, -625, f"UE 槽位（共 30 个）：填充 {filled} 个，其余补零",
+        ax.text(0, -630, f"UE 槽位（共 30 个）：填充 {filled} 个，其余补零",
                 ha="center", fontsize=8, color=PALETTE["text"])
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(.5, 1.08), ncol=2, fontsize=8, frameon=False)
-    fig.subplots_adjust(bottom=0.06, wspace=0.08)
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(.5, 1.03), ncol=2, fontsize=8, frameon=True, fancybox=False, edgecolor="#4A525D")
+    fig.subplots_adjust(bottom=0.08, top=0.83, wspace=0.08)
     save(fig, "图3-5_原观测与扩展观测对照示意", multi_panel=True)
 
 
@@ -484,7 +561,7 @@ def fig_bottleneck_composition() -> None:
     f_unc = float(review["uncovered_fraction"])
     f_fail_unc = float(review["fraction_of_failures_uncovered"])
 
-    fig, ax = plt.subplots(figsize=(6.0, 2.5))
+    fig, ax = plt.subplots(figsize=(6.0, 2.55))
     segments = [
         ("按时完成", f_ok, PALETTE["green"]),
         ("已接纳但超时", f_miss, PALETTE["orange"]),
@@ -500,9 +577,9 @@ def fig_bottleneck_composition() -> None:
     ax.set_yticks([])
     ax.set_xlabel("占全部实际生成服务请求的比例")
     ax.set_title(f"未覆盖请求占全部失败请求的 {100.0 * f_fail_unc:.2f}%", fontsize=9.0, pad=8)
-    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.26), ncol=3, fontsize=8.4, frameon=False)
-    soften_axes(ax, axis="x")
-    fig.subplots_adjust(bottom=0.28, top=0.84)
+    ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.28), ncol=3, fontsize=8.4, frameon=True, fancybox=False, edgecolor="#4A525D")
+    soften_axes(ax, axis="none")
+    fig.subplots_adjust(bottom=0.30, top=0.84)
     save(fig, "图3-6_主场景服务请求结果构成")
 
 
@@ -517,7 +594,7 @@ def fig_confirmation_training() -> None:
                     (float(row["training_DSR"]), float(row["mean_training_reward"]))
                 )
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.0))
+    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.15))
     specs = [
         (CANDIDATE, "候选（扩展观测）", PALETTE["full"]),
         (STRONG_BASELINE, "下层无注意力强基线", PALETTE["baseline"]),
@@ -539,10 +616,10 @@ def fig_confirmation_training() -> None:
         ax.set_xlabel("训练回合")
         ax.set_ylabel(ylabel)
         ax.set_title(title, fontsize=8.6, pad=6)
-        soften_axes(ax)
+        soften_axes(ax, axis="both")
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 1.08), ncol=2, fontsize=8.4, frameon=False)
-    fig.subplots_adjust(bottom=0.18, wspace=0.28)
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(0.5, 1.03), ncol=2, fontsize=8.4, frameon=True, fancybox=False, edgecolor="#4A525D")
+    fig.subplots_adjust(bottom=0.18, top=0.81, wspace=0.28)
     save(fig, "图3-7_确认实验训练曲线", multi_panel=True)
 
 
@@ -569,13 +646,13 @@ def fig_confirmation_seed_diff(cov_root: Path) -> None:
     sd = float(np.std(diffs, ddof=1))
     ci = T95_DF9 * sd / math.sqrt(len(diffs))
 
-    fig, ax = plt.subplots(figsize=(5.4, 2.9))
-    ax.bar(range(len(seeds)), diffs, color=PALETTE["full"], width=0.62)
-    ax.axhline(0, color=PALETTE["axis"], lw=0.8)
-    ax.axhline(mean, color=PALETTE["red"], lw=1.0, linestyle="--")
+    fig, ax = plt.subplots(figsize=(5.4, 2.95))
+    ax.bar(range(len(seeds)), diffs, color=PALETTE["full"], width=0.62, zorder=2)
+    ax.axhline(0, color=PALETTE["axis"], lw=0.8, zorder=3)
+    ax.axhline(mean, color=PALETTE["red"], lw=1.0, linestyle="--", zorder=3)
 
     n_pos = sum(1 for d in diffs if d > 0)
-    ax.text(0.02, 1.10,
+    ax.text(0.02, 1.05,
             f"均值 +{mean:.2f} 个百分点，配对 $t$ 95% CI [{mean-ci:.2f}, {mean+ci:.2f}]；{n_pos}/{len(diffs)} 种子为正",
             transform=ax.transAxes, fontsize=8, color=PALETTE["red"], va="bottom")
     ax.set_xticks(range(len(seeds)))
@@ -583,7 +660,8 @@ def fig_confirmation_seed_diff(cov_root: Path) -> None:
     ax.set_xlabel("训练种子")
     ax.set_ylabel("DSR 差值 / 个百分点")
     ax.margins(y=0.16)
-    soften_axes(ax)
+    soften_axes(ax, axis="both")
+    fig.subplots_adjust(bottom=0.18, top=0.84)
     save(fig, "图3-8_确认实验逐种子配对差值")
 
 
@@ -591,7 +669,7 @@ def fig_admission_quality_paired(cov_root: Path) -> None:
     """图3-9: paired admission fraction and satisfaction-among-admitted."""
     data = _load_confirmation(cov_root)
     seeds = sorted(data[CANDIDATE])
-    fig, axes = plt.subplots(1, 2, figsize=(6.6, 3.0))
+    fig, axes = plt.subplots(1, 2, figsize=(6.6, 3.15))
     panels = [("adm", "(a) 接纳率 $A/G$"), ("sat", "(b) 接纳后按时完成率 $S/A$")]
     for ax, (key, title) in zip(axes, panels):
         base = [np.mean(data[STRONG_BASELINE][s][key]) for s in seeds]
@@ -603,16 +681,17 @@ def fig_admission_quality_paired(cov_root: Path) -> None:
         ax.set_xlim(-0.25, 1.25)
         ax.set_xticks([0, 1])
         ax.set_xticklabels(["强基线", "候选"], fontsize=8)
-        ax.set_title(f"{title}\n均值：{mb:.3f} → {mc:.3f}", fontsize=8,pad=8)
+        ax.set_title(f"{title}\n均值：{mb:.3f} → {mc:.3f}", fontsize=8,pad=7)
         vals = base + cand
         span = max(vals) - min(vals)
         ax.set_ylim(min(vals) - 0.25 * span - 0.02, max(vals) + 0.30 * span + 0.03)
-        soften_axes(ax)
+        soften_axes(ax, axis="both")
     pair_handles = [
         Line2D([0], [0], color=PALETTE["baseline"], lw=0.9, alpha=0.65, label="各训练种子配对连线（5 工作负载均值）"),
         Line2D([0], [0], color=PALETTE["full"], lw=1.8, marker="o", markersize=4.8, label="10 个训练种子均值"),
     ]
-    fig.legend(handles=pair_handles, loc="upper center", bbox_to_anchor=(0.5, 1.09), ncol=2, fontsize=8, frameon=False)
+    fig.legend(handles=pair_handles, loc="upper center", bbox_to_anchor=(0.5, 1.03), ncol=2, fontsize=8, frameon=True, fancybox=False, edgecolor="#4A525D")
+    fig.subplots_adjust(bottom=0.14, top=0.78, wspace=0.28)
     save(fig, "图3-9_接纳率与接纳后质量配对比较", multi_panel=True)
 
 
@@ -640,7 +719,7 @@ def fig_sharing_externality() -> None:
         for i in range(n):
             ax.add_patch(Rectangle((i * seg_w, 1 - row), seg_w, 0.72,
                                    facecolor=PALETTE["full"] if row == 0 else PALETTE["orange"],
-                                   alpha=0.25 + 0.12 * (i % 2), edgecolor=PALETTE["axis"], lw=0.6))
+                                   alpha=0.25 + 0.12 * (i % 2), edgecolor=PALETTE["axis"], lw=0.75))
             ax.text(i * seg_w + seg_w / 2, 1 - row + 0.36, f"{seg_w:.0f} GHz", ha="center",
                     va="center", fontsize=8)
         ax.text(-3.5, 1 - row + 0.36, f"$n={n}$", ha="right", va="center", fontsize=8)
@@ -649,44 +728,46 @@ def fig_sharing_externality() -> None:
     ax.set_yticks([])
     ax.set_xlabel("UAV 算力 $F_u=60$ GHz 在批内均分", fontsize=8.5)
     ax.set_title("(a) 批量算力均分", fontsize=8.5)
+    soften_axes(ax, axis="none")
 
     for ax, (idx, title, unit, fmt) in zip(axes[1:], [
             (0, "(b) 每任务计算时延", "s", "%.3f"),
             (1, "(c) 归一化时延比 $T^{cmp}/D_m$", "比值", "%.3f")]):
         vals = [res[2][idx], res[4][idx]]
         bars = ax.bar(["$n=2$", "$n=4$"], vals, width=0.55,
-                      color=[PALETTE["full"], PALETTE["orange"]])
+                      color=[PALETTE["full"], PALETTE["orange"]], zorder=2)
         if idx == 1:
-            ax.axhline(1.0, color=PALETTE["red"], lw=0.9, ls="--")
+            ax.axhline(1.0, color=PALETTE["red"], lw=0.9, ls="--", zorder=3)
         for b, v in zip(bars, vals):
             ax.text(b.get_x() + b.get_width() / 2, v + max(vals)*.05, fmt % v, ha="center", va="bottom", fontsize=8)
         ax.set_title(title, fontsize=8.5)
         ax.set_ylabel(unit)
-        ax.margins(y=0.20)
-        soften_axes(ax)
-    fig.subplots_adjust(bottom=0.18, wspace=0.30)
+        ax.margins(y=0.22)
+        soften_axes(ax, axis="none")
+    fig.subplots_adjust(bottom=0.18, top=0.86, wspace=0.30)
     save(fig, "图4-1_批量算力共享与迁移外部影响示意", multi_panel=True)
 
 
 def fig_mc_itr_flowchart() -> None:
     """Finite search with distinct verified-local and budget exits."""
-    fig,ax=plt.subplots(figsize=(6.4,5.5));ax.axis("off")
+    fig,ax=plt.subplots(figsize=(6.5,5.5));ax.axis("off")
     def box(x,y,w,h,text,color):
-        ax.add_patch(FancyBboxPatch((x,y),w,h,boxstyle="round,pad=.005",facecolor=color,alpha=.13,edgecolor=color,transform=ax.transAxes))
+        ax.add_patch(Rectangle((x-.005,y-.005),w+.010,h+.010,facecolor=color+"18",edgecolor=color,lw=1.0,transform=ax.transAxes))
         ax.text(x+w/2,y+h/2,text,ha="center",va="center",fontsize=8,transform=ax.transAxes)
     def arrow(a,b,color="axis"):
-        ax.add_patch(FancyArrowPatch(a,b,arrowstyle="-|>",mutation_scale=9,lw=.8,color=PALETTE[color],transform=ax.transAxes))
-    x,w,cx=.35,.62,.66
+        ax.add_patch(FancyArrowPatch(a,b,arrowstyle="-|>",mutation_scale=9.5,lw=1.0,color=PALETTE[color],transform=ax.transAxes))
+    x,w,cx=.33,.59,.625
     box(x,.84,w,.13,"冻结完整快照与硬候选域\n共享 Greedy 初值，评价系统目标",PALETTE["baseline"])
     box(x,.63,w,.13,"检查轮数预算 $R_{\\max} = 1000$\n有预算：完整枚举单请求迁移",PALETTE["orange"])
     box(x,.42,w,.13,"生产执行器整体重评估\n严格比较：超时数→平均归一化时延",PALETTE["full"])
     box(x,.21,w,.13,"选择最佳严格改善迁移\n重复评价，确认确定且严格下降",PALETTE["green"])
-    box(.01,.63,.25,.13,"预算耗尽返回\n不认证局部最优",PALETTE["orange"])
-    box(.01,.42,.25,.13,"完整邻域无改善\n验证单迁局部最优",PALETTE["red"])
-    arrow((cx,.835),(cx,.765));arrow((cx,.625),(cx,.555));arrow((cx,.415),(cx,.345))
-    arrow((x-.006,.695),(.265,.695),"orange");arrow((x-.006,.485),(.265,.485),"red")
-    arrow((cx,.205),(cx,.11));arrow((cx,.11),(.30,.11));arrow((.30,.11),(.30,.795));arrow((.30,.795),(cx,.795));arrow((cx,.795),(cx,.765))
-    ax.text(.09,.16,"接受后继续\n（目标严格下降）",ha="left",fontsize=8,transform=ax.transAxes)
+    box(.01,.63,.24,.13,"预算耗尽返回\n不认证局部最优",PALETTE["orange"])
+    box(.01,.42,.24,.13,"完整邻域无改善\n验证单迁局部最优",PALETTE["red"])
+    arrow((cx,.832),(cx,.768));arrow((cx,.622),(cx,.558));arrow((cx,.412),(cx,.348))
+    arrow((x-.008,.695),(.258,.695),"orange");arrow((x-.008,.485),(.258,.485),"red")
+    ax.plot([cx,cx,.975,.975,cx],[.202,.105,.105,.798,.798],color=PALETTE["axis"],lw=1.0,transform=ax.transAxes)
+    arrow((cx,.798),(cx,.768))
+    ax.text(.625,.055,"接受后继续（目标严格下降）",ha="center",va="center",fontsize=8,transform=ax.transAxes)
     save(fig,"图4-2_MC-ITR算法流程图")
 
 def _load_ch4() -> tuple[dict, list[dict]]:
@@ -723,7 +804,8 @@ def fig_main_comparison() -> None:
         method_ticks(ax)
         ax.set_title(title, fontsize=8.5)
         ax.margins(y=0.20)
-        soften_axes(ax)
+        soften_axes(ax, axis="both")
+    fig.subplots_adjust(bottom=0.16, top=0.88, wspace=0.28)
     method_key(fig, y=-.035)
     save(fig, "图4-3_主配置质量时延耗时对比", multi_panel=True)
 
@@ -748,7 +830,7 @@ def fig_paired_diff_iterative() -> None:
         lo, hi = np.quantile(draws, [0.025, 0.975])
         return float(lo), float(hi)
 
-    fig, axes = plt.subplots(1, 3, figsize=(8.4, 2.8), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(8.4, 2.85), sharey=True)
     diff_methods = [CH4_METHODS[0], CH4_METHODS[1], CH4_METHODS[3]]  # vs iterative_base
     for ax, (mkey, label, color) in zip(axes, diff_methods):
         seeds = sorted(per[mkey])
@@ -761,12 +843,13 @@ def fig_paired_diff_iterative() -> None:
         ax.scatter(range(len(seeds)), diffs, s=16, color=color, zorder=3)
         ax.axhline(mean, color=color, lw=1.2, linestyle="--")
         ax.fill_between([-0.5, len(seeds) - 0.5], lo, hi, color=color, alpha=0.15)
-        ax.set_title(f"{label}\n均值 {mean:+.3f}\n95% CI [{lo:+.3f}, {hi:+.3f}]",fontsize=8,pad=8)
+        ax.set_title(f"{label}\n均值 {mean:+.3f}\n95% CI [{lo:+.3f}, {hi:+.3f}]",fontsize=8,pad=7)
         ax.set_xlabel("工作负载种子（排序）")
         ax.set_xticks(range(len(seeds)))
         ax.set_xticklabels([f"S{i+1}" for i in range(len(seeds))], fontsize=8)
-        soften_axes(ax)
+        soften_axes(ax, axis="both")
     axes[0].set_ylabel("超时数差值（方法 $-$ Iterative-Base）")
+    fig.subplots_adjust(bottom=0.18, top=0.80, wspace=0.16)
     save(fig, "图4-4_相对Iterative-Base配对差值", multi_panel=True)
 
 
@@ -798,7 +881,7 @@ def fig_sensitivity(kind: str) -> None:
         xlabel = "UAV 算力倍率"
         name = "图4-6_算力敏感性"
 
-    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.0))
+    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.15))
     panels = [("deadline_misses", "(a) 每快照平均超时数"), ("mean_normalized_latency", "(b) 平均归一化时延")]
     x = np.arange(len(variant_map))
     for ax, (metric, title) in zip(axes, panels):
@@ -811,66 +894,72 @@ def fig_sensitivity(kind: str) -> None:
         ax.set_xticks(x)
         ax.set_xticklabels([xl for _, xl in variant_map], fontsize=8)
         ax.set_xlabel(xlabel)
-        ax.set_title(title, fontsize=8.5)
-        soften_axes(ax)
+        ax.set_title(title, fontsize=8.5, pad=6)
+        soften_axes(ax, axis="both")
     legend_ax = axes[0] if kind == "ue" else axes[1]
     handles, labels = legend_ax.get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(.5,1.08), ncol=4, fontsize=8, frameon=False)
+    fig.legend(handles, labels, loc="upper center", bbox_to_anchor=(.5, 1.03), ncol=4, fontsize=8, frameon=True, fancybox=False, edgecolor="#4A525D")
+    fig.subplots_adjust(bottom=0.18, top=0.81, wspace=0.26)
     save(fig, name, multi_panel=True)
 
 
 def fig_exact_small() -> None:
-    """图4-7: Exact-Small snapshot composition and per-component agreement."""
-    _, rows = _load_ch4()
-    es = [r for r in rows if r["variant"] == "exact_small" and r["method"] == "mc_itr"]
-    n_snap = sum(int(r["snapshots"]) for r in es)
-    n_empty = sum(float(r["empty_snapshot_fraction"]) * int(r["snapshots"]) for r in es)
-    n_req = sum(float(r["admitted_service_requests"]) * int(r["snapshots"]) for r in es)
-    n_double = max(0, int(round(n_req - (n_snap - n_empty))))
-    n_single = max(0, int(round((n_snap - n_empty) - n_double)))
-    n_empty_int = int(round(n_empty))
+    """图4-7: Competitive tractable exact-enumeration verification (N=354, K>=2, |A|<=50,000)."""
+    comp_doc = json.loads((SOURCE_DIR / "exact_competitive_verification.json").read_text(encoding="utf-8"))
+    k_dist = {int(k): int(v) for k, v in comp_doc["k_distribution"].items()}
+    n_comp = int(comp_doc["competitive_tractable_snapshots"])
+    pooled = comp_doc["pooled_summary"]
 
-    means: dict[str, list[float]] = {}
-    for mkey in ["heuristic_control", "greedy_single_pass", "iterative_base", "mc_itr", "exact_small"]:
-        sel = [r for r in rows if r["variant"] == "exact_small" and r["method"] == mkey]
-        arr = np.array([[float(r["deadline_misses"]), float(r["mean_normalized_latency"])] for r in sel])
-        means[mkey] = arr.mean(axis=0).tolist()
+    fig = plt.figure(figsize=(8.6, 3.25))
+    gs = fig.add_gridspec(1, 3, left=0.07, right=0.98, bottom=0.22, top=0.77, wspace=0.31)
 
-    fig = plt.figure(figsize=(7.6, 2.8))
-    gs = fig.add_gridspec(1, 3, wspace=0.34)
-    ax = fig.add_subplot(gs[0])
-    cats = ["空快照", "单请求", "多请求"]
-    vals = [n_empty_int, n_single, n_double]
-    colors = ["#C9CDD4", PALETTE["full"], PALETTE["orange"]]
-    left = 0
-    for c, v, col in zip(cats, vals, colors):
-        ax.barh([0], [v], left=left, color=col, height=0.5, label=f"{c}：{v}（{100.0*v/max(n_snap,1):.1f}%）")
-        left += v
-    ax.set_xlim(0, n_snap)
-    ax.set_yticks([])
-    ax.set_xlabel(f"快照数（共 {n_snap}）")
-    ax.set_title("(a) 快照构成", fontsize=8.5)
-    handles, legend_labels = ax.get_legend_handles_labels()
-    fig.legend(handles, legend_labels, fontsize=8, loc="upper center",
-               bbox_to_anchor=(.5,1.12), ncol=3, frameon=False)
-    soften_axes(ax, axis="x")
+    # Panel (a): Request-count histogram across the 354 competitive tractable snapshots
+    ax0 = fig.add_subplot(gs[0])
+    ks = sorted(k_dist)
+    counts = [k_dist[k] for k in ks]
+    ax0.bar(range(len(ks)), counts, color=PALETTE["full"], width=0.66, alpha=0.88, zorder=2)
+    ax0.set_xticks(range(len(ks)))
+    ax0.set_xticklabels([str(k) for k in ks], fontsize=8)
+    ax0.set_xlabel(f"活跃请求数 $K$（共 {n_comp} 快照）")
+    ax0.set_ylabel("快照数")
+    ax0.set_ylim(0, 70)
+    ax0.set_title("(a) 竞争子集请求规模分布", fontsize=8.5, pad=6)
+    soften_axes(ax0, axis="y")
 
-    labels = [("heuristic_control", "Heuristic"), ("greedy_single_pass", "Greedy"),
-              ("iterative_base", "Iterative"), ("mc_itr", "MC-ITR"), ("exact_small", "穷举精确解")]
-    comp_titles = ["(b) 超时数", "(c) 归一化时延"]
-    fmts = ["%.3f", "%.4f"]
-    for gi, (comp, title, fmt) in enumerate(zip(range(2), comp_titles, fmts)):
-        ax = fig.add_subplot(gs[gi + 1])
-        vals = [means[k][comp] for k, _ in labels]
-        cols = ["#9AA0A6", "#D8A448", "#53A6A6", "#3D6FB6", PALETTE["purple"]]
-        ax.bar(range(5), vals, color=cols, width=0.62)
+    # Panel (b): Mean deadline misses F1 across H, G, I, MC, Ex
+    ax1 = fig.add_subplot(gs[1])
+    m_order = ["heuristic_control", "greedy_single_pass", "iterative_base", "mc_itr", "exact_small"]
+    f1_vals = [float(pooled[m]["mean_deadline_misses"]) for m in m_order]
+    cols = ["#9AA0A6", "#D8A448", "#53A6A6", "#3D6FB6", PALETTE["purple"]]
+    ax1.bar(range(5), f1_vals, color=cols, width=0.60, zorder=2)
+    method_ticks(ax1, exact=True)
+    ax1.set_xlabel("分配方法")
+    ax1.set_ylabel("每快照平均超时数 $F_1$")
+    ax1.set_ylim(0, 1.75)
+    ax1.set_title("(b) 竞争子集平均超时数", fontsize=8.5, pad=6)
+    soften_axes(ax1, axis="y")
 
-        method_ticks(ax, exact=True)
-        ax.set_title(title, fontsize=8.5)
-        ax.margins(y=0.22)
-        soften_axes(ax)
-    method_key(fig, y=-.06, exact=True)
-    fig.subplots_adjust(bottom=0.22)
+    # Panel (c): Global optimum hit rates (%) for H, G, I, MC
+    ax2 = fig.add_subplot(gs[2])
+    h_order = ["heuristic_control", "greedy_single_pass", "iterative_base", "mc_itr"]
+    xg = np.arange(len(h_order))
+    bw = 0.34
+    f1_hits = [100.0 * float(pooled[m]["exact_f1_hit_rate"]) for m in h_order]
+    lex_hits = [100.0 * float(pooled[m]["exact_lex_hit_rate"]) for m in h_order]
+    ax2.bar(xg - bw / 2, f1_hits, width=bw * 0.94, color=PALETTE["full"], label="$F_1$ 全局最少超时命中率", zorder=2)
+    ax2.bar(xg + bw / 2, lex_hits, width=bw * 0.94, color=PALETTE["orange"], label="二元字典序全局最优命中率", zorder=2)
+    ax2.set_xticks(xg)
+    ax2.set_xticklabels(["H", "G", "I", "MC"], fontsize=8)
+    ax2.set_xlabel("分配方法")
+    ax2.set_ylabel("全局最优命中率 / %")
+    ax2.set_ylim(0, 105)
+    ax2.set_title("(c) 全局穷举最优命中率", fontsize=8.5, pad=6)
+    soften_axes(ax2, axis="y")
+
+    handles, legend_labels = ax2.get_legend_handles_labels()
+    fig.legend(handles, legend_labels, fontsize=8.0, loc="upper center",
+               bbox_to_anchor=(0.52, 1.00), ncol=2, frameon=True, fancybox=False, edgecolor="#4A525D")
+    method_key(fig, y=0.02, exact=True)
     save(fig, "图4-7_Exact-Small验证与快照构成", multi_panel=True)
 
 
@@ -886,8 +975,8 @@ def fig_bridge() -> None:
     units = analysis["units"]
     methods = [("online_lower", "在线学习下层", PALETTE["baseline"])] + CH4_METHODS
 
-    fig, axes = plt.subplots(1, 3, figsize=(8.9, 2.95))
-    fig.subplots_adjust(wspace=0.30, bottom=0.20)
+    fig, axes = plt.subplots(1, 3, figsize=(8.9, 3.0))
+    fig.subplots_adjust(wspace=0.30, bottom=0.20, top=0.82)
     rng = np.random.default_rng(4)
     for ax, key, title, fmt in [
             (axes[0], "deadline_misses", "(a) 每快照平均超时数", "%.2f"),
@@ -900,25 +989,25 @@ def fig_bridge() -> None:
             ax.scatter(i + jitter, vals, s=5, color=PALETTE["text"], alpha=0.4, zorder=3)
 
         method_ticks(ax, online=True)
-        ax.set_title(title, fontsize=8.5)
+        ax.set_title(title, fontsize=8.5, pad=6)
         ax.margins(y=0.18)
-        soften_axes(ax)
+        soften_axes(ax, axis="both")
 
     ax = axes[2]
     pair = analysis["mc_itr_minus_online_lower_deadline_misses"]
     diffs = np.array(pair["seed_mean_differences"])
     ci = pair["training_seed_t_ci95"] if pair["training_seed_t_ci95"][0] is not None else [float(diffs.mean()), float(diffs.mean())]
-    ax.axhline(0, color=PALETTE["axis"], lw=0.8)
-    ax.bar(range(len(diffs)), diffs, color=PALETTE["full"], width=0.62)
-    ax.axhline(float(pair["mean_difference"]), color=PALETTE["red"], lw=1.0, linestyle="--")
+    ax.axhline(0, color=PALETTE["axis"], lw=0.8, zorder=3)
+    ax.bar(range(len(diffs)), diffs, color=PALETTE["full"], width=0.62, zorder=2)
+    ax.axhline(float(pair["mean_difference"]), color=PALETTE["red"], lw=1.0, linestyle="--", zorder=3)
 
     ax.set_xticks(range(len(diffs)))
     ax.set_xticklabels([f"S{i+1}" for i in range(len(diffs))], fontsize=8)
     ax.set_xlabel("训练种子（排序）")
     ax.set_ylabel("超时数差值")
-    ax.set_title(f"(c) MC-ITR - 在线下层\n均值 {fmt_half_up_signed(pair['mean_difference'])}\n95% CI [{fmt_half_up_signed(ci[0])}, {fmt_half_up_signed(ci[1])}]",fontsize=8,pad=8)
+    ax.set_title(f"(c) MC-ITR - 在线下层\n均值 {fmt_half_up_signed(pair['mean_difference'])}\n95% CI [{fmt_half_up_signed(ci[0])}, {fmt_half_up_signed(ci[1])}]",fontsize=8,pad=7)
     ax.margins(y=0.25)
-    soften_axes(ax)
+    soften_axes(ax, axis="both")
     method_key(fig, y=-.04, online=True)
     save(fig, "图4-8_候选轨迹快照桥接对比", multi_panel=True)
 
@@ -932,8 +1021,8 @@ def fig_ch4_mc_itr_trace() -> None:
     snap_a = payload["snapshots"]["lexicographic_tradeoff_s126_t200"]
     snap_b = payload["snapshots"]["self_interested_worsening_s168_t100"]
 
-    fig = plt.figure(figsize=(8.8, 5.2))
-    gs = fig.add_gridspec(2, 2, left=0.10, right=0.98, bottom=0.12, top=0.86, hspace=0.36, wspace=0.25)
+    fig = plt.figure(figsize=(8.8, 5.35))
+    gs = fig.add_gridspec(2, 2, left=0.10, right=0.98, bottom=0.12, top=0.84, hspace=0.36, wspace=0.25)
     ax_a1 = fig.add_subplot(gs[0, 0])
     ax_b1 = fig.add_subplot(gs[0, 1])
     ax_a2 = fig.add_subplot(gs[1, 0], sharex=ax_a1)
@@ -987,8 +1076,8 @@ def fig_ch4_mc_itr_trace() -> None:
         ax1.set_title(title1, fontsize=8.6, pad=6)
         ax2.set_title(title2, fontsize=8.6, pad=6)
         ax2.set_xlabel("接受迁移迭代步数 $r$（$r=0$ 为共享贪心初值）", fontsize=8.6)
-        soften_axes(ax1)
-        soften_axes(ax2)
+        soften_axes(ax1, axis="none")
+        soften_axes(ax2, axis="none")
 
         if idx == 0:
             ax1.set_ylabel("超时请求数 $F_1(\\mathbf{a}^r)$ / 个", fontsize=8.6)
@@ -1014,7 +1103,9 @@ def fig_ch4_mc_itr_trace() -> None:
         bbox_to_anchor=(0.53, 0.99),
         ncol=3,
         fontsize=8.5,
-        frameon=False,
+        frameon=True,
+        fancybox=False,
+        edgecolor="#4A525D",
     )
 
     save(fig, "ch4_mc_itr_iteration_trace", multi_panel=True)
@@ -1030,9 +1121,9 @@ def main() -> None:
     )
     parser.add_argument(
         "--only",
-        choices=("all", "ch34_upgrade"),
+        choices=("all", "ch34_upgrade", "restructure"),
         default="all",
-        help="Render all Chapter 3-4 figures or only the upgraded/new mechanism & trace figures",
+        help="Render all Chapter 3-4 figures or only targeted subsets",
     )
     args = parser.parse_args()
     family = setup_thesis_style(font_size=8.5)
@@ -1045,6 +1136,9 @@ def main() -> None:
     if args.only == "ch34_upgrade":
         fig_network_structure()
         fig_ch4_mc_itr_trace()
+    elif args.only == "restructure":
+        fig_system_overview()
+        fig_exact_small()
     else:
         fig_system_overview()
         fig_coverage_geometry()

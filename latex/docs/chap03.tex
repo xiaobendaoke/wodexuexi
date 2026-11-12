@@ -10,53 +10,33 @@
 
 在自然覆盖接纳规则下，上层轨迹策略的局部观测范围直接制约多智能体强化学习可习得的空间控制规律\cite{wang2023bandwidth,ren2022enabling,chen2024joint}。若局部观测仅编码当前已关联至本机的终端，策略网络虽能比较覆盖圆盘内部终端的距离与请求特征，却无法辨别覆盖圆盘外部的邻近空域究竟聚集了大量待服务热点，还是处于无需求状态。因高比例请求未覆盖而产生的低服务率团队奖励仅能告知策略“当前部署不佳”，却无法在局部观测空间中提供指向未覆盖需求热点的空间梯度信号。这种性能受限源于输入构造阶段的信息截断，而非神经网络参数容量不足：单纯增加隐藏层宽度或注意力头数无法恢复已在观测映射中被丢弃的外部需求位置。
 
-围绕固定服务半径下无人机集群的需求感知协同轨迹规划问题，本章首先在协议 I（单时隙批量结算与服务缓存耦合）下建立几何、无线通信、服务缓存与批量算力共享模型\cite{tao2026online}，明确上层机动动作影响端到端服务结果的跨时隙因果路径，并从理论上证明仅含已关联终端观测对未覆盖需求的策略梯度盲区性质；其次构建上层分散式部分可观测马尔可夫决策过程（Dec-POMDP），在保持固定观测槽位维度、网络拓扑与 $100\,\mathrm{m}$ 物理覆盖半径完全不变的前提下，提出按距离排序补入 $460\,\mathrm{m}$ 感知范围内未覆盖终端的预接纳需求扩展观测机制，并完整给出上层 Attention-MAPPO 与下层请求级卸载策略的协同训练流程；最后通过分层架构基准筛选、探索性实验与全新种子独立确认实验，定量检验预接纳观测扩展对自然接纳率 $\alpha$、接纳后条件完成率 $\eta$ 及端到端截止期满足率（DSR）的作用机理与信息边界。
+围绕固定服务半径下无人机集群的需求感知协同轨迹规划问题，本章在第二章建立的空地协同统一模型基础上，首先针对协议 I（单时隙批量结算与服务缓存耦合）明确单步移动前结算与移动后拓扑演化的因果时序及动态缓存规则\cite{tao2026online}，并从理论上证明仅含已关联终端观测对未覆盖需求的策略梯度盲区性质；其次构建上层分散式部分可观测马尔可夫决策过程（Dec-POMDP），在保持固定观测槽位维度、网络拓扑与 $100\,\mathrm{m}$ 物理覆盖半径完全不变的前提下，提出按距离排序补入 $460\,\mathrm{m}$ 感知范围内未覆盖终端的预接纳需求扩展观测机制，并完整给出上层 Attention-MAPPO 与下层请求级卸载策略的协同训练流程；最后通过分层架构基准筛选、探索性实验与全新种子独立确认实验，定量检验预接纳观测扩展对自然接纳率 $\alpha$、接纳后条件完成率 $\eta$ 及端到端截止期满足率（DSR）的作用机理与信息边界。
 
 需强调的是，本文不采用早期文献中常见的全连接强制关联假设替代自然覆盖。强制关联允许覆盖半径之外的终端直接接入最近无人机，从问题定义上消除了“空间未接纳”这一核心失败模式。在本章的自然覆盖协议下，未覆盖服务请求严格计入 DSR 分母 $G$ 而不进入下层卸载集合，上层轨迹控制必须通过后续时隙的受限机动改善空间覆盖，而不能依赖评估器越界补足接入。
 
-\section{系统模型与预接纳观测瓶颈分析}
+\section{协议 I 建模增量与预接纳观测盲区分析}
 \label{sec:system-model}
 \label{sec:upper-problem}
 
-\subsection{自然覆盖接纳与感知几何关系}
+\subsection{协议 I 下的单步决策时序与动作映射}
 \label{sec:ch3-swarm-planning}
 \label{sec:network-trajectory-model}
-
-基于第二章建立的空地协同计算统一几何模型（式~\eqref{eq:ch2-sensing-neighbors}～式~\eqref{eq:ch2-joint-geometry}），本章在协议 I 下研究无人机集合 $\mathcal{U}=\{1,\ldots,N\}$（$N=5$）协同服务地面移动终端集合 $\mathcal{I}=\{1,\ldots,M\}$（$M=100$）与一座地面宏基站（固定于 $(350,350,30)\,\mathrm{m}$）的需求感知轨迹规划问题。各无人机的水平位置、关联终端集合 $\mathcal{U}_u(t)$、感知邻机集合 $\mathcal{N}_u(t)$ 和机载算力/缓存资源通过自然覆盖接纳与任务执行相互耦合：单机位移会改变下一时隙可接纳的需求集合与机间链路距离，而跨机卸载又会改变目标节点的批量计算负载与缓存热度。图~\ref{fig:ch3-overview} 给出了系统总体空间布局与自然覆盖接纳示意图。
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.72\textwidth]{../docs/figures/图3-1_系统与自然覆盖示意图}
-    \bicaption{系统总体布局与自然覆盖接纳示意}{Schematic of the system layout and natural-coverage admission}
-    \label{fig:ch3-overview}
-    \sysufignote{三角形为 UAV，实线圆为 $100\,\mathrm{m}$ 服务覆盖范围，虚线圆为其中一架 UAV 的 $460\,\mathrm{m}$ 感知范围；绿色圆点为被覆盖 UE，红色叉为未被覆盖 UE，其请求本时隙不被接纳。图中位置为示意性布局，非真实轨迹快照。}
-\end{figure}
-
-由第二章式~\eqref{eq:ch2-natural-association}，为避免与无人机 $u$ 的关联终端集合 $\mathcal{U}_u(t)$ 产生符号混用，记地面终端 $m\in\mathcal{I}$ 在时隙 $t$ 的可覆盖无人机集合为 $\mathcal{C}_m^{\mathrm{cov}}(t)$，则唯一自然接纳来源无人机 $u_m(t)$ 与来源机关联集合 $\mathcal{U}_u(t)$ 分别定义为：
-\begin{equation}
- \mathcal{C}_m^{\mathrm{cov}}(t)=\big\{u\in\mathcal{U}:\|\mathbf{w}_m(t)-\mathbf{q}_u(t)\|_2\leq R_c\big\},
- \qquad
- u_m(t)=\underset{u\in\mathcal{C}_m^{\mathrm{cov}}(t)}{\arg\min}\,
-       \|\mathbf{w}_m(t)-\mathbf{q}_u(t)\|_2,
- \label{eq:ch3-natural-association}
-\end{equation}
-其中距离并列时按无人机编号最小打破平局，物理覆盖半径 $R_c=100\,\mathrm{m}$，且 $\mathcal{U}_u(t)=\{m\in\mathcal{I}:u_m(t)=u\}$。当 $\mathcal{C}_m^{\mathrm{cov}}(t)=\varnothing$ 时，该终端处于全部无人机覆盖范围之外（$u_m(t)=\varnothing$），其当步生成的计算服务请求计入总生成数 $G$ 但不进入已接纳集合 $A$。与此同时，机载邻机发现与预接纳需求感知半径设为 $R_s=460\,\mathrm{m}$。图~\ref{fig:ch3-geometry} 展示了覆盖半径 $R_c$ 与感知半径 $R_s$ 的几何嵌套关系：扩大感知可见范围仅丰富上层策略的决策输入，不会放宽 $100\,\mathrm{m}$ 的物理接入条件，无人机仍须通过受速限约束的机动在后续时隙接近目标终端才能实现自然接纳。
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.62\textwidth]{../docs/figures/图3-2_覆盖与感知几何示意图}
-    \bicaption{覆盖半径与感知半径的几何关系}{Geometry of the coverage radius and the sensing radius}
-    \label{fig:ch3-geometry}
-\end{figure}
-
-由第二章引理 2.2.1 可知，最小安全间距 $d_{\min}=200\,\mathrm{m}=2R_c$ 保证了任意两架无人机的开覆盖圆盘内部互不重叠。地面终端遵循随机航点移动模型（单步位移上限 $15\,\mathrm{m}$），其中 $85\%$ 的终端围绕两个半径为 $100\,\mathrm{m}$、中心间距不小于 $400\,\mathrm{m}$ 的任务热点分布，其余 $15\%$ 散布于全场区域。这种双热点非均匀分布使得集群必须在热点分担、稀疏终端兼顾与安全间距约束之间开展动态协调。
-
-\subsection{无人机移动与通信模型}
 \label{sec:ch3-motion-repair}
 \label{sec:slot-timeline}
 \label{sec:channel-model}
 
-策略网络输出的原始连续动作变量与环境最终执行的物理位移之间经过确定性幅值映射与几何安全修复。记无人机 $u$ 的原始策略输出为 $\mathbf{z}_u\in\mathbb{R}^2$，训练阶段按二维高斯分布采样；输入环境前先逐坐标截断为 $\mathbf{a}_u=\operatorname{clip}(\mathbf{z}_u,-1,1)$，再按径向模长映射为期望位移向量：
+本章沿用第二章 2.2 节建立的空地协同几何与通信模型（式~\eqref{eq:ch2-sensing-neighbors}～式~\eqref{eq:ch2-link-rate}）：无人机集合 $\mathcal{U}=\{1,\ldots,N\}$（$N=5$）与固定于 $(350,350,30)\,\mathrm{m}$ 的地面宏基站协同服务地面移动终端集合 $\mathcal{I}=\{1,\ldots,M\}$（$M=100$）。各终端遵循随机航点移动模型（单步位移上限 $15\,\mathrm{m}$，其中 $85\%$ 围绕两个半径 $100\,\mathrm{m}$、中心间距不小于 $400\,\mathrm{m}$ 的任务热点分布，其余 $15\%$ 散布全场）。按式~\eqref{eq:ch2-natural-association} 的最近邻自然覆盖关联规则（物理覆盖半径 $R_c=100\,\mathrm{m}$，平局按无人机编号最小打破），由引理 2.2.1 可知最小安全间距 $d_{\min}=200\,\mathrm{m}=2R_c$ 保证了各机关联集合 $\{\mathcal{U}_u(t)\}_{u=1}^N$ 严格互不相交；处于全体覆盖圆盘之外的终端（$u_m(t)=\varnothing$）当步计算请求计入生成总数 $G$ 但不进入已接纳集合 $A$。机载邻机发现与预接纳需求感知半径设为 $R_s=460\,\mathrm{m}$。图~\ref{fig:ch3-overview} 给出了双热点非均匀分布下的多机自然覆盖盲区与单机 $R_c/R_s$ 几何嵌套关系：扩大感知半径仅丰富上层策略输入而绝不放宽 $100\,\mathrm{m}$ 物理接入条件。
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../docs/figures/fig3_01_observation_aliasing.pdf}
+    \bicaption{双热点自然覆盖盲区、感知几何嵌套与预接纳扩展观测槽位重构示意}{Schematic of dual-hotspot natural-coverage blind zones, sensing geometry, and pre-admission extended-observation slot reconstruction}
+    \label{fig:ch3-overview}
+    \label{fig:ch3-obs-compare}
+    \sysufignote{（a）$700\times 700\,\mathrm{m}^2$ 服务区内双热点分布下的互斥物理覆盖域（$R_c=100\,\mathrm{m}$，$d_{\min}=200\,\mathrm{m}$）、感知域（$R_s=460\,\mathrm{m}$）与覆盖圈外未接纳漏失；（b）原始仅关联观测对圈外需求的零梯度截断（$\partial\Phi_u^{\mathrm{assoc}}/\partial\mathbf{w}_m=\mathbf{0}$）与保持 $30$ 槽及 $295$ 维不变的距离优先扩展观测填充规则。}
+\end{figure}
+
+在上层动作执行侧，无人机 $u$ 的原始二维高斯采样动作 $\mathbf{z}_u\in\mathbb{R}^2$ 先逐坐标截断为 $\mathbf{a}_u=\operatorname{clip}(\mathbf{z}_u,-1,1)$，再经径向饱和映射转化为期望水平位移：
 \begin{equation}
  \widetilde{\Delta\mathbf q}_u
  =v_{\max}\tau\min(\|\mathbf a_u\|_2,1)
@@ -64,45 +44,17 @@
  \qquad v_{\max}=15\,\mathrm{m/s},\ \tau=1.0\,\mathrm{s},
  \label{eq:ch3-radial-action}
 \end{equation}
-其中 $\epsilon_0=10^{-9}$ 为数值保护常量。当 $\|\mathbf{a}_u\|_2\leq 1$ 时，位移幅值与动作模长近似线性成正比；当 $\|\mathbf{a}_u\|_2>1$ 时，保留动作方向并饱和至单步最大位移 $v_{\max}\tau=15\,\mathrm{m}$。由于逐坐标裁剪点 $(1,1)$ 的欧氏模长为 $\sqrt{2}>1$，式~\eqref{eq:ch3-radial-action} 的径向饱和映射是严格满足最大飞行速度约束的必要环节。
+其中 $\epsilon_0=10^{-9}$；因逐坐标截断点 $(1,1)$ 的欧氏模长为 $\sqrt{2}>1$，式~\eqref{eq:ch3-radial-action} 保证了单步建议位移严格不超过 $v_{\max}\tau=15\,\mathrm{m}$。随后由第二章 2.2.2 节定义的交替投影与冲突悬停回退算子 $\mathcal{E}$ 将建议位置修复至安全可行域 $\mathcal{Q}=[50\,\mathrm{m},650\,\mathrm{m}]^2$（至多迭代 $40$ 轮，机间距容差 $10^{-3}\,\mathrm{m}$），并记录越界与防碰修复触发标记用于个体违例惩罚。
 
-实际飞行位置须同时满足水平边界留白、单步速度上限与机间最小安全距离约束。设水平边界留白为覆盖半径的一半（$50\,\mathrm{m}$），可行飞行域为 $\mathcal{Q}=[50\,\mathrm{m},650\,\mathrm{m}]^2$。给定当前可行位置 $\mathbf{q}(t)$，下一时隙联合可行位置集合定义为：
-\begin{equation}
- \mathcal F(\mathbf q(t))=
- \left\{\{\mathbf q_u'\}_{u=1}^{N}:\ 
- \mathbf q_u'\in\mathcal Q,\ 
- \|\mathbf q_u'-\mathbf q_u(t)\|_2\leq v_{\max}\tau,\ 
- \|\mathbf q_u'-\mathbf q_v'\|_2\geq d_{\min}\ (u\ne v)\right\}.
- \label{eq:ch3-motion-feasible}
-\end{equation}
-由于机间安全距离约束 $\|\mathbf{q}_u'-\mathbf{q}_v'\|_2\geq d_{\min}$ 对应开球外部区域，$\mathcal{F}(\mathbf{q}(t))$ 一般为非凸集合。环境采用有限轮交替投影与冲突回退算子完成几何修复：首先将建议位置截断至 $\mathcal{Q}$ 并拉回以 $\mathbf{q}_u(t)$ 为中心、半径 $v_{\max}\tau$ 的速度圆；随后对间距小于 $d_{\min}$ 的无人机对沿连线方向各外推一半重叠量，并再次执行边界与速度圆投影，最多迭代 $40$ 轮；若达到迭代上限仍存在残余冲突，则将冲突无人机回退至上一时隙可行位置 $\mathbf{q}_u(t)$ 悬停并传播检查新冲突，直至联合位置严格落入 $\mathcal{F}(\mathbf{q}(t))$（数值校验容差 $10^{-3}\,\mathrm{m}$）。该算子旨在保障离散时隙端点的几何安全性，而非求解非凸集合上的全局最小欧氏投影。边界越界与防碰撞修复触发标记在修复过程中同步记录并计入个体违例惩罚，促使策略主动学习内点安全动作而非依赖环境修复器。
-
-图~\ref{fig:ch3-timeline} 给出了协议 I 单时隙内的决策与结算时序。环境在上一时隙末尾（或重置时刻）生成当前请求，并按当前位置 $\mathbf{q}(t)$ 建立自然关联 $\mathcal{U}_u(t)$、更新感知邻机 $\mathcal{N}_u(t)$ 并构造上下层观测。进入环境步进后，系统先冻结移动前几何 $\mathbf{q}(t)$ 与二值缓存状态 $\mathbf{h}(t)$，解析当步全部已接纳服务请求的卸载目标并确定各节点最终并发任务数，继而结算服务请求与内容请求的传输和计算时延；所有上行接入、机间转发与宏基站回传速率均按移动前位置 $\mathbf{q}(t)$ 计算。请求结算完毕后，环境方才应用修复后的上层位移得到 $\mathbf{q}(t+1)$，随后统计当步奖励与服务指标、提交缓存更新、推进终端随机航点移动并生成下一时隙请求。因此，下层卸载动作 $\mathbf{b}(t)$ 即时决定当步完成时延，而上层轨迹动作 $\mathbf{a}(t)$ 对覆盖接纳与链路质量的作用体现在下一时隙：
+图~\ref{fig:ch3-timeline}(a) 给出了协议 I 单时隙内的因果决策与结算时序。环境在进入步进后先冻结移动前几何 $\mathbf{q}(t)$ 与二值缓存状态 $\mathbf{h}(t)$，解析当步全部已接纳服务请求的卸载目标 $\mathbf{b}(t)$ 并按移动前信道结算完整传输与计算时延 $\{T_m(t)\}$（单任务时延与截止期 $D_m\in[0.65,2.10]\,\mathrm{s}$ 可超过 $\tau=1.0\,\mathrm{s}$，当步直接判定 $T_m(t)\leq D_m$ 而不跨步保留队列，跨时隙持续排队由第五章协议 II 专门研究）；结算完毕后方才应用修复后的上层位移推进至 $\mathbf{q}(t+1)$，进而提交缓存更新、推进终端航点移动并生成下一时隙请求。由此形成两层动作的时间尺度分工：
 \begin{equation}
  \mathbf b(t)\longrightarrow\{T_m(t)\},\qquad
  \mathbf a(t)\longrightarrow\mathbf q(t+1)
  \longrightarrow\big\{\mathcal C_m^{\mathrm{cov}}(t+1),\,u_m(t+1)\big\}.
  \label{eq:ch3-two-action-timing}
 \end{equation}
-这意味着当前时隙的终端接纳完全由 $\mathcal{C}_m^{\mathrm{cov}}(t)$ 决定，不会因本时隙随后的无人机移动而追溯补接纳。
 
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.98\textwidth]{../docs/figures/图3-3_单时隙决策时序图}
-    \bicaption{单时隙内的请求执行与轨迹应用时序}{Decision and execution timeline within one slot}
-    \label{fig:ch3-timeline}
-    \sysufignote{两层动作由当前观测计算；请求按移动前几何执行，上层轨迹动作随后应用并影响下一时隙覆盖。}
-\end{figure}
-
-在协议 I 的单时隙批量结算抽象下，单个任务的完整路径完成时延 $T_m(t)$ 与相对截止期 $D_m\in[0.65,2.10]\,\mathrm{s}$ 均可超过宏时隙长度 $\tau=1.0\,\mathrm{s}$；仿真器在当步直接结算每项请求的完整通信与计算总耗时并判定 $T_m(t)\leq D_m$ 是否成立，而不将未完成计算量跨时隙保留为持久队列（跨时隙持续排队留待第五章协议 II 专门建模）。因此，本章与第四章中的节点“负载”严格指当步批量分配至该节点的并发服务请求数 $N_j$。
-
-无线信道遵循第二章式~\eqref{eq:ch2-distance}～式~\eqref{eq:ch2-link-rate} 的三维自由空间视距路径损耗与正交频段模型。对三维坐标分别为 $\mathbf{p}_i(t),\mathbf{p}_j(t)$ 的收发节点，信道功率增益为：
-\begin{equation}
- g_{ij}(t)=\frac{G_0g_0}{\|\mathbf p_i(t)-\mathbf p_j(t)\|_2^2+\epsilon_0},
- \qquad G_0g_0=3.244132\times10^{-4}.
- \label{eq:channel-gain}
-\end{equation}
-发射功率统一设为 $P^{\mathrm{comm}}=0.5\,\mathrm{W}$，接收端加性高斯白噪声功率设为固定基准 $\sigma^2=10^{-13}\,\mathrm{W}$（如第二章假设 2.2.2 所述，与等时长时分多址接入口径一致）。对已关联至来源无人机 $u$ 的终端 $m\in\mathcal{U}_u(t)$，接入频段总带宽 $B^{\mathrm{edge}}$ 在同一来源机的全部关联终端（含计算服务请求与内容获取请求终端，总数记为 $n_u^{\mathrm{assoc}}(t)=|\mathcal{U}_u(t)|\geq 1$）之间均分：
+在无线传输侧，接入、机间与回传三正交频段速率由第二章式~\eqref{eq:ch2-distance}～式~\eqref{eq:ch2-link-rate} 给出（发射功率 $P^{\mathrm{comm}}=0.5\,\mathrm{W}$，噪声基准 $\sigma^2=10^{-13}\,\mathrm{W}$，单拍机间 $20\,\mathrm{MHz}$ 与回传 $0.75\,\mathrm{MHz}$ 按协议 I 单请求独立速率近似取 $N_{\mathrm{act}}=1$）。对关联至来源机 $u$ 的终端 $m\in\mathcal{U}_u(t)$，接入总带宽 $B^{\mathrm{edge}}=40\,\mathrm{MHz}$ 在该机全部关联终端（含计算服务与内容获取终端，记 $n_u^{\mathrm{assoc}}(t)=|\mathcal{U}_u(t)|\geq 1$）间均分：
 \begin{equation}
  R^{\mathrm{edge}}_{m,u}(t)=
  \frac{B^{\mathrm{edge}}}{n_u^{\mathrm{assoc}}(t)}
@@ -110,62 +62,37 @@
  \qquad B^{\mathrm{edge}}=40\,\mathrm{MHz}.
  \label{eq:edge-rate}
 \end{equation}
-需注意接入分摊分母 $n_u^{\mathrm{assoc}}(t)$ 与机载 CPU 批量计算分母 $N_u(t)$ 的物理区别：前者包含关联至无人机 $u$ 的全部服务与内容终端且不因后续计算卸载而改变，后者仅统计最终留存或迁入无人机 $u$ 执行计算的服务请求数。机间协作转发速率与宏基站回传速率分别为：
-\begin{equation}
- \begin{aligned}
- R^{\mathrm{inter}}_{u,v}(t)&=B^{\mathrm{inter}}
- \log_2\left(1+\frac{P^{\mathrm{comm}}g_{u,v}(t)}{\sigma^2}\right),\qquad B^{\mathrm{inter}}=20\,\mathrm{MHz},\\
- R^{\mathrm{bh}}_{u,\mathrm M}(t)&=B^{\mathrm{bh}}
- \log_2\left(1+\frac{P^{\mathrm{comm}}g_{u,\mathrm M}(t)}{\sigma^2}\right),\qquad B^{\mathrm{bh}}=0.75\,\mathrm{MHz}.
- \end{aligned}
- \label{eq:ch3-other-rates}
-\end{equation}
-在协议 I 中，机间与回传链路按各自正交配置带宽计算单请求传输时延，主要通信瓶颈体现在多终端共享接入带宽稀释效应（$1/n_u^{\mathrm{assoc}}(t)$）与受限的宏基站回传带宽（$0.75\,\mathrm{MHz}$）。式~\eqref{eq:edge-rate} 同时揭示了覆盖扩张与接纳后服务质量之间的内生张力：当无人机移向高密度热点使 $n_u^{\mathrm{assoc}}(t)$ 增大时，单终端上行速率成反比下降、输入上传耗时相应延长，若新增服务请求继续留在本机计算还会推高 $N_u(t)$，故前端空间接纳扩张必须与后端跨机卸载协同配合。
+需区分接入带宽分母 $n_u^{\mathrm{assoc}}(t)$ 与第二章式~\eqref{eq:ch2-shared-computation} 的机载计算并发分母 $N_u(t)$：前者统计关联至本机的全部服务与内容终端且不随计算卸载改变，后者仅统计最终在本机执行计算的服务请求数。式~\eqref{eq:edge-rate} 直接揭示了空间接纳扩张与后端质量的内生张力——无人机移向热点增大 $n_u^{\mathrm{assoc}}(t)$ 时，单终端上行速率成反比稀释，若新增服务任务继续留存本机还会推高 $N_u(t)$。
 
-\subsection{任务执行与服务缓存模型}
+\subsection{异构业务生成、执行路径与动态缓存演化}
 \label{sec:request-battery-model}
 \label{sec:ch3-service-paths}
 \label{sec:ch3-cache-dynamics}
 
-系统业务目录由 $25$ 类计算服务程序镜像与 $50$ 类静态内容文件组成，共 $75$ 个唯一业务标识。全局请求流行度服从参数为 $\beta=0.8$ 的 Zipf 分布\cite{zipf1949human}；设业务标识 $s\in\{1,\ldots,75\}$ 在随机打乱映射下的流行度排名为 $r_s\in\{1,\ldots,75\}$，则单次请求抽中标识 $s$ 的概率为：
+系统业务目录包含 $25$ 类计算服务程序镜像与 $50$ 类静态内容文件（共 $75$ 个唯一标识），全局流行度服从参数 $\beta=0.8$ 的 Zipf 分布\cite{zipf1949human}：设标识 $s\in\{1,\ldots,75\}$ 的流行度排名为 $r_s$，抽中概率为
 \begin{equation}
  \Pr(s)=\frac{r_s^{-\beta}}{\sum_{k=1}^{75}r_k^{-\beta}},
  \qquad\beta=0.8.
  \label{eq:ch3-zipf}
 \end{equation}
-在固定静态配置种子（种子编号 $42$）下，目录中每类服务镜像或内容文件的固有字节大小 $B_s$ 预先在 $[10^6,5\times 10^6)\,\mathrm{B}$（即 $1\sim 5\,\mathrm{MB}$，全文统一按十进制 $1\,\mathrm{MB}=10^6\,\mathrm{B}$ 计）内均匀抽取并全局固定。每个地面终端 $m\in\mathcal{I}$ 在每时隙独立抽取一个业务标识 $s_m$：当 $s_m\in\{1,\ldots,25\}$ 时生成计算服务请求（类型编码 $\mathrm{type}_m=1$），并同步抽取任务输入数据字节数 $L_m\in[10^6,5\times 10^6)\,\mathrm{B}$、相对截止时间 $D_m\in[0.65,2.10]\,\mathrm{s}$ 与离散优先级 $p_m\in\{1,2,3\}$；当 $s_m\in\{26,\ldots,75\}$ 时生成内容获取请求（类型编码 $\mathrm{type}_m=2$，约占全部终端请求的 $2/3$），直接请求下载大小为 $B_{s_m}$ 的内容文件，其固定时隙完成期限为 $\tau=1.0\,\mathrm{s}$。对于计算服务请求，$L_m$ 为终端上行待处理数据量，而 $B_{s_m}$ 为目标无人机缓存未命中时需从宏基站回源拉取的服务容器镜像大小，二者物理路径截然不同。在配对实验中，不同控制策略面对完全一致的外生随机抽样序列。
-
-每类计算服务 $s\in\{1,\ldots,25\}$ 具有静态固定的每字节计算周期密度 $\omega_s\in[1200,2800)\,\mathrm{cycles/B}$，请求 $m$ 所需的总 CPU 周期数为：
-\begin{equation}
- C_m=\omega_{s_m} L_m.
- \label{eq:ch3-cpu-cycles}
-\end{equation}
-由于无线链路速率以 $\mathrm{bit/s}$ 计，字节量 $L_m,B_s$ 在通信传输时延计算中统一乘以 $8$（即 $8L_m/R$ 与 $8B_s/R$），而计算时延直接由周期数除以分配频率 $C_m/f$ 给出。五架无人机具有异构机载峰值算力与异构缓存容量，由静态硬件种子（编号 $42$）从各自离散候选域 $\{40,45,\ldots,85\}\,\mathrm{GHz}$ 与 $\{120,121,\ldots,179\}\,\mathrm{MB}$ 中抽取并跨全部实验固定为：
+在静态配置种子（编号 $42$）下，每类镜像或内容文件的固有大小 $B_s\in[10^6,5\times 10^6)\,\mathrm{B}$（$1\,\mathrm{MB}=10^6\,\mathrm{B}$）与服务计算周期密度 $\omega_s\in[1200,2800)\,\mathrm{cycles/B}$ 预先抽取并全局固定；五架无人机的异构峰值算力与缓存容量同样固定为：
 \begin{equation}
  \mathbf F_{\mathrm{UAV}}=[75,\,60,\,70,\,85,\,50]\,\mathrm{GHz},\qquad
  \mathbf S_{\mathrm{cap}}=[158,\,171,\,148,\,134,\,162]\,\mathrm{MB}.
  \label{eq:ch3-static-uav-specs}
 \end{equation}
-实验协议严格区分静态硬件异质性、外生工作负载随机流与策略训练随机种子三个层次，仅将不同训练随机种子计为独立策略训练重复。
+每个终端 $m\in\mathcal{I}$ 每时隙独立抽取 $s_m$：当 $s_m\in\{1,\ldots,25\}$ 时生成计算服务请求（$\mathrm{type}_m=1$），输入字节数 $L_m\in[10^6,5\times 10^6)\,\mathrm{B}$、总计算周期 $C_m=\omega_{s_m}L_m$、相对截止期 $D_m\in[0.65,2.10]\,\mathrm{s}$、优先级 $p_m\in\{1,2,3\}$；当 $s_m\in\{26,\ldots,75\}$ 时生成内容获取请求（$\mathrm{type}_m=2$，约占 $2/3$），下载文件 $B_{s_m}$，完成期限为 $\tau=1.0\,\mathrm{s}$。实验严格隔离静态硬件配置、外生工作负载随机流与策略训练种子，仅将不同训练种子计为独立策略重复。
 
-记时隙 $t$ 自然覆盖接纳的计算服务请求集合为 $\mathcal{M}(t)=\{m\in\mathcal{I}:u_m(t)\neq\varnothing,\ \mathrm{type}_m=1\}$（基数 $A_t=|\mathcal{M}(t)|$），请求 $m\in\mathcal{M}(t)$ 的来源无人机为 $u=u_m(t)$，下层指定的计算执行节点为 $b_m\in\mathcal{U}\cup\{\mathrm{MBS}\}$。解析当步全部卸载目标后，无人机 $j\in\mathcal{U}$ 的最终并发计算任务数 $N_j(\mathbf{b})$ 与单任务等份算力 $f_{m,j}$ 为：
-\begin{equation}
- N_j(\mathbf b)=\sum_{m\in\mathcal M(t)}\mathbf1[b_m=j],
- \qquad f_{m,j}=F_j/N_j(\mathbf b),\quad b_m=j.
- \label{eq:ch3-final-load}
-\end{equation}
-本地留存任务与邻机协作迁入任务共同计入 $N_j(\mathbf{b})$，卸载至宏基站的任务不占用任何机载 CPU 份额。先解析整批卸载目标再冻结 $N_j(\mathbf{b})$ 的两阶段结算机制消除了请求遍历先后次序造成的人为算力偏差。
-
-记时隙起点冻结的二值缓存指示为 $h_{j,s}(t)\in\{0,1\}$，简记上行接入上传时间 $U_m=8L_m/R^{\mathrm{edge}}_{m,u}$、服务镜像回源时间 $V_{j,s}=8B_s/R^{\mathrm{bh}}_{j,\mathrm{M}}$ 与机间协作输入转发时间 $I_{m,u,v}=8L_m/R^{\mathrm{inter}}_{u,v}$，则本地机载执行、邻机协作执行与宏基站回传执行三类路径的完成时延分别为：
+记时隙 $t$ 自然接纳的服务请求集合为 $\mathcal{M}(t)=\{m\in\mathcal{I}:u_m(t)\neq\varnothing,\ \mathrm{type}_m=1\}$（基数 $A_t=|\mathcal{M}(t)|$），解析整批卸载目标 $\mathbf{b}$ 后各无人机最终并发服务负载 $N_j(\mathbf{b})$ 按第二章式~\eqref{eq:ch2-shared-computation} 等份共享算力 $F_j/N_j(\mathbf{b})$（宏基站算力固定为 $F_{\mathrm{M}}=200\,\mathrm{GHz}$ 且默认持有全量服务库）。记时隙起点冻结缓存指示为 $h_{j,s}(t)\in\{0,1\}$，上行上传时间 $U_m=8L_m/R^{\mathrm{edge}}_{m,u}$、镜像回源时间 $V_{j,s}=8B_s/R^{\mathrm{bh}}_{j,\mathrm{M}}$、机间输入转发时间 $I_{m,u,v}=8L_m/R^{\mathrm{inter}}_{u,v}$，则计算服务三类执行路径时延为：
 \begin{equation}
  \begin{aligned}
  T_m^{\mathrm{local}}&=U_m+(1-h_{u,s_m})V_{u,s_m}+C_mN_u/F_u,\\
  T_m^{\mathrm{coop}}(v)&=U_m+I_{m,u,v}+(1-h_{v,s_m})V_{v,s_m}+C_mN_v/F_v,\\
- T_m^{\mathrm{MBS}}&=U_m+8L_m/R^{\mathrm{bh}}_{u,\mathrm M}+C_m/F_{\mathrm M},
+ T_m^{\mathrm{MBS}}&=U_m+8L_m/R^{\mathrm{bh}}_{u,\mathrm M}+C_m/F_{\mathrm M}.
  \end{aligned}
  \label{eq:ch3-service-three-paths}
 \end{equation}
-其中宏基站算力固定为 $F_{\mathrm{M}}=200\,\mathrm{GHz}$ 且默认持有全量服务库，三类路径均须首先经自然关联来源机 $u$ 完成无线接入（“本地执行”指来源无人机机载计算，而非地面终端本地计算）。记除 CPU 计算外的通信与回源总耗时为 $T_m^{\mathrm{comm}}$，当任务在无人机 $j$ 上执行且 $D_m\geq T_m^{\mathrm{comm}}$ 时，按时完成条件等价于节点并发负载上界：
+记除 CPU 计算外的通信与回源总耗时为 $T_m^{\mathrm{comm}}$，机载执行按时完成条件等价于并发负载上界：
 \begin{equation}
  T_m\leq D_m
  \quad\Longleftrightarrow\quad
@@ -173,7 +100,7 @@
  \qquad D_m\geq T_m^{\mathrm{comm}}.
  \label{eq:ch3-deadline-load-budget}
 \end{equation}
-式~\eqref{eq:ch3-deadline-load-budget} 表明，轨迹靠近目标终端与命中机载服务缓存均通过压缩 $T_m^{\mathrm{comm}}$ 为后端共享计算释放宝贵的截止期余量。对于不消耗机载 CPU 周期的内容获取请求（$\mathrm{type}_m=2$），本地、邻机协作与宏基站获取路径的完成时延分别为：
+不消耗 CPU 周期的内容获取请求（$\mathrm{type}_m=2$）三类下载路径时延分别为：
 \begin{equation}
  \begin{aligned}
  T_m^{\mathrm{content,local}}&=(1-h_{u,s_m})8B_{s_m}/R^{\mathrm{bh}}_{u,\mathrm M}
@@ -186,68 +113,43 @@
  \label{eq:ch3-content-three-paths}
 \end{equation}
 
-在缓存演化上，同一时隙内所有请求统一读取时隙起点冻结的 $h_{j,s}(t)$；当步回源拉取或协作接收的镜像/内容文件先进入待提交集合，在时隙末尾按贪心双大小频率（Greedy Dual-Size Frequency，GDSF）热度更新规则写入剩余容量：
+同一时隙内全部请求读取冻结的 $h_{j,s}(t)$；当步回源或协作获取的文件在时隙末按贪心双大小频率（GDSF）规则更新热度并按单位字节热度 $\chi_{u,s}$ 降序写入可用缓存（每 $50$ 步重整一次）：
 \begin{equation}
  H_{u,s}(t+1)=\beta_c\nu_{u,s}(t)+(1-\beta_c)H_{u,s}(t),
  \qquad\beta_c=0.75,\qquad
- \chi_{u,s}(t+1)=H_{u,s}(t+1)/B_s,
+ \chi_{u,s}(t+1)=H_{u,s}(t+1)/B_s.
  \label{eq:ch3-cache-score}
 \end{equation}
-其中 $\nu_{u,s}(t)$ 为当步文件请求频次，待提交项按单位字节热度 $\chi_{u,s}$ 降序填入可用存储空间（每 $50$ 步执行一次按 $\chi_{u,s}$ 降序的容量重整）。由于分散式卸载决策前无人机无法无延迟读取邻机精确缓存目录，下层启发式上下文与质量掩码采用基于流行度排名 $r_s$ 与邻机缓存容量 $S_v^{\mathrm{cache}}$ 的逻辑斯谛命中信念估计：
+分散式下层决策前无法无延迟读取邻机精确缓存目录，其启发式预测与质量掩码采用基于流行度排名 $r_s$ 与邻机容量 $S_v^{\mathrm{cache}}$ 的逻辑斯谛命中信念估计（实际结算严格使用真实 $h_{v,s}(t)$）：
 \begin{equation}
  \widehat h_{v,s}=
  \left[1+\exp\left(\gamma_c\left(r_s-\frac{S_v^{\mathrm{cache}}}{\overline B}\right)\right)\right]^{-1},
- \qquad\gamma_c=0.5,
+ \qquad\gamma_c=0.5.
  \label{eq:ch3-cache-belief}
 \end{equation}
-其中 $\overline{B}$ 为目录文件平均字节数；而环境实际结算（式~\eqref{eq:ch3-service-three-paths}）始终严格使用真实冻结状态 $h_{v,s}(t)$。
 
-\subsection{评价指标与预接纳观测瓶颈形式化}
+\subsection{评价口径补充与预接纳观测盲区理论分析}
 \label{sec:dsr-decomposition}
 \label{sec:denominator-boundary}
 \label{sec:fairness-model}
 
-由第二章定理 2.3.1，设单个评估单元内实际生成的计算服务请求总数为 $G$，自然覆盖接纳数为 $A$，在截止期 $D_m$ 内完成的服务请求数为 $S$（$0\leq S\leq A\leq G$）。统一定义自然接纳率 $\alpha=A/G$、接纳后条件完成率 $\eta=S/A$（当 $A>0$ 时），则端到端截止期满足率（DSR）及总失败服务请求数 $G-S$ 满足：
-\begin{equation}
- \mathrm{DSR}=\frac{S}{G}=\frac{A}{G}\frac{S}{A}=\alpha\eta ,
- \label{eq:current-dsr-decomp}
-\end{equation}
-\begin{equation}
- G-S=(G-A)+(A-S),
- \label{eq:ch3-failure-counts}
-\end{equation}
-其中 $G-A$ 为未进入任何无人机覆盖范围的前端未接纳失败数，$A-S$ 为已接纳但总时延超过 $D_m$ 的后端超时失败数。跨 $I$ 个评估单元取等权算术平均时，均值满足协方差分解恒等式：
+本章核心服务指标沿用第二章式~\eqref{eq:ch1-dsr-factorization} 的端到端截止期满足率双因子分解 $\mathrm{DSR}=S/G=\alpha\eta$（总失败数 $G-S=(G-A)+(A-S)$ 严格拆分为前端未覆盖漏失与后端执行超时），并按第二章引理 2.3.1 的对称差分恒等式~\eqref{eq:ch2-dsr-symmetric-diff} 逐配对评估单元解耦接纳扩张贡献与条件完成率变化贡献。当跨 $I$ 个评估单元取等权算术平均时，单元均值满足协方差恒等式：
 \begin{equation}
  \overline{\mathrm{DSR}}
  =\bar\alpha\bar\eta+
- \frac{1}{I}\sum_{i=1}^{I}(\alpha_i-\bar\alpha)(\eta_i-\bar\eta),
+ \frac{1}{I}\sum_{i=1}^{I}(\alpha_i-\bar\alpha)(\eta_i-\bar\eta).
  \label{eq:ch3-mean-decomposition}
 \end{equation}
-而在每个满足 $A_{c,i},A_{b,i}>0$ 的配对评估单元 $i$ 上，候选方法 $c$ 相对基线方法 $b$ 的 DSR 差值可精确对称分解为前端接纳扩展贡献与后端条件质量变化贡献之和：
-\begin{equation}
- \Delta\mathrm{DSR}_i
- =\Delta\alpha_i\frac{\eta_{c,i}+\eta_{b,i}}{2}
- +\Delta\eta_i\frac{\alpha_{c,i}+\alpha_{b,i}}{2}.
- \label{eq:ch3-paired-factor-decomp}
-\end{equation}
+在时延与公平性评价上，定义单终端当步惩罚时延 $T_m^{\mathrm{metric}}(t)$：被自然覆盖且按期完成（服务满足 $T_m(t)\leq D_m$、内容满足 $T_m(t)\leq\tau$）时取实际时延 $T_m(t)$，未覆盖或超时统一赋惩罚值 $T^{\mathrm{pen}}=20.0\,\mathrm{s}$；评估单元“每生成服务请求惩罚系统时延”定义为 $\bar{T}_{\mathrm{sys}}^{\mathrm{pen}}=\big(\sum_{t=0}^{T-1}\sum_{m=1}^{M}T_m^{\mathrm{metric}}(t)\big)/G$（分子含全体 $100$ 个服务与内容终端而分母为服务生成数 $G$，故高未覆盖率下比值可大于 $20\,\mathrm{s}$），“已接纳服务请求平均时延”仅对 $m\in\mathcal{M}(t)$ 取条件平均，终端服务均衡性则按第二章式~\eqref{eq:ch2-jain} 的 Jain 公平性指数 $J(t)$ 度量\cite{jain1984quantitative}。
 
-在时延与服务均衡性评价上，为将未覆盖与超时失败统一纳入连续惩罚尺度，对任意地面终端 $m\in\mathcal{I}$ 在时隙 $t$ 的当步请求（服务或内容），定义单终端惩罚时延指标 $T_m^{\mathrm{metric}}(t)$：若终端 $m$ 被自然覆盖且其当步请求在规定期限内完成（计算服务请求满足 $T_m(t)\leq D_m$，内容获取请求满足 $T_m(t)\leq\tau$），则取实际完成时延 $T_m^{\mathrm{metric}}(t)=T_m(t)$；若终端未被覆盖或完成超时，则赋予固定惩罚上限 $T_m^{\mathrm{metric}}(t)=T^{\mathrm{pen}}=20.0\,\mathrm{s}$。在此基础上，评估单元层面的“每生成服务请求惩罚系统时延”定义为全回合 $M=100$ 个终端的累计惩罚时延总和除以总生成服务请求数 $G$，即 $\bar{T}_{\mathrm{sys}}^{\mathrm{pen}}=\big(\sum_{t=0}^{T-1}\sum_{m=1}^{M}T_m^{\mathrm{metric}}(t)\big)/G$（由于分子汇总全部 $100$ 个服务与内容终端的惩罚时延，而分母仅为每步约 $33.8$ 个计算服务请求，故该综合惩罚比值在未覆盖率较高时可大于 $20\,\mathrm{s}$）；与此同时，“已接纳服务请求平均时延”仅对 $m\in\mathcal{M}(t)$ 的真实执行时延 $T_m(t)$ 取条件平均。此外，记终端 $m\in\mathcal{I}$ 截至时隙 $t$ 被自然覆盖且实际完成时延不超过单时隙时长 $\tau=1.0\,\mathrm{s}$ 的累计有效服务频次占比为 $c_m(t)=K_m(t)/t$（与第二章式~\eqref{eq:ch2-jain} 完全一致），系统 Jain 公平性指数定义为\cite{jain1984quantitative}：
-\begin{equation}
- J(t)=\begin{cases}
- \displaystyle\frac{\big(\sum_{m=1}^{M} c_m(t)\big)^2}{M\sum_{m=1}^{M} c_m^2(t)},&\sum_{m=1}^{M} c_m^2(t)>0,\\
- 0,&\sum_{m=1}^{M} c_m^2(t)=0.
- \end{cases}
- \label{eq:jfi}
-\end{equation}
-
-为从理论上刻画原始局部观测对未覆盖需求的盲区机理，引入如下形式化定义与定理：
+在明确上述模型后，即可从理论上刻画原始局部观测对未覆盖需求的盲区机理。记单机闭覆盖圆盘为 $\overline{\mathcal{D}_v(t)}=\{\mathbf{x}\in\mathbb{R}^2:\|\mathbf{x}-\mathbf{q}_v(t)\|_2\le R_c\}$，引入如下定义与定理：
 
 \begin{definition}[上层局部观测映射与预接纳观测混叠]
 设时隙 $t$ 系统的全局物理状态为 $s_t=\big(\mathbf{q}(t),\allowbreak\mathbf{h}(t),\allowbreak\{\mathbf{w}_m(t),\boldsymbol{\xi}_m(t)\}_{m\in\mathcal{I}}\big)$，其中 $\boldsymbol{\xi}_m(t)$ 为终端 $m$ 的当步请求特征向量。记无人机 $u\in\mathcal{U}$ 的上层局部观测构造算子为 $o_{u,t}=\Phi_u(s_t)$。若存在两个不同的全局状态 $s_t\neq s_t'$，其未覆盖终端集合 $\mathcal{U}_{\mathrm{uncov}}(s_t)$ 与 $\mathcal{U}_{\mathrm{uncov}}(s_t')$ 的空间位置或需求分布截然不同，但映射后的局部观测完全一致，即 $\Phi_u(s_t)=\Phi_u(s_t')$，则称观测算子 $\Phi_u$ 在状态对 $(s_t,s_t')$ 上发生预接纳观测混叠（Pre-Admission Observation Aliasing）。
 \end{definition}
 
 \begin{theorem}[仅含已关联终端观测对未覆盖需求的策略梯度盲区性质]
-设原始上层观测算子 $\Phi_u^{\mathrm{assoc}}(s_t)$ 仅编码无人机 $u$ 自身状态、感知范围内邻机位置以及当前已关联终端集合 $\mathcal{U}_u(s_t)=\{m\in\mathcal{I}:u_m(t)=u\}$。则对于任意保持各机自身状态、邻机位置及已关联集合不变（$\mathcal{U}_u(s_t)=\mathcal{U}_u(s_t'),\,\allowbreak\forall u\in\mathcal{U}$），仅改变未覆盖区域 $\{\mathbf{w}_m(t):m\in\mathcal{U}_{\mathrm{uncov}}(s_t)\}$ 内终端空间分布的全局状态微扰，任意可微分散式策略 $\pi_\theta(\mathbf{z}_u\mid\Phi_u^{\mathrm{assoc}}(s_t))$ 的动作分布与单步条件对数似然梯度恒满足：
+设原始上层观测算子 $\Phi_u^{\mathrm{assoc}}(s_t)$ 仅编码无人机 $u$ 自身状态、感知范围内邻机位置以及当前已关联终端集合 $\mathcal{U}_u(s_t)=\{m\in\mathcal{I}:u_m(t)=u\}$。对于任意严格位于全体闭覆盖圆盘并集外部开集 $\Omega_{\mathrm{ext}}(t)=\mathbb{R}^2\setminus\bigcup_{v\in\mathcal{U}}\overline{\mathcal{D}_v(t)}$（即满足 $\min_{v\in\mathcal{U}}\|\mathbf{w}_m(t)-\mathbf{q}_v(t)\|_2>R_c$）的未覆盖终端 $m\in\mathcal{U}_{\mathrm{uncov}}(s_t)$，在保持各机自身状态、邻机位置及已关联集合不变且微扰后坐标仍留在 $\Omega_{\mathrm{ext}}(t)$ 内的任意全局状态微扰 $s_t\to s_t'$ 下，任意对观测与参数可微的分散式策略 $\pi_\theta(\mathbf{z}_u\mid\Phi_u^{\mathrm{assoc}}(s_t))$ 的动作分布与单步条件对数似然得分函数偏导恒满足：
 \begin{equation}
     \begin{aligned}
     &\pi_\theta\big(\mathbf{z}_u\mid\Phi_u^{\mathrm{assoc}}(s_t)\big)=\pi_\theta\big(\mathbf{z}_u\mid\Phi_u^{\mathrm{assoc}}(s_t')\big),\\
@@ -258,10 +160,22 @@
 \end{theorem}
 
 \begin{proof}
-由原始观测算子 $\Phi_u^{\mathrm{assoc}}$ 的构造规则，任意未覆盖终端 $m\in\mathcal{U}_{\mathrm{uncov}}(s_t)$ 满足 $\|\mathbf{w}_m(t)-\mathbf{q}_v(t)\|_2>R_c$（$\forall v\in\mathcal{U}$），故 $m\notin\mathcal{U}_u(s_t)$。因此，$\Phi_u^{\mathrm{assoc}}(s_t)$ 的所有槽位特征均不显式包含 $\mathbf{w}_m(t)$ 与 $\boldsymbol{\xi}_m(t)$（$m\in\mathcal{U}_{\mathrm{uncov}}(s_t)$），从而对保持已关联集合不变的未覆盖终端分布变化恒有 $\Phi_u^{\mathrm{assoc}}(s_t)=\Phi_u^{\mathrm{assoc}}(s_t')$。根据复合函数链式求导法则，$\log\pi_\theta(\mathbf{z}_u\mid\Phi_u^{\mathrm{assoc}}(s_t))$ 对任意 $m\in\mathcal{U}_{\mathrm{uncov}}(s_t)$ 坐标 $\mathbf{w}_m(t)$ 的雅可比矩阵恒为零矩阵，式~\eqref{eq:ch3-aliasing-theorem} 成立。至此，定理 3.2.1 证毕。
+任取未覆盖终端 $m\in\mathcal{U}_{\mathrm{uncov}}(s_t)$，由 $\mathbf{w}_m(t)\in\Omega_{\mathrm{ext}}(t)$ 可知其到全体无人机的正距离余量满足 $\delta_m=\min_{v\in\mathcal{U}}\|\mathbf{w}_m(t)-\mathbf{q}_v(t)\|_2-R_c>0$。在开球邻域 $B(\mathbf{w}_m(t),\delta_m/2)=\{\mathbf{w}'\in\mathbb{R}^2:\|\mathbf{w}'-\mathbf{w}_m(t)\|_2<\delta_m/2\}\subset\Omega_{\mathrm{ext}}(t)$ 内任意微扰终端 $m$ 的位置至 $\mathbf{w}_m'(t)$（其余状态分量保持不变，记微扰后全局状态为 $s_t'$），由逆三角不等式有：
+\begin{align*}
+    \min_{v\in\mathcal{U}}\|\mathbf{w}_m'(t)-\mathbf{q}_v(t)\|_2
+    &\geq\min_{v\in\mathcal{U}}\Big(\|\mathbf{w}_m(t)-\mathbf{q}_v(t)\|_2-\|\mathbf{w}_m'(t)-\mathbf{w}_m(t)\|_2\Big) \\
+    &>(R_c+\delta_m)-\frac{\delta_m}{2}=R_c+\frac{\delta_m}{2}>R_c.
+\end{align*}
+由此可知 $m\notin\mathcal{U}_u(s_t')$ 且已关联终端集合保持 $\mathcal{U}_u(s_t')=\mathcal{U}_u(s_t)$，故原始观测算子 $\Phi_u^{\mathrm{assoc}}$ 在开球邻域 $B(\mathbf{w}_m(t),\delta_m/2)$ 上关于 $\mathbf{w}_m(t)$ 为局部常值映射，满足 $\Phi_u^{\mathrm{assoc}}(s_t')=\Phi_u^{\mathrm{assoc}}(s_t)$ 及局部雅可比矩阵 $\partial\Phi_u^{\mathrm{assoc}}(s_t)/\partial\mathbf{w}_m(t)=\mathbf{0}$。将其代入分散式策略即得动作分布不变性 $\pi_\theta(\mathbf{z}_u\mid\Phi_u^{\mathrm{assoc}}(s_t))=\pi_\theta(\mathbf{z}_u\mid\Phi_u^{\mathrm{assoc}}(s_t'))$；进一步对可微复合映射应用多元链式求导法则，可得单步对数似然得分函数关于 $\mathbf{w}_m(t)$ 的局部雅可比矩阵：
+\begin{align*}
+    \frac{\partial\nabla_\theta\log\pi_\theta\big(\mathbf{z}_u\mid\Phi_u^{\mathrm{assoc}}(s_t)\big)}{\partial\mathbf{w}_m(t)}
+    &=\left.\frac{\partial\nabla_\theta\log\pi_\theta(\mathbf{z}_u\mid o_u)}{\partial o_u}\right|_{o_u=\Phi_u^{\mathrm{assoc}}(s_t)}
+      \frac{\partial\Phi_u^{\mathrm{assoc}}(s_t)}{\partial\mathbf{w}_m(t)}=\mathbf{0},
+\end{align*}
+故式~\eqref{eq:ch3-aliasing-theorem} 对任意 $m\in\mathcal{U}_{\mathrm{uncov}}(s_t)$ 恒成立。至此，定理 3.2.1 证毕。
 \end{proof}
 
-定理 3.2.1 证明了原始已关联观测下的接纳瓶颈源于输入映射层面的结构性信息截断：即便全局奖励信号因大量请求未覆盖而给出低分，策略网络也无法从 $\Phi_u^{\mathrm{assoc}}(s_t)$ 中辨识未覆盖需求位于何处，从而难以形成指向未覆盖热点的有效空间机动。
+定理 3.2.1 刻画了原始已关联观测下的输入混叠机理：式~\eqref{eq:ch3-aliasing-theorem} 表明单步对数策略得分函数对当前圈外终端坐标的局部偏导恒为零；在完整策略梯度期望 $\mathbb{E}[\nabla_\theta\log\pi_\theta(\mathbf{z}_u\mid o_u^{\mathrm{assoc}})A_{u,t}]$ 中，尽管优势项 $A_{u,t}$ 受后续未覆盖惩罚影响而非零，但所有映射到同一局部观测等价类 $\{s_t:\Phi_u^{\mathrm{assoc}}(s_t)=o_u^{\mathrm{assoc}}\}$ 的相异圈外热点构型共享完全相同的得分方向 $\nabla_\theta\log\pi_\theta(\mathbf{z}_u\mid o_u^{\mathrm{assoc}})$，参数更新仅能对等价类内优势取条件平均，而无法根据当拍特定未覆盖热点的瞬时方位自适应转向。
 
 \section{需求感知协同轨迹规划方法}
 \label{sec:upper-dec-pomdp}
@@ -348,7 +262,7 @@
 \end{equation}
 其中 $\tilde{\tau}_{m,\cdot}=\operatorname{clip}(\widehat{T}_{m,\cdot}/D_m,0,10)/10$ 为截断归一化的三类路径启发式预测时延比，$\hat{f}_v=F_v/(|\mathcal{A}_v^{\mathrm{srv}}(t)|+1)$ 为邻机边际可用算力估计，$F_{\max}^{\mathrm{UAV}}=85\,\mathrm{GHz}$。下层离散卸载动作空间为 $\{0,1,\ldots,6\}$，依次对应本地执行（$0$）、宏基站卸载（$1$）及五架无人机协作编号（$2+v$，自身协作编号 $2+u$ 由硬掩码屏蔽）。
 
-针对定理 3.2.1 揭示的预接纳观测盲区，本章提出如图~\ref{fig:ch3-obs-compare} 所示的预接纳需求扩展观测机制。记感知半径 $R_s=460\,\mathrm{m}$ 内尚未被任何无人机覆盖的地面终端集合为 $\mathcal{V}_u^{\mathrm{un}}(t)=\{m\in\mathcal{U}_{\mathrm{uncov}}(t):\|\mathbf{w}_m(t)-\mathbf{q}_u(t)\|_2\leq R_s\}$（已被邻机接纳的终端不重复计入）。扩展观测首先按距离升序完整保留本机已关联终端 $\mathcal{U}_u(t)$，随后在剩余空闲槽位中按距离升序依次补入 $\mathcal{V}_u^{\mathrm{un}}(t)$ 中的未覆盖终端，直至填满 $30$ 槽（不足部分补零）：
+针对定理 3.2.1 揭示的预接纳观测盲区，本章提出如图~\ref{fig:ch3-obs-compare}(b) 所示的预接纳需求扩展观测机制。记感知半径 $R_s=460\,\mathrm{m}$ 内尚未被任何无人机覆盖的地面终端集合为 $\mathcal{V}_u^{\mathrm{un}}(t)=\{m\in\mathcal{U}_{\mathrm{uncov}}(t):\|\mathbf{w}_m(t)-\mathbf{q}_u(t)\|_2\leq R_s\}$（已被邻机接纳的终端不重复计入）。扩展观测首先按距离升序完整保留本机已关联终端 $\mathcal{U}_u(t)$，随后在剩余空闲槽位中按距离升序依次补入 $\mathcal{V}_u^{\mathrm{un}}(t)$ 中的未覆盖终端，直至填满 $30$ 槽（不足部分补零）：
 \begin{equation}
  \mathcal L_u(t)=
  \operatorname{first}_{30}\left[
@@ -357,15 +271,7 @@
  \operatorname{sort}_{(d,\mathrm{id})}\big(\mathcal V_u^{\mathrm{un}}(t)\big)\right].
  \label{eq:ch3-slot-selection}
 \end{equation}
-值得注意的是，$\mathcal{V}_u^{\mathrm{un}}(t)$ 同时包含当步发起服务请求（$\mathrm{type}_m=1$）与内容请求（$\mathrm{type}_m=2$）的未覆盖终端：由于两类请求共享相同的空间热点终端分布，内容终端槽位同样提供了高价值的终端聚集密度线索，同时注意力查询可依据式~\eqref{eq:ch3-ue-slot} 中的 $\mathrm{type}_m$ 与 $D_m^{\mathrm{obs}}$ 字段自适应区分紧迫计算服务需求与一般内容访问需求；一旦无人机机动覆盖该区域，两类终端也将共同参与式~\eqref{eq:edge-rate} 的接入带宽分摊与式~\eqref{eq:jfi} 的公平性统计。
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.9\textwidth]{../docs/figures/图3-5_原观测与扩展观测对照示意}
-    \bicaption{原观测与扩展观测的槽位填充规则对照}{Slot-filling rules of the original and the extended observation}
-    \label{fig:ch3-obs-compare}
-    \sysufignote{原观测仅含已覆盖 UE，扩展观测以距离顺序补入感知范围内尚未接纳的 UE；图为规则示意，非注意力权重或真实记录。}
-\end{figure}
+值得注意的是，$\mathcal{V}_u^{\mathrm{un}}(t)$ 同时包含当步发起服务请求（$\mathrm{type}_m=1$）与内容请求（$\mathrm{type}_m=2$）的未覆盖终端：由于两类请求共享相同的空间热点终端分布，内容终端槽位同样提供了高价值的终端聚集密度线索，同时注意力查询可依据式~\eqref{eq:ch3-ue-slot} 中的 $\mathrm{type}_m$ 与 $D_m^{\mathrm{obs}}$ 字段自适应区分紧迫计算服务需求与一般内容访问需求；一旦无人机机动覆盖该区域，两类终端也将共同参与式~\eqref{eq:edge-rate} 的接入带宽分摊与第二章式~\eqref{eq:ch2-jain} 的公平性统计。
 
 关于式~\eqref{eq:ch3-slot-selection} 定义的扩展观测构造机制，有如下结构保真与可辨识性质：
 
@@ -374,7 +280,17 @@
 \end{lemma}
 
 \begin{proof}
-由式~\eqref{eq:ch3-slot-selection} 的拼接优先级，$\operatorname{sort}_{(d,\mathrm{id})}$\allowbreak$(\mathcal{U}_u(t))$ 排在序列首部，当 $|\mathcal{U}_u(t)|\allowbreak <\allowbreak K_{\mathrm{slot}}$ 时，截断算子 $\operatorname{first}_{30}[\cdot]$ 完整保留 $\mathcal{U}_u(t)$ 的全部元素，且总输出槽位数固定为 $K_{\mathrm{slot}}=30$，故总观测维度恒为 $77+\allowbreak 4\times 2+\allowbreak 30\times 7=\allowbreak 295$。其次，由于排序键 $(d,\mathrm{id})$ 在固定状态下具有严格全序性，剩余 $K_{\mathrm{slot}}-\allowbreak |\mathcal{U}_u(t)|$ 个槽位与 $\mathcal{V}_u^{\mathrm{un}}(t)$ 中距离最近的前 $\min(|\mathcal{V}_u^{\mathrm{un}}(t)|,\allowbreak K_{\mathrm{slot}}-|\mathcal{U}_u(t)|)$ 个未覆盖终端建立一一对应映射，其非零相对位移向量 $(\mathbf{w}_m-\allowbreak \mathbf{q}_u)/\allowbreak 700$ 直接进入注意力键—值矩阵，从而在观测编码层消除了定理 3.2.1 所述的结构性输入截断，为策略网络利用该子集未覆盖终端的位置变化提供了可辨识输入条件。至此，引理 3.3.1 证毕。
+（1）由式~\eqref{eq:ch3-slot-selection} 的拼接优先级，$\operatorname{sort}_{(d,\mathrm{id})}(\mathcal{U}_u(t))$ 排在序列首部。当 $|\mathcal{U}_u(t)|<K_{\mathrm{slot}}=30$ 时，截断算子 $\operatorname{first}_{30}[\cdot]$ 完整保留 $\mathcal{U}_u(t)$ 的全部元素，补入未覆盖终端及零填充后的总槽位数恒固定为 $K_{\mathrm{slot}}$，故扩展观测张量维度恒满足：
+\begin{equation*}
+    \dim\big(\Phi_u^{\mathrm{ext}}(s_t)\big)=77+4\times 2+K_{\mathrm{slot}}\times 7=77+8+210=295=\dim\big(\Phi_u^{\mathrm{assoc}}(s_t)\big).
+\end{equation*}
+（2）由于排序键 $(d,\mathrm{id})$ 在固定状态下具有严格全序性，剩余 $K_{\mathrm{slot}}-|\mathcal{U}_u(t)|>0$ 个可用槽位与 $\mathcal{V}_u^{\mathrm{un}}(t)$ 中距离最近的前 $K_u^{\mathrm{un}}(t)=\min\big(|\mathcal{V}_u^{\mathrm{un}}(t)|,\,K_{\mathrm{slot}}-|\mathcal{U}_u(t)|\big)$ 个未覆盖终端子集 $\mathcal{V}_{u,\mathrm{vis}}^{\mathrm{un}}(t)$ 建立唯一确定的一一对应映射。对任意严格位于感知开圆盘内部（$\|\mathbf{w}_m(t)-\mathbf{q}_u(t)\|_2<R_s$）且不处于等距切换边界的可见未覆盖终端 $m\in\mathcal{V}_{u,\mathrm{vis}}^{\mathrm{un}}(t)$，在保持排序次序不变的局部开邻域内由式~\eqref{eq:ch3-ue-slot} 求偏导，其对应槽位向量 $\mathbf{x}_{u,m}\in\mathbb{R}^7$ 关于 $\mathbf{w}_m(t)$ 的局部雅可比秩满足：
+\begin{equation*}
+    \operatorname{rank}\!\left(\frac{\partial\Phi_u^{\mathrm{ext}}(s_t)}{\partial\mathbf{w}_m(t)}\right)
+    =\operatorname{rank}\!\left(\frac{\partial\mathbf{x}_{u,m}}{\partial\mathbf{w}_m(t)}\right)
+    =\operatorname{rank}\!\left(\frac{1}{700}\mathbf{I}_2\right)=2,
+\end{equation*}
+从而在观测编码层消除了定理 3.2.1 所述的结构性零雅可比输入截断，为注意力键值矩阵利用该子集未覆盖终端的位置变化提供了可辨识输入条件。至此，引理 3.3.1 证毕。
 \end{proof}
 
 例如，当本机当前关联 $12$ 个终端且 $460\,\mathrm{m}$ 感知范围内另有 $25$ 个未覆盖终端时，原观测包含 $12$ 个有效槽与 $18$ 个全零空槽；扩展观测则在完整保留前 $12$ 个已关联终端槽的基础上，按由近及远顺序填入最近的 $18$ 个未覆盖终端，同时保持上层 Actor/Critic 参数量与下层仅处理真实自然接纳服务集合 $\mathcal{A}_u^{\mathrm{srv}}(t)$ 的物理边界完全不变。
@@ -383,7 +299,7 @@
 \label{sec:attention-mappo}
 \label{sec:attention-structure}
 
-图~\ref{fig:ch3-architecture} 展示了协议 I 下上层 Attention-MAPPO（$295$ 维预接纳扩展局部观测与 $8$ 头交叉注意力）与下层受约束卸载 MAPPO（$1405$ 维请求级观测、$7$ 维离散卸载动作质量掩码及自适应违例乘子 $\lambda_{\mathrm{dsr}},\lambda_{\mathrm{mbs}}$）在单时隙物理环境中的上下层协同决策与训练结构。在上层 Actor 网络中，自身状态（$77$ 维）、邻机槽位（每槽 $2$ 维）与终端槽位（每槽 $7$ 维）分别经由独立线性映射、层归一化（LayerNorm）与 ReLU 激活编码为 $64$ 维特征嵌入。随后以自身嵌入 $\mathbf{e}_u\in\mathbb{R}^{64}$ 作为查询向量，分别对非空邻机嵌入集合与非空终端嵌入集合执行 $8$ 头缩放点积交叉注意力（每头子空间维度 $d_h=64/8=8$）：
+图~\ref{fig:ch3-architecture}(b) 展示了协议 I 下上层 Attention-MAPPO（$295$ 维预接纳扩展局部观测与 $8$ 头交叉注意力）与下层受约束卸载 MAPPO（$1405$ 维请求级观测、$7$ 维离散卸载动作质量掩码及自适应违例乘子 $\lambda_{\mathrm{dsr}},\lambda_{\mathrm{mbs}}$）在单时隙物理环境中的上下层协同决策与训练结构。在上层 Actor 网络中，自身状态（$77$ 维）、邻机槽位（每槽 $2$ 维）与终端槽位（每槽 $7$ 维）分别经由独立线性映射、层归一化（LayerNorm）与 ReLU 激活编码为 $64$ 维特征嵌入。随后以自身嵌入 $\mathbf{e}_u\in\mathbb{R}^{64}$ 作为查询向量，分别对非空邻机嵌入集合与非空终端嵌入集合执行 $8$ 头缩放点积交叉注意力（每头子空间维度 $d_h=64/8=8$）：
 \begin{equation}
  \mathbf Q_u^h=\mathbf e_uW_Q^h,\quad
  \mathbf K_i^h=\mathbf e_iW_K^h,\quad
@@ -395,14 +311,15 @@
 \end{equation}
 其中 $\mathcal{V}_u$ 表示当前非空有效槽位指标集，全零填充槽在 softmax 归一化前被严格置为 $-\infty$ 掩码屏蔽，缩放因子为单头维度的平方根 $\sqrt{d_h}=\sqrt{8}$。
 
-各注意力头加权聚合得到 $\mathbf{c}_u^h=\sum_{i\in\mathcal{V}_u}a_{u,i}^h\mathbf{V}_i^h$，经 $8$ 头拼接与线性投影后输出 $64$ 维邻机协调上下文和 $64$ 维地面需求上下文（当对应非空集合为空时上下文主干置零）。将自身嵌入、邻机上下文与终端上下文拼接为 $192$ 维联合表征，输入两层全连接融合网络（$192\to 128\to 64$，配 LayerNorm 与 ReLU）提取上层策略隐状态 $\mathbf{f}_u\in\mathbb{R}^{64}$。
+各注意力头加权聚合得到 $\mathbf{c}_u^h=\sum_{i\in\mathcal{V}_u}a_{u,i}^h\mathbf{V}_i^h$，经 $8$ 头拼接与线性投影后输出 $64$ 维邻机协调上下文和 $64$ 维地面需求上下文（当对应非空集合为空时上下文主干置零）。将自身嵌入、邻机上下文与终端上下文拼接为 $192$ 维联合表征，输入两层全连接融合网络（$192\to 128\to 64$，配 LayerNorm 与 ReLU）提取上层策略隐状态 $\mathbf{f}_u\in\mathbb{R}^{64}$。需明确因果控制边界：本章实验将上层多头交叉注意力固定为承载变长非空邻机与终端槽位的共享关系编码骨干，通过单变量受控对照专门隔离检验“下层请求自注意力裁剪”与“上层预接纳扩展观测重构”两项机制各自的因果效应。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{../docs/figures/图3-4_Attention-MAPPO网络与训练结构}
-    \bicaption{协议 I 下上层 Attention-MAPPO 与下层受约束卸载 MAPPO 的上下层协同闭环结构}{Hierarchical closed-loop architecture of upper-layer Attention-MAPPO and lower-layer constrained offloading MAPPO under Protocol I}
+    \includegraphics[width=\textwidth]{../docs/figures/fig3_02_hierarchical_mappo.pdf}
+    \bicaption{协议 I 单时隙因果结算时序与上下层协同 CTDE 网络结构}{Single-slot causal execution timeline and hierarchical CTDE architecture under Protocol I}
+    \label{fig:ch3-timeline}
     \label{fig:ch3-architecture}
-    \sysufignote{结构与数据流示意图：实线表示前向决策推理与单时隙环境物理闭环（S0 自然覆盖接纳、S2 批量共享结算、S3 轨迹推进），虚线表示训练期价值 Critic 评价与单向自适应违例乘子 $(\lambda_{\mathrm{dsr}},\lambda_{\mathrm{mbs}})$ 更新；上下层参数独立，下层严格仅处理真实自然接纳服务集合 $\mathcal{A}_u^{\mathrm{srv}}(t)$。}
+    \sysufignote{（a）单时隙移动前冻结几何下的请求批量结算与移动后轨迹推进时序；（b）上层 $8$ 头交叉注意力轨迹规划与下层无注意力精简受约束卸载 MAPPO 的集中式训练分散式执行（CTDE）闭环结构，下层仅处理真实自然接纳服务集合 $\mathcal{A}_u^{\mathrm{srv}}(t)$。}
 \end{figure}
 
 集中式 Critic 网络在训练阶段接收全部五架无人机的联合观测张量 $\mathbf{o}_t\in\mathbb{R}^{N\times 295}$：先将每架无人机的 $295$ 维局部观测独立编码为 $64$ 维智能体嵌入，再在 $N=5$ 个智能体嵌入之间执行屏蔽自身对角项的 $8$ 头智能体间自注意力，将自身嵌入与他机聚合上下文拼接为 $128$ 维特征后，经两层价值头（$128\to 64\to 1$）输出各无人机的集中式状态价值估计 $V_{\phi,u}(\mathbf{o}_t)$。
@@ -432,7 +349,7 @@
                                   \widehat A_{u,t+1},
  \label{eq:gae}
 \end{equation}
-其中 $\gamma=0.99$，$\lambda_{\mathrm{GAE}}=0.95$。先由未归一化优势构造 Critic 回报目标 $\widehat{R}_{u,t}=\widehat{A}_{u,t}^{\mathrm{raw}}+V_{u,t}^{\mathrm{old}}$，再对整批样本的 Actor 优势作零均值单位方差标准化。记新旧策略原始动作概率比为 $\rho_{u,t}=\exp\big(\log\pi_\theta(\mathbf{z}_{u,t}\mid o_{u,t})-\log\pi_{\theta_{\mathrm{old}}}(\mathbf{z}_{u,t}\mid o_{u,t})\big)$，PPO 裁剪策略目标与裁剪价值损失分别为：
+其中 $\gamma=0.99$，$\lambda_{\mathrm{GAE}}=0.95$，在固定回合末步 $t=999$ 处取回合终止掩码 $d_{999}=1$（其余时隙 $d_t=0$）。先由未归一化优势构造 Critic 回报目标 $\widehat{R}_{u,t}=\widehat{A}_{u,t}^{\mathrm{raw}}+V_{u,t}^{\mathrm{old}}$，再对整批样本的 Actor 优势作零均值单位方差标准化。记新旧策略原始动作概率比为 $\rho_{u,t}=\exp\big(\log\pi_\theta(\mathbf{z}_{u,t}\mid o_{u,t})-\log\pi_{\theta_{\mathrm{old}}}(\mathbf{z}_{u,t}\mid o_{u,t})\big)$，PPO 裁剪策略目标与裁剪价值损失分别为：
 \begin{equation}
  L^{\mathrm{CLIP}}=\widehat{\mathbb E}_{u,t}
  \left[\min\left(\rho_{u,t}\widehat A_{u,t},
@@ -450,7 +367,7 @@
  \end{aligned}
  \label{eq:ch3-value-clipping}
 \end{equation}
-上层 Actor 最小化 $-L^{\mathrm{CLIP}}-\allowbreak\beta_H\overline{H}$（熵系数 $\beta_H=\allowbreak 0.005$，$\overline{H}=\allowbreak\frac{1}{2}\allowbreak\sum_{k=1}^{2}$\allowbreak$\frac{1}{2}\allowbreak\log(\allowbreak 2\pi e\allowbreak\sigma_k^2)$），Actor 与 Critic 均采用 Adam 优化器（学习率 $3\times 10^{-4}$，全局梯度范数裁剪上限 $0.5$，每次采样以小批量 $256$ 更新 $8$ 轮）。完整上层训练流程如算法~\ref{alg:upper-mappo} 所示。
+上层 Actor 最小化 $-L^{\mathrm{CLIP}}-\allowbreak\beta_H\overline{H}$（熵系数 $\beta_H=\allowbreak 0.005$，$\overline{H}=\allowbreak\frac{1}{2}\allowbreak\sum_{k=1}^{2}$\allowbreak$\frac{1}{2}\allowbreak\log(\allowbreak 2\pi e\allowbreak\sigma_k^2)$ 为二维连续高斯动作按坐标分量取算术平均的单维微分熵），Actor 与 Critic 均采用 Adam 优化器（学习率 $3\times 10^{-4}$，全局梯度范数裁剪上限 $0.5$，每次采样以小批量 $256$ 个智能体—时隙样本更新 $8$ 轮）。完整上层训练流程如算法~\ref{alg:upper-mappo} 所示。
 
 \begin{algorithm}[!htbp]
  \caption{上层 Attention-MAPPO 的概率与执行一致训练流程}
@@ -513,16 +430,16 @@
         区域水平尺寸 & $700\times700$ & $\mathrm{m}^2$ & 单时隙时长 $\tau$ & $1.0$ & $\mathrm{s}$ \\
         无人机 $N$ / 终端 $M$ & $5$ / $100$ & 架 / 个 & 单回合时隙数 $T$ & $1000$ & 步 \\
         飞行高度 $H$ & $100$ & $\mathrm{m}$ & 最大速度 $v_{\max}$ & $15$ & $\mathrm{m/s}$ \\
-        最小安全机间距 $d_{\min}$ & $200$ & $\mathrm{m}$ & 终端单步最大位移 & $15$ & $\mathrm{m}$ \\
+        最小机间距 $d_{\min}$ & $200$ & $\mathrm{m}$ & 终端最大步长 & $15$ & $\mathrm{m}$ \\
         物理覆盖半径 $R_c$ & $100$ & $\mathrm{m}$ & 需求感知半径 $R_s$ & $460$ & $\mathrm{m}$ \\
-        机载算力 $\mathbf F_{\mathrm{UAV}}$ & $[75{,}60{,}70{,}85{,}50]$ & $\mathrm{GHz}$ & 宏基站三维坐标 & $(350{,}350{,}30)$ & $\mathrm{m}$ \\
+        机载算力 $\mathbf F_u$ & $[75{,}60{,}70{,}85{,}50]$ & $\mathrm{GHz}$ & 宏基站坐标 & $(350{,}350{,}30)$ & $\mathrm{m}$ \\
         宏基站算力 $F_{\mathrm{M}}$ & $200$ & $\mathrm{GHz}$ & 机载缓存 $\mathbf S_{\mathrm{cap}}$ & $[158{,}171{,}148{,}134{,}162]$ & $\mathrm{MB}$ \\
-        服务类别数 / 内容数 & $25$ / $50$ & 类 / 个 & Zipf 流行度指数 $\beta$ & $0.8$ & — \\
+        服务类别 / 内容数 & $25$ / $50$ & 类 / 个 & Zipf 流行度指数 $\beta$ & $0.8$ & — \\
         输入 $L_m$ / 镜像 $B_s$ & $1\sim5$ / $1\sim5$ & $\mathrm{MB}$ & 相对截止期 $D_m$ & $0.65\sim2.10$ & $\mathrm{s}$ \\
-        计算周期密度 $\omega_s$ & $1200\sim2800$ & $\mathrm{cycles/B}$ & 任务优先级 $p_m$ & $\{1,2,3\}$ & — \\
+        计算密度 $\omega_s$ & $1200\sim2800$ & $\mathrm{cycles/B}$ & 任务优先级 $p_m$ & $\{1,2,3\}$ & — \\
         接入带宽 $B^{\mathrm{edge}}$ & $40$ & $\mathrm{MHz}$ & 协作带宽 $B^{\mathrm{inter}}$ & $20$ & $\mathrm{MHz}$ \\
-        回传带宽 $B^{\mathrm{bh}}$ & $0.75$ & $\mathrm{MHz}$ & 发射功率 / 噪声功率 & $0.5$ / $10^{-13}$ & $\mathrm{W}$ \\
-        热点数量 / 热点半径 & $2$ / $100$ & 个 / $\mathrm{m}$ & 热点终端聚集比例 & $85$ & $\%$ \\
+        回传带宽 $B^{\mathrm{bh}}$ & $0.75$ & $\mathrm{MHz}$ & 发射 / 噪声功率 & $0.5$ / $10^{-13}$ & $\mathrm{W}$ \\
+        热点数量 / 半径 & $2$ / $100$ & 个 / $\mathrm{m}$ & 热点终端比例 & $85$ & $\%$ \\
         \bottomrule
     \end{sysufulltabular}
 \end{table}
@@ -539,7 +456,7 @@
         PPO 裁剪系数 $\varepsilon$ & $0.2$ & — & 策略熵正则系数 $\beta_H$ & $0.005$ & — \\
         Actor / Critic 学习率 & $3\times10^{-4}$ & — & 梯度范数裁剪上限 & $0.5$ & — \\
         单轮采样步数 & $1000$ & 步 & 每次采样更新轮数 & $8$ & 轮 \\
-        小批量样本规模 & $256$ & 步 & 注意力头数 / 嵌入维度 & $8$ / $64$ & 头 / 维 \\
+        小批量样本规模 & $256$ & 样本 & 注意力头数 / 嵌入维度 & $8$ / $64$ & 头 / 维 \\
         \bottomrule
     \end{sysufulltabular}
 \end{table}
@@ -582,7 +499,7 @@
     \centering
     \bicaption{原始已关联观测下两类分层强化学习架构的基准比较}{Benchmark comparison of two hierarchical MARL architectures under associated-only observation}
     \label{tab:ch3-baseline-arch}
-    \begin{sysufulltabular}[0pt]{lccc}
+    \begin{sysufulltabular}[3.5pt]{lccc}
         \toprule
         评估指标 & 完整双注意力 & 下层精简 MAPPO & 精简减双注意力 \\
          & 架构 & （强基线） & [95\% 区间]$^{\mathrm{a}}$ \\
@@ -599,16 +516,16 @@
     \sysutabnote{$^{\mathrm{a}}$ 基于 $5$ 个训练种子 $\times$ $10$ 个配对工作负载（$50$ 个评估单元），置信区间由训练种子与工作负载双向交叉配对 Bootstrap 给出。}
 \end{table}
 
-由表~\ref{tab:ch3-baseline-arch} 可见，下层精简 MAPPO 架构的平均 DSR 达到 $0.2507$，显著高于原完整双注意力架构的 $0.2390$（净提升 $+1.16$ 个百分点，交叉 Bootstrap $95\%$ 置信区间 $[+0.43,+1.99]$ 个百分点严格大于零）。分解指标揭示了上下层协同共演化机制的作用：在上下层同步更新的非平稳训练过程中，去除下层 $100$ 槽请求间注意力与 $7025$ 维跨机价值拼接显著降低了下层策略与价值估计的更新波动，并适度提高了高算力宏基站的分流利用率（$\rho_{\mathrm{MBS}}^{\mathrm{low}}$ 由 $3.92\%$ 增至 $6.60\%$），使上层轨迹策略得以在更稳定的后端反馈下探索高密度区域，将自然接纳率 $\alpha$ 由 $48.46\%$ 提升至 $52.19\%$（$+3.73$ 个百分点），而在接纳后完成率 $\eta$ 上的差异（$-1.21$ 个百分点）跨零不显著。为避免与较弱基线对比高估后续观测改进收益，本章将表现更优的“上层注意力 + 下层精简 MAPPO”确立为原始观测强基线。
+由表~\ref{tab:ch3-baseline-arch} 与图~\ref{fig:ch3-failure}(a) 可见，下层精简 MAPPO 架构的平均 DSR 达到 $0.2507$，显著高于原完整双注意力架构的 $0.2390$（净提升 $+1.16$ 个百分点，交叉 Bootstrap $95\%$ 置信区间 $[+0.43,+1.99]$ 个百分点严格大于零）。分解指标揭示了上下层协同共演化机制的作用：在上下层同步更新的非平稳训练过程中，去除下层 $100$ 槽请求间注意力与 $7025$ 维跨机价值拼接显著降低了下层策略与价值估计的更新波动，并适度提高了高算力宏基站的分流利用率（$\rho_{\mathrm{MBS}}^{\mathrm{low}}$ 由 $3.92\%$ 增至 $6.60\%$），使上层轨迹策略得以在更稳定的后端反馈下探索高密度区域，将自然接纳率 $\alpha$ 由 $48.46\%$ 提升至 $52.19\%$（$+3.73$ 个百分点），而在接纳后完成率 $\eta$ 上的差异（$-1.21$ 个百分点）跨零不显著。为避免与较弱基线对比高估后续观测改进收益，本章将表现更优的“上层注意力 + 下层精简 MAPPO”确立为原始观测强基线。
 
-进一步在探索性诊断批次（表~\ref{tab:ch3-protocol} 左列的 $5$ 个探索训练种子 $\{2767,\allowbreak 3191,\allowbreak 3623,\allowbreak 4081,\allowbreak 4597\}\times 5$ 个探索工作负载 $\{1433,\allowbreak 1471,\allowbreak 1511,\allowbreak 1553,\allowbreak 1601\}$，共 $25$ 个评估单元，严格独立于确认集）上对强基线的请求结局进行穷尽拆解，结果如图~\ref{fig:ch3-failure} 所示。在该诊断批次中，强基线平均 DSR 为 $0.2396$，自然接纳率为 $47.87\%$；因处于全部无人机 $100\,\mathrm{m}$ 覆盖圆盘之外而未被接纳的服务请求占全部生成请求的 $52.13\%$，占全部失败服务请求（$G-S$）的 $68.55\%$。与此同时，从该批次的 $5$ 个训练种子与 $2$ 个代表性工作负载（$1433,1511$）首回合等距时隙 $\{100,300,500,700,900\}$ 抽取 $50$ 个冻结快照（累计生成 $1540$ 个服务请求、接纳 $658$ 个、未覆盖 $882$ 个），在保持前端覆盖不变的前提下执行至多两步单请求最佳改善局部搜索：按时完成数在原质量掩码候选域下由 $339$ 增至 $396$（占快照生成数的 $+3.70$ 个百分点），在硬物理可行域下增至 $403$（$+4.16$ 个百分点）。上述定量诊断证实：一方面，超过三分之二的服务失败发生在前端空间准入之前，打通上层未覆盖需求感知盲区是提升端到端 DSR 的首要抓手；另一方面，已接纳批次内部确实客观存在跨机协同重分配余量（将在第四章专门深入求解）。
+进一步在探索性诊断批次（表~\ref{tab:ch3-protocol} 左列的 $5$ 个探索训练种子 $\{2767,\allowbreak 3191,\allowbreak 3623,\allowbreak 4081,\allowbreak 4597\}\times 5$ 个探索工作负载 $\{1433,\allowbreak 1471,\allowbreak 1511,\allowbreak 1553,\allowbreak 1601\}$，共 $25$ 个评估单元，严格独立于确认集）上对强基线的请求结局进行穷尽拆解，结果如图~\ref{fig:ch3-failure}(b) 所示。在该诊断批次中，强基线平均 DSR 为 $0.2396$，自然接纳率为 $47.87\%$；因处于全部无人机 $100\,\mathrm{m}$ 覆盖圆盘之外而未被接纳的服务请求占全部生成请求的 $52.13\%$，占全部失败服务请求（$G-S$）的 $68.55\%$。与此同时，从该批次的 $5$ 个训练种子与 $2$ 个代表性工作负载（$1433,1511$）首回合等距时隙 $\{100,300,500,700,900\}$ 抽取 $50$ 个冻结快照（累计生成 $1540$ 个服务请求、接纳 $658$ 个、未覆盖 $882$ 个），在保持前端覆盖不变的前提下执行至多两步单请求最佳改善局部搜索：按时完成数在原质量掩码候选域下由 $339$ 增至 $396$（占快照生成数的 $+3.70$ 个百分点），在硬物理可行域下增至 $403$（$+4.16$ 个百分点）。上述定量诊断证实：一方面，超过三分之二的服务失败发生在前端空间准入之前，打通上层未覆盖需求感知盲区是提升端到端 DSR 的首要抓手；另一方面，已接纳批次内部确实客观存在跨机协同重分配余量（将在第四章专门深入求解）。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.8\textwidth]{../docs/figures/图3-6_主场景服务请求结果构成}
-    \bicaption{主场景实际生成服务请求的结果构成}{Outcome composition of generated service requests in the main setting}
+    \includegraphics[width=\textwidth]{../docs/figures/fig3_03_architecture_bottleneck.pdf}
+    \bicaption{分层基准架构筛选对比与主场景请求失败瓶颈归因诊断}{Hierarchical baseline architecture comparison and failure-bottleneck attribution in the main setting}
     \label{fig:ch3-failure}
-    \sysufignote{下层无注意力强基线在瓶颈诊断批次 25 个评估单元上的计数汇总。}
+    \sysufignote{（a）基准矩阵 $50$ 个评估单元上的算法平均 DSR 与双向交叉 Bootstrap $95\%$ 置信区间；（b）瓶颈诊断批次 $25$ 个评估单元的生成服务请求三结局拆解（未覆盖占失败请求的 $68.55\%$）及 $50$ 个冻结快照上的两步跨机重分配潜在余量。}
 \end{figure}
 
 \subsection{扩展未覆盖需求观测的探索对比与独立确认案例}
@@ -636,22 +553,15 @@
     \sysutabnote{$^{\mathrm{a}}$ 以训练种子为独立统计单位的双侧 $95\%$ 配对 $t$ 置信区间（$10$ 个全新训练种子 $\times$ $5$ 个全新工作负载）。先在每评估单元内汇总请求计数求比例，再对 $50$ 个单元取等权算术平均；由于跨评估单元存在负向协方差项（式~\eqref{eq:ch3-mean-decomposition}），单元平均比值满足 $\bar\alpha\bar\eta=0.4769\times 0.5170=0.2466\neq 0.2450$（强基线）及 $0.5751\times 0.4786=0.2752\neq 0.2735$（候选），而在全集累计计数下乘积恒等式严格成立。}
 \end{table}
 
-由表~\ref{tab:upper-confirmation} 与图~\ref{fig:ch3-seed-diff} 可知，在独立确认实验中，预接纳扩展观测策略将评估单元等权平均 DSR 从强基线的 $0.2450$ 提升至 $0.2735$，净提升 $+2.85$ 个百分点，跨训练种子配对 $t$ 的 $95\%$ 置信区间为 $[+1.65,+4.06]$ 个百分点（双向交叉 Bootstrap $95\%$ 置信区间为 $[+1.49,+3.98]$ 个百分点）。在 $10$ 个全新训练种子中有 $9$ 个种子取得正向增益，$50$ 个配对评估单元中有 $42$ 个单元取得正向增益。从全集累计请求计数核验看，强基线与扩展观测策略在完全相同的外生工作负载随机流下累计生成的服务请求总数严格一致，均为 $G=9{,}805{,}180$ 个：强基线累计自然接纳 $4{,}671{,}766$ 个、按时完成 $2{,}401{,}441$ 个（全集累计 DSR 为 $0.24492$）；扩展观测策略累计自然接纳 $5{,}636{,}432$ 个、按时完成 $2{,}683{,}032$ 个（全集累计 DSR 为 $0.27363$，净增 $281{,}591$ 个按时完成服务请求）。图~\ref{fig:ch3-training} 的训练演化曲线进一步表明，扩展观测策略自训练中期起持续保持更高的在线截止期满足率与协同团队奖励。
+由表~\ref{tab:upper-confirmation} 与图~\ref{fig:ch3-seed-diff}(c) 可知，在独立确认实验中，预接纳扩展观测策略将评估单元等权平均 DSR 从强基线的 $0.2450$ 提升至 $0.2735$，净提升 $+2.85$ 个百分点，跨训练种子配对 $t$ 的 $95\%$ 置信区间为 $[+1.65,+4.06]$ 个百分点（双向交叉 Bootstrap $95\%$ 置信区间为 $[+1.49,+3.98]$ 个百分点）。在 $10$ 个全新训练种子中有 $9$ 个种子取得正向增益，$50$ 个配对评估单元中有 $42$ 个单元取得正向增益。从全集累计请求计数核验看，强基线与扩展观测策略在完全相同的外生工作负载随机流下累计生成的服务请求总数严格一致，均为 $G=9{,}805{,}180$ 个：强基线累计自然接纳 $4{,}671{,}766$ 个、按时完成 $2{,}401{,}441$ 个（全集累计 DSR 为 $0.24492$）；扩展观测策略累计自然接纳 $5{,}636{,}432$ 个、按时完成 $2{,}683{,}032$ 个（全集累计 DSR 为 $0.27363$，净增 $281{,}591$ 个按时完成服务请求）。图~\ref{fig:ch3-training}(a)--(b) 的训练演化曲线进一步表明，扩展观测策略自训练中期起持续保持更高的在线截止期满足率与协同团队奖励。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.9\textwidth]{../docs/figures/图3-7_确认实验训练曲线}
-    \bicaption{独立确认实验的训练曲线}{Training curves of the independent confirmation}
+    \includegraphics[width=\textwidth]{../docs/figures/fig3_04_confirmation_convergence.pdf}
+    \bicaption{独立确认实验的训练收敛过程与逐训练种子配对 DSR 差值}{Training convergence curves and per-training-seed paired DSR differences in the independent confirmation}
     \label{fig:ch3-training}
-    \sysufignote{10 个训练种子的均值 $\pm$ 标准差：(a) 训练 DSR；(b) 平均训练奖励。}
-\end{figure}
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.75\textwidth]{../docs/figures/图3-8_确认实验逐种子配对差值}
-    \bicaption{独立确认实验中候选相对强基线的逐训练种子 DSR 差值}{Per-training-seed paired DSR differences of the candidate against the strong baseline}
     \label{fig:ch3-seed-diff}
-    \sysufignote{每个种子为 5 个工作负载差值的平均；区间为配对 $t$ 95\% 区间。}
+    \sysufignote{基于 $10$ 个全新独立训练种子与 $5$ 个盲测工作负载：（a）在线训练 DSR 均值 $\pm$ 标准差；（b）协同团队奖励均值 $\pm$ 标准差；（c）逐训练种子配对 DSR 差值及跨种子配对 $t$ 的 $95\%$ 置信区间 $[+1.65,+4.06]$ 个百分点。}
 \end{figure}
 
 \subsection{接纳扩展与接纳后质量配对解耦及信息边界分析案例}
@@ -659,26 +569,26 @@
 \label{sec:obs-assumption}
 \label{sec:ch3-non-claims}
 
-为在总体统计层面剖析预接纳扩展观测提升端到端 DSR 的内在物理机理，图~\ref{fig:ch3-admission-quality} 首先展示了独立确认实验中 $10$ 个训练种子在自然接纳率 $\alpha=A/G$ 与接纳后条件完成率 $\eta=S/A$ 两个乘积因子上的逐种子配对变化。定量结果显示，扩展观测将平均自然接纳率 $\alpha$ 从 $0.4769$ 大幅提升至 $0.5751$（净增 $+9.82$ 个百分点，配对 $95\%$ 置信区间 $[+5.38,+14.26]$ 个百分点，$10$ 个训练种子全部呈正向增长）；与此同时，正如式~\eqref{eq:edge-rate} 与式~\eqref{eq:ch3-final-load} 的理论分析所预见，单时隙内接纳更多热点请求同步加剧了上行接入带宽均分稀释与机载 CPU 批量并发竞争，使接纳后条件完成率 $\eta$ 由 $0.5170$ 轻微回落至 $0.4786$（变化 $-3.85$ 个百分点，配对 $95\%$ 置信区间 $[-8.04,+0.35]$ 个百分点跨零），已接纳服务请求条件平均时延由 $1.5765\,\mathrm{s}$ 变为 $1.6553\,\mathrm{s}$（差值 $+0.0789\,\mathrm{s}$，区间跨零）。
+为在总体统计层面剖析预接纳扩展观测提升端到端 DSR 的内在物理机理，图~\ref{fig:ch3-admission-quality} 首先展示了独立确认实验中 $10$ 个训练种子在自然接纳率 $\alpha=A/G$ 与接纳后条件完成率 $\eta=S/A$ 两个乘积因子上的逐种子配对变化。定量结果显示，扩展观测将平均自然接纳率 $\alpha$ 从 $0.4769$ 大幅提升至 $0.5751$（净增 $+9.82$ 个百分点，配对 $95\%$ 置信区间 $[+5.38,+14.26]$ 个百分点，$10$ 个训练种子全部呈正向增长）；与此同时，正如式~\eqref{eq:edge-rate} 与第二章式~\eqref{eq:ch2-shared-computation} 的理论分析所预见，单时隙内接纳更多热点请求同步加剧了上行接入带宽均分稀释与机载 CPU 批量并发竞争，使接纳后条件完成率 $\eta$ 由 $0.5170$ 轻微回落至 $0.4786$（变化 $-3.85$ 个百分点，配对 $95\%$ 置信区间 $[-8.04,+0.35]$ 个百分点跨零），已接纳服务请求条件平均时延由 $1.5765\,\mathrm{s}$ 变为 $1.6553\,\mathrm{s}$（差值 $+0.0789\,\mathrm{s}$，区间跨零）。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.92\textwidth]{../docs/figures/图3-9_接纳率与接纳后质量配对比较}
-    \bicaption{确认实验中接纳率与接纳后按时完成率的配对比较}{Paired comparison of the admission fraction and the deadline satisfaction among admitted requests}
+    \includegraphics[width=\textwidth]{../docs/figures/fig3_05_dsr_phase_waterfall.pdf}
+    \bicaption{确认实验的 $(\alpha,\eta)$ 相平面配对轨迹、对称分解瀑布与次级服务指标对比}{Paired $(\alpha,\eta)$ phase-plane shifts, exact symmetric decomposition waterfall, and secondary service metrics in the confirmation}
     \label{fig:ch3-admission-quality}
-    \sysufignote{每点为一个训练种子下五个配对工作负载的均值。两因子反向变化，DSR 增益来自接纳因子。}
+    \sysufignote{（a）$10$ 个独立训练种子在接纳率 $\alpha$ 与接纳后完成率 $\eta$ 相平面上的配对迁移箭头及等 DSR 轮廓线；（b）基于式~\eqref{eq:ch2-dsr-symmetric-diff} 的逐单元精确对称归因瀑布分解（$+4.87 - 2.02 = +2.85$ 个百分点）；（c）惩罚系统时延与 Jain 服务公平性指数配对对比。}
 \end{figure}
 
-依据式~\eqref{eq:ch3-paired-factor-decomp} 对全部 $50$ 个配对评估单元逐单元执行精确对称分解并取平均：前端空间接纳扩张项平均贡献 $+4.87$ 个百分点，后端条件完成率稀释项平均抵消 $-2.02$ 个百分点，二者严格相加得到端到端 DSR 净增益 $+2.85$ 个百分点（需说明，若直接将宏观均值代入插值近似 $\Delta\bar{\alpha}(\bar{\eta}_c+\bar{\eta}_b)/2=+4.89$ 个百分点与 $\Delta\bar{\eta}(\bar{\alpha}_c+\bar{\alpha}_b)/2=-2.02$ 个百分点，其约 $0.02$ 个百分点的微小差异源于式~\eqref{eq:ch3-mean-decomposition} 中的跨单元接纳—质量负协方差项）。此外，每生成服务请求惩罚系统时延 $\bar{T}_{\mathrm{sys}}^{\mathrm{pen}}$ 由 $33.73\,\mathrm{s}$ 显著下降至 $28.15\,\mathrm{s}$（降低 $5.58\,\mathrm{s}$，配对 $95\%$ 区间 $[-8.03,-3.12]\,\mathrm{s}$），Jain 服务公平性指数由 $0.8665$ 提升至 $0.9210$（提升 $+0.0544$，配对 $95\%$ 区间 $[+0.0361,+0.0728]$），表明集群在改善热点接入的同时显著提升了跨终端服务覆盖的均衡度。
+依据第二章引理 2.3.1 的式~\eqref{eq:ch2-dsr-symmetric-diff} 对全部 $50$ 个配对评估单元逐单元执行精确对称分解并取平均：前端空间接纳扩张项平均贡献 $+4.87$ 个百分点，后端条件完成率稀释项平均抵消 $-2.02$ 个百分点，二者严格相加得到端到端 DSR 净增益 $+2.85$ 个百分点（需说明，若直接将宏观均值代入插值近似 $\Delta\bar{\alpha}(\bar{\eta}_c+\bar{\eta}_b)/2=+4.89$ 个百分点与 $\Delta\bar{\eta}(\bar{\alpha}_c+\bar{\alpha}_b)/2=-2.02$ 个百分点，其约 $0.02$ 个百分点的微小差异源于式~\eqref{eq:ch3-mean-decomposition} 中的跨单元接纳—质量负协方差项）。此外，每生成服务请求惩罚系统时延 $\bar{T}_{\mathrm{sys}}^{\mathrm{pen}}$ 由 $33.73\,\mathrm{s}$ 显著下降至 $28.15\,\mathrm{s}$（降低 $5.58\,\mathrm{s}$，配对 $95\%$ 区间 $[-8.03,-3.12]\,\mathrm{s}$），Jain 服务公平性指数由 $0.8665$ 提升至 $0.9210$（提升 $+0.0544$，配对 $95\%$ 区间 $[+0.0361,+0.0728]$），表明集群在改善热点接入的同时显著提升了跨终端服务覆盖的均衡度。
 
 为进一步在微观时空尺度直观印证上述空间部署差异，图~\ref{fig:ch3-trajectory-coverage} 与表~\ref{tab:ch3-trajectory} 对比了独立确认集中代表性中位增益训练种子 $7541$（跨种子配对增益排序居中，最接近总体均值 $+2.85$ 个百分点）在首个确认工作负载 $2203$ 第 $1$ 个测试回合上的完整 $1000$ 步执行轨迹及第 $500$ 时隙（零基步号 $499$）移动前覆盖快照。两种策略加载各自冻结检查点，在完全相同的初始部署与外生随机流下无平滑回放全部 $1000$ 个时隙（逐时隙核对封存评估日志中的全部 $33$ 项环境指标、合计 $66{,}000$ 项数值，最大绝对偏差为 $0.0$）。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{../docs/figures/图3-10_固定配对回合轨迹与覆盖对比}
-    \bicaption{固定配对回合的无人机执行轨迹与需求覆盖对比}{Executed UAV trajectories and demand coverage in a fixed paired episode}
+    \includegraphics[width=\textwidth]{../docs/figures/fig3_06_spatial_trajectory_replay.pdf}
+    \bicaption{固定配对回合的无人机完整执行轨迹、第 $500$ 时隙物理覆盖与单元性能对比}{Executed UAV trajectories, slot-500 physical coverage, and paired performance summary in a fixed replay episode}
     \label{fig:ch3-trajectory-coverage}
-    \sysufignote{上排为两方法在完整 $1000$ 个时隙内的实际执行轨迹与起终点，下排为第 $500$ 时隙移动前的 $100\,\mathrm{m}$ 物理覆盖圆与服务请求接纳情况。}
+    \sysufignote{训练种子 $7541$、工作负载 $2203$ 首回合无平滑逐拍回放：（a）原关联观测强基线的 $1000$ 步轨迹与第 $500$ 时隙 $100\,\mathrm{m}$ 物理覆盖快照；（b）预接纳扩展观测策略的轨迹与第 $500$ 时隙双热点协同包夹快照；（c）该回合及所属 $6$ 回合评估单元的关键指标增益。}
 \end{figure}
 
 \begin{table}[!htbp]
@@ -687,28 +597,28 @@
     \label{tab:ch3-trajectory}
     \begin{sysufulltabular}[0pt]{lrrr}
         \toprule
-        评估指标 & 传统局部观测（强基线） & 预接纳扩展观测 & 扩展观测减基线 \\
+        评估指标 & 局部观测（强基线） & 预接纳扩展观测 & 扩展观测减基线 \\
         \midrule
         \multicolumn{4}{l}{固定回放回合（训练种子 $7541$、工作负载 $2203$ 的第 $1$ 个测试回合）} \\
-        \quad 全局自然接纳率 $\alpha = A/G$ ($\%$) & $46.69$ & $61.25$ & $+14.56$ \\
-        \quad 热点服务请求接纳率 ($\%$) & $49.02$ & $65.51$ & $+16.49$ \\
-        \quad 接纳后按时完成率 $\eta = S/A$ ($\%$) & $55.34$ & $47.96$ & $-7.38$ \\
-        \quad 端到端成功率 $\mathrm{DSR} = S/G$ ($\%$) & $25.84$ & $29.38$ & $+3.54$ \\
-        \quad 平均单机实际航程 ($\mathrm{km}$) & $9.607$ & $9.890$ & $+0.283$ \\
+        \hspace{0.6em}全局自然接纳率 $\alpha = A/G$ ($\%$) & $46.69$ & $61.25$ & $+14.56$ \\
+        \hspace{0.6em}热点服务请求接纳率 ($\%$) & $49.02$ & $65.51$ & $+16.49$ \\
+        \hspace{0.6em}接纳后按时完成率 $\eta = S/A$ ($\%$) & $55.34$ & $47.96$ & $-7.38$ \\
+        \hspace{0.6em}端到端成功率 $\mathrm{DSR} = S/G$ ($\%$) & $25.84$ & $29.38$ & $+3.54$ \\
+        \hspace{0.6em}平均单机实际航程 ($\mathrm{km}$) & $9.607$ & $9.890$ & $+0.283$ \\
         \midrule
         \multicolumn{4}{l}{同一评估单元 $6$ 回合汇总（独立确认实验封存值）} \\
-        \quad 全局自然接纳率 $\alpha$ ($\%$) & $46.71$ & $60.28$ & $+13.58$ \\
-        \quad 接纳后按时完成率 $\eta$ ($\%$) & $54.86$ & $47.95$ & $-6.91$ \\
-        \quad 端到端成功率 $\mathrm{DSR}$ ($\%$) & $25.62$ & $28.90$ & $+3.28$ \\
+        \hspace{0.6em}全局自然接纳率 $\alpha$ ($\%$) & $46.71$ & $60.28$ & $+13.58$ \\
+        \hspace{0.6em}接纳后按时完成率 $\eta$ ($\%$) & $54.86$ & $47.95$ & $-6.91$ \\
+        \hspace{0.6em}端到端成功率 $\mathrm{DSR}$ ($\%$) & $25.62$ & $28.90$ & $+3.28$ \\
         \bottomrule
     \end{sysufulltabular}
 \end{table}
 
-由图~\ref{fig:ch3-trajectory-coverage} 与表~\ref{tab:ch3-trajectory} 可见，从相同初始位置出发后，原始关联观测下的多机轨迹在大范围空域内低效交错游走（图~\ref{fig:ch3-trajectory-coverage}a），第 $500$ 时隙仅 UAV $3$ 稳定覆盖左上方热点 $(204.9,596.7)\,\mathrm{m}$，其余无人机偏离左下方热点 $(151.6,156.0)\,\mathrm{m}$ 核心区，导致左下方热点内大量服务请求因未被覆盖而漏接（图~\ref{fig:ch3-trajectory-coverage}c，当步 $34$ 个服务请求仅接纳 $14$ 个、完成 $5$ 个）。相比之下，引入预接纳扩展观测后，$5$ 架无人机快速收敛至互不重叠的协同驻留构型（图~\ref{fig:ch3-trajectory-coverage}b）：第 $500$ 时隙 UAV $4$ 精准驻留左上方热点中心附近（中心距 $21.0\,\mathrm{m}$），UAV $1$ 与 UAV $2$ 在严格满足 $d_{\min}=200\,\mathrm{m}$ 安全间距约束的前提下从两侧协同包夹左下方热点（中心距分别为 $115.9\,\mathrm{m}$ 与 $109.2\,\mathrm{m}$），配合中部走廊的 UAV $3$ 与 UAV $5$ 将当步接纳数提升至 $20$ 个、按时完成数提升至 $12$ 个（图~\ref{fig:ch3-trajectory-coverage}d）。全回合生成 $33{,}778$ 个服务请求（含热点请求 $29{,}344$ 个），扩展观测将热点接纳率提升 $+16.49$ 个百分点、全局接纳率提升 $+14.56$ 个百分点，在克服条件完成率回落（$-7.38$ 个百分点）后实现单回合 DSR 净提升 $+3.54$ 个百分点（所属评估单元 $6$ 回合汇总净提升 $+3.28$ 个百分点）。
+由图~\ref{fig:ch3-trajectory-coverage} 与表~\ref{tab:ch3-trajectory} 可见，从相同初始位置出发后，原始关联观测下的多机轨迹在大范围空域内低效交错游走（图~\ref{fig:ch3-trajectory-coverage}(a)），第 $500$ 时隙仅 UAV $3$ 稳定覆盖左上方热点 $(204.9,596.7)\,\mathrm{m}$，其余无人机偏离左下方热点 $(151.6,156.0)\,\mathrm{m}$ 核心区，导致左下方热点内大量服务请求因未被覆盖而漏接（当步 $34$ 个服务请求仅接纳 $14$ 个、完成 $5$ 个）。相比之下，引入预接纳扩展观测后，$5$ 架无人机快速收敛至互不重叠的协同驻留构型（图~\ref{fig:ch3-trajectory-coverage}(b)）：第 $500$ 时隙 UAV $4$ 精准驻留左上方热点中心附近（中心距 $21.0\,\mathrm{m}$），UAV $1$ 与 UAV $2$ 在严格满足 $d_{\min}=200\,\mathrm{m}$ 安全间距约束的前提下从两侧协同包夹左下方热点（中心距分别为 $115.9\,\mathrm{m}$ 与 $109.2\,\mathrm{m}$），配合中部走廊的 UAV $3$ 与 UAV $5$ 将当步接纳数提升至 $20$ 个、按时完成数提升至 $12$ 个。全回合生成 $33{,}778$ 个服务请求（含热点请求 $29{,}344$ 个），扩展观测将热点接纳率提升 $+16.49$ 个百分点、全局接纳率提升 $+14.56$ 个百分点，在克服条件完成率回落（$-7.38$ 个百分点）后实现单回合 DSR 净提升 $+3.54$ 个百分点（所属评估单元 $6$ 回合汇总净提升 $+3.28$ 个百分点，见图~\ref{fig:ch3-trajectory-coverage}(c)）。
 
-在方法适用边界上，预接纳需求扩展观测以广域控制信令信道能够上报 $R_s=460\,\mathrm{m}$ 内未覆盖终端的位置与基本请求描述子为前提；当单机已关联终端接近或超过 $K_{\mathrm{slot}}=30$ 槽容量、或信令上报存在显著丢包与延迟时，外部需求可见余量将相应收缩。同时，本章实验明确揭示了“前端接纳扩大导致后端机载批量算力竞争加剧”这一结构性矛盾，为第四章在固定快照下深入消解跨机迁移算力外部性提供了直接问题驱动。
+在方法适用与归因边界上，预接纳需求扩展观测以广域控制信令信道能够上报 $R_s=460\,\mathrm{m}$ 内未覆盖终端的位置与基本请求描述子为前提；当单机已关联终端接近或超过 $K_{\mathrm{slot}}=30$ 槽容量、或信令上报存在显著丢包与延迟时，外部需求可见余量将相应收缩。此外，本章受控对比严格聚焦于“下层请求注意力消融”与“固定 $295$ 维槽位预算下的预接纳扩展观测重构”两项变量，上层多头交叉注意力在对比中作为共享关系编码骨干保持不变；在相同排序扩展观测下进一步横向比较上层多层感知机编码器或几何需求质心启发式轨迹规则留作第六章后续展望（第五章亦在动态排队场景中引入了历史衰减加权需求质心候选机制）。同时，本章实验明确揭示了“前端接纳扩大导致后端机载批量算力竞争加剧”这一结构性矛盾，为第四章在固定快照下深入消解跨机迁移算力外部性提供了直接问题驱动。
 
 \section{本章小结}
 \label{sec:ch3-summary}
 
-本章在自然覆盖接纳规则下系统研究了无人机集群的需求感知协同轨迹规划问题。首先建立了单时隙移动前请求结算与移动后拓扑更新相耦合的几何、通信、缓存及批量算力共享模型，形式化证明了仅含已关联终端观测对未覆盖区域需求的策略梯度盲区性质（定理 3.2.1）。进而，在不改变 $295$ 维观测张量结构、网络参数规模与 $100\,\mathrm{m}$ 物理覆盖半径的前提下，提出了按距离优先级补入 $460\,\mathrm{m}$ 感知范围内未覆盖终端的预接纳需求扩展观测机制（引理 3.3.1），并完整给出了上层 Attention-MAPPO 与下层精简请求级 MAPPO 的协同训练架构。分层基准对比、探索实验与 $10$ 个全新训练种子独立确认实验表明：预接纳观测扩展将主场景平均自然接纳率提升 $+9.82$ 个百分点，推动端到端 DSR 由 $0.2450$ 显著提升至 $0.2735$（$+2.85$ 个百分点，配对 $95\%$ 置信区间 $[+1.65,+4.06]$ 个百分点），同时将惩罚系统时延降低 $5.58\,\mathrm{s}$、Jain 公平性提升 $+0.0544$；配对分解亦表明接纳扩张伴随 $-2.02$ 个百分点的后端竞争稀释，自然引出第四章针对跨机批量算力竞争的精细任务分配研究。
+本章在自然覆盖接纳规则下系统研究了无人机集群的需求感知协同轨迹规划问题。首先建立了单时隙移动前请求结算与移动后拓扑更新相耦合的几何、通信、缓存及批量算力共享模型，形式化证明了仅含已关联终端观测对覆盖圈外部开集区域需求的策略梯度盲区性质（定理 3.2.1）。进而，在不改变 $295$ 维观测张量结构、共享上层交叉注意力骨干参数规模与 $100\,\mathrm{m}$ 物理覆盖半径的前提下，提出了按距离优先级补入 $460\,\mathrm{m}$ 感知范围内未覆盖终端的预接纳需求扩展观测机制（引理 3.3.1），并结合基准筛选验证更为稳健的下层无注意力精简 MAPPO 完成了协同训练。分层基准对比、探索实验与 $10$ 个全新训练种子独立确认实验表明：预接纳观测扩展将主场景平均自然接纳率提升 $+9.82$ 个百分点，推动端到端 DSR 由 $0.2450$ 显著提升至 $0.2735$（$+2.85$ 个百分点，配对 $95\%$ 置信区间 $[+1.65,+4.06]$ 个百分点），同时将惩罚系统时延降低 $5.58\,\mathrm{s}$、Jain 公平性提升 $+0.0544$；配对分解亦表明接纳扩张伴随 $-2.02$ 个百分点的后端竞争稀释，自然引出第四章针对跨机批量算力竞争的精细任务分配研究。

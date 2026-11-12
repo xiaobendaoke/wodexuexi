@@ -10,25 +10,7 @@
 
 第三章证明了预接纳需求可见性对改善无人机集群空间覆盖接纳的作用，第四章进一步刻画了给定位置与请求集合下机载批量算力竞争的二元字典序重分配余量。然而，在连续突发到达的实际边缘计算服务中，未完成的无线传输与计算工作量往往跨时隙持久保留\cite{neely2010stochastic,nguyen2024deadline,li2024computing}：当前时隙的空间位置与卸载分配不仅决定本步任务的即刻处理速率，还会通过上传队列、转发队列与机载 CPU 队列的跨步积压深刻影响后续到达任务的等待延迟与过期风险。若控制器仅优化当前单步批次而忽略跨时隙排队耦合，极易在业务突发高峰期诱发严重的级联阻塞。为此，本章在第二章建立的协议 II（跨时隙释放时间工作守恒 EDF 串联排队协议）下，系统研究突发请求驱动的轨迹与卸载联合控制问题。
 
-如第二章表~\ref{tab:ch2-two-protocols} 及本章表~\ref{tab:ch5-protocol-boundary} 所示，协议 II 保持五架无人机、一百个地面终端、一座地面宏基站、$100\,\mathrm{m}$ 物理覆盖半径与 $200\,\mathrm{m}$ 最小安全间距不变，但将单时隙批量结算扩展为保留跨时隙上传、转发与节点先占式最早截止期优先（EDF）计算进度的持续排队网络，并包含高峰到达后的完整排空结算阶段。针对该持续排队系统中长视距信用分配困难与在线规划耗时受限的双重挑战，本章提出一套由“两轮数据聚合（DAgger）规划知识蒸馏、共同随机数（CRN）短视界反事实辅助近端策略优化（PPO）微调、以及神经引导 Top-6 模型预测控制（MPC）”构成的三阶段协同控制框架\cite{schulman2017proximal,schulman2015high,ross2011dagger,hewing2020learning}，在相同排队协议与盲测工作负载下严格检验各核心环节对提升端到端截止期满足率与降低在线决策耗时的贡献。
-
-\begin{table}[!htbp]
-\centering
-\bicaption{第三、四章与本章的协议和证据边界}{Protocol and evidence boundaries across Chapters 3--5}
-\label{tab:ch5-protocol-boundary}
-\begin{tabularx}{\textwidth}{lYY}
-\toprule
-项目 & 第三、四章（协议 I） & 本章（协议 II） \\
-\midrule
-研究对象 & 需求感知轨迹；固定快照批量分配 & 突发到达下的跨时隙联合控制 \\
-执行模型 & 原通信、缓存与最终批量共享算力 & 上传、转发和 EDF 计算的持续队列 \\
-UE 与请求 & 原用户移动、服务与内容请求机制 & 固定 UE 几何，带属性的时隙泊松计算请求 \\
-进度跨步 & 单时隙内完成接纳与结算，不保留跨步队列 & 上传、转发与计算进度跨时隙保留，含排空结算 \\
-控制策略 & Attention-MAPPO；MC-ITR 快照求解 & 候选级联合策略、反事实辅助 PPO、Top-6 MPC \\
-可比较范围 & 各自协议内的配对对照 & 相同排队协议和确认工作负载内的对照 \\
-\bottomrule
-\end{tabularx}
-\end{table}
+如第二章图~\ref{fig:ch2-dual-protocols} 与表~\ref{tab:ch2-two-protocols} 所示，协议 II 保持五架无人机、一百个地面终端、一座地面宏基站、$100\,\mathrm{m}$ 物理覆盖半径与 $200\,\mathrm{m}$ 最小安全间距不变，但将协议 I 的单时隙批量结算扩展为保留跨时隙上传、转发与节点先占式最早截止期优先（EDF）计算进度的持续排队网络，并包含高峰到达后的完整排空结算阶段；所有实验比较均严格限定在相同协议 II 仿真器与同源确认工作负载内部，不与协议 I 下的单步或快照指标跨协议拼接。针对该持续排队系统中长视距信用分配困难与在线规划耗时受限的双重挑战，本章提出一套由“两轮数据聚合（DAgger）规划知识蒸馏、共同随机数（CRN）短视界反事实辅助近端策略优化（PPO）微调、以及神经引导 Top-6 模型预测控制（MPC）”构成的三阶段协同控制框架\cite{schulman2017proximal,schulman2015high,ross2011dagger,hewing2020learning}，系统检验各核心环节对提升端到端截止期满足率与降低在线决策耗时的独立贡献。
 
 \section{动态服务系统与候选动作建模}
 \label{sec:ch5-queue-model}
@@ -45,27 +27,19 @@ UE 与请求 & 原用户移动、服务与内容请求机制 & 固定 UE 几何�
  \end{cases}
  \label{eq:ch5-arrival}
 \end{equation}
-单回合期望生成请求数为 $50\times 15+50\times 60+100\times 15=5250$ 个。图~\ref{fig:ch5-dynamic-protocol} 展示该负载设计；它是受控合成业务协议，不是应急现场的实测流量记录。每个生成任务 $n$ 的输入数据字节数 $L_n^{\mathrm{byte}}$ 在 $\{1.5\times10^6,\ldots,3.0\times10^6\}\,\mathrm{B}$ 上离散均匀采样（输入比特数 $b_n=8L_n^{\mathrm{byte}}$），每比特计算密度 $\omega_n$ 在 $\{500,\ldots,1000\}\,\mathrm{cycles/bit}$ 上离散均匀采样，总计算周期为 $c_n=b_n\omega_n$；相对截止期限在 $d_n-a_n\sim\mathcal{U}(2.0,3.0)\,\mathrm{s}$ 上连续均匀采样。
+单回合期望生成请求数为 $50\times 15+50\times 60+100\times 15=5250$ 个。图~\ref{fig:ch5-dynamic-protocol}(a) 展示该负载设计；它是受控合成业务协议，不是应急现场的实测流量记录。每个生成任务 $n$ 的输入数据字节数 $L_n^{\mathrm{byte}}$ 在 $\{1.5\times10^6,\ldots,3.0\times10^6\}\,\mathrm{B}$ 上离散均匀采样（输入比特数 $b_n=8L_n^{\mathrm{byte}}$），每比特计算密度 $\omega_n$ 在 $\{500,\ldots,1000\}\,\mathrm{cycles/bit}$ 上离散均匀采样，总计算周期为 $c_n=b_n\omega_n$；相对截止期限在 $d_n-a_n\sim\mathcal{U}(2.0,3.0)\,\mathrm{s}$ 上连续均匀采样。
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.94\textwidth]{../docs/figures/ch5_dynamic_01_protocol.pdf}
-\bicaption{动态排队协议的期望到达率与排空阶段}{Prespecified arrival intensity and the post-arrival drain stage}
+\includegraphics[width=\textwidth]{../docs/figures/fig5_01_burst_tandem_edf.pdf}
+\bicaption{动态排队非平稳到达剖面、释放时间先占式 EDF 调度机理与解析近似误差核验}{Non-stationary burst arrival profile, release-time preemptive EDF scheduling mechanism, and analytical approximation audit}
 \label{fig:ch5-dynamic-protocol}
-\sysufignote{阴影标出 $50$--$100\,\mathrm{s}$ 高峰窗口；$200\,\mathrm{s}$ 后停止生成请求，并继续结算未完成队列。曲线表示预设期望强度，不是观测流量拟合。}
+\sysufignote{（a）预设期望到达率 $\lambda(t)$ 与 $200\,\mathrm{s}$ 后的尾队列排空结算窗口；（b）第一阶段通信释放时刻 $\tilde{\varsigma}_{\mathrm{rel}}$ 约束下的先占式 EDF 消除静态单遍预约虚假阻塞的机理；（c）$932$ 个验证状态--动作对上两阶段近似与真实离散事件仿真的误差核验（$r=0.9996$）。}
 \end{figure}
 
 停止到达后仍继续选择动作并推进系统，直到请求全部完成或过期。由于最大相对截止期限不超过 $3.0\,\mathrm{s}$，冻结实现对宏步起点采用 $t\leq204\,\mathrm{s}$ 的保护上限，实际终止由系统队列是否全部排空决定。该处理使最后阶段产生的请求也获得完整结算，避免只在 $t<200\,\mathrm{s}$ 统计成功而人为截断晚到请求。训练经验同样保留排空步自身的状态、动作、旧策略概率和奖励，而不是把排空阶段收益事后合并到最后一个活跃步。
 
-设统计范围内生成、接纳、按时完成的请求数分别为 $G,A,S$，与第二、三章符号体系一致，主指标及两阶段乘积分解定义为：
-\begin{equation}
- \mathrm{DSR}=\frac{S}{G},\qquad
- \alpha=\frac{A}{G},\qquad
- \eta=\frac{S}{A},\qquad
- \mathrm{DSR}=\alpha\cdot\eta.
- \label{eq:ch5-dsr-identity}
-\end{equation}
-该恒等式在使用同一组请求计数时严格成立。分阶段结果按请求到达时刻 $a_n$ 归入突发前（$[0,50)\,\mathrm{s}$）、高峰（$[50,100)\,\mathrm{s}$）和突发后（$[100,200)\,\mathrm{s}$）队列，完成时刻可以晚于所属到达窗口；非高峰阶段汇总突发前与突发后两组。所有实际生成请求都进入分母 $G$，包括始终未被接纳而过期的请求。完整排空后恒有 $G=S+E$，其中 $E$ 为过期请求总数。
+沿用第二章式~\eqref{eq:ch1-dsr-factorization} 的评价符号体系，记统计范围内实际生成、获得接纳与按时完成的请求总数分别为 $G,A,S$，主评价指标端到端截止期满足率及双因子计数分解满足 $\mathrm{DSR}=S/G=(A/G)\cdot(S/A)=\alpha\cdot\eta$（在同一请求集合上严格成立）。分阶段评价按请求到达时刻 $a_n$ 归入突发前（$[0,50)\,\mathrm{s}$）、高峰（$[50,100)\,\mathrm{s}$）和突发后（$[100,200)\,\mathrm{s}$）三个到达批次，任务实际完成时刻允许跨入后续窗口或排空阶段；非高峰阶段汇总突发前与突发后两组。所有实际生成请求（包括始终未被接纳而在地面等待中过期的请求）均计入分母 $G$，完整排空结算后恒有 $G=S+E$，其中 $E$ 为过期请求总数。
 
 \subsection{不可变关联与传输--计算串联队列}
 
@@ -86,9 +60,9 @@ UE 与请求 & 原用户移动、服务与内容请求机制 & 固定 UE 几何�
 
 \subsection{可用信息、候选库与状态特征}
 
-控制器在每个宏步起点观察当前无人机位置、已接纳任务的剩余三阶段工作量，以及机群 $460\,\mathrm{m}$ 感知范围内地面终端的待接纳请求，并通过因果历史到达统计器递推估计到达强度（包括历史均值 $\hat{\lambda}_{\mathrm{slow}}$、衰减因子为 $1-e^{-1/2}$ 与 $1-e^{-1/5}$ 的双指数平滑估计 $\hat{\lambda}_{\mathrm{fast2}}$ 与 $\hat{\lambda}_{\mathrm{fast5}}$、以及最近三步滑窗均值 $\hat{\lambda}_{\mathrm{win3}}$），严格不读取未来真实到达批次。执行时采用集中式结构化候选级决策：下层候选给出本步新接纳且未指派请求的目标节点分配方案，上层候选给出五架无人机的联合安全位移向量。这里的上下层指同一集中式策略内的分配与运动两个决策分支，而非直接复用第三章的分散式 Attention-MAPPO。
+控制器部署于地面宏基站（MBS）边缘控制服务器，以集中式控制面架构运行：在每个 $\tau=1.0\,\mathrm{s}$ 宏步起点，控制器汇聚当前五架无人机三维坐标、已接纳任务的剩余三阶段工作量以及机群 $460\,\mathrm{m}$ 感知范围内地面终端的待接纳请求摘要（单步上行控制面状态摘要约 $3.2\,\mathrm{KB}$，下行候选分配索引与五机目标位移指令不足 $0.5\,\mathrm{KB}$，折合控制信令开销低于 $32\,\mathrm{kbps}$，空地控制信道往返传播与帧交换时延处于毫秒量级），并通过因果历史到达统计器递推估计到达强度（包括历史均值 $\hat{\lambda}_{\mathrm{slow}}$、衰减因子为 $1-e^{-1/2}$ 与 $1-e^{-1/5}$ 的双指数平滑估计 $\hat{\lambda}_{\mathrm{fast2}}$ 与 $\hat{\lambda}_{\mathrm{fast5}}$、以及最近三步滑窗均值 $\hat{\lambda}_{\mathrm{win3}}$），严格不读取未来真实到达批次；若出现极端控制信令抖动或求解超时，机载侧可直接回退执行无需跨机协商的本地安全默认动作 $(k_{\mathrm{safe}},\mathbf{0})$。执行时采用集中式结构化候选级决策：下层候选给出本步新接纳且未指派请求的目标节点分配方案，上层候选给出五架无人机的联合安全位移向量。这里的上下层指同一集中式策略内的分配与运动两个决策分支，而非直接复用第三章的分散式 Attention-MAPPO。
 
-为与地面终端总数 $M=100$ 及请求集合符号严格区分，记状态 $s$ 下的候选分配集合为 $\mathcal{K}(s)$（基数 $K=|\mathcal{K}(s)|\leq 4$），候选运动集合为 $\mathcal{D}_{\mathrm{mot}}(s)$（基数 $N_{\mathrm{mot}}=|\mathcal{D}_{\mathrm{mot}}(s)|\in[4,8]$），联合候选动作为 $(k,m)\in\mathcal{K}(s)\times\mathcal{D}_{\mathrm{mot}}(s)$。实验中固定的三组“上游预训练模型组”（索引 $g\in\{0,1,2\}$）对应由三个独立随机种子预先训练并全程冻结的上游检查点对：每组包含一个基础候选提议与锚定先验模型（产出至多 $K_0=3$ 个基础分配方案、$N_{\mathrm{mot},0}\geq 4$ 个满足边界与 $200\,\mathrm{m}$ 安全间距的基础联合位移、以及基础先验分布 $p^{\mathrm{base}}(k,m\mid s)=p_a^{\mathrm{base}}(k\mid s)p_m^{\mathrm{base}}(m\mid s,k)$）和一个隐层宽度为 $32$ 的双分支加性回归评分器（产出基础神经评分 $s_{km}^{\mathrm{neu}}$）。在此上游接口基础上，系统在每步确定性地注入领域安全与救援候选并计算解析耦合算子：
+为与地面终端总数 $M=100$ 及请求集合符号严格区分，本章统一以 $n$ 索引单个跨时隙任务请求，而将 $m$ 专用于索引五机联合运动候选槽位（与第三、四章的单时隙请求下标严格区分）：记状态 $s$ 下的候选分配集合为 $\mathcal{K}(s)$（基数 $K=|\mathcal{K}(s)|\leq 4$），候选运动集合为 $\mathcal{D}_{\mathrm{mot}}(s)=\{1,\ldots,N_{\mathrm{mot}}\}$（基数 $N_{\mathrm{mot}}=|\mathcal{D}_{\mathrm{mot}}(s)|\in[4,8]$），联合候选动作为 $(k,m)\in\mathcal{K}(s)\times\mathcal{D}_{\mathrm{mot}}(s)$。实验中固定的三组“上游预训练模型组”（索引 $g\in\{0,1,2\}$）对应由三个独立随机种子预先构建并全程冻结的上游候选生成与先验评分模块，其具体白盒架构与训练数据边界如下：（a）上游分配提议网络采用候选序列打分架构（共 $19{,}713$ 个可训练参数，将 $80$ 维节点与队列全局状态经单层线性加 LayerNorm 映射为 $64$ 维向量，与基于确定性虚拟队列顺序前缀推演提取的 $30$ 维目标节点边际增量特征映射所得 $64$ 维向量做逐元素乘积并拼接为 $192$ 维表示，再经 $64$ 维 $\tanh$ 隐层输出标量打分），结合确定性队列启发式、$1$ 条贪心解码与 $2$ 条温度采样序列去重产出至多 $K_0=3$ 个基础分配方案及归一化对数似然先验 $p_a^{\mathrm{base}}(k\mid s)$；（b）上游运动候选构造器维护衰减因子为 $e^{-1/20}$ 的历史到达终端指数平滑空间权重，按最近邻 Voronoi 分区求取各无人机加权需求质心方向，组合悬停动作 $\mathbf{0}$、全幅与半幅五机协同位移及单机独立位移并经连续线段防碰校验（全路径机间距 $d_{\min}=200\,\mathrm{m}$）与热点扩张筛选产出 $N_{\mathrm{mot},0}\geq 4$ 个安全联合位移，同时基于 $44$ 维 $\operatorname{arcsinh}$ 压缩状态特征给出条件运动先验 $p_m^{\mathrm{base}}(m\mid s,k)$，合成基础先验分布 $p^{\mathrm{base}}(k,m\mid s)=p_a^{\mathrm{base}}(k\mid s)p_m^{\mathrm{base}}(m\mid s,k)$；（c）上游双分支加性回归评分器为隐层宽度 $32$ 的双分支残差多层感知机（共 $27{,}584$ 个可训练参数），在 $144$ 个公开队列状态上以 $16$ 条三步蒙特卡洛回滚均值作为中心化均方误差回归目标离线训练 $64$ 轮（共 $1{,}152$ 次梯度步）产出基础神经评分 $s_{km}^{\mathrm{neu}}$，全程不引入策略交叉熵或测试集模型选择。在工作负载隔离上，上游分配提议器预训练工作负载种子段为 $8000\sim8443$，上游回归评分器与先验开发工作负载种子均分布在 $911000\sim952007$ 区间内，与本章盲测确认集工作负载（$955000\sim955007$）严格不重叠（交集为空集 $\emptyset$）。在此上游接口基础上，系统在每步确定性地注入领域安全与救援候选并计算解析耦合算子：
 \begin{enumerate}
 \item 级联安全 EDF 分配候选 $k_{\mathrm{safe}}$：按剩余时限余量 $s_n=d_n-t$ 升序遍历当前待分配请求，对每个可行节点模拟插入 EDF 队列，按四元字典序键 $(\mathrm{tier},\allowbreak \Delta E_{\mathrm{cascade}},\allowbreak \tilde{\varsigma}_n^{\mathrm{done}},\allowbreak j)$ 择优——优先选择使自身按时完成且不诱发任何既有任务新增级联超时的节点（$\mathrm{tier}=0$），其次选择自身按时完成且新增级联超时最少的节点（$\mathrm{tier}=1$），若均不可行则隔离至新增级联超时最少的轻载节点或 MBS（$\mathrm{tier}=2$）。若 $k_{\mathrm{safe}}$ 不在基础分配列表中，则追加至 $\mathcal{K}(s)$ 并赋予 $0.08$ 的先验概率质量（将其余方案先验乘以 $0.92$ 归一化；若已存在则叠加质量），使神经策略候选分配数满足 $K\leq 4$。
 \item 紧迫度加权空间救援运动扩展与 $R_{\mathrm{rescue}}(s,m)$：对感知范围内待接纳请求集合 $\mathcal{T}_{\mathrm{wait}}(s)$，记联合位移 $m$ 沿同向线性外推步数 $k'\in\{1,2,3\}$ 首次将该请求纳入 $100\,\mathrm{m}$ 覆盖的步数为 $k_n^{\mathrm{adm}}(m)$（三步内未覆盖记为 $\infty$），其乐观通信加计算下界耗时为 $\underline{T}_n^{\mathrm{srv}}$，定义空间救援价值算子为：
@@ -121,7 +95,7 @@ UE 与请求 & 原用户移动、服务与内容请求机制 & 固定 UE 几何�
 张量 & 作用范围 & 维度 & 逐索引特征分量与归一化定义 \\
 \midrule
 $\mathbf c(s)$ & 公共上下文 & $14$ & 索引 $0\sim 7$（因果到达率特征）：慢速历史到达率 $\hat\lambda_{\mathrm{slow}}/60$、双指数平滑到达率 $\hat\lambda_{\mathrm{fast2}}/60$ 与 $\hat\lambda_{\mathrm{fast5}}/60$、三步滑窗均值 $\hat\lambda_{\mathrm{win3}}/60$、当步到达数 $A_t^{\mathrm{new}}/60$、快慢差 $(\hat\lambda_{\mathrm{fast2}}-\hat\lambda_{\mathrm{slow}})/60$、滑窗与中速差 $(\hat\lambda_{\mathrm{win3}}-\hat\lambda_{\mathrm{fast5}})/60$、历史步数占比 $\min(t+1,20)/20$；索引 $8\sim 13$：拥塞压力 $\tanh(P(s)/2)$、滑窗到达率兼容槽位 $\hat\lambda_{\mathrm{win3}}/60$（为保持与上游固定维度特征槽位对齐而保留，与索引 $3$ 同源）、拥塞门控指示 $\mathbf 1\{\mathrm{congested}\}$、已接纳任务数 $|\mathcal T_{\mathrm{adm}}|/40$、待接纳等待数 $|\mathcal T_{\mathrm{wait}}|/40$、三阶段活跃任务总和 $(N_{\mathrm{up}}+N_{\mathrm{tr}}+N_{\mathrm{cpu}})/40$ \\
-$\mathbf a_k(s)$ & 候选分配 $k$ & $14$ & 索引 $0,1$：悬停下方案 $k$ 计入超载惩罚 $\Omega_k=\sum_{u=1}^5[\ell_{k,u}-1]_+^2$ 后的释放时间近似可完成分 $\operatorname{norm}(\widehat C_{k,0}-0.5\Omega_k)$ 与溢出分 $\operatorname{norm}(\widehat O_{k,0}+0.5\Omega_k)$；索引 $2,3$：机间转发与 MBS 回传任务占 $\max(1,|\mathcal T_{\mathrm{adm}}|)$ 比例；索引 $4,5$：安全方案指示 $\mathbf 1\{k=k_{\mathrm{safe}}\}$ 及未分配任务与 $k_{\mathrm{safe}}$ 一致率；索引 $6\sim 9$：五架 UAV 计算负载 $\ell_{k,u}$ 的最大值、均值、标准差及 MBS 负载 $\ell_{k,\mathrm{MBS}}$ 的 $\tanh(\cdot/2)$ 值；索引 $10,11$：上游神经评分跨运动均值 $\operatorname{norm}(\bar s_k^{\mathrm{neu}})$ 与对数先验 $\operatorname{norm}(\log p_a^0(k\mid s))$；索引 $12,13$：$\tanh(P(s)/2)$ 与 $\mathbf 1\{\mathrm{congested}\}$ \\
+$\mathbf a_k(s)$ & 候选分配 $k$ & $14$ & 索引 $0,1$：悬停动作 $m_{\mathrm{hover}}$ 下方案 $k$ 计入超载惩罚 $\Omega_k=\sum_{u=1}^5[\ell_{k,u}-1]_+^2$ 后的释放时间近似可完成分 $\operatorname{norm}(\widehat C_{k,\mathrm{hover}}-0.5\Omega_k)$ 与溢出分 $\operatorname{norm}(\widehat O_{k,\mathrm{hover}}+0.5\Omega_k)$；索引 $2,3$：机间转发与 MBS 回传任务占 $\max(1,|\mathcal T_{\mathrm{adm}}|)$ 比例；索引 $4,5$：安全方案指示 $\mathbf 1\{k=k_{\mathrm{safe}}\}$ 及未分配任务与 $k_{\mathrm{safe}}$ 一致率；索引 $6\sim 9$：五架 UAV 计算负载 $\ell_{k,u}$ 的最大值、均值、标准差及 MBS 负载 $\ell_{k,\mathrm{MBS}}$ 的 $\tanh(\cdot/2)$ 值；索引 $10,11$：上游神经评分跨运动均值 $\operatorname{norm}(\bar s_k^{\mathrm{neu}})$ 与对数先验 $\operatorname{norm}(\log p_a^0(k\mid s))$；索引 $12,13$：$\tanh(P(s)/2)$ 与 $\mathbf 1\{\mathrm{congested}\}$ \\
 $\mathbf m_{km}(s)$ & 候选运动 $(k,m)$ & $16$ & 索引 $0\sim 3$（核心耦合量 $\boldsymbol\phi_{km}$，经 $\operatorname{norm}(\cdot)$ 归一化）：待接纳救援潜力 $R_{\mathrm{rescue}}(s,m)$、预测未来到达可服务量 $\widehat S_{km}^{\mathrm{fut}}$、综合溢出风险 $\widehat O_{km}^{\mathrm{tot}}=\widehat O_{km}+\widehat O_{km}^{\mathrm{fut}}+0.5\Omega_k$、净物理吞吐评分 $\widehat C_{km}+\widehat S_{km}^{\mathrm{fut}}-\widehat O_{km}^{\mathrm{tot}}$；索引 $4,5$：即时可完成分 $\operatorname{norm}(\widehat C_{km})$ 与上游基础神经评分 $\operatorname{norm}(s_{km}^{\mathrm{neu}})$；索引 $6\sim 12$：归一化位移步长 $\bar d_m$、悬停指示 $\mathbf 1\{\mathrm{hover}\}$、救援动作指示 $\mathbf 1\{\mathrm{rescue}\}$、拥塞指示 $\mathbf 1\{\mathrm{congested}\}$、交互项 $\mathbf 1\{\mathrm{congested}\}\mathbf 1\{\mathrm{rescue}\}$、非拥塞救援项 $(1-\mathbf 1\{\mathrm{congested}\})\operatorname{norm}(R_{\mathrm{rescue}})_m$、压力步长交互项 $\tanh(P(s)/2)\bar d_m$；索引 $13\sim 15$：$\mathbf 1\{k=k_{\mathrm{safe}}\}$、与 $k_{\mathrm{safe}}$ 一致率及方案内对数运动先验 $\operatorname{norm}_m(\log p_m^0(m\mid s,k))$（严格去耦对照将依赖方案 $k$ 的 $8$ 个通道 $\{1,2,3,4,5,13,14,15\}$ 按下层先验加权平均） \\
 $\mathbf x_V(s)$ & 价值网络输入 & $34$ & $14$ 维公共上下文 $\mathbf c(s)$ + 候选分配特征前 $6$ 维（索引 $0\sim 5$）先验加权均值与前 $4$ 维（索引 $0\sim 3$）跨方案最大值 + 候选运动特征前 $6$ 维（索引 $0\sim 5$）联合先验加权均值与前 $4$ 维核心耦合量（索引 $0\sim 3$）跨候选最大值 \\
 \bottomrule
@@ -139,7 +113,7 @@ $\mathbf x_V(s)$ & 价值网络输入 & $34$ & $14$ 维公共上下文 $\mathbf 
 给定公开观察状态 $s$（当前时刻 $t$、无人机位置 $\mathbf q_u$）与候选联合动作 $(k,m)\in\mathcal{K}(s)\times\mathcal{D}_{\mathrm{mot}}(s)$，记位移中点为 $\mathbf q_{u,m}^{\mathrm{mid}}=\mathbf q_u+0.5\boldsymbol\delta_{u,m}$、终点为 $\mathbf q_{u,m}^{\mathrm{after}}=\mathbf q_u+\boldsymbol\delta_{u,m}$，释放时间工作守恒串联排队近似算子按 $(d_n,\mathrm{uid}_n)$ 升序由以下两个串联阶段构成：
 
 \begin{enumerate}
-\item 第一阶段（单遍通道尾时刻通信释放近似递推）：维护各 $(u,\mathrm{ue})$ 上传可用相对时刻 $\varsigma^{\mathrm{up}}_{\mathrm{free}}(u,\mathrm{ue})$、各 UAV 上传尾时刻 $\varsigma^{\mathrm{up}}_{\mathrm{tail}}(u)$、集群共享机间转发可用时刻 $\varsigma^{\mathrm{inter}}_{\mathrm{free}}$ 与共享宏基站回传可用时刻 $\varsigma^{\mathrm{bh}}_{\mathrm{free}}$（初值均为 $0$）。对已接纳任务 $n$（来源 $u_n$、目标节点 $j$、相对截止余量 $s_n=d_n-t$）：若仍需上传，按无人机 $u_n$ 在起点或中点覆盖内的活跃上传终端数 $S_{u_n}^{\mathrm{up}}\geq 1$ 均分上行香农速率 $R^{\mathrm{up}}_{n}/S_{u_n}^{\mathrm{up}}$ 计算上传增量 $\Delta\tilde\varsigma_n^{\mathrm{up}}$；当终端在中点与终点均处于 $u_n$ 覆盖内时取 $\tilde\varsigma_n^{\mathrm{up}}=\varsigma^{\mathrm{up}}_{\mathrm{free}}(u_n,\mathrm{ue}_n)+\Delta\tilde\varsigma_n^{\mathrm{up}}$，仅在起点与中点覆盖但终点脱离覆盖时若 $\tilde\varsigma_n^{\mathrm{up}}>0.75\,\mathrm{s}$ 则截断为 $10.0\,\mathrm{s}$，其余失联情形取 $10.0\,\mathrm{s}$。若 $j\neq u_n$ 且需跨节点传输，当 $j=\mathrm{MBS}$ 或当 $j\in\mathcal U\setminus\{u_n\}$ 且中点与终点机间距均不超过 $460\,\mathrm{m}$ 时，分别由共享回传尾时刻或共享机间尾时刻加上对应传输增量 $\Delta\tilde\varsigma_{n,u_n,j}^{\mathrm{tr}}$ 递推通信释放相对时刻（失联取 $10.0\,\mathrm{s}$，已在 CPU 队列的任务取 $0$）：
+\item 第一阶段（单遍通道尾时刻通信释放近似递推）：维护各 $(u,\mathrm{ue})$ 上传可用相对时刻 $\varsigma^{\mathrm{up}}_{\mathrm{free}}(u,\mathrm{ue})$、各 UAV 上传尾时刻 $\varsigma^{\mathrm{up}}_{\mathrm{tail}}(u)$、集群共享机间转发可用时刻 $\varsigma^{\mathrm{inter}}_{\mathrm{free}}$ 与共享宏基站回传可用时刻 $\varsigma^{\mathrm{bh}}_{\mathrm{free}}$（初值均为 $0$）。记当前关联至无人机 $u$ 且剩余上传比特数 $b_\tau^{\mathrm{up}}>0$ 的已接纳活跃任务集为 $\mathcal{Q}_u^{\mathrm{up}}$，定义起点或中点覆盖内的并发活跃上传终端数为 $S_u^{\mathrm{up}}=\max\big(1,\big|\{\mathrm{ue}(\tau):\tau\in\mathcal{Q}_u^{\mathrm{up}},\,\|\mathbf{w}_{\mathrm{ue}(\tau)}-\mathbf{q}_u\|_2\leq R_c\lor\|\mathbf{w}_{\mathrm{ue}(\tau)}-\mathbf{q}_{u,m}^{\mathrm{mid}}\|_2\leq R_c\}\big|\big)$（其中 $R_c=100\,\mathrm{m}$）。对已接纳任务 $n$（来源 $u_n$、目标节点 $j$、相对截止余量 $s_n=d_n-t$）：若仍需上传，按均分上行香农速率 $R^{\mathrm{up}}_{n}/S_{u_n}^{\mathrm{up}}$ 计算上传增量 $\Delta\tilde\varsigma_n^{\mathrm{up}}$；当终端在中点与终点均处于 $u_n$ 覆盖内时取 $\tilde\varsigma_n^{\mathrm{up}}=\varsigma^{\mathrm{up}}_{\mathrm{free}}(u_n,\mathrm{ue}_n)+\Delta\tilde\varsigma_n^{\mathrm{up}}$，仅在起点与中点覆盖但终点脱离覆盖时若 $\tilde\varsigma_n^{\mathrm{up}}>0.75\,\mathrm{s}$ 则截断为 $10.0\,\mathrm{s}$，其余失联情形取 $10.0\,\mathrm{s}$；当 $\tilde\varsigma_n^{\mathrm{up}}<s_n$ 时，立即更新上行可用时刻 $\varsigma^{\mathrm{up}}_{\mathrm{free}}(u_n,\mathrm{ue}_n)\leftarrow\tilde\varsigma_n^{\mathrm{up}}$ 与机载上传尾时刻 $\varsigma^{\mathrm{up}}_{\mathrm{tail}}(u_n)\leftarrow\max\big(\varsigma^{\mathrm{up}}_{\mathrm{tail}}(u_n),\tilde\varsigma_n^{\mathrm{up}}\big)$。若 $j\neq u_n$ 且需跨节点传输，当 $j=\mathrm{MBS}$ 或当 $j\in\mathcal U\setminus\{u_n\}$ 且中点与终点机间距均不超过 $460\,\mathrm{m}$ 时，分别由共享回传尾时刻或共享机间尾时刻加上对应传输增量 $\Delta\tilde\varsigma_{n,u_n,j}^{\mathrm{tr}}$ 递推通信释放相对时刻（失联取 $10.0\,\mathrm{s}$，已在 CPU 队列的任务取 $0$）：
 \begin{equation}
  \tilde\varsigma_{n,j}^{\mathrm{rel}}(s,k,m)=
  \begin{cases}
@@ -148,7 +122,7 @@ $\mathbf x_V(s)$ & 价值网络输入 & $34$ & $14$ 维公共上下文 $\mathbf 
  \end{cases}
  \label{eq:ch5-release-time-stage1}
 \end{equation}
-若 $\tilde\varsigma_{n,j}^{\mathrm{rel}}\geq s_n$ 则直接记入通信阶段溢出，否则更新对应通道可用时刻并将任务元组 $(\tilde\varsigma_{n,j}^{\mathrm{rel}},\,\allowbreak c_n^{\mathrm{rem}}/F_j,\,\allowbreak s_n,\,\allowbreak \min(3.0,s_n),\,\allowbreak \mathrm{uid}_n)$ 加入节点 $j$ 的待计算列表；对候选评估中传入的待接纳任务（$s_n>1.0\,\mathrm{s}$ 且在终点 $\mathbf q_{u,m}^{\mathrm{after}}$ 进入最近无人机覆盖），自 $\max(1.0,\varsigma^{\mathrm{up}}_{\mathrm{tail}}(u))$ 起估算上传并贪心选择预计最早完成的可达节点并入对应列表。
+若 $\tilde\varsigma_{n,j}^{\mathrm{rel}}\geq s_n$ 则直接记入通信阶段溢出，否则在 $j\neq u_n$（且跨节点传输增量非零）时同步更新共享机间或回传可用时刻 $\varsigma^{\mathrm{inter/bh}}_{\mathrm{free}}\leftarrow\max\big(\varsigma^{\mathrm{inter/bh}}_{\mathrm{free}},\tilde\varsigma_{n,j}^{\mathrm{rel}}\big)$，并将任务元组 $(\tilde\varsigma_{n,j}^{\mathrm{rel}},\,\allowbreak c_n^{\mathrm{rem}}/F_j,\,\allowbreak s_n,\,\allowbreak \min(3.0,s_n),\,\allowbreak \mathrm{uid}_n)$ 加入节点 $j$ 的待计算列表；对候选评估中传入的待接纳任务（$s_n>1.0\,\mathrm{s}$ 且在终点 $\mathbf q_{u,m}^{\mathrm{after}}$ 进入最近无人机覆盖），自 $\max(1.0,\varsigma^{\mathrm{up}}_{\mathrm{tail}}(u))$ 起估算上传并贪心选择预计最早完成的可达节点并入对应列表。
 
 \item 第二阶段（目标节点就绪集精确工作守恒先占式 EDF 推进）：在每个执行节点 $j$ 上，维护相对时间 $\varsigma\geq 0$ 下已释放且未过期的就绪任务集合 $\tilde{\mathcal C}_j(\varsigma)=\{n:\tilde\varsigma_{n,j}^{\mathrm{rel}}\leq\varsigma,\ \allowbreak c_n^{\mathrm{rem}}(\varsigma)>0,\ \allowbreak \varsigma<s_n\}$。在相邻事件时刻（当前任务完成、过期或更早截止任务到达释放时刻发生抢占）$\varsigma_e<\varsigma_{e+1}$ 之间，令就绪集中最早截止任务 $n_j^*(\varsigma_e)=\arg\min_{n\in\tilde{\mathcal C}_j(\varsigma_e)}(s_n,\mathrm{uid}_n)$ 以速率 $F_j$ 独占推进剩余计算周期：
 \begin{equation}
@@ -161,7 +135,7 @@ $\mathbf x_V(s)$ & 价值网络输入 & $34$ & $14$ 维公共上下文 $\mathbf 
 
 在完成与溢出计分上，若任务在截止期前完成且位于三步前瞻窗口内（$\tilde\varsigma_{n,j}^{\mathrm{done}}\leq\allowbreak\min(3.0,\allowbreak s_n)$），则计入可完成分 $+1.0$；若在三步窗口后但在截止期前完成（$\min(3.0,\allowbreak s_n)<\allowbreak\tilde\varsigma_{n,j}^{\mathrm{done}}\leq s_n$），则计入可完成分 $+0.85$ 与溢出分 $+0.15$；若在通信或计算阶段超过截止期，则计入溢出分 $+1.0$。需说明的是，在本章主协议相对截止期限 $d_n-a_n\in[2.0,3.0]\,\mathrm{s}$ 下，任意在途任务恒满足 $s_n\leq 3.0\,\mathrm{s}$ 即 $\min(3.0,s_n)=s_n$，故窗口外 $0.85/0.15$ 折减分支仅作为兼容更长截止期限配置的一般化保护接口保留，在主实验配置中所有按时完成任务均赋予权重 $1.0$。汇总各节点输出即得近似可完成分 $\widehat C(s,k,m)$ 和近似溢出分 $\widehat O(s,k,m)$，用于候选特征及后续状态势评价；实际任务成功计数始终由完整离散事件队列仿真器执行记录确定。由于第一阶段对机间与回传链路采用全局单通道静态尾时刻聚合，并依赖中点/终点代表性几何与待接纳任务贪心接入估计，该算子属于面向特征提取的轻量级解析排队近似，不具有精确多信道动态带宽重分配保证。
 
-在 $932$ 个验证状态--动作对上（对比近似可完成分 $\widehat C(s,k,m)$ 与离散事件队列仿真器三步真实完成数），释放时间工作守恒 EDF 近似与真实仿真的皮尔逊相关系数为 $0.9996$（精确值 $0.99957$），平均绝对误差（MAE）为 $0.2758$，均方根误差（RMSE）为 $0.6444$；静态单遍 Lindley 近似（记输出为 $\widehat{C}_{km}^{\mathrm{Lin}},\widehat{O}_{km}^{\mathrm{Lin}}$）对应相关系数 $0.9996$（精确值 $0.99963$）、MAE $0.2704$、RMSE $0.6180$。新近似从排队机制上消除了构造反例中“晚释放紧迫任务在模型中提前卡住早释放任务”的跨阶段预约偏差，而在实测工作负载状态上的总体回归误差与静态 Lindley 近似处于同一量级（主要残差均来自第一阶段单通道尾时刻聚合与几何离散化）。因此，本节将该算子定位为物理机理自洽的快速特征与势函数评估器，而不宣称其回归误差普遍低于静态近似。
+在 $932$ 个验证状态--动作对上（对比近似可完成分 $\widehat C(s,k,m)$ 与离散事件队列仿真器三步真实完成数，见图~\ref{fig:ch5-dynamic-protocol}(b)--(c)），释放时间工作守恒 EDF 近似与真实仿真的皮尔逊相关系数为 $0.9996$（精确值 $0.99957$），平均绝对误差（MAE）为 $0.2758$，均方根误差（RMSE）为 $0.6444$；静态单遍 Lindley 近似（记输出为 $\widehat{C}_{km}^{\mathrm{Lin}},\widehat{O}_{km}^{\mathrm{Lin}}$）对应相关系数 $0.9996$（精确值 $0.99963$）、MAE $0.2704$、RMSE $0.6180$。新近似从排队机制上消除了构造反例中“晚释放紧迫任务在模型中提前卡住早释放任务”的跨阶段预约偏差，而在实测工作负载状态上的总体回归误差与静态 Lindley 近似处于同一量级（主要残差均来自第一阶段单通道尾时刻聚合与几何离散化）。因此，本节将该算子定位为物理机理自洽的快速特征与势函数评估器，而不宣称其回归误差普遍低于静态近似。
 
 \subsection{双分支联合分布与期望反馈}
 
@@ -186,7 +160,15 @@ $\mathbf x_V(s)$ & 价值网络输入 & $34$ & $14$ 维公共上下文 $\mathbf 
  \end{aligned}
  \label{eq:ch5-joint-policy}
 \end{equation}
-按照上述拼接定义，运动分支输入 $[\mathbf m_{km},\mathbf a_k,\mathbf c]$ 与分配分支输入 $[\mathbf a_k,\mathbf C_{\mathrm{upper}}(s,k),\mathbf c]$ 的特征维度分别为 $16+14+14=44$ 与 $14+4+14=32$。分配对数几率对 $\mathbf C_{\mathrm{upper}}(s,k)$ 的可微依赖，使下层分配损失梯度可沿式~\eqref{eq:ch5-coupling} 反向传播至运动分支参数 $\theta_m$。关于式~\eqref{eq:ch5-motion-policy}～式~\eqref{eq:ch5-joint-policy} 定义的双分支网络结构，有如下置换等变性质：
+按照上述拼接定义（整体前向特征融合与反向梯度耦合通路如图~\ref{fig:ch5-dual-branch} 所示），运动分支输入 $[\mathbf m_{km},\mathbf a_k,\mathbf c]$ 与分配分支输入 $[\mathbf a_k,\mathbf C_{\mathrm{upper}}(s,k),\mathbf c]$ 的特征维度分别为 $16+14+14=44$ 与 $14+4+14=32$。分配对数几率对 $\mathbf C_{\mathrm{upper}}(s,k)$ 的可微依赖，使下层分配损失梯度可沿式~\eqref{eq:ch5-coupling} 反向传播至运动分支参数 $\theta_m$。关于式~\eqref{eq:ch5-motion-policy}～式~\eqref{eq:ch5-joint-policy} 定义的双分支网络结构，有如下置换等变性质：
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{../docs/figures/fig5_02_equivariant_dual_branch.pdf}
+\bicaption{候选等变双分支联合策略网络、期望反馈向量与价值网络协同架构}{Candidate-equivariant dual-branch joint policy architecture, expected-feedback coupling, and state-value network}
+\label{fig:ch5-dual-branch}
+\sysufignote{（a）上层条件运动分支共享评分器 $g_m$（$44\to 48\to 1$）与四维物理期望反馈向量 $\mathbf{C}_{\mathrm{upper}}(s,k)\in\mathbb{R}^4$ 聚合；（b）下层分配分支评分器 $g_a$（$32\to 48\to 1$）、自回归联合分布生成与仅由真实轨迹更新的价值网络 $V_\psi(s)$，红色虚线标示下层损失向上层运动分支的梯度回传通路。}
+\end{figure}
 
 \begin{lemma}[候选等变双分支策略关于槽位置换的同变性]
 设 $\sigma_K\in\mathcal{S}_K$ 与 $\sigma_{\mathrm{mot}}\in\mathcal{S}_{N_{\mathrm{mot}}}$ 分别为作用在候选分配槽位索引 $\mathcal{K}(s)=\{1,\ldots,K\}$ 与候选运动槽位索引 $\mathcal{D}_{\mathrm{mot}}(s)=\{1,\ldots,N_{\mathrm{mot}}\}$ 上的任意置换。若候选特征与先验同步按 $(\sigma_K,\sigma_{\mathrm{mot}})$ 重排，即 $\mathbf{a}'_k=\mathbf{a}_{\sigma_K(k)}$、$\mathbf{m}'_{km}=\mathbf{m}_{\sigma_K(k),\sigma_{\mathrm{mot}}(m)}$、$p_a^{\prime 0}(k\mid s)=p_a^0(\sigma_K(k)\mid s)$、$p_m^{\prime 0}(m\mid s,k)=p_m^0(\sigma_{\mathrm{mot}}(m)\mid s,\sigma_K(k))$，则上层期望反馈向量满足 $\mathbf{C}'_{\mathrm{upper}}(s,k)=\mathbf{C}_{\mathrm{upper}}(s,\sigma_K(k))$，且双分支联合输出概率严格满足置换同变性：
@@ -197,7 +179,30 @@ $\mathbf x_V(s)$ & 价值网络输入 & $34$ & $14$ 维公共上下文 $\mathbf 
 \end{lemma}
 
 \begin{proof}
-由于评分函数 $g_m$ 在所有候选对 $(k,m)$ 间共享同一组权重参数，且 $\operatorname{softmax}_m$ 的归一化分母对全体 $m'\in\mathcal{D}_{\mathrm{mot}}(s)$ 求和，由加法交换律有 $p'_{\theta_m}(m\mid s,k)=p_{\theta_m}(\sigma_{\mathrm{mot}}(m)\mid s,\sigma_K(k))$。将其代入式~\eqref{eq:ch5-coupling} 并对指标 $\tilde{m}=\sigma_{\mathrm{mot}}(m)$ 重排求和项，可得 $\mathbf{C}'_{\mathrm{upper}}(s,k)=\sum_{m=1}^{N_{\mathrm{mot}}} p_{\theta_m}(\sigma_{\mathrm{mot}}(m)\mid s,\sigma_K(k))\boldsymbol{\phi}_{\sigma_K(k),\sigma_{\mathrm{mot}}(m)}=\mathbf{C}_{\mathrm{upper}}(s,\sigma_K(k))$。进而因分配打分网络 $g_a$ 在所有 $k\in\mathcal{K}(s)$ 间共享参数且 $\operatorname{softmax}_k$ 分母满足置换不变性，有 $p'_{\theta_a}(k\mid s)=p_{\theta_a}(\sigma_K(k)\mid s)$。两式相乘即得式~\eqref{eq:ch5-permutation-equivariance}。至此，引理 5.3.1 证毕。
+记运动分支原始对数几率为 $\ell_{k,m}(s)=\allowbreak\log p_m^0(m\mid s,k)+\allowbreak g_m([\mathbf{m}_{km},\allowbreak\mathbf{a}_k,\allowbreak\mathbf{c}])$。由于评分网络 $g_m$ 在所有候选对 $(k,m)$ 间共享同一组权重参数，置换后对数几率满足 $\ell'_{k,m}(s)=\allowbreak\ell_{\sigma_K(k),\sigma_{\mathrm{mot}}(m)}(s)$；又因 $\sigma_{\mathrm{mot}}\in\mathcal{S}_{N_{\mathrm{mot}}}$ 为 $\mathcal{D}_{\mathrm{mot}}(s)=\{1,\ldots,N_{\mathrm{mot}}\}$ 上的双射，令 $\tilde{m}'=\sigma_{\mathrm{mot}}(m')$ 重排归一化分母求和项可得：
+\begin{align*}
+    p'_{\theta_m}(m\mid s,k)
+    &=\frac{\exp\big(\ell'_{k,m}(s)\big)}{\sum_{m'=1}^{N_{\mathrm{mot}}}\exp\big(\ell'_{k,m'}(s)\big)}
+      =\frac{\exp\big(\ell_{\sigma_K(k),\sigma_{\mathrm{mot}}(m)}(s)\big)}{\sum_{m'=1}^{N_{\mathrm{mot}}}\exp\big(\ell_{\sigma_K(k),\sigma_{\mathrm{mot}}(m')}(s)\big)} \\
+    &=\frac{\exp\big(\ell_{\sigma_K(k),\sigma_{\mathrm{mot}}(m)}(s)\big)}{\sum_{\tilde{m}'=1}^{N_{\mathrm{mot}}}\exp\big(\ell_{\sigma_K(k),\tilde{m}'}(s)\big)}
+      =p_{\theta_m}\big(\sigma_{\mathrm{mot}}(m)\mid s,\sigma_K(k)\big).
+\end{align*}
+将其代入式~\eqref{eq:ch5-coupling} 并令 $\tilde{m}=\sigma_{\mathrm{mot}}(m)$ 作双射下标换元，可得上层期望反馈向量的同变关系：
+\begin{align*}
+    \mathbf{C}'_{\mathrm{upper}}(s,k)
+    &=\sum_{m=1}^{N_{\mathrm{mot}}}p'_{\theta_m}(m\mid s,k)\boldsymbol{\phi}'_{km}
+      =\sum_{m=1}^{N_{\mathrm{mot}}}p_{\theta_m}\big(\sigma_{\mathrm{mot}}(m)\mid s,\sigma_K(k)\big)\boldsymbol{\phi}_{\sigma_K(k),\sigma_{\mathrm{mot}}(m)} \\
+    &=\sum_{\tilde{m}=1}^{N_{\mathrm{mot}}}p_{\theta_m}\big(\tilde{m}\mid s,\sigma_K(k)\big)\boldsymbol{\phi}_{\sigma_K(k),\tilde{m}}
+      =\mathbf{C}_{\mathrm{upper}}\big(s,\sigma_K(k)\big).
+\end{align*}
+进而因分配打分网络 $g_a$ 在所有 $k\in\mathcal{K}(s)$ 间共享参数且 $\sigma_K\in\mathcal{S}_K$ 保持 $\operatorname{softmax}_k$ 归一化分母不变，代入 $\mathbf{a}'_k=\mathbf{a}_{\sigma_K(k)}$ 与 $\mathbf{C}'_{\mathrm{upper}}(s,k)=\mathbf{C}_{\mathrm{upper}}(s,\sigma_K(k))$ 可得 $p'_{\theta_a}(k\mid s)=p_{\theta_a}(\sigma_K(k)\mid s)$，两分支相乘即有：
+\begin{align*}
+    \pi'_\theta(k,m\mid s)
+    &=p'_{\theta_a}(k\mid s)p'_{\theta_m}(m\mid s,k)
+      =p_{\theta_a}\big(\sigma_K(k)\mid s\big)p_{\theta_m}\big(\sigma_{\mathrm{mot}}(m)\mid s,\sigma_K(k)\big) \\
+    &=\pi_\theta\big(\sigma_K(k),\sigma_{\mathrm{mot}}(m)\mid s\big),
+\end{align*}
+即式~\eqref{eq:ch5-permutation-equivariance} 成立。至此，引理 5.3.1 证毕。
 \end{proof}
 
 严格去耦对照把全部八个方案相关运动通道以及方案特征按下层先验边缘化，运动先验也替换为 $\bar p_m^0(m\mid s)=\sum_kp_a^0(k\mid s)p_m^0(m\mid s,k)$，并令 $\mathbf C_{\mathrm{upper}}=\mathbf 0$，从而得到乘积独立策略 $\pi(k,m\mid s)=p_a(k\mid s)p_m(m\mid s)$。独立性验证记录对保存的去耦蒸馏与去耦微调模型在验证状态集上逐状态检验表明，任意两个分配候选 $k,k'\in\mathcal K(s)$ 之间的运动分支条件分布最大 $L_1$ 差异严格满足 $\max_{s,k,k'}\|p_{\theta_m}(\cdot\mid s,k)-p_{\theta_m}(\cdot\mid s,k')\|_1=0.0$。仅去掉期望向量的消融对照则保留 $p_m(m\mid s,k)$ 的方案条件化而仅令 $\mathbf C_{\mathrm{upper}}=\mathbf 0$，用于单独剥离期望反馈通道的作用。
@@ -282,7 +287,7 @@ $\mathbf x_V(s)$ & 价值网络输入 & $34$ & $14$ 维公共上下文 $\mathbf 
  -\eta_{\mathrm{pen}}(s)U^{(3)}+\zeta(s)R_{\mathrm{rescue}}(s,m),
  \label{eq:ch5-cf-score}
 \end{equation}
-其中拥塞惩罚系数与救援奖励系数按拥塞门控切换：当 $P(s)>0.85$ 或 $\hat\lambda_{\mathrm{win3}}(s)>25.0\,\mathrm{tasks/s}$ 时取 $(\eta_{\mathrm{pen}}(s),\zeta(s))=(0.45,0)$ 以重点抑制队列积压溢出，否则取 $(0.15,0.25)$ 以兼顾待接纳需求的空间救援（为与条件完成率 $\eta=S/A$ 及下文定理中的公共扰动项区分，此处惩罚权重记作 $\eta_{\mathrm{pen}}(s)$）。需要指出的是，$U^{(3)}$ 同时包含三步内已过期任务与窗口末端新接纳但尚在正常传输或计算中的未完结任务；这种有限视界截断惩罚赋予控制器适度的拥塞保守性（避免在算力饱和时盲目扩张接纳无法消化的任务），同时也是后文在线 MPC 方案呈现出略低接纳率 $\alpha$ 与更高条件完成率 $\eta$ 的直接机制动因。
+其中拥塞惩罚系数与救援奖励系数按拥塞门控切换：当 $P(s)>0.85$ 或 $\hat\lambda_{\mathrm{win3}}(s)>25.0\,\mathrm{tasks/s}$ 时取 $(\eta_{\mathrm{pen}}(s),\zeta(s))=(0.45,0)$ 以重点抑制队列积压溢出，否则取 $(0.15,0.25)$ 以兼顾待接纳需求的空间救援（为与条件完成率 $\eta=S/A$ 及下文定理中的公共到达波动项 $\zeta_{\mathrm{com}}(s_t,\xi_t)$ 严格区分，此处积压惩罚权重记作 $\eta_{\mathrm{pen}}(s)$）。需要指出的是，$U^{(3)}$ 同时包含三步内已过期任务与窗口末端新接纳但尚在正常传输或计算中的未完结任务；这种有限视界截断惩罚赋予控制器适度的拥塞保守性（避免在算力饱和时盲目扩张接纳无法消化的任务），同时也是后文在线 MPC 方案呈现出略低接纳率 $\alpha$ 与更高条件完成率 $\eta$ 的直接机制动因。
 
 对当前反事实候选组 $\mathcal B_t$，借鉴组相对策略优化（Group Relative Policy Optimization，GRPO）的组内相对优势归一化思想\cite{shao2024deepseekmath}构建反事实辅助优势：
 \begin{equation}
@@ -294,14 +299,52 @@ $\mathbf x_V(s)$ & 价值网络输入 & $34$ & $14$ 维公共上下文 $\mathbf 
 当组内标准差低于 $10^{-8}$ 时跳过该辅助组。关于共同随机数（CRN）下组中心化差分消除公共到达扰动的代数机理，有如下性质：
 
 \begin{theorem}[共同随机数反事实组中心化的公共加性扰动消去与状态基线恒等式]
-设在给定公开排队状态 $s_t$ 下，未来预测到达随机流记为 $\xi_t$，任意候选联合动作 $b\in\mathcal{B}_t$ 的三步反事实回滚评分可分解为：$Q_{\mathrm{cf}}(s_t,b;\xi_t)=\mu(s_t,b)+\eta(s_t,\xi_t)+\varepsilon(s_t,b,\xi_t)$，其中 $\eta(s_t,\xi_t)$ 为仅依赖同源到达实现 $\xi_t$ 而与候选动作 $b$ 无关的公共到达波动项（方差为 $\sigma_\eta^2=\operatorname{Var}_{\xi_t}[\eta(s_t,\xi_t)]>0$），$\varepsilon(s_t,b,\xi_t)$ 为零均值残差项。则在共同随机数（所有 $b\in\mathcal{B}_t$ 共享同一 $\xi_t$）下：（1）组均值 $\overline{Q}_{\mathcal{B}_t}(\xi_t)=|\mathcal{B}_t|^{-1}\sum_{b'\in\mathcal{B}_t}Q_{\mathrm{cf}}(s_t,b';\xi_t)$ 在代数上完全消去公共到达波动项 $\eta(s_t,\xi_t)$，即组相对差分满足 $Q_{\mathrm{cf}}(s_t,b;\xi_t)-\overline{Q}_{\mathcal{B}_t}(\xi_t)=\big(\mu(s_t,b)-\bar{\mu}_{\mathcal{B}_t}\big)+\allowbreak\big(\varepsilon(s_t,b,\xi_t)-\bar{\varepsilon}_{\mathcal{B}_t}(\xi_t)\big)$；若进一步有残差差分 $\tilde\varepsilon_{\mathcal B_t}(s_t,b,\xi_t)=\varepsilon(s_t,b,\xi_t)-\bar\varepsilon_{\mathcal B_t}(\xi_t)$ 与 $\eta(s_t,\xi_t)$ 不相关，则中心化差分相对含 $\eta(s_t,\xi_t)$ 的未中心化评分精确减少 $\sigma_\eta^2$ 的方差项；（2）对任意仅依赖 $(s_t,\xi_t)$ 而与当前采样动作 $b$ 无关的状态基线 $b_{\mathrm{base}}(s_t,\xi_t)$，策略对数似然梯度乘以该基线的条件期望恒为零：$\mathbb{E}_{b\sim\pi_\theta(\cdot\mid s_t)}\big[b_{\mathrm{base}}(s_t,\xi_t)\nabla_\theta\log\pi_\theta(b\mid s_t)\big]=\mathbf{0}$。
+设在给定公开排队状态 $s_t$ 下，未来预测到达随机流记为 $\xi_t$，非退化候选集满足 $|\mathcal{B}_t|\geq 2$，任意候选联合动作 $b\in\mathcal{B}_t$ 的三步反事实回滚评分可分解为：$Q_{\mathrm{cf}}(s_t,b;\xi_t)=\mu(s_t,b)+\zeta_{\mathrm{com}}(s_t,\xi_t)+\varepsilon(s_t,b,\xi_t)$，其中 $\zeta_{\mathrm{com}}(s_t,\xi_t)$ 为仅依赖同源到达实现 $\xi_t$ 而与候选动作 $b$ 无关的公共到达波动项（条件方差为 $\sigma_{\mathrm{com}}^2(s_t)=\operatorname{Var}_{\xi_t}[\zeta_{\mathrm{com}}(s_t,\xi_t)\mid s_t]>0$），$\varepsilon(s_t,b,\xi_t)$ 为条件零均值动作交互残差项。则在共同随机数（所有 $b\in\mathcal{B}_t$ 共享同一 $\xi_t$）下：（1）组均值 $\overline{Q}_{\mathcal{B}_t}(\xi_t)=|\mathcal{B}_t|^{-1}\sum_{b'\in\mathcal{B}_t}Q_{\mathrm{cf}}(s_t,b';\xi_t)$ 在代数上完全消去公共到达波动项 $\zeta_{\mathrm{com}}(s_t,\xi_t)$，即组相对差分满足 $Q_{\mathrm{cf}}(s_t,b;\xi_t)-\overline{Q}_{\mathcal{B}_t}(\xi_t)=\big(\mu(s_t,b)-\bar{\mu}_{\mathcal{B}_t}\big)+\allowbreak\tilde{\varepsilon}_{\mathcal{B}_t}(s_t,b,\xi_t)$（其中 $\tilde{\varepsilon}_{\mathcal{B}_t}(s_t,b,\xi_t)=\varepsilon(s_t,b,\xi_t)-\bar{\varepsilon}_{\mathcal{B}_t}(\xi_t)$）；若进一步有 $\zeta_{\mathrm{com}}(s_t,\xi_t)$ 与各候选残差 $\{\varepsilon(s_t,b',\xi_t)\}_{b'\in\mathcal{B}_t}$ 条件不相关，则组中心化前后的条件方差减少量精确满足
+\[
+\begin{aligned}
+\operatorname{Var}_{\xi_t}\!\big(Q_{\mathrm{cf}}(s_t,b;\xi_t)\mid s_t\big)&-\operatorname{Var}_{\xi_t}\!\big(Q_{\mathrm{cf}}(s_t,b;\xi_t)-\overline{Q}_{\mathcal{B}_t}(\xi_t)\mid s_t\big)\\
+&=\sigma_{\mathrm{com}}^2(s_t)+\operatorname{Var}_{\xi_t}\!\big(\varepsilon(s_t,b,\xi_t)\mid s_t\big)-\operatorname{Var}_{\xi_t}\!\big(\tilde{\varepsilon}_{\mathcal{B}_t}(s_t,b,\xi_t)\mid s_t\big),
+\end{aligned}
+\]
+特别地，当组内残差互不相关且具有同方差 $\sigma_\varepsilon^2(s_t)$ 时，$\operatorname{Var}_{\xi_t}\big(\tilde{\varepsilon}_{\mathcal{B}_t}(s_t,b,\xi_t)\mid s_t\big)=\frac{|\mathcal{B}_t|-1}{|\mathcal{B}_t|}\sigma_\varepsilon^2(s_t)$，净方差削减量为 $\sigma_{\mathrm{com}}^2(s_t)+|\mathcal{B}_t|^{-1}\sigma_\varepsilon^2(s_t)\geq\sigma_{\mathrm{com}}^2(s_t)$；（2）对任意仅依赖 $(s_t,\xi_t)$ 而与当前采样动作 $b$ 无关的状态基线 $b_{\mathrm{base}}(s_t,\xi_t)$，策略对数似然梯度乘以该基线的条件期望恒为零：$\mathbb{E}_{b\sim\pi_\theta(\cdot\mid s_t)}\big[b_{\mathrm{base}}(s_t,\xi_t)\nabla_\theta\log\pi_\theta(b\mid s_t)\mid s_t,\xi_t\big]=\mathbf{0}$。
 \end{theorem}
 
 \begin{proof}
-（1）在共同随机数下，同一状态 $s_t$ 的候选组 $\mathcal{B}_t$ 注入完全相同的预测到达序列 $\xi_t$，因此公共波动项 $\eta(s_t,\xi_t)$ 对所有 $b'\in\mathcal{B}_t$ 取同一常数值。对 $b'\in\mathcal{B}_t$ 求算术平均可得 $\overline{Q}_{\mathcal{B}_t}(\xi_t)=\bar{\mu}_{\mathcal{B}_t}+\eta(s_t,\xi_t)+\bar{\varepsilon}_{\mathcal{B}_t}(\xi_t)$，与 $Q_{\mathrm{cf}}(s_t,b;\xi_t)$ 相减后 $\eta(s_t,\xi_t)$ 严格对消；当 $\operatorname{Cov}_{\xi_t}(\eta,\tilde\varepsilon_{\mathcal B_t})=0$ 时，未中心化项 $\eta+\tilde\varepsilon_{\mathcal B_t}$ 的方差为 $\sigma_\eta^2+\operatorname{Var}(\tilde\varepsilon_{\mathcal B_t})$，消去 $\eta$ 后方差恰减少 $\sigma_\eta^2$。（2）由于 $b_{\mathrm{base}}(s_t,\xi_t)$ 不依赖当前采样动作 $b$，将其提出关于 $b\sim\pi_\theta(\cdot\mid s_t)$ 的期望算子外，有 $\mathbb{E}_{b\sim\pi_\theta}[b_{\mathrm{base}}(s_t,\xi_t)\nabla_\theta\log\pi_\theta(b\mid s_t)]=b_{\mathrm{base}}(s_t,\xi_t)\nabla_\theta\sum_b\pi_\theta(b\mid s_t)=\mathbf{0}$。至此，定理 5.4.1 证毕。
+（1）在共同随机数下，同一状态 $s_t$ 的候选组 $\mathcal{B}_t$ 注入完全相同的预测到达序列 $\xi_t$，因此公共波动项 $\zeta_{\mathrm{com}}(s_t,\xi_t)$ 对所有 $b'\in\mathcal{B}_t$ 取同一常数值。对 $b'\in\mathcal{B}_t$ 取算术平均并与 $Q_{\mathrm{cf}}(s_t,b;\xi_t)$ 作差可得：
+\begin{align*}
+    \overline{Q}_{\mathcal{B}_t}(\xi_t)
+    &=\frac{1}{|\mathcal{B}_t|}\sum_{b'\in\mathcal{B}_t}\Big(\mu(s_t,b')+\zeta_{\mathrm{com}}(s_t,\xi_t)+\varepsilon(s_t,b',\xi_t)\Big) \\
+    &=\bar{\mu}_{\mathcal{B}_t}+\zeta_{\mathrm{com}}(s_t,\xi_t)+\bar{\varepsilon}_{\mathcal{B}_t}(\xi_t), \\
+    Q_{\mathrm{cf}}(s_t,b;\xi_t)-\overline{Q}_{\mathcal{B}_t}(\xi_t)
+    &=\big(\mu(s_t,b)-\bar{\mu}_{\mathcal{B}_t}\big)+\tilde{\varepsilon}_{\mathcal{B}_t}(s_t,b,\xi_t),
+\end{align*}
+可见 $\zeta_{\mathrm{com}}(s_t,\xi_t)$ 被严格对消。当 $\operatorname{Cov}_{\xi_t}(\zeta_{\mathrm{com}},\varepsilon(s_t,b',\xi_t)\mid s_t)=0$（$\forall b'\in\mathcal{B}_t$）时，未中心化随机评分的条件方差为 $\operatorname{Var}_{\xi_t}(\zeta_{\mathrm{com}}+\varepsilon\mid s_t)=\sigma_{\mathrm{com}}^2(s_t)+\operatorname{Var}_{\xi_t}(\varepsilon\mid s_t)$，而中心化随机差分的条件方差为 $\operatorname{Var}_{\xi_t}(\tilde{\varepsilon}_{\mathcal{B}_t}\mid s_t)$，两者相减即得定理所述的精确方差差恒等式。进一步，若 $\{\varepsilon(s_t,b',\xi_t)\}_{b'\in\mathcal{B}_t}$ 条件不相关且同方差为 $\sigma_\varepsilon^2(s_t)$，将 $\tilde{\varepsilon}_{\mathcal{B}_t}$ 按自身项与其余 $|\mathcal{B}_t|-1$ 项分离展开条件方差：
+\begin{align*}
+    &\operatorname{Var}_{\xi_t}\!\big(\tilde{\varepsilon}_{\mathcal{B}_t}(s_t,b,\xi_t)\mid s_t\big) \\
+    &\quad=\operatorname{Var}_{\xi_t}\!\left(\left(1-\frac{1}{|\mathcal{B}_t|}\right)\varepsilon(s_t,b,\xi_t)
+      -\frac{1}{|\mathcal{B}_t|}\sum_{b'\in\mathcal{B}_t\setminus\{b\}}\varepsilon(s_t,b',\xi_t)\,\middle|\,s_t\right) \\
+    &\quad=\left[\left(1-\frac{1}{|\mathcal{B}_t|}\right)^2+\frac{|\mathcal{B}_t|-1}{|\mathcal{B}_t|^2}\right]\sigma_\varepsilon^2(s_t)
+      =\frac{|\mathcal{B}_t|-1}{|\mathcal{B}_t|}\sigma_\varepsilon^2(s_t),
+\end{align*}
+代入即得净方差削减量 $\sigma_{\mathrm{com}}^2(s_t)+\big(1-\frac{|\mathcal{B}_t|-1}{|\mathcal{B}_t|}\big)\sigma_\varepsilon^2(s_t)=\sigma_{\mathrm{com}}^2(s_t)+|\mathcal{B}_t|^{-1}\sigma_\varepsilon^2(s_t)$。（2）由式~\eqref{eq:ch5-motion-policy} 与式~\eqref{eq:ch5-joint-policy} 的 $\operatorname{softmax}$ 定义知有限候选集 $\mathcal{K}(s_t)\times\mathcal{D}_{\mathrm{mot}}(s_t)$ 上恒有 $\pi_\theta(b\mid s_t)>0$，且 $b_{\mathrm{base}}(s_t,\xi_t)$ 不依赖采样动作 $b$，将其提出条件期望算子外可得：
+\begin{align*}
+    &\mathbb{E}_{b\sim\pi_\theta(\cdot\mid s_t)}\!\big[b_{\mathrm{base}}(s_t,\xi_t)\nabla_\theta\log\pi_\theta(b\mid s_t)\mid s_t,\xi_t\big] \\
+    &\quad=b_{\mathrm{base}}(s_t,\xi_t)\sum_{b\in\mathcal{K}(s_t)\times\mathcal{D}_{\mathrm{mot}}(s_t)}\pi_\theta(b\mid s_t)\frac{\nabla_\theta\pi_\theta(b\mid s_t)}{\pi_\theta(b\mid s_t)} \\
+    &\quad=b_{\mathrm{base}}(s_t,\xi_t)\nabla_\theta\sum_{b\in\mathcal{K}(s_t)\times\mathcal{D}_{\mathrm{mot}}(s_t)}\pi_\theta(b\mid s_t)
+      =b_{\mathrm{base}}(s_t,\xi_t)\nabla_\theta(1)=\mathbf{0}.
+\end{align*}
+至此，定理 5.4.1 证毕。
 \end{proof}
 
-需指出的是，若动作与随机流存在强负相关交互（$\operatorname{Cov}_{\xi_t}(\eta,\tilde\varepsilon_{\mathcal B_t})<0$），代数消去公共项并不自动保证任意残差结构下总方差必然小于独立随机数；同时，实际实现中的候选集 $\mathcal B_t$ 包含确定性 Top-3 候选且采用式~\eqref{eq:ch5-cf-adv} 的组标准差缩放与截断，因此定理 5.4.1 的意义在于阐明共享到达流消去公共加性负载波动的代数机理，而不将实际混合更新宣称为无偏策略梯度。
+需指出的是，若公共波动与动作残差存在负协方差或候选残差之间存在强负相关（使 $\operatorname{Var}(\tilde{\varepsilon}_{\mathcal{B}_t})>\operatorname{Var}(\varepsilon)$），需按上述一般恒等式逐项核算净方差变化；同时，实际实现中的候选集 $\mathcal B_t$ 包含确定性 Top-3 候选且采用式~\eqref{eq:ch5-cf-adv} 的组标准差缩放与截断，因此定理 5.4.1 的意义在于阐明共享到达流消去公共加性负载波动的代数机理，而不将实际混合更新宣称为无偏策略梯度。图~\ref{fig:ch5-crn-tree} 汇总了真实双流交互轨迹、每四步触发的共同随机数三步反事实克隆树与 Critic 回归目标严格隔离的协同训练数据流。
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{../docs/figures/fig5_03_distill_crn_mpc_framework.pdf}
+\bicaption{两轮规划蒸馏、共同随机数三步反事实辅助 PPO 微调与双模式在线控制全流程架构}{End-to-end framework of two-round planning distillation, CRN counterfactual-assisted PPO fine-tuning, and dual-mode online control}
+\label{fig:ch5-crn-tree}
+\sysufignote{阶段 I 以离线三步规划教师 $Q_T(s,k,m)$ 执行两轮 DAgger 数据聚合蒸馏（训后退出在线环路）；阶段 II 结合双流留一真实轨迹（独占更新 $V_\psi$）与每 $4$ 步触发的共同随机数三步反事实克隆树（消去公共波动 $\zeta_{\mathrm{com}}$）协同更新联合策略；阶段 III 支持零在线前瞻采样与熵校准 Top-6 MPC 两种部署预算。}
+\end{figure}
 
 \subsection{联合裁剪目标与训练组合}
 
@@ -373,27 +416,13 @@ KL 系数 $\beta_{\mathrm{KL}}$ & $0.015$ & $0.015$ \\
  \end{aligned}
  \label{eq:ch5-entropy-calibration}
 \end{equation}
-关于式~\eqref{eq:ch5-entropy-calibration} 的幂次温度缩放校准，有如下保序引理：
-
-\begin{lemma}[幂次温度缩放校准的候选动作严格保序性]
-对任意正值候选提议分布 $p(k,m)>0$，式~\eqref{eq:ch5-entropy-calibration} 定义的校准指数满足 $\alpha_{\mathrm{cal}}(s)\in[0.25,1.0]>0$，因此校准后分布 $\widetilde{p}(k,m)$ 在全体联合候选集合 $\mathcal{K}(s)\times\mathcal{D}_{\mathrm{mot}}(s)$ 上严格保持原提议分布 $p(k,m)$ 的大小偏序关系与非并列 Top-$K_{\mathrm{mpc}}$ 候选集合不变，即对任意两候选 $b_1,b_2$：
-\begin{equation}
-    p(b_1)>p(b_2)\iff\widetilde{p}(b_1)>\widetilde{p}(b_2).
-    \label{eq:ch5-rank-preservation}
-\end{equation}
-\end{lemma}
-
-\begin{proof}
-由式~\eqref{eq:ch5-entropy-calibration}，$\alpha_{\mathrm{cal}}(s)=\min\{1.0,\max[0.25,H(p)/1.85]\}\geq 0.25>0$。在正实数域 $(0,+\infty)$ 上，幂函数 $x\mapsto x^{\alpha_{\mathrm{cal}}(s)}$（$\alpha_{\mathrm{cal}}(s)>0$）为严格单调递增函数，且归一化分母 $Z_{\alpha_{\mathrm{cal}}}=\sum_{b'}p(b')^{\alpha_{\mathrm{cal}}(s)}>0$ 为正常数，故 $p(b_1)>p(b_2)\iff p(b_1)^{\alpha_{\mathrm{cal}}(s)}>p(b_2)^{\alpha_{\mathrm{cal}}(s)}\iff\widetilde{p}(b_1)>\widetilde{p}(b_2)$，从而非并列 Top-6 候选集合在幂次校准前后完全一致。至此，引理 5.4.1 证毕。
-\end{proof}
-
-在此基础上选取 $\widetilde p(k,m)$ 最大的至多 $K_{\mathrm{mpc}}=6$ 个联合候选动作，分别从当前公开状态克隆离散事件队列仿真器，注入由因果历史滑窗估计生成的两步共享预测到达流（CRN），首步执行候选动作 $(k,m)$，随后两步采用级联安全分配 $k_{\mathrm{safe}}$ 与悬停动作。记克隆分支三步累计按时完成数为 $S^{(3)}$，则在线 MPC 综合评分为：
+由于式~\eqref{eq:ch5-entropy-calibration} 中的校准指数满足 $\alpha_{\mathrm{cal}}(s)\in[0.25,1.0]>0$，正实数域上的严格递增幂函数 $x\mapsto x^{\alpha_{\mathrm{cal}}(s)}$ 与正常数归一化分母 $Z_{\alpha_{\mathrm{cal}}}=\sum_{k',m'}p(k',m')^{\alpha_{\mathrm{cal}}(s)}$ 保证了对任意候选对有 $p(b_1)>p(b_2)\iff\widetilde{p}(b_1)>\widetilde{p}(b_2)$，即幂次校准严格保持原联合提议分布的非并列候选排序不变。在此基础上选取 $\widetilde p(k,m)$ 最大的至多 $K_{\mathrm{mpc}}=6$ 个联合候选动作，分别从当前公开状态克隆离散事件队列仿真器，注入由因果历史滑窗估计生成的两步共享预测到达流（CRN），首步执行候选动作 $(k,m)$，随后两步采用级联安全分配 $k_{\mathrm{safe}}$ 与悬停动作。记克隆分支三步累计按时完成数为 $S^{(3)}$，则在线 MPC 综合评分为：
 \begin{equation}
  J(s,k,m)=S^{(3)}-\eta_{\mathrm{pen}}(s)U^{(3)}+\zeta(s)R_{\mathrm{rescue}}(s,m)
  +0.65\log\widetilde p(k,m).
  \label{eq:ch5-mpc-score}
 \end{equation}
-结合引理 5.4.1 与式~\eqref{eq:ch5-mpc-score} 可以清晰看到熵自适应校准的真实作用机制：幂次变换虽不改变进入 Top-6 的候选集合排序，但取对数后有 $\log\widetilde{p}(k,m)=\alpha_{\mathrm{cal}}(s)\log p(k,m)-\log Z_{\alpha_{\mathrm{cal}}}$，即等效地将式~\eqref{eq:ch5-mpc-score} 中神经对数先验相对于三步物理推演项的权重系数动态调节为 $0.65\alpha_{\mathrm{cal}}(s)\in[0.1625,0.65]$——当策略分布过度尖锐（低熵 $H(p)<1.85$）时自动下调对数先验权重，防止过信先验掩盖在线队列推演发现的即时拥塞差异。评分按 $0.01$ 精度量化后选取最大值（并列时按 $\widetilde{p}$ 加权抽样），仅向真实环境提交首步动作，下一宏步滚动重规划。
+将式~\eqref{eq:ch5-entropy-calibration} 取对数代入式~\eqref{eq:ch5-mpc-score} 可得 $\log\widetilde{p}(k,m)=\alpha_{\mathrm{cal}}(s)\log p(k,m)-\log Z_{\alpha_{\mathrm{cal}}}$（常数项 $-\log Z_{\alpha_{\mathrm{cal}}}$ 不影响同状态下的候选比较）：可见熵自适应校准的实质并非改变进入 Top-6 的候选集合，而是将在线综合评分中神经对数先验相对于三步队列物理推演项的等效权重动态调节为 $0.65\alpha_{\mathrm{cal}}(s)\in[0.1625,0.65]$——当策略分布过度尖锐（低熵 $H(p)<1.85$）时自动下调先验权重，防止过信先验掩盖在线队列推演发现的即时拥塞差异。评分按 $0.01$ 精度量化后选取最大值（并列时按 $\widetilde{p}$ 加权抽样），仅向真实环境提交首步动作，下一宏步滚动重规划。
 
 \begin{algorithm}[!htbp]
 \caption{两种在线联合控制方式}
@@ -427,20 +456,20 @@ KL 系数 $\beta_{\mathrm{KL}}$ & $0.015$ & $0.015$ \\
         \toprule
         参数名称 & 参数取值 & 量纲 & 参数名称 & 参数取值 & 量纲 \\
         \midrule
-        服务区域尺寸 & $700\times700$ & $\mathrm{m}^2$ & 宏决策步长 / 基准微步长 & $1.0$ / $0.1$ & $\mathrm{s}$ \\
-        无人机 $N$ / 终端 $M$ & $5$ / $100$ & 架 / 个 & 生成时长 / 排空上限 & $200$ / $204$ & $\mathrm{s}$ \\
-        平峰 / 高峰期望到达率 & $15$ / $60$ & $\mathrm{tasks/s}$ & 高峰持续时间窗口 & $[50,100)$ & $\mathrm{s}$ \\
-        任务输入数据大小 & $1.5\sim3.0$ & $\mathrm{MB}$ & 计算密度 $\omega_n$ & $500\sim1000$ & $\mathrm{cycles/bit}$ \\
-        任务相对截止时间 & $2.0\sim3.0$ & $\mathrm{s}$ & 物理覆盖 / 感知半径 & $100$ / $460$ & $\mathrm{m}$ \\
-        机载算力 $\mathbf F_u$ & $[75,60,70,85,50]$ & $\mathrm{GHz}$ & 宏基站计算能力 $F_{\mathrm M}$ & $200$ & $\mathrm{GHz}$ \\
-        接入 / 协作 / 回传带宽 & $40$ / $20$ / $0.75$ & $\mathrm{MHz}$ & 候选数 $K$ / $N_{\mathrm{mot}}$ & $\leq 4$ / $4\sim 8$ & 个 \\
-        上游预训练模型组数 & $3$ & 组 & 盲测确认工作负载数 & $8$ & 个 \\
-        每方案配对评估回合数 & $48$ & 回合 & 全集累计生成请求数 $G$ & $252{,}024$ & 个 \\
+        服务区域尺寸 & $700\times700$ & $\mathrm{m}^2$ & 宏步长 / 微步长 & $1.0$ / $0.1$ & $\mathrm{s}$ \\
+        无人机 $N$ / 终端 $M$ & $5$ / $100$ & 架 / 个 & 生成 / 排空上限 & $200$ / $204$ & $\mathrm{s}$ \\
+        平峰 / 高峰到达率 & $15$ / $60$ & $\mathrm{tasks/s}$ & 高峰持续窗口 & $[50,100)$ & $\mathrm{s}$ \\
+        任务输入数据量 & $1.5\sim3.0$ & $\mathrm{MB}$ & 计算密度 $\omega_n$ & $500\sim1000$ & $\mathrm{cycles/bit}$ \\
+        任务相对截止期 & $2.0\sim3.0$ & $\mathrm{s}$ & 覆盖 / 感知半径 & $100$ / $460$ & $\mathrm{m}$ \\
+        机载算力 $\mathbf F_u$ & $[75{,}60{,}70{,}85{,}50]$ & $\mathrm{GHz}$ & 宏基站算力 $F_{\mathrm M}$ & $200$ & $\mathrm{GHz}$ \\
+        三频段信道带宽 & $40$ / $20$ / $0.75$ & $\mathrm{MHz}$ & 候选数 $K$ / $N_{\mathrm{mot}}$ & $\leq 4$ / $4\sim 8$ & 个 \\
+        上游预训练组数 & $3$ & 组 & 确认工作负载数 & $8$ & 个 \\
+        每方案评估回合 & $48$ & 回合 & 累计生成请求 $G$ & $252{,}024$ & 个 \\
         \bottomrule
     \end{sysufulltabular}
 \end{table}
 
-在工作负载严格隔离划分上，两轮蒸馏与 PPO 微调使用 $12$ 个训练工作负载（种子编号 $940000\sim940011$），模型检查点选择使用 $3$ 个独立验证工作负载（种子编号 $941000\sim941002$），开发集种子编号为 $951000\sim951003$，最终盲测确认集为 $8$ 个全新工作负载（种子编号 $955000\sim955007$）。全部 $17$ 种控制方案均在 $3$ 组固定上游预训练模型 $\times\ 8$ 个确认工作负载 $\times\ 2$ 个动作流 $=48$ 个配对回合（总计 $816$ 个确认回合，每种方案全集累计生成请求数严格一致为 $G=252{,}024$，其中高峰窗口到达 $G_{\mathrm{peak}}=144{,}186$、非高峰到达 $G_{\mathrm{nonpeak}}=107{,}838$）上运行。
+在工作负载严格隔离划分上，上游分配提议器预训练种子段为 $8000\sim8443$，上游双分支回归评分器与先验开发种子均位于 $911000\sim952007$ 范围内；本章两轮蒸馏与 PPO 微调使用 $12$ 个训练工作负载（种子编号 $940000\sim940011$），模型检查点选择使用 $3$ 个独立验证工作负载（种子编号 $941000\sim941002$），开发集种子编号为 $951000\sim951003$，最终盲测确认集为与上述全部上游及训练/验证种子严格互斥的 $8$ 个全新工作负载（种子编号 $955000\sim955007$）。全部 $17$ 种控制方案均在 $3$ 组固定上游预训练模型 $\times\ 8$ 个确认工作负载 $\times\ 2$ 个动作流 $=48$ 个配对回合（总计 $816$ 个确认回合，每种方案全集累计生成请求数严格一致为 $G=252{,}024$，其中高峰窗口到达 $G_{\mathrm{peak}}=144{,}186$、非高峰到达 $G_{\mathrm{nonpeak}}=107{,}838$）上运行。
 
 在统计推断协议上，为严格保留同一工作负载内三组上游模型与两条动作流之间的相关性，采用以独立确认工作负载 $w\in\{1,\ldots,8\}$ 为整群抽样单元的 $B=10{,}000$ 次配对分块 Bootstrap：记控制方案 $c$ 在工作负载 $w$ 下跨 $3\times 2=6$ 个回合汇总的按时完成请求数为 $S_{c,w}$、生成请求数为 $G_w$，第 $b$ 次重采样有放回抽取 $8$ 个工作负载簇索引 $(w_1^*,\ldots,w_8^*)$ 并计算重采样累计 DSR 差值 $\Delta\mathrm{DSR}^{*(b)}=\big[\sum_{\ell=1}^8(S_{c,w_\ell^*}-S_{c',w_\ell^*})\big]/\big(\sum_{\ell=1}^8 G_{w_\ell^*}\big)$，取双侧分位数构造单比较 $95\%$ 置信区间、预设主检验族（$N_{\mathrm{comp}}=8$，分位水平 $0.05/8$）Bonferroni 区间以及覆盖全集 $N_{\mathrm{comp}}=31$ 项比较（分位水平 $0.05/31$）的 Bonferroni 同时置信区间。以下分三个仿真案例依次分析 $17$ 种控制方案综合性能对比、规划蒸馏与反事实微调递进消融以及在线决策推理耗时折中。
 
@@ -448,24 +477,25 @@ KL 系数 $\beta_{\mathrm{KL}}$ & $0.015$ & $0.015$ \\
 
 本章评估的 $17$ 种控制方案按设计机制分为五组：（1）先验与单分支或事后拼接基线组（$4$ 种）：初始先验选择器、仅下层 RL、仅上层 RL 与单层训练后拼接；（2）双分支冷启动 RL 组（$3$ 种）：去耦冷启动 RL、无期望向量冷启动 RL 与联合冷启动 RL；（3）两轮规划蒸馏组（$3$ 种）：去耦蒸馏、无期望向量蒸馏与联合蒸馏；（4）蒸馏热启动反事实辅助微调组（$3$ 种）：去耦微调、无期望向量微调与联合微调；（5）在线前瞻与神经引导 Top-6 MPC 组（$4$ 种）：在线规划基线、先验 Top-6 MPC、蒸馏 Top-6 MPC 与微调 Top-6 MPC。
 
-图~\ref{fig:ch5-dynamic-validation} 展示了 PPO 更新轮次上的独立验证集 DSR 演化曲线，表~\ref{tab:ch5-dynamic-main} 与图~\ref{fig:ch5-dynamic-arms} 给出了全部 $17$ 种控制方案在盲测确认集上的完整性能对比。在相同候选动作接口下，初始先验选择器 DSR 为 $44.30\%$，联合冷启动 RL 为 $44.25\%$（表明缺乏规划先验引导的直接冷启动 RL 难以跨越跨时隙长视距信用分配障碍），两轮规划蒸馏学生大幅跃升至 $48.04\%$（较初始先验提升 $+3.74$ 个百分点，按时完成 $121{,}079$ 个请求），联合反事实辅助微调在零在线仿真前瞻下进一步提升至 $48.74\%$（完成 $122{,}842$ 个请求），而结合神经先验剪枝的微调 Top-6 MPC 达到全场最高的 $49.31\%$（完成 $124{,}280$ 个请求）。
+图~\ref{fig:ch5-dynamic-validation}(a) 展示了 PPO 更新轮次上的独立验证集 DSR 演化曲线，表~\ref{tab:ch5-dynamic-main} 与图~\ref{fig:ch5-dynamic-arms} 给出了全部 $17$ 种控制方案在盲测确认集上的完整性能对比、接纳—完成率相空间定位及核心配对效应区间。在相同候选动作接口下，初始先验选择器 DSR 为 $44.30\%$，联合冷启动 RL 为 $44.25\%$（表明缺乏规划先验引导的直接冷启动 RL 难以跨越跨时隙长视距信用分配障碍），两轮规划蒸馏学生大幅跃升至 $48.04\%$（较初始先验提升 $+3.74$ 个百分点，按时完成 $121{,}079$ 个请求），联合反事实辅助微调在零在线仿真前瞻下进一步提升至 $48.74\%$（完成 $122{,}842$ 个请求），而结合神经先验剪枝的微调 Top-6 MPC 达到全场最高的 $49.31\%$（完成 $124{,}280$ 个请求）。
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.96\textwidth]{../docs/figures/ch5_dynamic_02_validation.pdf}
-\bicaption{训练方案的验证 DSR 曲线}{Validation DSR across PPO updates for the evaluated training configurations}
+\includegraphics[width=\textwidth]{../docs/figures/fig5_05_training_counterfactual_coupling.pdf}
+\bicaption{验证集收敛演化、反事实辅助受控开关消融与运动分支方案依赖度审计}{Validation convergence, controlled counterfactual switch ablation, and motion-branch plan-dependence audit}
 \label{fig:ch5-dynamic-validation}
-\sysufignote{各点来自三组固定上游预训练模型的验证集汇总，轮次 $0$ 为各方案自身初值；验证工作负载与确认集严格独立。}
+\sysufignote{（a）蒸馏热启动微调与冷启动 RL 在独立验证集上的逐轮 DSR 曲线；（b）固定蒸馏初值与暖启动超参数下关闭（$w_{\mathrm{cf}}=0$）与启用（$w_{\mathrm{cf}}=1.25$）反事实辅助模块的确认集配对哑铃对比；（c）验证状态集上运动分支对候选分配的 $L_1$ 依赖度审计（去耦方案精确为 $0.00$，联合微调达 $0.95$）。}
 \end{figure}
 
 \input{docs/tables/ch5_dynamic_main.tex}
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.96\textwidth]{../docs/figures/ch5_dynamic_03_all_arms.pdf}
-\bicaption{全部十七种控制方案的盲测确认集 DSR}{Confirmation DSR for all seventeen control schemes with descriptive upstream-group values}
+\includegraphics[width=\textwidth]{../docs/figures/fig5_04_main_confirmation_effects.pdf}
+\bicaption{全部十七种控制方案的盲测确认集 DSR、接纳—质量相图与关键配对效应森林图}{Confirmation DSR across all seventeen schemes, admission--quality phase map, and key paired-effect forest plot}
 \label{fig:ch5-dynamic-arms}
-\sysufignote{彩色菱形为全集累计请求计数比率，灰色圆、方、三角分别为三组固定上游预训练模型下的子集比率；每种方案均包含 $48$ 个配对评估回合。}
+\label{fig:ch5-dynamic-effects}
+\sysufignote{（a）$17$ 种方案在 $48$ 个盲测确认回合（累计 $G=252{,}024$）上的全程 DSR 及三组上游预训练模型子集分布；（b）代表性方案在接纳率 $\alpha$ 与条件完成率 $\eta$ 相平面上的演化定位；（c）核心机制比较的配对 $\Delta\mathrm{DSR}$（粗线为单比较 $95\%$ 区间，细线为全集 $N_{\mathrm{comp}}=31$ 项 Bonferroni 同时置信区间，星号表示严格跨过零线）。}
 \end{figure}
 
 \subsection{规划蒸馏、反事实微调与神经引导 MPC 递进增益消融案例}
@@ -474,7 +504,7 @@ KL 系数 $\beta_{\mathrm{KL}}$ & $0.015$ & $0.015$ \\
 
 \input{docs/tables/ch5_dynamic_effects.tex}
 
-为进一步剥离暖启动微调配置下“短视界反事实组辅助模块”的独立增量贡献，表~\ref{tab:ch5-cf-ablation} 给出了在完全相同的冻结蒸馏学生起点（联合蒸馏 $48.04\%$、去耦蒸馏 $47.96\%$）、相同的 $48$ 个确认回合（工作负载 $955000\sim955007$，全集累计生成 $252{,}024$ 个任务）和相同暖启动超参数（表~\ref{tab:ch5-dynamic-hyper} 右列）下，关闭反事实辅助项（$K_{\mathrm{cf}}=0,\ w_{\mathrm{cf}}=0.0$，即纯在策略 PPO-GAE 暖启动微调）与启用反事实辅助项（$K_{\mathrm{cf}}=4,\ w_{\mathrm{cf}}=1.25$）的受控开关消融对比。在保持特征编码、网络拓扑、PPO-GAE 更新与零前瞻测试路径完全一致的受控条件下，两组实验仅改变上述反事实辅助开关。
+为进一步剥离暖启动微调配置下“短视界反事实组辅助模块”的独立增量贡献，表~\ref{tab:ch5-cf-ablation} 与图~\ref{fig:ch5-dynamic-validation}(b) 给出了在完全相同的冻结蒸馏学生起点（联合蒸馏 $48.04\%$、去耦蒸馏 $47.96\%$）、相同的 $48$ 个确认回合（工作负载 $955000\sim955007$，全集累计生成 $252{,}024$ 个任务）和相同暖启动超参数（表~\ref{tab:ch5-dynamic-hyper} 右列）下，关闭反事实辅助项（$K_{\mathrm{cf}}=0,\ w_{\mathrm{cf}}=0.0$，即纯在策略 PPO-GAE 暖启动微调）与启用反事实辅助项（$K_{\mathrm{cf}}=4,\ w_{\mathrm{cf}}=1.25$）的受控开关消融对比。在保持特征编码、网络拓扑、PPO-GAE 更新与零前瞻测试路径完全一致的受控条件下，两组实验仅改变上述反事实辅助开关。
 
 \begin{table}[!htbp]
 \centering
@@ -485,11 +515,11 @@ KL 系数 $\beta_{\mathrm{KL}}$ & $0.015$ & $0.015$ \\
 控制方案 & 起点 DSR & $w_{\mathrm{cf}}=0$ & 较起点差 & $w_{\mathrm{cf}}=1.25$ & 较起点差 & 启用净差$^{\mathrm{b}}$ \\
 \midrule
 去耦微调 & $47.96\%$ & $47.92\%$ & $-0.04$ & $48.41\%$ & $+0.45$ & $+0.49$ \\
-（完成/区间） & $(120{,}865)$ & $(120{,}759)$ & $[{-0.50},{+0.42}]$ & $(122{,}002)$ & $[{-0.02},{+0.93}]$ & $({+0.76},{+0.44},{+0.28})$ \\
+（完成/CI） & $(120{,}865)$ & $(120{,}759)$ & $[{-0.50},{+0.42}]$ & $(122{,}002)$ & $[{-0.02},{+0.93}]$ & $({+0.76},{+0.44},{+0.28})$ \\
 无期望微调 & $48.04\%^{\mathrm{a}}$ & $47.89\%$ & $-0.15$ & $48.63\%$ & $+0.59$ & $+0.74$ \\
-（完成/区间） & $(121{,}079)$ & $(120{,}701)$ & $[{-0.42},{+0.16}]$ & $(122{,}571)$ & $[{+0.35},{+0.80}]$ & $({+0.76},{+0.41},{+1.05})$ \\
+（完成/CI） & $(121{,}079)$ & $(120{,}701)$ & $[{-0.42},{+0.16}]$ & $(122{,}571)$ & $[{+0.35},{+0.80}]$ & $({+0.76},{+0.41},{+1.05})$ \\
 联合微调 & $48.04\%$ & $48.05\%$ & $+0.01$ & $48.74\%$ & $+0.70$ & $+0.69$ \\
-（完成/区间） & $(121{,}079)$ & $(121{,}100)$ & $[{-0.33},{+0.34}]$ & $(122{,}842)$ & $[{+0.51},{+0.88}]$ & $({+0.66},{+0.71},{+0.71})$ \\
+（完成/CI） & $(121{,}079)$ & $(121{,}100)$ & $[{-0.33},{+0.34}]$ & $(122{,}842)$ & $[{+0.51},{+0.88}]$ & $({+0.66},{+0.71},{+0.71})$ \\
 \bottomrule
 \end{sysufulltabular}
 \sysutabnote{注：差值列单位均为百分点（pp），方括号内为单比较 $95\%$ 置信区间，圆括号内为三组固定上游预训练模型的逐组净差。$^{\mathrm{a}}$ 无期望向量微调与联合微调从同一联合蒸馏检查点（$48.04\%$）出发，仅在微调与执行时置 $\mathbf C_{\mathrm{upper}}=\mathbf 0$。$^{\mathrm{b}}$ 本表为预设 $N_{\mathrm{comp}}=8$ 项主检验族与 $N_{\mathrm{comp}}=31$ 项全比较族之外的补充机制消融；因两组微调共享完全相同的冻结蒸馏起点与每组模型分母（$84{,}008$），由两组的相对蒸馏差值相减可精确导出启用相对关闭的逐组配对净差（其中联合微调在 $n=3$ 组上游模型聚类下的配对 $t_{\mathrm{df}=2}$ 的 $95\%$ 区间为 $[+0.62,+0.77]$ 个百分点）。}
@@ -502,16 +532,8 @@ KL 系数 $\beta_{\mathrm{KL}}$ & $0.015$ & $0.015$ \\
 
 \item 固定暖启动配置下反事实辅助模块的增量收益：在保持蒸馏初值与暖启动超参数完全一致的前提下，当 $w_{\mathrm{cf}}=0$ 时，三种暖启动微调策略的 DSR 分别为 $47.92\%$、$47.89\%$ 和 $48.05\%$，相对各自蒸馏起点的差值（$-0.04$、$-0.15$、$+0.01$ 个百分点）置信区间全部跨零（联合微调三组上游模型差值为 $+0.04$、$+0.05$、$-0.07$ 个百分点），表明在当前 $4$ 轮更新预算下，单靠稀疏单步轨迹的在策略 PPO-GAE 未检出相对蒸馏学生的净提升。启用每 $4$ 步一次的共同随机数反事实辅助模块（$w_{\mathrm{cf}}=1.25$）后，去耦微调、无期望向量微调与联合微调在全部三组上游模型上均取得一致正向改善，全集累计分别多完成 $1{,}243$、$1{,}870$ 和 $1{,}742$ 个请求（净增 $+0.49$、$+0.74$ 和 $+0.69$ 个百分点，其中联合微调逐组净差为 $+0.66$、$+0.71$、$+0.71$ 个百分点），从而使联合微调相对蒸馏学生实现 $+0.70$ 个百分点的全 $N_{\mathrm{comp}}=31$ 项 Bonferroni 显著提升。该对比定量证实了共同随机数三步反事实组辅助模块在突破跨时隙信用分配瓶颈上的关键增量价值。
 
-\item 微调组内部双分支耦合参数化的证据边界：在同样启用蒸馏热启动与反事实辅助（$w_{\mathrm{cf}}=1.25$）的条件下，联合微调（$48.74\%$）相对去耦微调（$48.41\%$）高 $+0.33$ 个百分点（$95\%$ 置信区间为 $[-0.08,+0.84]$，三组上游模型差值分别为 $+0.49$、$-0.14$、$+0.65$ 个百分点），相对无期望向量微调（$48.63\%$）高 $+0.11$ 个百分点（$95\%$ 置信区间为 $[-0.15,+0.41]$，三组上游模型差值分别为 $-0.31$、$+0.42$、$+0.21$ 个百分点）。表~\ref{tab:ch5-dynamic-effects} 与图~\ref{fig:ch5-dynamic-effects} 如实报告这些跨零结果，说明当规划蒸馏热启动与反事实组辅助同时在场时，候选分配特征与上游先验本身已捕获大部分队列负载结构，双分支条件化与期望向量 $\mathbf{C}_{\mathrm{upper}}(s,k)$ 主要承担保持槽位置换同变性的结构化参数化职责，在全程 DSR 上仅提供边际正点估计而未达统计显著；与此同时，在已接纳任务条件完成率 $\eta$ 上，联合微调（全集累计 $92.69\%$，$48$ 回合算术均值 $92.73\%$）相对去耦微调（$91.79\%$，回合均值 $91.85\%$）与无期望向量微调（$92.10\%$，回合均值 $92.17\%$）分别呈现 $+0.90$ 个百分点与 $+0.59$ 个百分点的描述性改善，体现了更审慎的高质量准入与执行协调倾向。
+\item 微调组内部双分支耦合参数化的证据边界：在同样启用蒸馏热启动与反事实辅助（$w_{\mathrm{cf}}=1.25$）的条件下，联合微调（$48.74\%$）相对去耦微调（$48.41\%$）高 $+0.33$ 个百分点（$95\%$ 置信区间为 $[-0.08,+0.84]$，三组上游模型差值分别为 $+0.49$、$-0.14$、$+0.65$ 个百分点），相对无期望向量微调（$48.63\%$）高 $+0.11$ 个百分点（$95\%$ 置信区间为 $[-0.15,+0.41]$，三组上游模型差值分别为 $-0.31$、$+0.42$、$+0.21$ 个百分点）。表~\ref{tab:ch5-dynamic-effects} 与图~\ref{fig:ch5-dynamic-effects}(c) 如实报告这些跨零结果，说明当规划蒸馏热启动与反事实组辅助同时在场时，候选分配特征与上游先验本身已捕获大部分队列负载结构，双分支条件化与期望向量 $\mathbf{C}_{\mathrm{upper}}(s,k)$ 主要承担保持槽位置换同变性的结构化参数化职责（图~\ref{fig:ch5-dynamic-validation}(c)），在全程 DSR 上仅提供边际正点估计而未达统计显著；与此同时，在已接纳任务条件完成率 $\eta$ 上，联合微调（全集累计 $92.69\%$，$48$ 回合算术均值 $92.73\%$）相对去耦微调（$91.79\%$，回合均值 $91.85\%$）与无期望向量微调（$92.10\%$，回合均值 $92.17\%$）分别呈现 $+0.90$ 个百分点与 $+0.59$ 个百分点的描述性改善，体现了更审慎的高质量准入与执行协调倾向。
 \end{enumerate}
-
-\begin{figure}[!htbp]
-\centering
-\includegraphics[width=0.99\textwidth]{../docs/figures/ch5_dynamic_04_paired_effects.pdf}
-\bicaption{主比较及两项补充比较的全程 DSR 配对差}{Paired full-horizon DSR effects with Bonferroni intervals across all 31 comparisons}
-\label{fig:ch5-dynamic-effects}
-\sysufignote{前八行为预设主检验族，末两行用于界定在线替代与 MPC 内部增量。线段统一为全集 $N_{\mathrm{comp}}=31$ 项 DSR 比较的 Bonferroni 同时置信区间，蓝色表示区间严格高于零；区间条件于三组固定上游预训练模型。}
-\end{figure}
 
 在引入神经引导在线前瞻后，微调 Top-6 MPC 的 DSR 达 $49.31\%$，显著高于在线规划基线的 $48.56\%$（全集累计多完成 $1{,}898$ 个请求，提升 $+0.75$ 个百分点，单比较 $95\%$ 区间为 $[+0.41,+1.16]$，主检验族 $N_{\mathrm{comp}}=8$ 的 Bonferroni 区间为 $[+0.29,+1.35]$，全集 $N_{\mathrm{comp}}=31$ 项 Bonferroni 区间为 $[+0.25,+1.42]$ 个百分点；三组上游模型下微调 Top-6 MPC 的子集 DSR 分别为 $49.50\%$、$49.37\%$、$49.07\%$，在线规划基线分别为 $48.64\%$、$48.51\%$、$48.53\%$，逐组差值分别为 $+0.86$、$+0.86$、$+0.54$ 个百分点，配对 $t_{\mathrm{df}=2}$ 的 $95\%$ 区间为 $[+0.30,+1.21]$ 个百分点）。在同一 Top-6 MPC 框架内，先验 Top-6 MPC 为 $45.46\%$，蒸馏 Top-6 MPC 为 $49.10\%$，微调 Top-6 MPC 为 $49.31\%$（显著优于先验 Top-6 MPC $+3.85$ 个百分点，相对蒸馏 Top-6 MPC 高 $+0.21$ 个百分点、$95\%$ 区间 $[-0.06,+0.48]$ 跨零）。与此同时，零在线仿真前瞻的联合微调（$48.74\%$）相对在线规划基线（$48.56\%$）高 $+0.18$ 个百分点（$95\%$ 区间 $[-0.168,+0.605]$，$90\%$ 区间 $[-0.128,+0.523]$，在 $\pm 0.50$ 个百分点界值下满足单侧非劣效判定，在 $\pm 0.75$ 个百分点界值下满足双单侧等效判定）。
 
@@ -519,27 +541,27 @@ KL 系数 $\beta_{\mathrm{KL}}$ & $0.015$ & $0.015$ \\
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.99\textwidth]{../docs/figures/ch5_dynamic_05_service_outcomes.pdf}
-\bicaption{主要控制方案的请求服务结局与分阶段 DSR 对比}{Request outcomes and arrival-cohort DSR for six representative control schemes}
+\includegraphics[width=\textwidth]{../docs/figures/fig5_06_cohort_peak_queue_dynamics.pdf}
+\bicaption{代表性方案的请求三结局构成、分到达批次 DSR 与突发窗口累计未结过期演化}{Request outcome breakdown, arrival-cohort DSR, and cumulative unserved/expired trajectory across the burst window}
 \label{fig:ch5-dynamic-service}
-\sysufignote{（a）按全集累计生成请求分解的三类结局，未接纳请求同样计入分母 $G$；（b）按请求到达时刻区分高峰与非高峰阶段的 DSR，任务结算包含后续排空阶段。完整十七种方案指标见表~\ref{tab:ch5-dynamic-main}。}
+\sysufignote{（a）按全集累计生成请求 $G$ 分解的三类服务结局占比；（b）按到达时刻划分平峰前、突发高峰与恢复期的分批次 DSR（微调 Top-6 MPC 高峰期较在线规划高 $+1.30$ 个百分点）；（c）代表性确认工作负载 $955000$ 上逐秒累计未结与过期请求数轨迹（微调 Top-6 MPC 较初始先验减少 $443$ 次过期）。}
 \end{figure}
 
 \subsection{在线决策推理耗时与服务质量折中分析案例}
 
-表~\ref{tab:ch5-dynamic-cost} 和图~\ref{fig:ch5-dynamic-cost} 同时报告了七种代表性方案在远程 Linux 实验服务器上（限定数值代数库单线程运行 OMP/\allowbreak MKL/\allowbreak OPENBLAS/\allowbreak NUMEXPR\_\allowbreak NUM\_\allowbreak THREADS\allowbreak =1 并以多进程并发执行确认评估回合）实测的单步决策平均耗时、第 $95$ 百分位尾延迟（$\mathrm{P95}$）与在线仿真计数。零在线前瞻的联合微调平均每步耗时为 $0.520\,\mathrm{s}$，较在线规划基线的 $1.602\,\mathrm{s}$ 降低 $67.5\%$（速度提升约 $3.08$ 倍）；微调 Top-6 MPC 平均每步耗时为 $0.722\,\mathrm{s}$，较在线规划基线降低 $54.9\%$。在线仿真计数显示，在线规划基线在 $48$ 个确认回合中累计调用了 $1{,}664{,}565$ 个确定性队列仿真步，微调 Top-6 MPC 仅调用 $58{,}173$ 个预测候选克隆分支，而联合微调的两类在线队列仿真计数均严格为零。
+表~\ref{tab:ch5-dynamic-cost} 详细列出了七种代表性方案在远程 Linux 实验服务器上（限定数值代数库单线程运行 OMP/\allowbreak MKL/\allowbreak OPENBLAS/\allowbreak NUMEXPR\_\allowbreak NUM\_\allowbreak THREADS\allowbreak =1 并以多进程并发执行确认评估回合）实测的单步决策平均耗时、第 $95$ 百分位尾延迟（$\mathrm{P95}$）、超 $1\,\mathrm{s}$ 步占比与在线仿真计数；图~\ref{fig:ch5-dynamic-cost} 则从“全程 DSR--平均耗时帕累托前沿”与“分运行阶段单步平均耗时”两个互补视角揭示服务质量与计算预算的折中结构。由图~\ref{fig:ch5-dynamic-cost}(a) 可见，联合蒸馏（$0.439\,\mathrm{s},\ 48.04\%$）、联合微调（$0.520\,\mathrm{s},\ 48.74\%$）、蒸馏 Top-6 MPC（$0.711\,\mathrm{s},\ 49.10\%$）与微调 Top-6 MPC（$0.722\,\mathrm{s},\ 49.31\%$）共同构成经验帕累托前沿，其中零前瞻联合微调与神经引导 Top-6 MPC 在全程 DSR 与平均耗时两个维度上均严格帕累托支配在线规划基线（$1.602\,\mathrm{s},\ 48.56\%$）：联合微调耗时降低 $67.5\%$（提速约 $3.08$ 倍），微调 Top-6 MPC 耗时降低 $54.9\%$ 且多完成 $1{,}898$ 个请求。在线仿真计数显示，在线规划基线在 $48$ 个确认回合中累计调用了 $1{,}664{,}565$ 个确定性队列仿真步，微调 Top-6 MPC 仅调用 $58{,}173$ 个预测候选克隆分支，而联合微调的两类在线队列仿真计数均严格为零。
 
 \input{docs/tables/ch5_dynamic_cost.tex}
 
 \begin{figure}[!htbp]
 \centering
-\includegraphics[width=0.99\textwidth]{../docs/figures/ch5_dynamic_06_decision_cost.pdf}
-\bicaption{七种主要控制方案的单步决策耗时对比}{Mean, P95 and one-second exceedance of recorded per-step decision time}
+\includegraphics[width=\textwidth]{../docs/figures/fig5_07_decision_cost_pareto.pdf}
+\bicaption{服务质量—决策耗时帕累托前沿、分运行阶段耗时对比与零前瞻内部子模块开销分解}{Empirical DSR--runtime Pareto frontier, operating-stage decision time, and internal zero-lookahead runtime breakdown}
 \label{fig:ch5-dynamic-cost}
-\sysufignote{（a）评估回合记录的单步平均耗时与 $\mathrm{P95}$ 尾延迟；（b）单步耗时超过 $1\,\mathrm{s}$ 宏时隙步长的决策步比例。数据记录自完整 Python 调用路径，非嵌入式硬实时基准。}
+\sysufignote{（a）盲测确认集七种代表性方案的全程 DSR 与单步平均耗时帕累托前沿；（b）平峰期（$t<40\,\mathrm{s}$）、突发拥塞窗口（$40\leq t<105\,\mathrm{s}$）与恢复排空期（$t\geq 105\,\mathrm{s}$）的分阶段耗时对比；（c）零前瞻联合微调内部四类子阶段耗时占比（双分支策略网络张量前向仅占 $0.21\%$ 即约 $1.1\,\mathrm{ms}$）。}
 \end{figure}
 
-同时必须客观界定实时性边界：在当前 Python 原型实现与多进程并发评估环境下，联合微调与微调 Top-6 MPC 的 $\mathrm{P95}$ 尾延迟分别为 $1.297\,\mathrm{s}$ 和 $2.203\,\mathrm{s}$，单步耗时超过 $1.0\,\mathrm{s}$ 宏步长的比例分别为 $16.9\%$ 和 $24.5\%$（在线规划基线则达 $\mathrm{P95}=5.998\,\mathrm{s}$、超限比例 $29.7\%$），且仿真采用“零决策等待延迟”理想原型假设（即物理队列推进未挂起等待控制器计算结束）。因此，上述计时结果支持所提框架在相同软件栈下相对全候选在线规划显著压降平均计算开销，但尚不构成机载硬实时闭环部署保证；面向实际工程落地，仍需结合编译型语言重写队列内核、候选分支批量向量化并行以及显式计入计算等待时延的闭环测试。
+结合图~\ref{fig:ch5-dynamic-cost}(b)--(c) 与表~\ref{tab:ch5-dynamic-cost} 可客观界定实时性边界并定量拆解耗时来源：在当前纯 Python 原型实现与多进程并发评估环境下（Intel Xeon Gold 6248R 处理器），联合微调与微调 Top-6 MPC 在全部 $48$ 个确认回合（共 $9{,}696$ 个宏决策步）上的单步耗时中位数分别为 $0.273\,\mathrm{s}$ 和 $0.372\,\mathrm{s}$，$\mathrm{P95}$ 尾延迟分别为 $1.297\,\mathrm{s}$ 和 $2.203\,\mathrm{s}$，单步耗时超过 $1.0\,\mathrm{s}$ 宏步长的比例分别为 $16.9\%$ 和 $24.5\%$（在线规划基线则达 $\mathrm{P95}=5.998\,\mathrm{s}$、超限比例 $29.7\%$）。按运行阶段拆分可见，在平峰期（$t<40\,\mathrm{s}$）与恢复排空期（$t\geq 105\,\mathrm{s}$），联合蒸馏（$0.224\,\mathrm{s}/\allowbreak 0.241\,\mathrm{s}$）、联合微调（$0.294\,\mathrm{s}/\allowbreak 0.260\,\mathrm{s}$）与微调 Top-6 MPC（$0.344\,\mathrm{s}/\allowbreak 0.326\,\mathrm{s}$）均远低于 $1.0\,\mathrm{s}$ 时隙步长；超限尾延迟主要集中于到达强度激增四倍、在途活跃队列深度骤升的突发拥塞窗口（$40\leq t<105\,\mathrm{s}$，在线规划基线阶段均值飙升至 $3.817\,\mathrm{s}$，而联合蒸馏、联合微调与微调 Top-6 MPC 分别压制在 $0.868\,\mathrm{s}$、$1.048\,\mathrm{s}$ 与 $1.546\,\mathrm{s}$，其中 Top-6 三步克隆队列推演相对零前瞻方案全程平均仅增量耗时 $0.202\,\mathrm{s}$，折合每个候选分支约 $33.6\,\mathrm{ms}$）。对零前瞻联合微调内部四个串行子阶段的细粒度计时剖析（跨三组上游模型共 $606$ 个完整决策步）表明：上游虚拟队列顺序前缀分配提议、运动候选构造与回归打分占总耗时的 $73.7\%$，级联安全方案注入与空间救援防碰几何扫描占 $3.2\%$，$K\times N_{\mathrm{mot}}$ 组释放时间串联排队与未来到达解析特征提取占 $22.9\%$，而双分支候选等变策略网络本身的前向张量推理仅占 $0.21\%$（折算约 $1.1\,\mathrm{ms}$）。这证明超过 $99.7\%$ 的零前瞻原型耗时源自解释型 Python 中的对象深拷贝（\texttt{deepcopy}）与串行事件循环开销，而非神经网络前向计算。由于当前仿真采用“零决策等待延迟”理想原型假设（即物理队列推进未挂起等待控制器计算结束），上述计时结果支持所提框架在相同软件栈下相对全候选在线规划显著压降平均计算开销，但尚不构成硬实时闭环部署保证；面向实际宏基站边缘服务器落地，将上述串行排队特征算子与候选构造器以 C++ 编译重写并结合候选网格批量向量化并行，可将常规在线求解延迟压缩至毫秒量级，并配合极端超限时的本地零通信安全回退动作 $(k_{\mathrm{safe}},\mathbf{0})$ 形成完整实时闭环保障。
 
 此外，本章方法的适用范围亦受以下建模假设约束：离线教师与解析特征包含单通道排队近似误差，反事实三步分支采用因果滑窗预测到达与固定安全延续策略，有限结构化候选集不覆盖任意连续轨迹与指数级离散分配组合；统计推断条件于三组固定上游预训练模型与预设移动热点突发协议，跨拓扑规模或真实外场流量的泛化性留待后续研究检验。
 

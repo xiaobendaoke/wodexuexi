@@ -5,7 +5,7 @@
 \section{引言}
 \label{sec:ch2-intro}
 
-在无人机集群辅助移动边缘计算（UAV-MEC）系统中，空中平台的空间机动、地面终端的自然覆盖接纳、无线信道传输以及多节点计算资源调度之间存在着紧密的物理与数学耦合。若缺乏统一的底层几何关联、平台运行包线、执行路径与时限评价模型，不同时间尺度与控制粒度下的规划算法将难以在同一理论框架下分析与对标。为此，本章作为全文的第一项基础研究工作，建立面向时限计算服务的无人机集群空地协同计算统一数学模型与双协议评价体系。首先，从集群空间区域、旋翼平台额定续航与控制时间尺度分离包线、最近邻自然覆盖接纳规则、二维离散机动安全间距修复算子以及空地/机间/回传无线通信信道出发，建立系统的几何与通信模型；随后，统一刻画机载本地计算、邻机协同中继与地面宏基站回传三类执行路径，分别构建单时隙批量等份算力共享（协议 I）与跨时隙持续排队（协议 II）两类受控互补负载耦合模型，并阐明两套协议的实验控制演进逻辑；在此基础上，推导基于生成、接纳与按时完成三项计数的端到端截止期满足率（DSR）双因子精确分解定理、同源工作负载配对评价准则以及部分可观测序贯协同决策表示，为后续第三、四、五章的协同规划与控制算法设计提供统一的模型底座。
+在无人机集群辅助移动边缘计算（UAV-MEC）系统中，空中平台的空间机动、地面终端的自然覆盖接纳、无线信道传输以及多节点计算资源调度之间存在着紧密的物理与数学耦合。若缺乏统一的底层几何关联、平台运行包线、执行路径与时限评价模型，不同时间尺度与控制粒度下的规划算法将难以在同一理论框架下分析与对标。为此，本章作为全文的基础建模工作，建立面向时限计算服务的无人机集群空地协同计算统一数学模型与双协议评价体系。首先，从集群空间区域、旋翼平台额定续航与控制时间尺度分离包线、最近邻自然覆盖接纳规则、二维离散机动安全间距修复算子以及空地/机间/回传无线通信信道出发，建立系统的几何与通信模型；随后，统一刻画机载本地计算、邻机协同中继与地面宏基站回传三类执行路径，分别构建单时隙批量等份算力共享（协议 I）与跨时隙持续排队（协议 II）两类受控互补负载耦合模型，并阐明两套协议的实验控制演进逻辑；在此基础上，给出基于生成、接纳与按时完成三项计数的端到端截止期满足率（DSR）双因子归因分解性质、同源工作负载配对评价准则以及部分可观测序贯协同决策框架，为后续第三、四、五章的协同规划与控制算法设计提供统一的模型底座。
 
 \section{空地协同计算系统几何与通信建模}
 \label{sec:ch2-swarm-planning}
@@ -15,21 +15,15 @@
 \label{sec:ch2-swarm-levels}
 \label{subsec:mec-overview}
 
-考虑在水平尺度为 $L_{\mathrm{area}}\times L_{\mathrm{area}}$（本文主场景取 $700\times 700\,\mathrm{m}^2$）的二维目标服务区域内，部署由 $N$ 架机动几何参数同构而机载计算与缓存容量异构的旋翼无人机组成的空中边缘计算集群 $\mathcal{U}=\{1,2,\ldots,N\}$（主场景 $N=5$）、一座位于固定中心位置 $\mathbf{q}_{\mathrm{MBS}}=(350,350)\,\mathrm{m}$（天线架高 $H_{\mathrm{MBS}}=30\,\mathrm{m}$）的地面宏基站（MBS）以及 $M$ 个地面移动或时变需求用户终端（UE）集合 $\mathcal{I}=\{1,2,\ldots,M\}$（主场景 $M=100$）。系统在离散宏决策时隙 $t\in\{0,1,\ldots,T-1\}$ 上运行，单宏时隙持续时间为 $\tau=1.0\,\mathrm{s}$。图~\ref{fig:mec_architecture} 与图~\ref{fig:uav_scenarios} 分别给出了端—空—地三层协同移动边缘计算架构与典型应用场景：地面终端产生具有严格截止期约束的计算请求，无人机集群同时承担空中移动接入点与异构边缘计算/缓存节点的双重职能，地面宏基站则提供高算力与全量程序库回传支撑\cite{chung2018swarm,shi2016edge,mao2017survey,abbas2018mobile,wang2020edge}。
+考虑在水平尺度为 $L_{\mathrm{area}}\times L_{\mathrm{area}}$（本文主场景取 $700\times 700\,\mathrm{m}^2$）的二维目标服务区域内，部署由 $N$ 架机动几何参数同构而机载计算与缓存容量异构的旋翼无人机组成的空中边缘计算集群 $\mathcal{U}=\{1,2,\ldots,N\}$（主场景 $N=5$）、一座位于固定中心位置 $\mathbf{q}_{\mathrm{MBS}}=(350,350)\,\mathrm{m}$（天线架高 $H_{\mathrm{MBS}}=30\,\mathrm{m}$）的地面宏基站（MBS）以及 $M$ 个地面移动或时变需求用户终端（UE）集合 $\mathcal{I}=\{1,2,\ldots,M\}$（主场景 $M=100$）。系统在离散宏决策时隙 $t\in\{0,1,\ldots,T-1\}$ 上运行，单宏时隙持续时间为 $\tau=1.0\,\mathrm{s}$。图~\ref{fig:mec_architecture} 与图~\ref{fig:uav_scenarios} 分别给出了端—空—地三层协同移动边缘计算的空间几何约束与三类执行路径机制：地面终端产生具有严格截止期约束的计算请求，无人机集群同时承担空中移动接入点与异构边缘计算/缓存节点的双重职能，地面宏基站则提供高算力与全量程序库回传支撑\cite{chung2018swarm,shi2016edge,mao2017survey,abbas2018mobile,wang2020edge}。
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.98\textwidth]{../docs/figures/图2-1_MEC三层架构示意图}
-    \bicaption{端--空--地三层协同移动边缘计算空间几何与三类执行路径架构示意图}{Spatial Geometry and Three Execution Paths of the Three-Layer Cooperative UAV-MEC System}
+    \includegraphics[width=\textwidth]{../docs/figures/fig2_01_spatial_kinematics.pdf}
+    \bicaption{五机协同空间自然覆盖几何与离散机动安全间距修复机理示意图}{Spatial Natural-Coverage Geometry and Discrete Kinematic Collision-Repair Mechanism of the Five-UAV Swarm}
     \label{fig:mec_architecture}
-    \sysufignote{机制示意图：（a）$700\times 700\,\mathrm{m}^2$ 服务区域内 $5$ 架 UAV 互斥 $100\,\mathrm{m}$ 覆盖圆、$460\,\mathrm{m}$ 感知弧、$100$ 个 UE 与中心固定 MBS 的空间关系；（b）本地计算（含缓存命中与回源分支）、邻机中继与宏基站回传三类路径。}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.82\textwidth]{../docs/figures/图2-2_UAV辅助通信应用场景}
-    \bicaption{无人机辅助通信与计算卸载典型应用场景示意图}{Typical Application Scenarios of UAV-Assisted Edge Computing}
-    \label{fig:uav_scenarios}
+    \label{fig:ch2-kinematic-repair}
+    \sysufignote{几何机理示意图：（a）$700\times 700\,\mathrm{m}^2$ 服务区域内内缩可行域 $\mathcal{Q}=[50,650]^2\,\mathrm{m}^2$、五机互斥物理覆盖圆（$R_c=100\,\mathrm{m}$，安全间距 $d_{\min}=200\,\mathrm{m}$）、感知半径 $R_s=460\,\mathrm{m}$ 与中心固定宏基站的空间关系；（b）单步最大步长限幅（$v_{\max}\tau=15\,\mathrm{m}$）、间距冲突连线对称排斥推离与残余冲突悬停回退算子 $\mathcal{E}(\cdot)$。}
 \end{figure}
 
 设时隙 $t$ 内无人机 $u\in\mathcal{U}$ 的水平投影坐标为 $\mathbf{q}_u(t)=(x_u(t),y_u(t))\in\mathbb{R}^2$，巡航飞行高度保持恒定 $H=100\,\mathrm{m}$；地面终端 $m\in\mathcal{I}$ 的水平坐标为 $\mathbf{w}_m(t)=(x_m(t),y_m(t))\in\mathbb{R}^2$。机载高速接入链路受限于最大水平物理覆盖半径 $R_c=100\,\mathrm{m}$，而机载低速率状态信令发现与邻机协作通信半径记为 $R_s=460\,\mathrm{m}$（满足 $R_s>R_c$）。无人机 $u$ 在感知范围内的邻机集合定义为：
@@ -68,22 +62,26 @@
     \ \|\mathbf q_u-\mathbf q_v\|_2\geq d_{\min},\ \forall u\neq v\right\}.
     \label{eq:ch2-joint-geometry}
 \end{equation}
-由于分散式策略网络独立输出的原始位移提案不一定天然落入非凸可行集 $\mathcal{Q}_{\mathrm{joint}}$，环境通过确定性可行性修复算子 $\mathcal{E}(\cdot)$ 将原始提案映射为物理可执行位移（几何修复机理如图~\ref{fig:ch2-kinematic-repair} 所示）：首先对单步步长与边界 $\mathcal{Q}$ 进行裁剪，随后对间距小于 $d_{\min}$ 的无人机对执行有限轮对称排斥推离与步长重投影；若有限轮迭代后仍存在间距冲突，则将冲突无人机回退至上一时隙可行位置 $\mathbf{q}_u(t)$ 直至满足数值容差 $10^{-3}\,\mathrm{m}$（协议 II 进一步沿宏步内线性运动轨迹连续校验全路径最小间距）。基于上述几何与安全间距约束，可导出自然覆盖关联集合的如下基本性质：
-
-\begin{figure}[!htbp]
-    \centering
-    \includegraphics[width=0.96\textwidth]{../docs/figures/ch2_kinematic_collision_repair}
-    \bicaption{内缩可行域下无人机单步限幅、对称排斥推离与悬停回退防碰修复机理示意图}{Schematic of UAV Step Clipping, Symmetric Repulsion, and Hover Fallback within the Inset Feasible Domain}
-    \label{fig:ch2-kinematic-repair}
-    \sysufignote{几何机理示意图：（a）边界内缩可行域 $\mathcal{Q}=[50,650]^2\,\mathrm{m}^2$ 与最大步长圆 $v_{\max}\tau=15\,\mathrm{m}$；（b）违反安全间距 $d_{\min}=200\,\mathrm{m}$ 时的连线对称外推及残余冲突悬停回退机制。}
-\end{figure}
+由于分散式策略网络独立输出的原始位移提案不一定天然落入非凸可行集 $\mathcal{Q}_{\mathrm{joint}}$，环境通过确定性可行性修复算子 $\mathcal{E}(\cdot)$ 将原始提案映射为物理可执行位移（几何修复机理如图~\ref{fig:ch2-kinematic-repair}(b) 所示）：首先对单步步长与边界 $\mathcal{Q}$ 进行裁剪，随后对间距小于 $d_{\min}$ 的无人机对执行有限轮对称排斥推离与步长重投影；若有限轮迭代后仍存在间距冲突，则将冲突无人机回退至上一时隙可行位置 $\mathbf{q}_u(t)$ 直至满足数值容差 $10^{-3}\,\mathrm{m}$（协议 II 进一步沿宏步内线性运动轨迹连续校验全路径最小间距）。基于上述几何与安全间距约束，可导出自然覆盖关联集合的如下基本性质：
 
 \begin{lemma}[自然覆盖最近邻关联互斥性与完备划分]
 若无人机集群位置配置满足联合安全间距约束 $\mathbf{q}(t)\in\mathcal{Q}_{\mathrm{joint}}$ 且 $d_{\min}\geq 2R_c$，则各无人机的开覆盖圆盘 $\mathcal{D}_u^\circ(t)=\{\mathbf{w}\in\mathbb{R}^2:\|\mathbf{w}-\mathbf{q}_u(t)\|_2<R_c\}$ 两两互不相交，且式~\eqref{eq:ch2-natural-association} 定义的关联终端集合 $\{\mathcal{U}_1(t),\allowbreak\ldots,\allowbreak\mathcal{U}_N(t),\allowbreak\mathcal{U}_{\mathrm{uncov}}(t)\}$ 构成全体地面终端集合 $\mathcal{I}$ 的严格两两互斥完备划分。
 \end{lemma}
 
 \begin{proof}
-任取两架不同无人机 $u\neq v$，由 $\mathbf{q}(t)\in\mathcal{Q}_{\mathrm{joint}}$ 及 $d_{\min}=200\,\mathrm{m}=2R_c$ 可知 $\|\mathbf{q}_u(t)-\mathbf{q}_v(t)\|_2\geq 2R_c$。若存在地面点 $\mathbf{w}\in\mathcal{D}_u^\circ(t)\cap\mathcal{D}_v^\circ(t)$，则由三角不等式有 $\|\mathbf{q}_u(t)-\mathbf{q}_v(t)\|_2\leq\|\mathbf{w}-\mathbf{q}_u(t)\|_2+\|\mathbf{w}-\mathbf{q}_v(t)\|_2<2R_c$，矛盾，故开覆盖圆盘内部互不重叠；对于恰处于两覆盖圆边界切点 $\|\mathbf{w}_m(t)-\mathbf{q}_u(t)\|_2=\|\mathbf{w}_m(t)-\mathbf{q}_v(t)\|_2=R_c$ 的退化情形，式~\eqref{eq:ch2-natural-association} 的最小下标平局打破规则将其唯一归入编号较小的无人机关联集，故 $\mathcal{U}_u(t)\cap\mathcal{U}_v(t)=\varnothing$（$\forall u\neq v$）。结合补集 $\mathcal{U}_{\mathrm{uncov}}(t)$ 的定义，即证 $\{\mathcal{U}_1(t),\allowbreak\ldots,\allowbreak\mathcal{U}_N(t),\allowbreak\mathcal{U}_{\mathrm{uncov}}(t)\}$ 构成 $\mathcal{I}$ 的互斥完备划分。至此，引理 2.2.1 证毕。
+任取两架不同无人机 $u\neq v$，由 $\mathbf{q}(t)\in\mathcal{Q}_{\mathrm{joint}}$ 及 $d_{\min}=200\,\mathrm{m}=2R_c$ 可知 $\|\mathbf{q}_u(t)-\mathbf{q}_v(t)\|_2\geq 2R_c$。假设存在地面点 $\mathbf{w}\in\mathcal{D}_u^\circ(t)\cap\mathcal{D}_v^\circ(t)$，则由欧氏范数三角不等式及开圆盘定义有：
+\begin{align*}
+    2R_c=d_{\min}\leq\|\mathbf{q}_u(t)-\mathbf{q}_v(t)\|_2
+    &\leq\|\mathbf{w}-\mathbf{q}_u(t)\|_2+\|\mathbf{w}-\mathbf{q}_v(t)\|_2 \\
+    &<R_c+R_c=2R_c,
+\end{align*}
+产生矛盾，故开覆盖圆盘内部互不重叠（$\mathcal{D}_u^\circ(t)\cap\mathcal{D}_v^\circ(t)=\varnothing$）。对于恰处于两覆盖圆边界切点 $\|\mathbf{w}_m(t)-\mathbf{q}_u(t)\|_2=\|\mathbf{w}_m(t)-\mathbf{q}_v(t)\|_2=R_c$ 的退化情形，式~\eqref{eq:ch2-natural-association} 的字典序最小下标平局打破规则将其唯一归入 $\min(u,v)$ 对应的无人机关联集，结合未覆盖补集 $\mathcal{U}_{\mathrm{uncov}}(t)=\mathcal{I}\setminus\bigcup_{u=1}^N\mathcal{U}_u(t)$ 的定义，可得集合关系：
+\begin{align*}
+    \mathcal{U}_u(t)\cap\mathcal{U}_v(t)&=\varnothing\quad(\forall u\neq v),\qquad
+    \mathcal{U}_{\mathrm{uncov}}(t)\cap\bigcup_{u=1}^{N}\mathcal{U}_u(t)=\varnothing, \\
+    \left(\bigcup_{u=1}^{N}\mathcal{U}_u(t)\right)\cup\mathcal{U}_{\mathrm{uncov}}(t)&=\mathcal{I},
+\end{align*}
+即证 $\{\mathcal{U}_1(t),\allowbreak\ldots,\allowbreak\mathcal{U}_N(t),\allowbreak\mathcal{U}_{\mathrm{uncov}}(t)\}$ 构成 $\mathcal{I}$ 的严格两两互斥完备划分。至此，引理 2.2.1 证毕。
 \end{proof}
 
 引理 2.2.1 表明，在 $d_{\min}=2R_c$ 约束下，集群不存在因两机靠得过近而导致的有效覆盖内部重叠浪费；空间轨迹规划的核心作用在于将这 $N$ 个互斥的圆形覆盖域动态投送至待服务请求密集的区域。
@@ -107,7 +105,7 @@
     R=\frac{B}{N_{\mathrm{act}}}\log_2\left(1+\frac{P^{\mathrm{comm}}g(d)}{\sigma^2}\right).
     \label{eq:ch2-link-rate}
 \end{equation}
-当传输数据量以字节（Byte）计量并记为 $L_m$ 时，执行 $8\,\mathrm{bit/Byte}$ 的量纲转换，对应无线传输时延为：
+其中空地接入上行链路在两类协议中均严格按并发活跃关联或上传终端数计入 $N_{\mathrm{act}}$ 分摊；对于机间协作中继链路与空对地回传链路，协议 II（第五章）通过显式维护单通道释放时刻队列对多任务并发传输施加严格的串行排队延迟，而协议 I（第三、四章单时隙批量结算模型）为聚焦前端覆盖盲区诊断与同批算力共享外部性分析，对单拍内的机间与回传传输采用单请求独立速率近似（取 $N_{\mathrm{act}}=1$），并在第三章在线训练中引入宏基站卸载配额上限 $\eta_{\mathrm{MBS}}^{\max}$ 以抑制窄带回传过载。当传输数据量以字节（Byte）计量并记为 $L_m$ 时，执行 $8\,\mathrm{bit/Byte}$ 的量纲转换，对应无线传输时延为：
 \begin{equation}
     T^{\mathrm{tx}}_m=\frac{8L_m}{R}.
     \label{eq:ch2-byte-bit}
@@ -132,12 +130,20 @@
 \end{equation}
 且各无人机按固定周期采用贪心双尺寸频率替换策略（Greedy-Dual-Size-Frequency，GDSF）根据本地历史访问频次与文件大小动态更新缓存内容。
 
-对于由接入无人机 $u=u_m^\star(t)$ 自然接纳的请求 $m$，卸载决策需为其唯一指定一个目标执行节点 $b_m\in\mathcal{J}$，从而形成以下三类完整执行路径（如图~\ref{fig:mec_architecture}(b) 所示）：
+对于由接入无人机 $u=u_m^\star(t)$ 自然接纳的请求 $m$，卸载决策需为其唯一指定一个目标执行节点 $b_m\in\mathcal{J}$，从而形成以下三类完整执行路径（如图~\ref{fig:uav_scenarios}(a) 所示）：
 \begin{enumerate}
 \item 接入无人机本地执行（$b_m=u$）：请求经终端至无人机 $u$ 的上行链路完成数据上传后，若协议包含服务缓存且本地未命中（$h_{u,s(m)}(t)=0$），则先经回传链路下载服务程序镜像，随后由无人机 $u$ 的机载处理器执行计算；
 \item 邻近协作无人机中继执行（$b_m=j\in\mathcal{U}\setminus\{u\}$）：请求先上传至接入无人机 $u$，再在感知通信半径约束（$\|\mathbf{q}_u-\mathbf{q}_j\|_2\le R_s$）下经机间无线链路转发至协作无人机 $j$，在满足目标节点程序准备条件后由无人机 $j$ 的机载处理器完成计算；
 \item 地面宏基站回传执行（$b_m=\mathrm{MBS}$）：请求上传至接入无人机 $u$ 后，经受限带宽空对地回传链路转发至计算资源充裕且常驻全量服务库的地面宏基站执行计算。
 \end{enumerate}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=\textwidth]{../docs/figures/fig2_02_execution_contention.pdf}
+    \bicaption{三类卸载执行路径、服务缓存状态耦合与正交频段等时分竞争模型}{Three Offloading Execution Paths, Service-Cache Coupling, and Orthogonal-Band Equal-Time-Share Contention Model}
+    \label{fig:uav_scenarios}
+    \sysufignote{机制示意图：（a）接入无人机本地执行（含机载 GDSF 缓存命中与未命中回源分支）、邻机协作中继（$460\,\mathrm{m}$ 内 $20\,\mathrm{MHz}$ 机间链路）与地面宏基站回传（$0.75\,\mathrm{MHz}$ 窄带回传与 $200\,\mathrm{GHz}$ 全量库）三类路径；（b）同频段并发活跃数 $N_{\mathrm{act}}$ 下的等时分多址（TDMA）有效吞吐速率反比稀释规律 $R\propto 1/N_{\mathrm{act}}$。}
+\end{figure}
 
 \subsection{单时隙批量等份共享与跨时隙串联排队模型}
 \label{sec:ch2-assignment}
@@ -176,15 +182,15 @@
 \end{equation}
 第四章正式二元字典序搜索直接采用式~\eqref{eq:ch2-matching-cost} 的零标量化精确元组比较。
 
-\item 协议 II：跨时隙持续 EDF 串联排队模型（第五章）：在协议 II 中，未完成任务的剩余上传比特、剩余转发比特与剩余计算周期跨时隙持久保留，直至任务完成或超过绝对截止期 $d_n$ 后作为过期任务清除。在真实物理环境推进中，每个已接纳任务依次经历无线链路传输阶段（上传与跨节点转发）与目标节点先占式最早截止期优先（EDF）计算阶段\cite{liu1973scheduling}构成的串联队列。为在不调用完整微步积分器的前提下实现零前瞻特征提取，第五章进一步构造两阶段解析串联排队近似：第一阶段按截止期紧迫序递推各任务完成无线传输并到达目标计算队列的释放时刻 $\tilde{r}_{n,j}$，第二阶段在各计算节点上严格按释放时刻约束执行工作守恒先占式 EDF 推进，从而低开销地刻画跨时隙积压对后续任务的阻塞风险。
+\item 协议 II：跨时隙持续 EDF 串联排队模型（第五章）：在协议 II 中，未完成任务的剩余上传比特、剩余转发比特与剩余计算周期跨时隙持久保留，直至任务完成或超过绝对截止期 $d_n$ 后作为过期任务清除。在真实物理环境推进中，每个已接纳任务依次经历无线链路传输阶段（上传与跨节点转发）与目标节点先占式最早截止期优先（EDF）计算阶段\cite{liu1973scheduling}构成的串联队列。为在不调用完整微步积分器的前提下实现零前瞻特征提取，第五章进一步构造两阶段解析串联排队近似：第一阶段按截止期紧迫序递推各任务完成无线传输并到达目标计算队列的释放时刻 $\tilde{\varsigma}_{n,j}^{\mathrm{rel}}$，第二阶段在各计算节点上严格按释放时刻约束执行工作守恒先占式 EDF 推进，从而低开销地刻画跨时隙积压对后续任务的阻塞风险。
 \end{enumerate}
 
 \begin{figure}[!htbp]
     \centering
-    \includegraphics[width=0.95\textwidth]{../docs/figures/ch2_dual_protocol_comparison}
-    \bicaption{单时隙批量等份共享协议（协议 I）与跨时隙持续串联排队协议（协议 II）对照示意图}{Schematic Comparison between Single-Slot Batch Equal-Sharing Protocol (Protocol I) and Cross-Slot Persistent Tandem Queuing Protocol (Protocol II)}
+    \includegraphics[width=\textwidth]{../docs/figures/fig2_03_dual_protocol_accounting.pdf}
+    \bicaption{单时隙批量等份共享协议（协议 I）、跨时隙持续串联排队协议（协议 II）与统一端到端计数口径对照示意图}{Schematic Comparison of Protocol I, Protocol II, and the Unified End-to-End Request Accounting Framework}
     \label{fig:ch2-dual-protocols}
-    \sysufignote{机制对照示意图：协议 I 当步未覆盖即失败且同批任务按 $F_j/N_j(\mathbf{b})$ 等份共享算力当步清零；协议 II 未覆盖请求等待接入，上传、转发与抢占式 EDF 计算剩余进度跨步保留并含末尾排空结算；两协议独立运行，不作实线串联。}
+    \sysufignote{机制对照示意图：（a）协议 I 当步未覆盖即失败，已接纳任务按 $F_j/N_j(\mathbf{b})$ 等份共享算力并在当步清零；（b）协议 II 未覆盖请求等待接入，上传释放时刻 $\tilde{\varsigma}_{n,j}^{\mathrm{rel}}$ 与先占式 EDF 计算剩余进度跨时隙保留并含末尾排空结算；底栏给出两协议共用的生成、接纳与按时完成三计数（$G\to A\to S$）双因子分解口径。}
 \end{figure}
 
 \begin{table}[!htbp]
@@ -222,127 +228,48 @@
     {M\sum_{m=1}^{M}c_m(t)^2+\epsilon_0},
     \label{eq:ch2-jain}
 \end{equation}
-其中 $\epsilon_0=10^{-9}$ 为防止零分母的数值保护常数。针对同源外生工作负载下的算法配对比较，有如下精确分解定理：
+其中 $\epsilon_0=10^{-9}$ 为防止零分母的数值保护常数。针对同源外生工作负载下的算法配对归因，有如下精确分解性质：
 
-\begin{theorem}[端到端截止期满足率精确分解与同源配对差分性质]
+\begin{lemma}[端到端截止期满足率双因子分解与同源配对对称差分性质]
 设任意两个控制策略 $\pi^{(1)}$ 与 $\pi^{(0)}$ 在由同一外生工作负载随机流驱动的评估单元 $b\in\{1,\ldots,n\}$ 上运行，其实际生成服务请求序列与总生成数恒满足 $G_b^{(1)}=G_b^{(0)}=G_b>0$，且设两策略均有非空接纳 $A_b^{(1)}>0, A_b^{(0)}>0$。记两策略的接纳率为 $\alpha_b^{(k)}=A_b^{(k)}/G_b$、接纳后条件完成率为 $\eta_b^{(k)}=S_b^{(k)}/A_b^{(k)}$（$k\in\{0,1\}$），单元内均值记为 $\bar{\alpha}_b=(\alpha_b^{(1)}+\alpha_b^{(0)})/2$ 与 $\bar{\eta}_b=(\eta_b^{(1)}+\eta_b^{(0)})/2$，则两策略在该评估单元上的端到端截止期满足率配对差值 $d_b=\mathrm{DSR}_b^{(1)}-\mathrm{DSR}_b^{(0)}$ 恒满足精确对称双分量分解：
 \begin{equation}
     d_b=\frac{S_b^{(1)}-S_b^{(0)}}{G_b}
-    =\bar{\eta}_b\big(\alpha_b^{(1)}-\alpha_b^{(0)}\big)+\bar{\alpha}_b\big(\eta_b^{(1)}-\eta_b^{(0)}\big),
+    =\bar{\eta}_b\big(\alpha_b^{(1)}-\alpha_b^{(0)}\big)+\bar{\alpha}_b\big(\eta_b^{(1)}-\eta_b^{(0)}\big).
     \label{eq:ch2-dsr-symmetric-diff}
 \end{equation}
-且总体配对均值差与配对差样本方差由下式无偏估计\cite{agarwal2021deep}：
-\begin{equation}
-    \bar d=\frac{1}{n}\sum_{b=1}^{n}d_b,\qquad
-    s_d^2=\frac{1}{n-1}\sum_{b=1}^{n}(d_b-\bar d)^2.
-    \label{eq:ch2-paired-difference}
-\end{equation}
-\end{theorem}
+\end{lemma}
 
 \begin{proof}
-由于需求到达完全由与策略动作解耦的外生工作负载种子生成，在同一评估单元 $b$ 下两策略面对完全一致的请求到达集合，故分母恒满足 $G_b^{(1)}=G_b^{(0)}=G_b>0$，从而 $d_b=(S_b^{(1)}-S_b^{(0)})/G_b$ 直接正比于按时完成服务请求数的净增量。当 $A_b^{(1)}>0$ 且 $A_b^{(0)}>0$ 时，$\mathrm{DSR}_b^{(k)}=\alpha_b^{(k)}\eta_b^{(k)}$ 严格成立，展开式~\eqref{eq:ch2-dsr-symmetric-diff} 右端可得：
-\[
-\frac{\eta_b^{(1)}+\eta_b^{(0)}}{2}\big(\alpha_b^{(1)}-\alpha_b^{(0)}\big)+\frac{\alpha_b^{(1)}+\alpha_b^{(0)}}{2}\big(\eta_b^{(1)}-\eta_b^{(0)}\big)
-=\alpha_b^{(1)}\eta_b^{(1)}-\alpha_b^{(0)}\eta_b^{(0)}=d_b,
-\]
-其中第一项 $\bar{\eta}_b\Delta \alpha_b$ 度量空间覆盖接纳变化的主效应，第二项 $\bar{\alpha}_b\Delta \eta_b$ 度量接纳后卸载与资源调度变化的主效应；对 $b=1,\ldots,n$ 求算术平均即保持两侧严格相等。至此，定理 2.3.1 证毕。
+由于需求到达完全由与策略动作解耦的外生工作负载种子生成，在同一评估单元 $b$ 下两策略面对完全一致的请求到达集合，故分母恒满足 $G_b^{(1)}=G_b^{(0)}=G_b>0$。当 $A_b^{(1)}>0$ 且 $A_b^{(0)}>0$ 时，将 $\bar{\eta}_b=(\eta_b^{(1)}+\eta_b^{(0)})/2$ 与 $\bar{\alpha}_b=(\alpha_b^{(1)}+\alpha_b^{(0)})/2$ 代入式~\eqref{eq:ch2-dsr-symmetric-diff} 右端并逐项展开：
+\begin{align*}
+    &\bar{\eta}_b\big(\alpha_b^{(1)}-\alpha_b^{(0)}\big)+\bar{\alpha}_b\big(\eta_b^{(1)}-\eta_b^{(0)}\big) \\
+    &\quad=\frac{\eta_b^{(1)}+\eta_b^{(0)}}{2}\big(\alpha_b^{(1)}-\alpha_b^{(0)}\big)
+      +\frac{\alpha_b^{(1)}+\alpha_b^{(0)}}{2}\big(\eta_b^{(1)}-\eta_b^{(0)}\big) \\
+    &\quad=\frac{1}{2}\Big(\alpha_b^{(1)}\eta_b^{(1)}-\alpha_b^{(0)}\eta_b^{(1)}+\alpha_b^{(1)}\eta_b^{(0)}-\alpha_b^{(0)}\eta_b^{(0)}\Big) \\
+    &\qquad+\frac{1}{2}\Big(\alpha_b^{(1)}\eta_b^{(1)}-\alpha_b^{(1)}\eta_b^{(0)}+\alpha_b^{(0)}\eta_b^{(1)}-\alpha_b^{(0)}\eta_b^{(0)}\Big) \\
+    &\quad=\alpha_b^{(1)}\eta_b^{(1)}-\alpha_b^{(0)}\eta_b^{(0)}
+      =\frac{A_b^{(1)}}{G_b}\cdot\frac{S_b^{(1)}}{A_b^{(1)}}-\frac{A_b^{(0)}}{G_b}\cdot\frac{S_b^{(0)}}{A_b^{(0)}}
+      =\frac{S_b^{(1)}-S_b^{(0)}}{G_b}=d_b,
+\end{align*}
+其中交叉乘积项 $\pm\frac{1}{2}\alpha_b^{(0)}\eta_b^{(1)}$ 与 $\pm\frac{1}{2}\alpha_b^{(1)}\eta_b^{(0)}$ 成对精确相消，第一项 $\bar{\eta}_b(\alpha_b^{(1)}-\alpha_b^{(0)})$ 度量前端空间覆盖接纳变化的主效应，第二项 $\bar{\alpha}_b(\eta_b^{(1)}-\eta_b^{(0)})$ 度量接纳后卸载与资源调度变化的主效应。至此，引理 2.3.1 证毕。
 \end{proof}
+在后续实验统计推断中，为严格消除同一训练随机种子或同一工作负载内多回合样本的聚类相关性\cite{agarwal2021deep}，本文统一以独立训练种子均值（第三章配对 $t$ 置信区间）或独立工作负载整群单元（第四、五章配对分块 Bootstrap 置信区间）对单元差值 $\{d_b\}_{b=1}^n$ 进行区间估计。
 
-\begin{figure}[htbp]
-    \centering
-    \includegraphics[width=0.56\textwidth]{../docs/figures/图2-3_强化学习智能体环境交互框架}
-    \bicaption{强化学习智能体与环境交互框架示意图}{Interaction Framework between Reinforcement Learning Agent and Environment}
-    \label{fig:rl_framework}
-\end{figure}
-
-为求解上述空地协同序贯控制问题，将系统建模为有限时域分散式部分可观测马尔可夫决策过程（Dec-POMDP）$(\mathcal{U},\allowbreak\mathcal{S},\allowbreak\mathcal{A},\allowbreak P,\allowbreak r,\allowbreak\rho_0,\allowbreak\gamma,\allowbreak T)$，智能体与环境闭环交互流程如图~\ref{fig:rl_framework} 所示\cite{watkins1992q,lecun2015deep,sutton2018reinforcement}。环境状态转移满足马尔可夫性质：
+为求解上述空地协同序贯控制问题，将多时隙闭环控制统一表示为有限时域部分可观测马尔可夫决策过程（POMDP / Dec-POMDP）\cite{sutton2018reinforcement,littman1994markov}。设时隙 $t\in\{0,\ldots,T-1\}$ 系统底层状态为 $s_t\in\mathcal{S}$，控制器（第三章为各无人机分散式 Actor，第五章为宏基站集中式候选级策略）依据可获取观测信息采样动作 $a_t\sim\pi_\theta(\cdot\mid o_t)$，环境按状态转移核 $P(s_{t+1}\mid s_t,a_t)$ 演化并反馈即时奖励 $r_t$。以折扣因子 $\gamma\in(0,1)$ 定义有限时域期望累计折扣回报目标：
 \begin{equation}
-    P(s_{t+1}\mid s_0,a_0,\ldots,s_t,a_t)
-    =P(s_{t+1}\mid s_t,a_t).
-    \label{eq:ch2-markov-property}
-\end{equation}
-记从时隙 $t$ 开始的有限时域折扣回报为：
-\begin{equation}
-    \mathcal G_t=\sum_{k=t}^{T-1}\gamma^{k-t}r_k,
-    \qquad \mathcal G_T=0,
+    J(\theta)=\mathbb{E}_{\pi_\theta}\left[\sum_{t=0}^{T-1}\gamma^t r_t\right].
     \label{eq:ch2-return}
 \end{equation}
-则状态价值函数 $V_t^\pi(s)$、动作价值函数 $Q_t^\pi(s,a)$、Bellman 递推方程与优势函数 $A_t^\pi(s,a)$ 分别满足：
-\begin{align}
-    V_t^\pi(s)&=\mathbb E_\pi[\mathcal G_t\mid s_t=s],
-    \label{eq:ch2-state-value}\\
-    Q_t^\pi(s,a)&=\mathbb E_\pi[\mathcal G_t\mid s_t=s,a_t=a],
-    \label{eq:ch2-action-value}\\
-    Q_t^\pi(s,a)&=\bar r(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V_{t+1}^\pi(s'),
-    \label{eq:ch2-bellman-q}\\
-    V_t^\pi(s)&=\sum_a\pi(a\mid s)Q_t^\pi(s,a),
-    \qquad V_T^\pi(s)=0,
-    \label{eq:ch2-bellman-v}\\
-    A_t^\pi(s,a)&=Q_t^\pi(s,a)-V_t^\pi(s),
-    \qquad \sum_a\pi(a\mid s)A_t^\pi(s,a)=0.
-    \label{eq:ch2-advantage}
-\end{align}
-策略梯度定理\cite{williams1992simple}与价值评价网络损失基础形式表示为：
-\begin{align}
-    \nabla_\theta J(\theta)
-    &=\mathbb E\left[\sum_{t=0}^{T-1}\gamma^t
-    \nabla_\theta\log\pi_\theta(a_t\mid s_t)A_t^\pi(s_t,a_t)\right],
-    \label{eq:ch2-advantage-gradient}\\
-    L_V(\phi)&=\frac{1}{2}\mathbb E\left[(V_\phi(s_t)-\widehat V_t)^2\right].
-    \label{eq:ch2-value-loss}
-\end{align}
-引入回合终止自举掩码 $b_t^{\mathrm{boot}}\in\{0,1\}$ 与轨迹连续掩码 $c_t^{\mathrm{cont}}\in\{0,1\}$ 后，一步时序差分（TD）残差与有限时域广义优势估计（GAE）\cite{schulman2015high}递推式为：
-\begin{align}
-    \delta_t&=r_t+\gamma b_t^{\mathrm{boot}} V_\phi(s_{t+1})-V_\phi(s_t),
-    \label{eq:ch2-td-error}\\
-    \widehat A_t^{\mathrm{GAE}}&=\delta_t+\gamma\lambda_{\mathrm{GAE}}c_t^{\mathrm{cont}}\widehat A_{t+1}^{\mathrm{GAE}}
-    =\sum_{l=0}^{T-t-1}(\gamma\lambda_{\mathrm{GAE}})^l\left(\prod_{i=0}^{l-1}c_{t+i}^{\mathrm{cont}}\right)\delta_{t+l}.
-    \label{eq:ch2-masked-gae}
-\end{align}
-近端策略优化（PPO）\cite{schulman2017proximal}与多智能体 PPO（MAPPO）\cite{lowe2017multi,yu2022surprising,littman1994markov,busoniu2008comprehensive,oroojlooyjadid2022review,gronauer2022multi}通过重要性采样比率 $\rho_t(\theta)$ 与裁剪代理目标更新策略参数：
-\begin{align}
-    \rho_t(\theta)&=\frac{\pi_\theta(a_t\mid s_t)}{\pi_{\theta_{\mathrm{old}}}(a_t\mid s_t)}
-    =\exp\left[\log\pi_\theta(a_t\mid s_t)-\log\pi_{\theta_{\mathrm{old}}}(a_t\mid s_t)\right],
-    \label{eq:ch2-importance}\\
-    L_{\mathrm{clip}}(\theta)&=\mathbb E_{\mathrm{old}}\left[
-       \min\left(\rho_t(\theta)\widehat A_t,
-       \operatorname{clip}(\rho_t(\theta),1-\varepsilon,1+\varepsilon)\widehat A_t\right)\right],
-    \label{eq:ch2-ppo-clip}\\
-    \log\pi_\theta(a\mid o)
-    &=-\frac{1}{2}\sum_{d=1}^{2}\left[
-        \frac{(a_d-\mu_d)^2}{\sigma_d^2}+2\log\sigma_d+\log(2\pi)\right],
-    \label{eq:ch2-gaussian-logprob}\\
-    \pi_\theta(a\mid o,\mathbf{m}^{\mathrm{act}})&=\frac{m_a^{\mathrm{act}}\exp(z_a)}{\sum_{a'} m_{a'}^{\mathrm{act}}\exp(z_{a'})},
-    \label{eq:ch2-masked-policy}\\
-    \boldsymbol V_\phi(\mathbf{o}_t)&=(V_{\phi,1}(\mathbf{o}_t),\ldots,V_{\phi,N}(\mathbf{o}_t))\in\mathbb R^N,
-    \label{eq:ch2-joint-critic}\\
-    L_{\mathrm{MAPPO}}(\theta)&=\frac{1}{NT}
-    \sum_{u=1}^{N}\sum_{t=0}^{T-1}\min\left(\rho_{u,t}\widehat A_{u,t},
-      \operatorname{clip}(\rho_{u,t},1-\varepsilon,1+\varepsilon)\widehat A_{u,t}\right),
-    \label{eq:ch2-mappo-loss}
-\end{align}
-其中式~\eqref{eq:ch2-joint-critic} 对应第三章上层跨机关系注意力集中式价值网络 $\boldsymbol{V}_\phi(\mathbf{o}_t)$，而第三章精简无注意力下层则采用共享参数的单机局部观测价值网络 $V_{\phi_{\mathrm{low}}}(\mathbf{o}_u^{\mathrm{offload}})$ 以抑制联合训练方差。
-
-在特征与动作分布表征上，第三章上层网络采用多头缩放点积注意力机制\cite{vaswani2017attention,iqbal2019actor,hu2021updet}聚合变长邻机与终端槽位特征：
-\begin{align}
-    \operatorname{Att}(Q,K,V)&=\operatorname{softmax}\left(\frac{QK^{\top}}{\sqrt{d_h}}+M_{\mathrm{pad}}\right)V,
-    \label{eq:ch2-scaled-attention}\\
-    \operatorname{MHA}(Q,K,V)&=\operatorname{Concat}(H_1,\ldots,H_{N_{\mathrm{head}}})W^O,\quad
-    H_h=\operatorname{Att}(QW_h^Q,KW_h^K,VW_h^V).
-    \label{eq:ch2-multihead}
-\end{align}
-第五章则针对离散候选卸载方案集合 $\mathcal{K}(s)=\{1,\ldots,K\}$ 与候选联合运动方案集合 $\mathcal{D}_{\mathrm{mot}}(s)=\{1,\ldots,N_{\mathrm{mot}}\}$，构建满足槽位置换同变性\cite{zaheer2017deep}的链式双分支联合策略，通过四维上层期望运动耦合向量 $\mathbf{C}_{\mathrm{upper}}(s,k)\in\mathbb{R}^4$（由二值结构消融开关 $\eta_{\mathrm{fb}}\in\{0,1\}$ 控制是否在联合模式中启用）连接运动分支与分配分支：
-\begin{align}
-    p_{\theta_m}(m\mid s,k) &= \operatorname{softmax}_m\Big[\log p_m^0(m\mid s,k)+g_m\big([\mathbf{m}_{km},\mathbf{a}_k,\mathbf{c}(s)]\big)\Big],\nonumber\\
-    \mathbf{C}_{\mathrm{upper}}(s,k) &= \sum_{m=1}^{N_{\mathrm{mot}}}p_{\theta_m}(m\mid s,k)\,\boldsymbol{\phi}_{km}(s)\in\mathbb{R}^4,\qquad k\in\mathcal{K}(s),
-    \label{eq:ch2-message-passing}\\
-    \pi_\theta(k,m\mid s)&=p_{\theta_a}(k\mid s)\,p_{\theta_m}(m\mid s,k),
-    \label{eq:ch2-dual-branch-factorization}\\
-    p_{\theta_a}(k\mid s)&=\operatorname{softmax}_k\Big[\log p_a^0(k\mid s)+g_a\big([\mathbf{a}_k,\eta_{\mathrm{fb}}\mathbf{C}_{\mathrm{upper}}(s,k),\mathbf{c}(s)]\big)\Big].
-    \label{eq:ch2-expectation-feedback}
-\end{align}
+本文在线策略优化算法均以广义优势估计（GAE）\cite{schulman2015high}与近端策略优化（PPO / MAPPO）\cite{schulman2017proximal,yu2022surprising}为通用参数更新框架：利用参数化价值网络 $V_\phi$ 构造时序差分残差 $\delta_t=r_t+\gamma(1-d_t)V_\phi(s_{t+1})-V_\phi(s_t)$（$d_t\in\{0,1\}$ 为回合终止指示）及指数加权优势估计 $\widehat{A}_t=\sum_{l\ge 0}(\gamma\lambda_{\mathrm{GAE}})^l\big(\prod_{i=0}^{l-1}(1-d_{t+i})\big)\delta_{t+l}$，并通过新旧策略重要性概率比 $\rho_t(\theta)=\pi_\theta(a_t\mid o_t)/\pi_{\theta_{\mathrm{old}}}(a_t\mid o_t)$ 优化裁剪代理目标：
+\begin{equation}
+    L_{\mathrm{clip}}(\theta)=\mathbb{E}_{\pi_{\theta_{\mathrm{old}}}}\left[
+       \min\Big(\rho_t(\theta)\widehat{A}_t,\,
+       \operatorname{clip}\big(\rho_t(\theta),1-\varepsilon,1+\varepsilon\big)\widehat{A}_t\Big)\right].
+    \label{eq:ch2-ppo-clip}
+\end{equation}
+至于面向不同协议瓶颈的具体观测槽位扩展编码、上下层注意力/精简协同架构（第三章 3.3 节），以及跨时隙串联排队下的候选槽位置换同变双分支期望反馈网络、两轮规划蒸馏与共同随机数反事实辅助微调机制（第五章 5.3～5.4 节），将在后续各章结合具体控制问题专门建立。
 
 \section{本章小结}
 \label{sec:summary-chap02}
 
-本章建立了无人机集群空地协同计算系统的统一数学模型与双协议评价体系。首先，在明确旋翼平台额定续航窗口与高低层控制时间尺度分离假设的基础上，构建了二维服务区域、最近邻自然覆盖终端关联准则、离散机动防碰修复算子以及频段隔离等时分共享视距信道模型，并证明了安全间距约束下自然覆盖关联集合的互斥完备划分性质；随后，统一刻画了机载本地计算、邻机中继与宏基站回传三类执行路径，阐述了协议 I（单时隙批量等份共享与二元字典序评价）与协议 II（跨时隙持续 EDF 串联排队）的变量隔离演进逻辑；最后，导出了基于生成、接纳与按时完成三项计数的端到端截止期满足率（DSR）双因子精确分解与同源工作负载配对差分定理，并给出了支撑后续章节的序贯协同决策数学表示。
+本章建立了无人机集群空地协同计算系统的统一数学模型与双协议评价体系。首先，在明确旋翼平台额定续航窗口与高低层控制时间尺度分离假设的基础上，构建了二维服务区域、最近邻自然覆盖终端关联准则、离散机动防碰修复算子以及频段隔离等时分共享视距信道模型，并证明了安全间距约束下自然覆盖关联集合的互斥完备划分性质；随后，统一刻画了机载本地计算、邻机中继与宏基站回传三类执行路径，阐述了协议 I（单时隙批量等份共享与二元字典序评价）与协议 II（跨时隙持续 EDF 串联排队）的变量隔离演进逻辑；最后，给出了基于生成、接纳与按时完成三项计数的端到端截止期满足率（DSR）双因子精确分解性质、同源工作负载配对评价准则及序贯协同决策基础框架。

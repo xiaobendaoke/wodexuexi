@@ -65,6 +65,34 @@ SEMANTIC_PALETTE = {
     "text_dark": "#22252A",
 }
 
+# 2026-11 全书 23 图重构设计系统常量（匹配中大硕士模板 A4 版芯 \textwidth = 146.6 mm）
+TEXTWIDTH_MM: float = 146.6
+TEXTWIDTH_IN: float = TEXTWIDTH_MM / 25.4
+TEXTWIDTH_PT: float = TEXTWIDTH_IN * 72.0
+COMPACT_WIDTH_MM: float = 132.0
+COMPACT_WIDTH_IN: float = COMPACT_WIDTH_MM / 25.4
+
+REDESIGN_PALETTE = {
+    "hero": "#005A9C",          # 本文核心方法（扩展需求观测 / MC-ITR / 联合微调与 Top-6 MPC）
+    "hero_light": "#DCEAF7",    # 核心方法浅底色填充
+    "hero_mid": "#2B7BBA",      # 核心次要系列（如微调零前瞻与微调 MPC 区分）
+    "comparator": "#D55E00",    # 核心强基线对标（纯关联基线 / Iterative-Base / 在线规划基线）
+    "comp_light": "#FCE8D8",    # 强基线浅底色
+    "distilled": "#009E73",     # 递进中间态（Greedy / 两轮规划蒸馏）
+    "dist_light": "#DCF3EC",    # 中间态浅底色
+    "ablation": "#6A51A3",      # 消融对照（cf=0 纯在策略暖启动 / 去期望反馈 / 分解式）
+    "abl_light": "#ECE7F6",     # 消融浅底色
+    "prior": "#6E7781",         # 初始先验 / Heuristic / 弱基线
+    "muted": "#AEB6C0",         # 背景细轨迹 / 未覆盖灰色部分
+    "crimson": "#C43C39",       # 安全红线 (d_min=200m / 1.0s 时隙预算) 与反向梯度箭头
+    "amber": "#E69F00",         # 已接纳超时损失 (A-S)
+    "success": "#2E8B57",       # 按时完成服务 (S)
+    "ink": "#1F2328",           # 统一深色正文墨色
+    "grid": "#E2E6EC",          # 极浅辅助网格线
+    "panel_bg": "#F7F9FC",      # 面板/容器极浅灰蓝衬底
+    "border": "#CBD2DC",        # 容器淡边框
+}
+
 BASELINE_COLORS = {
     "random": "#9AA0A6",
     "uniform": "#B08968",
@@ -107,8 +135,8 @@ def resolve_qa_scripts_dir(repo_root: Path) -> Path:
     raise FileNotFoundError("Unable to locate nature-figure QA scripts directory.")
 
 
-def setup_thesis_style(font_size: float = 8.0, legend_frameon: bool = False) -> str:
-    """Apply the shared compact thesis style and return the selected font."""
+def setup_thesis_style(font_size: float = 8.0, legend_frameon: bool = True) -> str:
+    """Apply the shared enclosed-frame engineering thesis style and return the selected font."""
 
     family = selected_chinese_font()
     mpl.rcParams.update(
@@ -121,32 +149,68 @@ def setup_thesis_style(font_size: float = 8.0, legend_frameon: bool = False) -> 
             "pdf.fonttype": 42,
             "ps.fonttype": 42,
             "font.size": font_size,
-            "axes.spines.top": False,
-            "axes.spines.right": False,
-            "axes.linewidth": 0.8,
+            "axes.spines.top": True,
+            "axes.spines.right": True,
+            "axes.linewidth": 0.95,
             "axes.edgecolor": PALETTE["text"],
             "axes.labelcolor": PALETTE["text"],
             "xtick.color": PALETTE["text"],
             "ytick.color": PALETTE["text"],
-            "xtick.direction": "out",
-            "ytick.direction": "out",
+            "xtick.direction": "in",
+            "ytick.direction": "in",
+            "xtick.major.size": 3.0,
+            "ytick.major.size": 3.0,
+            "xtick.major.width": 0.8,
+            "ytick.major.width": 0.8,
+            "xtick.major.pad": 3.5,
+            "ytick.major.pad": 3.5,
             "legend.frameon": legend_frameon,
+            "legend.fancybox": False,
+            "legend.edgecolor": "#4A525D",
+            "legend.facecolor": "white",
+            "legend.framealpha": 0.96,
+            "patch.linewidth": 0.75,
             "figure.dpi": 140,
             "savefig.dpi": 600,
             "mathtext.fontset": "custom",
             "mathtext.rm": "Times New Roman",
             "mathtext.it": "Times New Roman:italic",
             "mathtext.bf": "Times New Roman:bold",
-            "mathtext.cal": "Times New Roman:italic",
+            "mathtext.cal": "STIXGeneral:italic",
+            "mathtext.fallback": "stix",
         }
     )
     return family
 
 
-def soften_axes(ax: plt.Axes, axis: str = "y") -> None:
-    ax.grid(axis=axis, color=PALETTE["grid"], linewidth=0.55, alpha=0.78)
+def soften_axes(ax: plt.Axes, axis: str = "both") -> None:
+    if axis in ("x", "y", "both"):
+        ax.grid(True, axis=axis, color=PALETTE["grid"], linewidth=0.55, alpha=0.82)
+    else:
+        ax.grid(False)
     ax.set_axisbelow(True)
-    ax.tick_params(length=2.5, width=0.7)
+    for side in ("top", "right", "bottom", "left"):
+        ax.spines[side].set_visible(True)
+        ax.spines[side].set_linewidth(0.95)
+        ax.spines[side].set_edgecolor(PALETTE["text"])
+    has_x = len(ax.get_xticks()) > 0
+    has_y = len(ax.get_yticks()) > 0
+    ax.tick_params(
+        axis="x",
+        direction="in",
+        length=3.0,
+        width=0.8,
+        top=has_x,
+        bottom=has_x,
+    )
+    ax.tick_params(
+        axis="y",
+        direction="in",
+        length=3.0,
+        width=0.8,
+        left=has_y,
+        right=has_y,
+    )
 
 
 def panel_label(ax: plt.Axes, label: str, x: float = -0.16, y: float = 1.06) -> None:
@@ -267,3 +331,217 @@ def save_pub(
         write_qa_report(qa_report, qa)
     plt.close(fig)
     return qa
+
+
+def setup_redesign_style(font_size: float = 8.0) -> str:
+    """Apply the unified 146.6 mm 1:1 thesis redesign style and return selected CJK font."""
+    family = selected_chinese_font()
+    mpl.rcParams.update(
+        {
+            "font.family": "serif",
+            "font.serif": [family] + FONT_CANDIDATES,
+            "font.sans-serif": [family] + FONT_CANDIDATES,
+            "axes.unicode_minus": False,
+            "svg.fonttype": "none",
+            "pdf.fonttype": 42,
+            "ps.fonttype": 42,
+            "font.size": font_size,
+            "axes.titlesize": 8.5,
+            "axes.labelsize": 8.2,
+            "xtick.labelsize": 7.6,
+            "ytick.labelsize": 7.6,
+            "legend.fontsize": 7.6,
+            "axes.spines.top": False,
+            "axes.spines.right": False,
+            "axes.linewidth": 0.80,
+            "axes.edgecolor": REDESIGN_PALETTE["ink"],
+            "axes.labelcolor": REDESIGN_PALETTE["ink"],
+            "xtick.color": REDESIGN_PALETTE["ink"],
+            "ytick.color": REDESIGN_PALETTE["ink"],
+            "xtick.direction": "out",
+            "ytick.direction": "out",
+            "xtick.major.size": 2.8,
+            "ytick.major.size": 2.8,
+            "xtick.major.width": 0.75,
+            "ytick.major.width": 0.75,
+            "xtick.major.pad": 2.8,
+            "ytick.major.pad": 2.8,
+            "legend.frameon": False,
+            "patch.linewidth": 0.75,
+            "figure.dpi": 150,
+            "savefig.dpi": 450,
+            "mathtext.fontset": "custom",
+            "mathtext.rm": "Times New Roman",
+            "mathtext.it": "Times New Roman:italic",
+            "mathtext.bf": "Times New Roman:bold",
+            "mathtext.cal": "STIXGeneral:italic",
+            "mathtext.fallback": "stix",
+        }
+    )
+    return family
+
+
+def style_redesign_axis(
+    ax: plt.Axes,
+    *,
+    grid: str = "y",
+    box: bool = False,
+) -> None:
+    """Format quantitative or spatial axis cleanly with subtle grid and crisp spines."""
+    if grid in ("x", "y", "both"):
+        ax.grid(True, axis=grid, color=REDESIGN_PALETTE["grid"], linewidth=0.55, alpha=0.85, zorder=0)
+    else:
+        ax.grid(False)
+    ax.set_axisbelow(True)
+    for side in ("bottom", "left"):
+        ax.spines[side].set_visible(True)
+        ax.spines[side].set_linewidth(0.80)
+        ax.spines[side].set_edgecolor(REDESIGN_PALETTE["ink"])
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(box)
+        if box:
+            ax.spines[side].set_linewidth(0.80)
+            ax.spines[side].set_edgecolor(REDESIGN_PALETTE["ink"])
+    ax.tick_params(
+        axis="both",
+        direction="in" if box else "out",
+        length=2.8,
+        width=0.75,
+        top=False,
+        right=False,
+    )
+
+
+def add_panel_tag(
+    ax: plt.Axes,
+    tag: str,
+    *,
+    x_offset_pt: float = -2.0,
+    y_offset_pt: float = 5.0,
+    fontsize: float = 9.0,
+) -> None:
+    """Place a panel tag such as '(a)' at a fixed physical point offset above top-left."""
+    from matplotlib.transforms import ScaledTranslation
+
+    offset = ScaledTranslation(
+        x_offset_pt / 72.0,
+        y_offset_pt / 72.0,
+        ax.figure.dpi_scale_trans,
+    )
+    ax.text(
+        0.0,
+        1.0,
+        tag,
+        transform=ax.transAxes + offset,
+        fontsize=fontsize,
+        fontweight="bold",
+        color=REDESIGN_PALETTE["ink"],
+        ha="left",
+        va="bottom",
+    )
+
+
+def export_redesign_figure(
+    fig: plt.Figure,
+    stem: str,
+    *,
+    repo_root: Path,
+    output_dirs: Iterable[Path],
+    qa_dir: Path,
+    axes: list[plt.Axes] | None = None,
+    row_groups: list[object] | None = None,
+    column_groups: list[object] | None = None,
+    exclude_axes: Iterable[plt.Axes] = (),
+    exemptions: list[dict[str, object]] | None = None,
+    png_dpi: int = 450,
+    min_glyph_pt: float = 5.0,
+) -> dict[str, object]:
+    """Export 1:1 physical-width Matplotlib figure and run full alignment + PDF text + collision QA."""
+    import io
+    import subprocess
+    import sys
+
+    qa_scripts = resolve_qa_scripts_dir(repo_root)
+    if str(qa_scripts) not in sys.path:
+        sys.path.insert(0, str(qa_scripts))
+    from audit_panel_alignment import require_matplotlib_panel_alignment
+
+    qa_dir.mkdir(parents=True, exist_ok=True)
+    align_json = qa_dir / f"{stem}.alignment.json"
+    align_svg = qa_dir / f"{stem}.alignment.svg"
+
+    target_axes = list(axes) if axes is not None else list(fig.axes)
+    align_report = require_matplotlib_panel_alignment(
+        fig,
+        axes=target_axes,
+        row_groups=row_groups,
+        column_groups=column_groups,
+        exclude_axes=exclude_axes,
+        exemptions=exemptions or [],
+        json_out=align_json,
+        overlay_svg=align_svg if len(target_axes) >= 2 else None,
+        tolerance_pt=1.5,
+        gutter_tolerance_pt=1.5,
+        strict=True,
+    )
+
+    written_pdf: Path | None = None
+    written_svg: Path | None = None
+    for out_dir in output_dirs:
+        out_dir.mkdir(parents=True, exist_ok=True)
+        for ext in ("pdf", "svg", "png"):
+            dpi = png_dpi if ext == "png" else None
+            buf = io.BytesIO()
+            fig.savefig(buf, format=ext, facecolor="white", dpi=dpi)
+            payload = buf.getvalue()
+            if ext == "svg":
+                # Strip DTD and normalize Matplotlib's 1-pt-user-unit 'px' CSS label so SVG tools read true pt sizes
+                payload = re.sub(rb"<!DOCTYPE[^>]*>\s*", b"", payload)
+                payload = re.sub(rb"(font:\s*(?:italic\s+|bold\s+|700\s+|600\s+)*)(\d+(?:\.\d+)?)px\b", rb"\g<1>\2pt", payload)
+                payload = re.sub(rb"(font-size:\s*)(\d+(?:\.\d+)?)px\b", rb"\g<1>\2pt", payload)
+            target = out_dir / f"{stem}.{ext}"
+            target.write_bytes(payload)
+            if ext == "pdf" and written_pdf is None:
+                written_pdf = target
+            if ext == "svg" and written_svg is None:
+                written_svg = target
+    plt.close(fig)
+
+    assert written_pdf is not None
+    res_text = subprocess.run(
+        [
+            sys.executable,
+            str(qa_scripts / "audit_pdf_text.py"),
+            str(written_pdf),
+            "--min-pt",
+            str(min_glyph_pt),
+            "--json",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    (qa_dir / f"{stem}.pdf_text.json").write_text(res_text.stdout, encoding="utf-8")
+    if res_text.returncode != 0:
+        raise RuntimeError(f"PDF glyph size floor failed for {stem}:\n{res_text.stdout}\n{res_text.stderr}")
+
+    col_json = qa_dir / f"{stem}.collision.json"
+    res_col = subprocess.run(
+        [
+            sys.executable,
+            str(qa_scripts / "audit_figure_collisions.py"),
+            str(written_pdf),
+            "--json-out",
+            str(col_json),
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if res_col.returncode == 1 or res_col.returncode == 2:
+        raise RuntimeError(f"Collision audit failed for {stem} (code {res_col.returncode}):\n{res_col.stdout}\n{res_col.stderr}")
+    col_data = json.loads(col_json.read_text(encoding="utf-8"))
+    return {
+        "stem": stem,
+        "alignment_verdict": align_report.get("verdict"),
+        "collision_verdict": col_data.get("verdict"),
+        "collision_summary": col_data.get("summary", {}),
+    }

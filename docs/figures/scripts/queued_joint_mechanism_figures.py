@@ -418,7 +418,7 @@ def render_ch5_crn_tree() -> None:
     )
     card(
         ax, 0.028, 0.10, 0.215, 0.165,
-        "消去公共到达波动\n$\\eta(s_t,\\xi_t)$（定理 5.4.1）",
+        "消去公共到达波动\n$\\zeta_{\\mathrm{com}}(s_t,\\xi_t)$（定理 5.4.1）",
         TEAL, 8.5
     )
 

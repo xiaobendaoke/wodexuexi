@@ -10,13 +10,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.lines import Line2D
-from matplotlib.patches import Circle, FancyArrowPatch, FancyBboxPatch, Rectangle
+from matplotlib.patches import Circle, FancyArrowPatch, Rectangle
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from paths import REPO_ROOT
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from thesis_figure_style import SEMANTIC_PALETTE, resolve_qa_scripts_dir, setup_thesis_style
+from thesis_figure_style import SEMANTIC_PALETTE, resolve_qa_scripts_dir, setup_thesis_style, soften_axes
 
 SKILL = resolve_qa_scripts_dir(REPO_ROOT)
 sys.path.insert(0, str(SKILL))
@@ -33,15 +33,29 @@ RED = SEMANTIC_PALETTE["uncovered_expired"]
 PURPLE = SEMANTIC_PALETTE["module_purple"]
 GRAY = SEMANTIC_PALETTE["neutral_slate"]
 DARK = SEMANTIC_PALETTE["text_dark"]
+NAVY = "#1F4E79"
+SLATE_EDGE = "#2B3A4A"
 
 
-def box(ax, x, y, w, h, text, color=BLUE, fontsize=8.3, lw=0.95, alpha_fill="16", bold=False):
+def box(
+    ax,
+    x,
+    y,
+    w,
+    h,
+    text,
+    color=BLUE,
+    fontsize=8.3,
+    lw=1.0,
+    alpha_fill="16",
+    bold=False,
+    pad=0.006,
+):
     ax.add_patch(
-        FancyBboxPatch(
-            (x, y),
-            w,
-            h,
-            boxstyle="round,pad=0.008",
+        Rectangle(
+            (x - pad, y - pad),
+            w + 2 * pad,
+            h + 2 * pad,
             facecolor=color + alpha_fill,
             edgecolor=color,
             lw=lw,
@@ -60,7 +74,7 @@ def box(ax, x, y, w, h, text, color=BLUE, fontsize=8.3, lw=0.95, alpha_fill="16"
     )
 
 
-def arrow(ax, a, b, color=GRAY, ls="-", lw=1.05, scale=10):
+def arrow(ax, a, b, color=DARK, ls="-", lw=1.05, scale=10):
     ax.add_patch(
         FancyArrowPatch(
             a,
@@ -272,10 +286,7 @@ def render_upgraded_fig_2_1() -> None:
     ax_map.set_xlabel("$x$ / m", fontsize=8.4)
     ax_map.set_ylabel("$y$ / m", fontsize=8.4)
     ax_map.set_title("(a) $700\\times 700\\,\\mathrm{m}^2$ 空地几何与自然覆盖", fontsize=8.8, pad=7)
-    for side in ("top", "right"):
-        ax_map.spines[side].set_visible(True)
-        ax_map.spines[side].set_linewidth(0.75)
-        ax_map.spines[side].set_edgecolor(DARK)
+    soften_axes(ax_map, axis="none")
 
     legend_handles = [
         Line2D([0], [0], marker="^", color="w", markerfacecolor=BLUE, markersize=6.8, label="UAV（5 架）"),
@@ -286,10 +297,12 @@ def render_upgraded_fig_2_1() -> None:
     ax_map.legend(
         handles=legend_handles,
         loc="upper center",
-        bbox_to_anchor=(0.50, -0.155),
+        bbox_to_anchor=(0.50, -0.165),
         ncol=2,
         fontsize=7.9,
-        frameon=False,
+        frameon=True,
+        fancybox=False,
+        edgecolor="#4A525D",
         columnspacing=0.9,
         handletextpad=0.35,
     )
@@ -382,10 +395,12 @@ def render_upgraded_fig_2_1() -> None:
     ax_flow.legend(
         handles=path_handles,
         loc="upper center",
-        bbox_to_anchor=(0.50, -0.065),
+        bbox_to_anchor=(0.50, -0.075),
         ncol=3,
         fontsize=7.9,
-        frameon=False,
+        frameon=True,
+        fancybox=False,
+        edgecolor="#4A525D",
         columnspacing=0.8,
         handletextpad=0.35,
     )
@@ -446,9 +461,7 @@ def render_kinematic_collision_repair() -> None:
     ax_left.set_xlabel("$x$ / m", fontsize=8.4)
     ax_left.set_ylabel("$y$ / m", fontsize=8.4)
     ax_left.set_title("(a) 内缩可行域 $\\mathcal{Q}$ 与单步最大位移圆裁剪", fontsize=8.8, pad=7)
-    for side in ("top", "right"):
-        ax_left.spines[side].set_visible(True)
-        ax_left.spines[side].set_linewidth(0.75)
+    soften_axes(ax_left, axis="none")
 
     # ---- Panel (b): Symmetric repulsion when d < d_min=200m + residual hover fallback ----
     ax_right.set_xlim(0.0, 1.0)
@@ -457,8 +470,8 @@ def render_kinematic_collision_repair() -> None:
     ax_right.set_title("(b) 对称外推排斥向量与残余冲突悬停回退", fontsize=8.8, pad=7)
 
     ax_right.add_patch(
-        FancyBboxPatch(
-            (0.02, 0.47), 0.96, 0.49, boxstyle="round,pad=0.01", facecolor="#F8FAFC", edgecolor=GRAY, lw=0.85
+        Rectangle(
+            (0.015, 0.465), 0.97, 0.505, facecolor="#F8FAFC", edgecolor=SLATE_EDGE, lw=0.95, ls="--"
         )
     )
     ax_right.text(
@@ -485,8 +498,8 @@ def render_kinematic_collision_repair() -> None:
     ax_right.text(0.50, 0.515, "每轮推离后重投影至 $\\mathcal{Q}$ 与 $15\\,\\mathrm{m}$ 步长圆（最多 40 轮）", ha="center", va="center", fontsize=7.9, color=GRAY)
 
     ax_right.add_patch(
-        FancyBboxPatch(
-            (0.02, 0.03), 0.96, 0.39, boxstyle="round,pad=0.01", facecolor="#FFF9F5", edgecolor=ORANGE, lw=0.9
+        Rectangle(
+            (0.015, 0.025), 0.97, 0.405, facecolor="#FFF9F5", edgecolor=ORANGE, lw=0.95, ls="--"
         )
     )
     ax_right.text(
@@ -520,8 +533,8 @@ def render_dual_protocol_comparison() -> None:
     ax_p1.set_ylim(0.0, 1.0)
     ax_p1.axis("off")
     ax_p1.add_patch(
-        FancyBboxPatch(
-            (0.01, 0.04), 0.98, 0.90, boxstyle="round,pad=0.01", facecolor="#F8FAFD", edgecolor=BLUE, lw=0.95
+        Rectangle(
+            (0.008, 0.03), 0.984, 0.92, facecolor="#F8FAFD", edgecolor=BLUE, lw=1.0, ls="--"
         )
     )
     ax_p1.text(
@@ -559,8 +572,8 @@ def render_dual_protocol_comparison() -> None:
     ax_p2.set_ylim(0.0, 1.0)
     ax_p2.axis("off")
     ax_p2.add_patch(
-        FancyBboxPatch(
-            (0.01, 0.04), 0.98, 0.90, boxstyle="round,pad=0.01", facecolor="#F7FBF9", edgecolor=TEAL, lw=0.95
+        Rectangle(
+            (0.008, 0.03), 0.984, 0.92, facecolor="#F7FBF9", edgecolor=TEAL, lw=1.0, ls="--"
         )
     )
     ax_p2.text(
@@ -595,7 +608,7 @@ def render_dual_protocol_comparison() -> None:
     )
     ax_p2.text(
         0.55, 0.20,
-        "跨时隙进度连续传递（$0\\sim 200\\,\\mathrm{s}$），到期时刻 $t=d_n$ 未完立即过期清除",
+        "跨时隙进度连续传递（$[0, 200]\\,\\mathrm{s}$），到期时刻 $t=d_n$ 未完立即过期清除",
         ha="center", va="center", fontsize=7.9, color=ORANGE
     )
 
@@ -610,64 +623,211 @@ def render_dual_protocol_comparison() -> None:
 
 
 def render_legacy_card(number: int) -> None:
-    """Keep existing 图2-2 and 图2-3 foundation cards intact."""
+    """Render 图2-2 and 图2-3 foundation block diagrams with crisp right-angle engineering boxes."""
     fig, ax = plt.subplots(figsize=(7.2, 3.9))
     fig.subplots_adjust(left=0.025, right=0.975, bottom=0.07, top=0.94)
     ax.set(xlim=(0, 1), ylim=(0, 1))
     ax.axis("off")
     if number == 2:
         name = "UAV辅助通信应用场景"
-        box(ax, 0.03, 0.68, 0.28, 0.22, "灾后或临时热点\n快速形成空中接入", TEAL, fontsize=10)
-        box(ax, 0.36, 0.68, 0.28, 0.22, "巡检与感知需求\n数据进入计算链路", TEAL, fontsize=10)
-        box(ax, 0.69, 0.68, 0.28, 0.22, "移动用户与覆盖变化\n持续调整服务位置", TEAL, fontsize=10)
-        box(ax, 0.20, 0.27, 0.60, 0.22, "共同决策关系\n位置影响接纳与链路，卸载影响负载与完成时间", BLUE, fontsize=10)
-        for x in [0.17, 0.50, 0.83]:
-            arrow(ax, (x, 0.67), (0.50, 0.50))
-        box(ax, 0.10, 0.04, 0.80, 0.13, "本文评价：请求能否自然接纳，以及接纳后能否按时完成", GRAY, fontsize=10)
-        arrow(ax, (0.50, 0.26), (0.50, 0.18))
+        box(ax, 0.03, 0.69, 0.28, 0.21, "灾后或临时热点\n快速形成空中接入", TEAL, fontsize=9.8)
+        box(ax, 0.36, 0.69, 0.28, 0.21, "巡检与感知需求\n数据进入计算链路", TEAL, fontsize=9.8)
+        box(ax, 0.69, 0.69, 0.28, 0.21, "移动用户与覆盖变化\n持续调整服务位置", TEAL, fontsize=9.8)
+        box(ax, 0.18, 0.29, 0.64, 0.22, "共同决策关系\n位置影响接纳与链路，卸载影响负载与完成时间", BLUE, fontsize=9.8)
+        ax.plot([0.17, 0.17, 0.83, 0.83], [0.678, 0.595, 0.595, 0.678], color=SLATE_EDGE, lw=1.05)
+        ax.plot([0.50, 0.50], [0.678, 0.595], color=SLATE_EDGE, lw=1.05)
+        arrow(ax, (0.50, 0.595), (0.50, 0.522), color=SLATE_EDGE, lw=1.1)
+        box(ax, 0.10, 0.04, 0.80, 0.14, "本文评价：请求能否自然接纳，以及接纳后能否按时完成", GRAY, fontsize=9.8)
+        arrow(ax, (0.50, 0.278), (0.50, 0.192), color=SLATE_EDGE, lw=1.1)
     else:
         name = "强化学习智能体环境交互框架"
-        box(ax, 0.03, 0.34, 0.34, 0.29, "智能体／参数化策略\n根据观测选择动作", BLUE, fontsize=10)
-        box(ax, 0.63, 0.34, 0.34, 0.29, "环境／状态转移\n执行动作并产生反馈", TEAL, fontsize=10)
-        arrow(ax, (0.38, 0.52), (0.62, 0.52))
-        ax.text(0.50, 0.58, "动作 $a_t$", ha="center", fontsize=10.5)
-        arrow(ax, (0.79, 0.33), (0.79, 0.13))
-        arrow(ax, (0.79, 0.13), (0.20, 0.13))
-        arrow(ax, (0.20, 0.13), (0.20, 0.33))
-        ax.text(0.50, 0.20, "下一观测 $o_{t+1}$、奖励 $r_t$、终止标记", ha="center", fontsize=9.8)
-        box(ax, 0.25, 0.75, 0.50, 0.14, "训练：采样轨迹 → 价值估计与策略更新", GRAY, fontsize=10)
+        box(ax, 0.03, 0.34, 0.34, 0.29, "智能体／参数化策略\n根据观测选择动作", BLUE, fontsize=9.8)
+        box(ax, 0.63, 0.34, 0.34, 0.29, "环境／状态转移\n执行动作并产生反馈", TEAL, fontsize=9.8)
+        arrow(ax, (0.382, 0.52), (0.618, 0.52), color=SLATE_EDGE, lw=1.15)
+        ax.text(0.50, 0.585, "动作 $a_t$", ha="center", fontsize=10.2, color=DARK)
+        ax.plot([0.79, 0.79, 0.20], [0.328, 0.125, 0.125], color=SLATE_EDGE, lw=1.1)
+        arrow(ax, (0.20, 0.125), (0.20, 0.328), color=SLATE_EDGE, lw=1.15)
+        ax.text(0.50, 0.195, "下一观测 $o_{t+1}$、奖励 $r_t$、终止标记", ha="center", fontsize=9.6, color=DARK)
+        box(ax, 0.24, 0.76, 0.52, 0.14, "训练阶段：采样交互轨迹 → 价值估计与策略更新", GRAY, fontsize=9.6)
+        arrow(ax, (0.20, 0.642), (0.20, 0.83), color=GRAY, ls="--", lw=1.0)
+        arrow(ax, (0.20, 0.83), (0.232, 0.83), color=GRAY, ls="--", lw=1.0)
     title = f"图2-{number}_{name}"
     _export_and_audit(fig, [ax], title)
 
 
 def render_organization() -> None:
-    fig, ax = plt.subplots(figsize=(7.4, 5.4))
-    fig.subplots_adjust(left=0.02, right=0.98, bottom=0.03, top=0.97)
+    """图1-1：工科框线质感章节组织架构图（深海蓝竖排章签 + 虚线研究阶段分组 + 正交折线箭头）。"""
+    fig, ax = plt.subplots(figsize=(7.6, 5.65))
+    fig.subplots_adjust(left=0.015, right=0.985, bottom=0.015, top=0.985)
     ax.set(xlim=(0, 1), ylim=(0, 1))
     ax.axis("off")
     name = "论文章节安排与组织结构"
-    box(ax, 0.04, 0.885, 0.92, 0.085, "第一章：绪论\n课题背景与研究意义  |  国内外研究现状综述  |  主要研究内容与章节组织", GRAY, fontsize=9.5)
-    box(ax, 0.04, 0.70, 0.14, 0.13, "系统建模\n基础研究", TEAL, fontsize=9.5)
-    box(ax, 0.22, 0.70, 0.22, 0.13, "第二章\n无人机集群空地协同\n计算系统建模与分析", BLUE, fontsize=9.2)
-    box(ax, 0.48, 0.70, 0.48, 0.13, "• 自然覆盖几何关联、离散机动与无线信道建模\n• 协议 I（批量等份共享）与协议 II（跨时隙排队）\n• 截止期满足率双因子分解与同源配对评价准则", TEAL, fontsize=9.0)
-    box(ax, 0.04, 0.15, 0.14, 0.49, "协同规划\n与控制\n技术研究", BLUE, fontsize=9.5)
-    box(ax, 0.22, 0.51, 0.22, 0.13, "第三章\n无人机集群需求感知\n协同轨迹规划", BLUE, fontsize=9.2)
-    box(ax, 0.48, 0.51, 0.48, 0.13, "• 原始已关联观测下未覆盖需求混叠瓶颈诊断\n• 感知半径内未覆盖终端按距离排序扩展观测\n• 上层关系自注意力轨迹与下层无注意力精简卸载", TEAL, fontsize=9.0)
-    box(ax, 0.22, 0.33, 0.22, 0.13, "第四章\n跨机资源竞争下的无人机\n集群计算任务分配", BLUE, fontsize=9.2)
-    box(ax, 0.48, 0.33, 0.48, 0.13, "• 单时隙批量等份共享下的跨机迁移时延外部性\n• 超时请求数优先与归一化时延次之二元字典序\n• 全批次重评估多轮协同迭代（MC-ITR）与桥接", TEAL, fontsize=9.0)
-    box(ax, 0.22, 0.15, 0.22, 0.13, "第五章\n动态排队服务中的规划蒸馏\n与反事实辅助协同控制", BLUE, fontsize=9.0)
-    box(ax, 0.48, 0.15, 0.48, 0.13, "• 释放时间工作守恒 EDF 串联排队与等变双分支\n• 两轮 DAgger 规划蒸馏与共同随机数反事实微调\n• 零前瞻快速推理与温度校准神经引导 Top-6 MPC", TEAL, fontsize=9.0)
-    box(ax, 0.04, 0.02, 0.92, 0.085, "结论\n全文主要研究工作总结  |  论文核心创新点归纳  |  后续研究工作展望", GRAY, fontsize=9.5)
-    arrow(ax, (0.50, 0.875), (0.50, 0.84))
-    arrow(ax, (0.19, 0.765), (0.212, 0.765))
-    arrow(ax, (0.45, 0.765), (0.472, 0.765))
-    arrow(ax, (0.33, 0.69), (0.33, 0.65))
-    arrow(ax, (0.33, 0.50), (0.33, 0.47))
-    arrow(ax, (0.33, 0.32), (0.33, 0.29))
-    for y in (0.575, 0.395, 0.215):
-        arrow(ax, (0.19, y), (0.212, y))
-        arrow(ax, (0.45, y), (0.472, y))
-    arrow(ax, (0.50, 0.14), (0.50, 0.115))
+
+    def header_bar(y: float, h: float, tab_text: str, body_text: str) -> None:
+        ax.add_patch(
+            Rectangle((0.060, y), 0.130, h, facecolor=NAVY, edgecolor=SLATE_EDGE, lw=1.0)
+        )
+        ax.text(
+            0.125,
+            y + h / 2,
+            tab_text,
+            ha="center",
+            va="center",
+            fontsize=9.4,
+            fontweight="bold",
+            color="white",
+        )
+        ax.add_patch(
+            Rectangle((0.190, y), 0.750, h, facecolor="#EBF1F8", edgecolor=SLATE_EDGE, lw=1.0)
+        )
+        ax.text(
+            0.565,
+            y + h / 2,
+            body_text,
+            ha="center",
+            va="center",
+            fontsize=8.8,
+            color=DARK,
+            linespacing=1.32,
+        )
+
+    def chapter_row(y: float, h: float, chap_vertical: str, chap_title: str, bullets: str) -> None:
+        yc = y + h / 2
+        ax.add_patch(
+            Rectangle((0.188, y), 0.052, h, facecolor=NAVY, edgecolor=SLATE_EDGE, lw=1.0)
+        )
+        ax.text(
+            0.214,
+            yc,
+            chap_vertical,
+            ha="center",
+            va="center",
+            fontsize=8.6,
+            fontweight="bold",
+            color="white",
+            linespacing=1.14,
+        )
+        ax.add_patch(
+            Rectangle((0.240, y), 0.230, h, facecolor="#F2F6FA", edgecolor=SLATE_EDGE, lw=1.0)
+        )
+        ax.text(
+            0.355,
+            yc,
+            chap_title,
+            ha="center",
+            va="center",
+            fontsize=8.7,
+            fontweight="bold",
+            color=DARK,
+            linespacing=1.32,
+        )
+        arrow(ax, (0.474, yc), (0.496, yc), color=SLATE_EDGE, lw=1.05, scale=9)
+        ax.add_patch(
+            Rectangle((0.500, y), 0.460, h, facecolor="#FAFBFD", edgecolor=SLATE_EDGE, lw=1.0)
+        )
+        ax.text(
+            0.514,
+            yc,
+            bullets,
+            ha="left",
+            va="center",
+            fontsize=8.3,
+            color=DARK,
+            linespacing=1.30,
+        )
+
+    # 1. 第一章：绪论
+    header_bar(
+        0.896,
+        0.086,
+        "第一章",
+        "绪  论\n课题背景与研究意义  |  国内外研究现状综述  |  主要研究内容与章节组织",
+    )
+    arrow(ax, (0.50, 0.892), (0.50, 0.858), color=SLATE_EDGE, lw=1.15)
+
+    # 2. 阶段一：系统建模基础研究（虚线外框）
+    ax.add_patch(
+        Rectangle((0.025, 0.680), 0.950, 0.174, facecolor="none", edgecolor=NAVY, lw=1.0, ls="--")
+    )
+    ax.add_patch(
+        Rectangle((0.040, 0.698), 0.116, 0.138, facecolor="#E8EEF6", edgecolor=SLATE_EDGE, lw=1.0)
+    )
+    ax.text(
+        0.098,
+        0.767,
+        "系统建模\n基础研究",
+        ha="center",
+        va="center",
+        fontsize=9.1,
+        fontweight="bold",
+        color=NAVY,
+        linespacing=1.32,
+    )
+    arrow(ax, (0.160, 0.767), (0.184, 0.767), color=SLATE_EDGE, lw=1.05, scale=9)
+    chapter_row(
+        0.698,
+        0.138,
+        "第\n二\n章",
+        "无人机集群空地协同\n计算系统建模与分析",
+        "• 自然覆盖几何关联、离散机动与无线信道建模\n• 协议 I（批量等份共享）与协议 II（跨时隙排队）\n• 截止期满足率双因子分解与同源配对评价准则",
+    )
+
+    arrow(ax, (0.50, 0.676), (0.50, 0.644), color=SLATE_EDGE, lw=1.15)
+
+    # 3. 阶段二：协同规划与控制技术研究（虚线外框 + 正交总线箭头）
+    ax.add_patch(
+        Rectangle((0.025, 0.134), 0.950, 0.506, facecolor="none", edgecolor=NAVY, lw=1.0, ls="--")
+    )
+    ax.add_patch(
+        Rectangle((0.040, 0.154), 0.116, 0.466, facecolor="#E8EEF6", edgecolor=SLATE_EDGE, lw=1.0)
+    )
+    ax.text(
+        0.098,
+        0.387,
+        "协同规划\n与控制\n技术研究",
+        ha="center",
+        va="center",
+        fontsize=9.1,
+        fontweight="bold",
+        color=NAVY,
+        linespacing=1.38,
+    )
+    ax.plot([0.156, 0.171], [0.387, 0.387], color=SLATE_EDGE, lw=1.05)
+    ax.plot([0.171, 0.171], [0.223, 0.551], color=SLATE_EDGE, lw=1.05)
+    for yc in (0.551, 0.387, 0.223):
+        arrow(ax, (0.171, yc), (0.184, yc), color=SLATE_EDGE, lw=1.05, scale=9)
+
+    chapter_row(
+        0.482,
+        0.138,
+        "第\n三\n章",
+        "无人机集群需求感知\n协同轨迹规划",
+        "• 原始已关联观测下未覆盖需求混叠瓶颈诊断\n• 感知半径内未覆盖终端按距离排序扩展观测\n• 上层关系自注意力轨迹与下层无注意力精简卸载",
+    )
+    chapter_row(
+        0.318,
+        0.138,
+        "第\n四\n章",
+        "跨机资源竞争下的无人机\n集群计算任务分配",
+        "• 单时隙批量等份共享下的跨机迁移时延外部性\n• 超时请求数优先与归一化时延次之二元字典序\n• 全批次重评估多轮协同迭代（MC-ITR）与桥接",
+    )
+    chapter_row(
+        0.154,
+        0.138,
+        "第\n五\n章",
+        "动态排队服务中的规划蒸馏\n与反事实辅助协同控制",
+        "• 释放时间工作守恒 EDF 串联排队与等变双分支\n• 两轮 DAgger 规划蒸馏与共同随机数反事实微调\n• 零前瞻快速推理与温度校准神经引导 Top-6 MPC",
+    )
+
+    arrow(ax, (0.50, 0.130), (0.50, 0.098), color=SLATE_EDGE, lw=1.15)
+
+    # 4. 结论
+    header_bar(
+        0.012,
+        0.082,
+        "结  论",
+        "全文主要研究工作总结  |  论文核心发现与方法贡献归纳  |  后续研究工作展望",
+    )
     _export_and_audit(fig, [ax], f"图1-1_{name}")
 
 
