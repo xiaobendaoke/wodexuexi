@@ -72,7 +72,7 @@
 
 \xeCJKsetup{
   PunctStyle = plain,
-  CJKglue    = {\hspace{0.45bp plus 0.72bp minus 0.08bp}},
+  CJKglue    = {\hspace{0.45bp plus 0.75bp minus 0.08bp}},
   CJKecglue  = {\hspace{3.0bp plus 1.6bp minus 0.4bp}},
 }
 
@@ -959,7 +959,9 @@
   \endtabularx
 }
 
-\newcommand\sysufignote[1]{%
+\newcommand\sysutabsubrow{\kern 0.6em\relax}
+
+\newcommand\sysufignote[1]{
   \par\smallskip
   {\songti\mdseries\footnotesize 注：#1\par}%
 }
@@ -1235,7 +1237,7 @@
     \vspace{0.95bp}%
   }%
   \let\bibsection\sysu@bib@chapter
-  \renewcommand\bibfont{\songti\mdseries\fontsize{10bp}{15.80bp}\selectfont}%
+  \renewcommand\bibfont{\songti\mdseries\fontsize{10bp}{15.80bp}\selectfont\raggedright\hyphenpenalty=10000\exhyphenpenalty=10000}%
   \setlength{\bibsep}{0bp}%
   \setlength{\bibhang}{22.96bp}%
   \renewcommand\NAT@bibsetnum[1]{%
@@ -1245,6 +1247,8 @@
     \setlength{\itemsep}{\bibsep}%
     \setlength{\parsep}{\z@}%
   }%
+  \@namedef{bibstyle@sysuthesis-numerical}{\bibstyle@inline}%
+  \citestyle{inline}%
   \def\@inlinecite##1{\begingroup\let\@cite\NAT@citenum\citep{##1}\endgroup\kern\z@\ifsysu@language@chinese\ignorespaces\fi}%
   \renewcommand\NAT@citesuper[3]{%
     \ifNAT@swa
@@ -1263,14 +1267,14 @@
   }%
   \renewcommand\NAT@citenum[3]{%
     \ifNAT@swa
-      \unskip\nobreak\kern\z@%
+      \unskip\nobreak\kern 0.37bp%
       \NAT@@open%
       \if*##2*\else##2\NAT@spacechar\fi%
       ##1\NAT@@close%
       \if*##3*\else\textsuperscript{##3}\fi%
-      \kern\z@%
+      \kern 0.50bp%
     \else
-      \unskip\nobreak\kern\z@##1\kern\z@%
+      \unskip\nobreak\kern 0.37bp##1\kern 0.50bp%
     \fi
     \endgroup
     \kern\z@\ifsysu@language@chinese\ignorespaces\fi%
@@ -1280,7 +1284,7 @@
 \ifdefined\bibfont
   \sysu@apply@natbib@overrides
 \fi
-\AtBeginDocument{\let\parencite\inlinecite}
+\AtBeginDocument{\citestyle{inline}\let\parencite\inlinecite}
 
 \renewcommand\sysu@achievements@name{附录}
 \renewcommand\sysu@acknowledgements@name{致谢}

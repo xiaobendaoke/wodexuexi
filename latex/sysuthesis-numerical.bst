@@ -183,12 +183,28 @@ FUNCTION {citation.et.al}
   if$
 }
 
-FUNCTION {bbl.colon} { ": " }
+FUNCTION {bbl.comma}
+{ entry.lang lang.zh =
+    { "，" }
+    { ", " }
+  if$
+}
+
+FUNCTION {bbl.colon}
+{ entry.lang lang.zh =
+    { "：" }
+    { ": " }
+  if$
+}
 
 FUNCTION {bbl.pages.colon}
-{ space.before.pages
-    { ": " }
-    { ":\allowbreak " }
+{ entry.lang lang.zh =
+    { "：" }
+    { space.before.pages
+        { ": " }
+        { ":\allowbreak " }
+      if$
+    }
   if$
 }
 
@@ -256,7 +272,7 @@ STRINGS { s t }
 FUNCTION {output.nonnull}
 { 's :=
   output.state mid.sentence =
-    { ", " * write$ }
+    { bbl.comma * write$ }
     { output.state after.block =
         { add.period$ write$
           newline$
@@ -597,14 +613,14 @@ FUNCTION {format.names}
     { namesleft #0 > }
     { s nameptr format.name bbl.et.al =
       numnames bibliography.et.al.min #1 - > nameptr bibliography.et.al.use.first > and or
-        { ", " *
+        { bbl.comma *
           bbl.et.al *
           #1 'namesleft :=
         }
         { nameptr #1 >
             { namesleft #1 = bbl.and "" = not and
                 { bbl.and * }
-                { ", " * }
+                { bbl.comma * }
               if$
             }
             'skip$
@@ -1093,7 +1109,11 @@ FUNCTION {format.mark}
       'entry.mark :=
       space.before.mark
         { " " }
-        { "\allowbreak" }
+        { entry.lang lang.zh =
+            { "\unskip\nobreak\kern 0.40bp\relax" }
+            { "" }
+          if$
+        }
       if$
       "[" * entry.mark * "]" *
     }
@@ -1360,7 +1380,7 @@ FUNCTION {format.editdate}
 FUNCTION {format.urldate}
 { show.urldate show.url entry.is.electronic or and entry.url empty$ not and
   urldate empty$ not and
-    { "\allowbreak[" urldate * "]" * }
+    { "[" urldate * "]" * }
     { "" }
   if$
 }
@@ -1418,7 +1438,11 @@ FUNCTION {format.journal.volume}
 
 FUNCTION {format.journal.number}
 { number empty$ not
-    { "\allowbreak (" number * ")" * }
+    { entry.lang lang.zh =
+        { "（" number * "）" * }
+        { "(" number * ")" * }
+      if$
+    }
     { "" }
   if$
 }

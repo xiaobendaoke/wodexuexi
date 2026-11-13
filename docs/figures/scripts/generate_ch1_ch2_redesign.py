@@ -41,225 +41,233 @@ QA_DIR = REPO_ROOT / "output" / "thesis_figure_redesign_20261112" / "validation"
 
 
 def build_fig1_01_roadmap() -> dict[str, object]:
-    """图 1-1：面向时限计算服务的无人机集群受控双协议与三章递进技术路线总图。"""
-    c = SchematicCanvas(height_mm=106.0)
+    """图 1-1：论文章节安排与总体技术路线组织结构图（自顶向下五层章节架构）。"""
+    c = SchematicCanvas(height_mm=123.0)
 
-    # Top banner (inner usable width ~382 pt -> max ~44 CJK chars)
-    c.container(
-        8.0,
-        6.0,
-        399.5,
-        38.0,
-        "第 1 章 绪论：核心科学问题与全量请求评价口径",
-        stroke=P["hero"],
-        fill=P["hero_light"],
-        title_color=P["hero"],
-    )
-    c.text(
-        207.8,
-        31.0,
-        "五机百终端异构空地协同（$700\\times 700\\,\\mathrm{m}^2$，无能耗建模） | 全量指标 $\\mathrm{DSR}=S/G=\\alpha\\cdot\\eta$",
-        fontsize=7.6,
-    )
+    chapter_blue = "#2B5B9E"
+    card_bg = "#E9EFF6"
+    card_stroke = "#2B5B9E"
+    divider_col = "#AEC0D6"
+    group_stroke = "#3B6FB6"
+    arrow_col = P["ink"]
+    cx = c.w / 2.0  # 207.78 pt
 
-    # Left column: Ch 2 unified mathematical foundation (w=108 pt -> inner 98 pt -> max 11 CJK chars)
-    c.container(
-        8.0,
-        51.0,
-        108.0,
-        192.0,
-        "第 2 章 建模底座",
-        stroke=P["border"],
-        fill=P["panel_bg"],
-    )
-    c.box(
-        14.0,
-        74.0,
-        96.0,
-        36.0,
-        "自然覆盖与安全几何",
-        "$R_c=100,\\ d_{\\min}=200\\,\\mathrm{m}$",
-        stroke=P["hero"],
-    )
-    c.box(
-        14.0,
-        117.0,
-        96.0,
-        36.0,
-        "三频段与三级路径",
-        "本地 / 中继 / 宏站",
-        stroke=P["distilled"],
-    )
-    c.box(
-        14.0,
-        160.0,
-        96.0,
-        36.0,
-        "受控双协议隔离",
-        "批量结算 vs 持续排队",
-        stroke=P["comparator"],
-    )
-    c.box(
-        14.0,
-        203.0,
-        96.0,
-        33.0,
-        "配对双因子分解",
-        "$d_b=\\bar{\\eta}_b\\Delta\\alpha_b+\\bar{\\alpha}_b\\Delta\\eta_b$",
-        stroke=P["ablation"],
-    )
+    def draw_chapter_card(
+        x: float,
+        y: float,
+        w: float,
+        h: float,
+        chap_chars: tuple[str, ...] | None,
+        title: str,
+        lines: list[str],
+        *,
+        strip_w: float = 22.0,
+        title_size: float = 8.7,
+        sub_size: float = 7.4,
+    ) -> None:
+        c.ax.add_patch(
+            Rectangle(
+                (x, y),
+                w,
+                h,
+                facecolor=card_bg,
+                edgecolor=card_stroke,
+                linewidth=0.95,
+                joinstyle="miter",
+                zorder=2.2,
+            )
+        )
+        if chap_chars:
+            c.ax.add_patch(
+                Rectangle(
+                    (x, y),
+                    strip_w,
+                    h,
+                    facecolor=chapter_blue,
+                    edgecolor=card_stroke,
+                    linewidth=0.95,
+                    joinstyle="miter",
+                    zorder=2.5,
+                )
+            )
+            mid_y = y + h / 2.0
+            step_y = 10.4 if h >= 42.0 else 9.4
+            offsets = [(i - (len(chap_chars) - 1) / 2.0) * step_y for i in range(len(chap_chars))]
+            for ch, dy in zip(chap_chars, offsets):
+                c.text(
+                    x + strip_w / 2.0,
+                    mid_y + dy,
+                    ch,
+                    fontsize=8.0,
+                    color="#FFFFFF",
+                    bold=True,
+                    zorder=3.0,
+                )
+            rx = x + strip_w
+            rw = w - strip_w
+        else:
+            rx = x
+            rw = w
 
-    # Right Upper Track: Protocol I (Ch 3 -> Ch 4)
-    c.container(
-        125.0,
-        51.0,
-        282.5,
-        100.0,
-        "协议 I 轨道：单时隙批量等份结算与缓存耦合",
-        stroke=P["hero"],
-        fill="#F8FBFF",
-        title_color=P["hero"],
-    )
-    c.box(
-        131.0,
-        72.0,
-        116.0,
-        50.0,
-        "第 3 章 需求感知轨迹",
-        "30 槽补入 $R_s$ 未覆盖需求\n精简下层 MLP 因果协同",
-        fill="#FFFFFF",
-        stroke=P["hero"],
-        bold_title=True,
-    )
-    c.pill(
-        131.0,
-        126.0,
-        116.0,
-        19.0,
-        "确认 DSR $+2.85$ pp",
-        fill=P["hero_light"],
-        stroke=P["hero"],
-        fontsize=7.6,
-        bold=True,
-    )
+        rcx = rx + rw / 2.0
+        title_h = 20.5
+        c.text(rcx, y + title_h * 0.52, title, fontsize=title_size, color=P["ink"], bold=True, zorder=3.0)
+        c.line((rx + 7.5, y + title_h), (x + w - 7.5, y + title_h), color=divider_col, lw=0.70, zorder=2.6)
 
-    c.arrow((248.5, 102.0), (282.5, 102.0), color=P["hero"], lw=1.15)
-    c.text(265.5, 86.0, "400 快照", fontsize=7.5, color=P["hero"], bold=True)
-    c.text(265.5, 115.0, "桥接移交", fontsize=7.5, color=P["hero"])
+        body_top = y + title_h
+        body_h = h - title_h
+        if len(lines) == 1:
+            c.text(rcx, body_top + body_h * 0.52, lines[0], fontsize=sub_size, color=P["ink"], zorder=3.0)
+        elif len(lines) == 2:
+            c.text(rcx, body_top + body_h * 0.31, lines[0], fontsize=sub_size, color=P["ink"], zorder=3.0)
+            c.text(rcx, body_top + body_h * 0.72, lines[1], fontsize=sub_size, color=P["ink"], zorder=3.0)
 
-    c.box(
-        284.0,
-        72.0,
-        117.0,
-        50.0,
-        "第 4 章 MC-ITR 分配",
-        "克隆全批消解算力外部性\n二元字典序 $(F_1, F_2)$",
-        fill="#FFFFFF",
-        stroke=P["hero"],
-        bold_title=True,
-    )
-    c.pill(
-        284.0,
-        126.0,
-        117.0,
-        19.0,
-        "主 $-0.170$ | 桥接 $-2.633$",
-        fill=P["hero_light"],
-        stroke=P["hero"],
-        fontsize=7.6,
-        bold=True,
+    def draw_group_frame(x: float, y: float, w: float, h: float, label: str) -> None:
+        c.ax.add_patch(
+            Rectangle(
+                (x, y),
+                w,
+                h,
+                facecolor="none",
+                edgecolor=group_stroke,
+                linewidth=0.95,
+                linestyle=(0, (5.0, 3.2)),
+                joinstyle="miter",
+                zorder=1.2,
+            )
+        )
+        c.text(
+            x + 8.5,
+            y + 5.8,
+            label,
+            fontsize=8.4,
+            color=chapter_blue,
+            bold=True,
+            ha="left",
+            va="top",
+            zorder=2.0,
+        )
+
+    # 1. Chapter 1: Introduction
+    w1, h1 = 240.0, 39.0
+    x1, y1 = cx - w1 / 2.0, 6.0
+    draw_chapter_card(
+        x1,
+        y1,
+        w1,
+        h1,
+        ("第", "一", "章"),
+        "绪　论",
+        ["课题背景与研究意义  ·  国内外研究现状  ·  主要研究内容"],
+        title_size=8.9,
+        sub_size=7.4,
     )
 
-    # Methodological inspiration dashed connector in clear corridor y=152..169
-    c.arrow((386.0, 152.0), (386.0, 168.5), color=P["comparator"], lw=1.05, ls="--")
-    c.text(
-        250.0,
-        160.2,
-        "离线重评耗时 $4.1\\sim 21.9\\,\\mathrm{s}$ 启发在线摊销（两协议独立评估）",
-        fontsize=7.5,
-        color=P["comparator"],
+    # Group 1: System Modeling & Evaluation Foundation (Chapter 2)
+    draw_group_frame(10.0, 56.0, c.w - 20.0, 68.0, "系统建模与评价基础")
+    w2, h2 = 318.0, 41.0
+    x2, y2 = cx - w2 / 2.0, 76.5
+    draw_chapter_card(
+        x2,
+        y2,
+        w2,
+        h2,
+        ("第", "二", "章"),
+        "无人机集群空地协同计算系统建模与分析",
+        ["自然覆盖与安全几何  |  多链路与三级执行路径  |  双协议负载与归因评价"],
+        title_size=8.7,
+        sub_size=7.4,
+    )
+    c.arrow((cx, y1 + h1 + 0.5), (cx, y2 - 0.5), color=arrow_col, lw=1.05)
+
+    # Group 2: Cooperative Planning, Allocation & Dynamic Queuing Control (Chapters 3, 4, 5)
+    draw_group_frame(10.0, 135.0, c.w - 20.0, 158.0, "协同规划与控制方法研究")
+
+    w34, h34 = 181.0, 54.5
+    x3, y34 = 16.0, 166.0
+    x4 = c.w - 16.0 - w34
+    cx3 = x3 + w34 / 2.0
+    cx4 = x4 + w34 / 2.0
+
+    draw_chapter_card(
+        x3,
+        y34,
+        w34,
+        h34,
+        ("第", "三", "章"),
+        "无人机集群需求感知协同轨迹规划",
+        ["预接纳局部观测梯度盲区分析", "感知域未覆盖需求扩展与协同训练"],
+        strip_w=20.5,
+        title_size=8.2,
+        sub_size=7.3,
+    )
+    draw_chapter_card(
+        x4,
+        y34,
+        w34,
+        h34,
+        ("第", "四", "章"),
+        "跨机资源竞争下的集群计算任务分配",
+        ["同批算力共享跨机迁移耦合分析", "严格二元字典序与全批次协同迭代"],
+        strip_w=20.5,
+        title_size=8.2,
+        sub_size=7.3,
     )
 
-    # Right Lower Track: Protocol II (Ch 5)
-    c.container(
-        125.0,
-        170.0,
-        282.5,
-        73.0,
-        "协议 II 轨道：跨时隙持续 EDF 串联排队（第 5 章）",
-        stroke=P["distilled"],
-        fill="#F6FCF9",
-        title_color=P["distilled"],
-    )
-    c.box(
-        131.0,
-        190.0,
-        84.0,
-        34.0,
-        "释放时刻 EDF",
-        "同变双分支 $\\mathbf{C}_{\\mathrm{upper}}$",
-        stroke=P["distilled"],
-    )
-    c.box(
-        224.0,
-        190.0,
-        84.0,
-        34.0,
-        "DAgger + CRN",
-        "$48.04\\%\\to 48.74\\%$",
-        stroke=P["hero"],
-    )
-    c.box(
-        317.0,
-        190.0,
-        84.0,
-        34.0,
-        "Top-6 MPC 控制",
-        "$49.31\\%$ ($0.722\\,\\mathrm{s}$)",
-        stroke=P["ablation"],
-    )
-    c.arrow((215.5, 207.0), (223.5, 207.0), color=P["distilled"], lw=1.05)
-    c.arrow((308.5, 207.0), (316.5, 207.0), color=P["hero"], lw=1.05)
-    c.text(
-        266.0,
-        233.5,
-        "816 回合确认：微调 $+0.70$ pp，Top-6 MPC $+0.75$ pp（耗时降 $54.9\\%$）",
-        fontsize=7.5,
+    # Split connector: Ch 2 -> Ch 3 & Ch 4 (clean miter corners via ortho_arrow + stem)
+    y_split = 154.0
+    c.line((cx, y2 + h2 + 0.5), (cx, y_split), color=arrow_col, lw=1.05, zorder=3.0)
+    c.ortho_arrow([(cx, y_split), (cx3, y_split), (cx3, y34 - 0.5)], color=arrow_col, lw=1.05)
+    c.ortho_arrow([(cx, y_split), (cx4, y_split), (cx4, y34 - 0.5)], color=arrow_col, lw=1.05)
+
+    # Horizontal handoff arrow: Ch 3 -> Ch 4
+    mid_y34 = y34 + h34 / 2.0
+    c.arrow((x3 + w34 + 0.6, mid_y34), (x4 - 0.6, mid_y34), color=arrow_col, lw=1.05)
+
+    # Chapter 5: Dynamic Queuing Joint Control
+    w5, h5 = 344.0, 42.0
+    x5, y5 = cx - w5 / 2.0, 244.0
+    draw_chapter_card(
+        x5,
+        y5,
+        w5,
+        h5,
+        ("第", "五", "章"),
+        "动态排队服务中的规划蒸馏与反事实辅助协同控制",
+        ["两阶段串联排队与同变双分支网络  |  规划蒸馏与反事实微调  |  神经引导滚动预测控制"],
+        title_size=8.6,
+        sub_size=7.3,
     )
 
-    # Arrows from Ch 2 foundation to Protocol I and Protocol II
-    c.arrow((116.5, 102.0), (124.5, 102.0), color=P["ink"], lw=1.1)
-    c.arrow((116.5, 207.0), (124.5, 207.0), color=P["ink"], lw=1.1)
+    # Merge connector: Ch 3 & Ch 4 -> Ch 5 (clean orthogonal polyline + arrow)
+    y_merge = 232.0
+    c.ax.plot(
+        [cx3, cx3, cx4, cx4],
+        [y34 + h34 + 0.5, y_merge, y_merge, y34 + h34 + 0.5],
+        color=arrow_col,
+        linewidth=1.05,
+        solid_joinstyle="miter",
+        solid_capstyle="butt",
+        zorder=3.0,
+    )
+    c.arrow((cx, y_merge), (cx, y5 - 0.5), color=arrow_col, lw=1.05)
 
-    # Bottom Chapter 6 synthesis bar
-    c.container(
-        8.0,
-        251.0,
-        399.5,
-        25.0,
-        "",
-        stroke=P["ink"],
-        fill=P["panel_bg"],
+    # Conclusion
+    w6, h6 = 240.0, 37.5
+    x6, y6 = cx - w6 / 2.0, 305.0
+    draw_chapter_card(
+        x6,
+        y6,
+        w6,
+        h6,
+        None,
+        "结　论",
+        ["主要研究成果总结  ·  研究局限性剖析  ·  后续工作展望"],
+        title_size=8.9,
+        sub_size=7.4,
     )
-    c.text(
-        207.8,
-        263.5,
-        "第 6 章 总结：前端需求感知接纳（第 3 章）→ 后端批量外部性消解（第 4 章）→ 持续排队摊销控制（第 5 章）",
-        fontsize=7.6,
-        bold=True,
-    )
-    c.arrow((266.0, 243.5), (266.0, 250.5), color=P["ink"], lw=1.05)
-    c.arrow((62.0, 243.5), (62.0, 250.5), color=P["ink"], lw=1.05)
+    c.arrow((cx, y5 + h5 + 0.5), (cx, y6 - 0.5), color=arrow_col, lw=1.05)
 
-    c.legend_row(
-        288.0,
-        [
-            ("-", P["hero"], "实线：同协议内模型与冻结快照流向"),
-            ("--", P["comparator"], "虚线：跨协议方法学演进（DSR 不直接拼接）"),
-        ],
-        x_start=24.0,
-        x_end=396.0,
-    )
     return c.export("fig1_01_thesis_roadmap", repo_root=REPO_ROOT, output_dirs=OUT_DIRS, qa_dir=QA_DIR)
 
 

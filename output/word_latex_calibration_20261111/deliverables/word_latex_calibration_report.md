@@ -1,7 +1,7 @@
 # 《中山大学航空航天学院学位论文撰写模板（2025年12月更新）.doc》逆向提取、LaTeX 结构化校准与 PDF 叠印验证报告
 
 - **权威基准原件**：`《中山大学航空航天学院学位论文撰写模板（2025年12月更新）.doc》`（通过本机 Word COM 无损导出 OOXML `.docx` 与 25 页原生矢量 PDF）
-- **校准目标工程**：[`latex/thesis-layout.tex`](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/thesis-layout.tex)、[`latex/docs/`](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/docs) 及编译产物 [`latex/main.pdf`](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/main.pdf)（共 131 页）
+- **校准目标工程**：[thesis-layout.tex](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/thesis-layout.tex)、[sysusetup.tex](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/sysusetup.tex)、[sysuthesis-numerical.bst](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/sysuthesis-numerical.bst)、[docs/](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/docs) 及编译产物 [main.pdf](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/main.pdf)（共 126 页）
 - **校准边界遵循说明**：严格执行**零先验盲测**、**内容与样式分离**、**修改必复测**原则；遵循用户明确指示，**保留论文现有章节组织与内容结构**（如 [`chap06.tex`](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/docs/chap06.tex) 结论章组织、[`abstract.tex`](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/docs/abstract.tex) 条目表述与 [`main.tex`](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/main.tex) 前置目录取舍），聚焦全部**纯排版几何参数**（纸张版心、页眉双线、字体字号、基线纵坐标 `y_base`、行距 `dy`、左右缩进、表格线宽、双语题注间距、文献引用胶水与零盒模型告警）的像素级对齐。
 
 ---
@@ -50,7 +50,7 @@ Word 页眉双线采用 `thickThinMediumGap`（线间空隙恒为 `0.72 bp`）�
 | 11 | 双语图题（31 幅） | `图X-Y` -> `Fig.X-Y` 中英首行基线差 `dy` | `13.92 bp`（`10.5 bp` 正体居中，无空格标签） | 单行 `13.92 bp`，但 **14 处双行英文题注骤缩至 `11.24 bp`** | **`-2.68 bp` 挤压跳变** | 全部 31 幅图题（单行与多行）恒为 `13.91~13.92 bp` | **`0.00~0.01 bp`** |
 | 12 | 双语表题（24 张） | `表X-Y` -> `TableX-Y` 中英首行基线差 `dy` | `16.32 bp`（`10.5 bp` 正体居中，无空格标签） | 单行 `16.32 bp`，但 **7 处双行英文题注骤缩至 `13.64 bp`** | **`-2.68 bp` 挤压跳变** | 全部 24 张表题（单行与多行）恒为 `16.32 bp` | **`0.00 bp`** |
 | 13 | 三线表与越界 | 24 张表线宽（`1.44 / 0.96 bp`）与版心边界 | `1.44 / 0.96 bp`，`x in [85.05..510.25]` | `表4-7` 右越界至 `594.77 bp`，且含 2 处 `式(??)` | **`+84.53 bp` 越界 + `??`** | 24 张表全部收于 `[85.05..510.25]`，`0` 处 `??` | **`0.00 bp`** |
-| 14 | 文献引用间距 | `\cite` / `\inlinecite` 前防断行与后防多余胶水 | 紧贴文字，无行首孤立 `[n]`，无多余空白 | `]` 后跟汉字泄露 `CJKecglue`（`4.19~6.13 bp` 空隙） | **`+4.19~6.13 bp` 空隙** | `\unskip\nobreak\kern\z@` + 后置胶水阻断，`0` 孤立行首引用 | **`0.00 bp`** |
+| 14 | 正文引用与文献表 | 正文统一 `12bp` 正体平排 `[n]`（前 `0.37bp`/后 `0.57bp`）；文献表左对齐、中文全角标点与紧贴 `[J]`（`0.49bp`） | 正文混用 `9bp` 上标与 `12bp` 平排；文献表拉伸断词、中文半角标点、10 处行首孤立 `[J]/(期)`、中文 `[J]` 前多 `3.0bp` 空隙 | 样式混排 + 孤立断行 | 全书 `0` 上标引用（全 `12bp` 平排，`0.37/0.50bp`）；文献表左对齐无断词、`0` 孤立标记、中文全角标点且 `[J]` 前 `0.41bp` | **`-0.08~0.00 bp`** |
 | 15 | 结论、文献、附录、致谢 | 标题基线与首行基线 | 结论/附录/致谢 `145.37->186.89`；文献 `145.37->184.97`（缩进 `108.00`） | 文献首条 `183.68 bp`（`-1.29 bp`） | **`-1.29 bp`** | 结论/附录/致谢 `145.37->186.89`；文献 `145.37->184.97`（`108.01`） | **`0.00~0.01 bp`** |
 | 16 | 全文字体与标记卫生 | 禁用局部补丁、非标字体及 `Overfull/Underfull` 警告 | `0` 局部补丁、`0` 非标字体、`0` 盒告警 | 1 处 `Courier New`（`\texttt`）、11 处局部 `\tabcolsep`、2 处 `\indent`、2 处 `Underfull \hbox` | 违规局部补丁与告警 | **`0` 局部补丁、`0` 非标字体、`0` `Overfull`、`0` `Underfull`** | **`0`** |
 
@@ -65,7 +65,7 @@ Word 页眉双线采用 `thickThinMediumGap`（线间空隙恒为 `0.72 bp`）�
 3. **一至四级标题与连续标题补偿**（[L244-L310](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/thesis-layout.tex#L244-L310)）：补齐 `section -> subsection` 连续标题 `+0.88 bp` 补偿（实测 `dy = 30.00 bp`），校准 `subsubsection` 在 `fixskip=true` 下的精确基线补偿（实测前后 `dy = 20.04 bp`，`aftername = 6.84 bp`）。
 4. **双语图表题注盒对称化与语义化三线表环境**（[L339-L445](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/thesis-layout.tex#L339-L445)）：显式声明 `bicaption` 语言并统一单行/多行题注顶底支柱，彻底根治 21 处双行英文题注 `-2.68 bp` 基线骤缩；提供全局 `sysutabular*` 与 `sysutabularx` 环境统一管理满宽三线表。
 5. **中英文目录跨层间距状态机与后置章校准**（[L500-L535](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/thesis-layout.tex#L500-L535)、[L1206-L1348](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/thesis-layout.tex#L1206-L1348)）：精确复刻中文目录首部 `摘 要 -> Abstract -> 第1章`（`183.06 -> 201.66 -> 219.78 bp`）、`节 -> 章`（`17.58 bp`）与后置连续章 `结 论 -> 参考文献 -> 附录 -> 致谢`（`19.44 bp`）三类间距；校准 `\conclusionchapter`、`参考文献` 首条 `[1]`（`184.97 bp`）及 `acknowledgements` 首行（`186.89 bp`）。
-6. **文献引用胶水精确阻断**（[L1222-L1258](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/thesis-layout.tex#L1222-L1258)）：在 `\NAT@citesuper` 与 `\NAT@citenum` 中通过 `\unskip\nobreak\kern\z@` 与后置零宽汉字锚点消除 `]` 后多余中英间距并杜绝行首孤立 `[序号]`。
+6. **正文平排文献引用与后置参考文献表 1:1 模板对齐**（[sysusetup.tex](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/sysusetup.tex#L24-L41)、[thesis-layout.tex](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/thesis-layout.tex#L1239-L1288)、[sysuthesis-numerical.bst](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/latex/sysuthesis-numerical.bst#L185-L216)）：全局切换 `cite-style = inline` 并锁定 `bibstyle@sysuthesis-numerical = \bibstyle@inline`，使全书 `\cite` 与 `\inlinecite` 统一为模板 WP15 所示 `12bp` `Times New Roman` 正体基线平排 `[n]`（`[` 前 `0.37 bp` 防折行、`]` 后 `0.50 bp` 阻断 `CJKecglue`）；参考文献表按 WP22 `Plain Text` 设为左对齐无英文断词（`\raggedright\hyphenpenalty=10000`），在 `.bst` 中补齐中文条目全角 `，`/`（期）：` 与 `[J]` 前 `0.41 bp` 紧贴补偿，并移除 `[J]`/`(期)`/`[访问日期]` 前的孤立折行断点。
 
 ### 2.2 正文标记净化范围（零局部排版硬编码）
 
@@ -77,13 +77,13 @@ Word 页眉双线采用 `thickThinMediumGap`（线间空隙恒为 `0.72 bp`）�
 
 ## 三、第三阶段：PDF 矢量自动断言与 300 DPI 半透明叠印校准验证
 
-### 3.1 103 项全量矢量坐标与排版卫生自动断言结果
+### 3.1 110 项全量矢量坐标与排版卫生自动断言结果
 
-机器可读完整断言数据见 [`validation/vector_assertions.json`](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/output/word_latex_calibration_20261111/validation/vector_assertions.json)：
+机器可读完整断言数据见 [vector_assertions.json](file:///c:/Users/woshinibaba/Documents/学习/我的项目/我的论文/wodexuexi/output/word_latex_calibration_20261111/validation/vector_assertions.json)：
 
-- **总断言数**：`103` 项（容差阈值 `<= 0.10 bp`）
-- **通过率**：**`103 / 103`（100% 通过）**
-- **全书最大坐标绝对误差 `max |Δ|`**：**`0.04 bp`**（约 `0.014 mm`，远优于 `0.10 bp` 精度目标）
+- **总断言数**：`110` 项（容差阈值 `<= 0.10 bp`）
+- **通过率**：**`110 / 110`（100% 通过）**
+- **全书最大坐标绝对误差 `max |Δ|`**：**`0.08 bp`**（约 `0.028 mm`，优于 `0.10 bp` 精度目标）
 - **编译日志与字体扫描**：
   - `Overfull \hbox / \vbox` 警告：**`0`**
   - `Underfull \hbox` 警告：**`0`**
